@@ -1,11 +1,11 @@
 package lib_test
 
 import (
-	"testing"
-	"gopkg.in/dedis/onet.v1/network"
 	"github.com/JoaoAndreSa/MedCo/lib"
-	"gopkg.in/dedis/crypto.v0/random"
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/dedis/crypto.v0/random"
+	"gopkg.in/dedis/onet.v1/network"
+	"testing"
 )
 
 // TestStoring tests survey store and its methods.

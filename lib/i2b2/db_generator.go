@@ -7,10 +7,10 @@ import (
 
 	"gopkg.in/dedis/onet.v1/network"
 
+	"github.com/JoaoAndreSa/MedCo/lib"
+	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/onet.v1/crypto"
 	"gopkg.in/dedis/onet.v1/log"
-	"gopkg.in/dedis/crypto.v0/abstract"
-	"github.com/JoaoAndreSa/MedCo/lib"
 	"strings"
 )
 

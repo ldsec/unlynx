@@ -3,10 +3,10 @@ package lib_test
 import (
 	"testing"
 
+	"github.com/JoaoAndreSa/MedCo/lib"
+	"github.com/stretchr/testify/assert"
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"
-	"github.com/stretchr/testify/assert"
-	"github.com/JoaoAndreSa/MedCo/lib"
 )
 
 func TestShuffleSequence(t *testing.T) {

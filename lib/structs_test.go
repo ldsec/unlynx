@@ -3,9 +3,9 @@ package lib_test
 import (
 	"testing"
 
-	"gopkg.in/dedis/crypto.v0/abstract"
-	"github.com/stretchr/testify/assert"
 	"github.com/JoaoAndreSa/MedCo/lib"
+	"github.com/stretchr/testify/assert"
+	"gopkg.in/dedis/crypto.v0/abstract"
 )
 
 // TestAddClientResponse tests the addition of two client response objects

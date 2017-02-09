@@ -7,10 +7,10 @@ import (
 
 	"sync"
 
-	"gopkg.in/dedis/onet.v1/network"
 	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/crypto.v0/cipher"
 	"gopkg.in/dedis/onet.v1"
+	"gopkg.in/dedis/onet.v1/network"
 )
 
 var mutexParallel sync.Mutex

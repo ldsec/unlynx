@@ -4,11 +4,11 @@ import (
 	"reflect"
 	"testing"
 
-	"gopkg.in/dedis/onet.v1/network"
+	"github.com/JoaoAndreSa/MedCo/lib"
+	"github.com/stretchr/testify/assert"
 	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/crypto.v0/random"
-	"github.com/stretchr/testify/assert"
-	"github.com/JoaoAndreSa/MedCo/lib"
+	"gopkg.in/dedis/onet.v1/network"
 )
 
 var suite = network.Suite
@@ -127,8 +127,8 @@ func TestCryptoKeySwitching(t *testing.T) {
 
 // TestEqualDeterministCipherText tests equality between deterministic ciphertexts.
 func TestEqualDeterministCipherText(t *testing.T) {
-	dcv1 := lib.DeterministCipherVector{ lib.DeterministCipherText{Point: suite.Point().Base()}, lib.DeterministCipherText{Point: suite.Point().Null()}}
-	dcv2 := lib.DeterministCipherVector{ lib.DeterministCipherText{Point: suite.Point().Base()}, lib.DeterministCipherText{Point: suite.Point().Null()}}
+	dcv1 := lib.DeterministCipherVector{lib.DeterministCipherText{Point: suite.Point().Base()}, lib.DeterministCipherText{Point: suite.Point().Null()}}
+	dcv2 := lib.DeterministCipherVector{lib.DeterministCipherText{Point: suite.Point().Base()}, lib.DeterministCipherText{Point: suite.Point().Null()}}
 
 	assert.True(t, dcv1.Equal(&dcv2))
 	assert.True(t, dcv1.Equal(&dcv1))

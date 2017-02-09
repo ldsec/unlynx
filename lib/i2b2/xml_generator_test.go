@@ -5,12 +5,12 @@ import (
 	"os"
 	"testing"
 
-	"gopkg.in/dedis/onet.v1/log"
-	"gopkg.in/dedis/onet.v1/network"
-	"gopkg.in/dedis/onet.v1"
-	"gopkg.in/dedis/crypto.v0/random"
 	"github.com/JoaoAndreSa/MedCo/lib"
 	"github.com/JoaoAndreSa/MedCo/lib/i2b2"
+	"gopkg.in/dedis/crypto.v0/random"
+	"gopkg.in/dedis/onet.v1"
+	"gopkg.in/dedis/onet.v1/log"
+	"gopkg.in/dedis/onet.v1/network"
 )
 
 func TestCreateXMLforTestonI2B2(t *testing.T) {

@@ -10,10 +10,10 @@ import (
 	"os"
 	"strconv"
 
-	"gopkg.in/dedis/onet.v1/log"
-	"gopkg.in/dedis/crypto.v0/abstract"
-	"gopkg.in/dedis/onet.v1/network"
 	"github.com/JoaoAndreSa/MedCo/lib"
+	"gopkg.in/dedis/crypto.v0/abstract"
+	"gopkg.in/dedis/onet.v1/log"
+	"gopkg.in/dedis/onet.v1/network"
 )
 
 // Result contains one value
