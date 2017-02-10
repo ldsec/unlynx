@@ -1,0 +1,9 @@
+Simulation = "DeterministicTagging"
+Servers = 3
+Bf = 2
+Rounds = 1
+RunWait = 6000000
+Bandwidth = 1000
+
+Hosts, NbrResponses, NbrGroupAttributes, NbrAggrAttributes, Proofs
+3, 100, 2, 100, false

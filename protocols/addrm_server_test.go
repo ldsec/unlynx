@@ -4,13 +4,13 @@ import (
 	"testing"
 	"time"
 
-	"gopkg.in/dedis/onet.v1/log"
-	"gopkg.in/dedis/onet.v1/network"
-	"gopkg.in/dedis/onet.v1"
 	"github.com/JoaoAndreSa/MedCo/lib"
 	"github.com/JoaoAndreSa/MedCo/protocols"
-	"gopkg.in/dedis/crypto.v0/random"
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/dedis/crypto.v0/random"
+	"gopkg.in/dedis/onet.v1"
+	"gopkg.in/dedis/onet.v1/log"
+	"gopkg.in/dedis/onet.v1/network"
 )
 
 func TestAddRmServer(t *testing.T) {

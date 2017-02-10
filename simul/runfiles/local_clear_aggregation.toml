@@ -1,0 +1,9 @@
+Simulation = "LocalClearAggregation"
+Servers = 1
+Bf = 2
+Rounds = 1
+RunWait = 6000000
+Bandwidth = 1000
+
+Hosts, NbrResponses, NbrGroups, NbrGroupAttributes, NbrAggrAttributes, Proofs
+1, 10, 10, 2, 1000, true

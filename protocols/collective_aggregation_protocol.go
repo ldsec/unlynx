@@ -1,0 +1,307 @@
+// The collective aggregation protocol permits the cothority to collectively aggregate the local
+// results of all the servers.
+// It uses the tree structure of the cothority. The root sends down an aggregation trigger message. The leafs
+// respond with their local result and other nodes aggregate what they receive before forwarding the
+// aggregation result up the tree until the root can produce the final result.
+
+package protocols
+
+import (
+	"errors"
+
+	"github.com/JoaoAndreSa/MedCo/lib"
+	"gopkg.in/dedis/onet.v1"
+	"gopkg.in/dedis/onet.v1/log"
+	"gopkg.in/dedis/onet.v1/network"
+)
+
+// CollectiveAggregationProtocolName is the registered name for the collective aggregation protocol.
+const CollectiveAggregationProtocolName = "CollectiveAggregation"
+
+func init() {
+	network.RegisterMessage(DataReferenceMessage{})
+	network.RegisterMessage(ChildAggregatedDataMessage{})
+	onet.GlobalProtocolRegister(CollectiveAggregationProtocolName, NewCollectiveAggregationProtocol)
+}
+
+// Messages
+//______________________________________________________________________________________________________________________
+
+// CothorityAggregatedData is the collective aggregation result.
+type CothorityAggregatedData struct {
+	GroupedData map[lib.GroupingKey]lib.ClientResponse
+}
+
+// DataReferenceMessage message sent to trigger an aggregation protocol.
+type DataReferenceMessage struct{}
+
+// ChildAggregatedDataMessage contains one node's aggregated data.
+type ChildAggregatedDataMessage struct {
+	ChildData []lib.ClientResponseDet
+}
+
+// ChildAggregatedDataBytesMessage is ChildAggregatedDataMessage in bytes.
+type ChildAggregatedDataBytesMessage struct {
+	Data []byte
+}
+
+// CADBLengthMessage is a message containing the lengths to read a shuffling message in bytes
+type CADBLengthMessage struct {
+	GacbLength  int
+	AabLength   int
+	PgaebLength int
+	DtbLength   int
+}
+
+// Structs
+//______________________________________________________________________________________________________________________
+
+type dataReferenceStruct struct {
+	*onet.TreeNode
+	DataReferenceMessage
+}
+
+type childAggregatedDataStruct struct {
+	*onet.TreeNode
+	ChildAggregatedDataMessage
+}
+
+type childAggregatedDataBytesStruct struct {
+	*onet.TreeNode
+	ChildAggregatedDataBytesMessage
+}
+
+type cadmbLengthStruct struct {
+	*onet.TreeNode
+	CADBLengthMessage
+}
+
+// Protocol
+//______________________________________________________________________________________________________________________
+
+// CollectiveAggregationProtocol performs an aggregation of the data held by every node in the cothority.
+type CollectiveAggregationProtocol struct {
+	*onet.TreeNodeInstance
+
+	// Protocol feedback channel
+	FeedbackChannel chan CothorityAggregatedData
+
+	// Protocol communication channels
+	DataReferenceChannel chan dataReferenceStruct
+	LengthNodeChannel    chan []cadmbLengthStruct
+	ChildDataChannel     chan []childAggregatedDataBytesStruct
+
+	// Protocol state data
+	GroupedData *map[lib.GroupingKey]lib.ClientResponse
+	Proofs      bool
+}
+
+// NewCollectiveAggregation initializes the protocol instance.
+func NewCollectiveAggregationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
+	pap := &CollectiveAggregationProtocol{
+		TreeNodeInstance: n,
+		FeedbackChannel:  make(chan CothorityAggregatedData),
+	}
+
+	err := pap.RegisterChannel(&pap.DataReferenceChannel)
+	if err != nil {
+		return nil, errors.New("couldn't register data reference channel: " + err.Error())
+	}
+
+	err = pap.RegisterChannel(&pap.ChildDataChannel)
+	if err != nil {
+		return nil, errors.New("couldn't register child-data channel: " + err.Error())
+	}
+
+	if err := pap.RegisterChannel(&pap.LengthNodeChannel); err != nil {
+		return nil, errors.New("couldn't register data reference channel: " + err.Error())
+	}
+
+	return pap, nil
+}
+
+// Start is called at the root to begin the execution of the protocol.
+func (p *CollectiveAggregationProtocol) Start() error {
+	if p.GroupedData == nil {
+		return errors.New("No data reference provided for aggregation")
+	}
+
+	log.LLvl1(p.ServerIdentity(), " started a Private Aggregate Protocol (", len(*p.GroupedData), "local group(s) )")
+	p.SendToChildren(&DataReferenceMessage{})
+	return nil
+}
+
+// Dispatch is called at each node and handle incoming messages.
+func (p *CollectiveAggregationProtocol) Dispatch() error {
+
+	// 1. Aggregation announcement phase
+	if !p.IsRoot() {
+		p.aggregationAnnouncementPhase()
+	}
+
+	// 2. Ascending aggregation phase
+	aggregatedData := p.ascendingAggregationPhase()
+	log.Lvl1(p.ServerIdentity(), " completed aggregation phase (", len(*aggregatedData), "group(s) )")
+
+	// 3. Result reporting
+	if p.IsRoot() {
+		p.FeedbackChannel <- CothorityAggregatedData{*aggregatedData}
+	}
+	return nil
+}
+
+// Announce forwarding down the tree.
+func (p *CollectiveAggregationProtocol) aggregationAnnouncementPhase() {
+	dataReferenceMessage := <-p.DataReferenceChannel
+	if !p.IsLeaf() {
+		p.SendToChildren(&dataReferenceMessage.DataReferenceMessage)
+	}
+}
+
+// Results pushing up the tree containing aggregation results.
+func (p *CollectiveAggregationProtocol) ascendingAggregationPhase() *map[lib.GroupingKey]lib.ClientResponse {
+
+	if p.GroupedData == nil {
+		emptyMap := make(map[lib.GroupingKey]lib.ClientResponse, 0)
+		p.GroupedData = &emptyMap
+	}
+
+	roundTotComput := lib.StartTimer(p.Name() + "_CollectiveAggregation(ascendingAggregation)")
+
+	if !p.IsLeaf() {
+
+		length := make([]cadmbLengthStruct, 0)
+		for _, v := range <-p.LengthNodeChannel {
+			length = append(length, v)
+		}
+		datas := make([]childAggregatedDataBytesStruct, 0)
+		for _, v := range <-p.ChildDataChannel {
+			datas = append(datas, v)
+		}
+		for i, v := range length {
+			childrenContribution := ChildAggregatedDataMessage{}
+			childrenContribution.FromBytes(datas[i].Data, v.GacbLength, v.AabLength, v.PgaebLength, v.DtbLength)
+			c1 := make(map[lib.GroupingKey]lib.ClientResponse)
+
+			roundProofs := lib.StartTimer(p.Name() + "_CollectiveAggregation(Proof-1stPart)")
+
+			if p.Proofs { //need to save previous state
+				for i, v := range *p.GroupedData {
+					c1[i] = v
+				}
+			}
+			lib.EndTimer(roundProofs)
+			roundComput := lib.StartTimer(p.Name() + "_CollectiveAggregation(Aggregation)")
+
+			for _, aggr := range childrenContribution.ChildData {
+				localAggr, ok := (*p.GroupedData)[aggr.DetTag]
+				if ok {
+					localAggr.AggregatingAttributes = *lib.NewCipherVector(len(localAggr.AggregatingAttributes)).Add(localAggr.AggregatingAttributes, aggr.CR.AggregatingAttributes)
+				} else {
+					localAggr = aggr.CR
+				}
+				(*p.GroupedData)[aggr.DetTag] = localAggr
+			}
+
+			lib.EndTimer(roundComput)
+			roundProofs2 := lib.StartTimer(p.Name() + "_CollectiveAggregation(Proof-2ndPart)")
+			if p.Proofs {
+				PublishedCollectiveAggregationProof := lib.CollectiveAggregationProofCreation(c1, childrenContribution.ChildData, *p.GroupedData)
+				//publication
+				_ = PublishedCollectiveAggregationProof
+			}
+			lib.EndTimer(roundProofs2)
+		}
+	}
+
+	lib.EndTimer(roundTotComput)
+
+	if !p.IsRoot() {
+		detAggrResponses := make([]lib.ClientResponseDet, len(*p.GroupedData))
+		count := 0
+		for i, v := range *p.GroupedData {
+			detAggrResponses[count].DetTag = i
+			detAggrResponses[count].CR = v
+			count++
+		}
+
+		message := ChildAggregatedDataBytesMessage{}
+
+		var gacbLength, aabLength, pgaebLength, dtbLength int
+
+		message.Data, gacbLength, aabLength, pgaebLength, dtbLength = (&ChildAggregatedDataMessage{detAggrResponses}).ToBytes()
+
+		childrenContribution := ChildAggregatedDataMessage{}
+		childrenContribution.FromBytes(message.Data, gacbLength, aabLength, pgaebLength, dtbLength)
+
+		p.SendToParent(&CADBLengthMessage{gacbLength, aabLength, pgaebLength, dtbLength})
+		p.SendToParent(&message)
+	}
+
+	return p.GroupedData
+}
+
+// Conversion
+//______________________________________________________________________________________________________________________
+
+// ToBytes converts a ChildAggregatedDataMessage to a byte array
+func (sm *ChildAggregatedDataMessage) ToBytes() ([]byte, int, int, int, int) {
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	b := make([]byte, 0)
+	bb := make([][]byte, len((*sm).ChildData))
+
+	var gacbLength int
+	var aabLength int
+	var pgaebLength int
+	var dtbLength int
+
+	wg := lib.StartParallelize(len((*sm).ChildData))
+	for i := range (*sm).ChildData {
+		if lib.PARALLELIZE {
+			go func(i int) {
+				defer wg.Done()
+				mutexParallel.Lock()
+				bb[i], gacbLength, aabLength, pgaebLength, dtbLength = (*sm).ChildData[i].ToBytes()
+				mutexParallel.Unlock()
+			}(i)
+		} else {
+			bb[i], gacbLength, aabLength, pgaebLength, dtbLength = (*sm).ChildData[i].ToBytes()
+		}
+
+	}
+	lib.EndParallelize(wg)
+
+	for _, el := range bb {
+		b = append(b, el...)
+	}
+
+	return b, gacbLength, aabLength, pgaebLength, dtbLength
+}
+
+// FromBytes converts a byte array to a ChildAggregatedDataMessage. Note that you need to create the (empty) object beforehand.
+func (sm *ChildAggregatedDataMessage) FromBytes(data []byte, gacbLength, aabLength, pgaebLength, dtbLength int) {
+	elementLength := (gacbLength + aabLength*64 + pgaebLength*64 + dtbLength) //CAUTION: hardcoded 64 (size of el-gamal element C,K)
+
+	if elementLength != 0 && len(data) > 0 {
+		var nbrChildData int
+		nbrChildData = len(data) / elementLength
+
+		(*sm).ChildData = make([]lib.ClientResponseDet, nbrChildData)
+		wg := lib.StartParallelize(nbrChildData)
+		for i := 0; i < nbrChildData; i++ {
+			v := data[i*elementLength : i*elementLength+elementLength]
+			if lib.PARALLELIZE {
+				go func(v []byte, i int) {
+					defer wg.Done()
+					(*sm).ChildData[i].FromBytes(v, gacbLength, aabLength, pgaebLength, dtbLength)
+				}(v, i)
+			} else {
+				(*sm).ChildData[i].FromBytes(v, gacbLength, aabLength, pgaebLength, dtbLength)
+			}
+
+		}
+		lib.EndParallelize(wg)
+	}
+}

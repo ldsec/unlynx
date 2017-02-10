@@ -1,14 +1,14 @@
-// Package medco contains the adding/removing protocol which permits to change the encryption of data.
+// Package protocols contains the adding/removing protocol which permits to change the encryption of data.
 // It allows to remove/add a server contribution to the encryption of ciphertexts.
 // We assume that the server joining/leaving the cothority participates in the process.
 package protocols
 
 import (
-	"gopkg.in/dedis/onet.v1/network"
-	"gopkg.in/dedis/onet.v1/log"
-	"gopkg.in/dedis/onet.v1"
 	"github.com/JoaoAndreSa/MedCo/lib"
 	"gopkg.in/dedis/crypto.v0/abstract"
+	"gopkg.in/dedis/onet.v1"
+	"gopkg.in/dedis/onet.v1/log"
+	"gopkg.in/dedis/onet.v1/network"
 )
 
 // AddRmServerProtocolName is the registered name for the local aggregation protocol.

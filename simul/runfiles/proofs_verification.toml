@@ -1,0 +1,9 @@
+Simulation = "ProofsVerification"
+Servers = 1
+Bf = 2
+Rounds = 1
+RunWait = 6000000
+Bandwidth = 1000
+
+Hosts, ShufflingProofsCount, DeterministicTaggingProofsCount, CollectiveAggregationProofsCount, AggregationProofsCount, KeySwitchingProofsCount, NbrResponses, NbrGroupAttributes, NbrAggrAttributes, Proofs
+1, 5, 5, 5, 5, 5, 10, 2, 10, true
