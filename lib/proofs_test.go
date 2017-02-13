@@ -50,7 +50,7 @@ func TestKeySwitchingProof(t *testing.T) {
 	switchedVect, rs := lib.NewCipherVector(2).KeySwitching(cipherVect, origEphemKeys, pubKeyNew, secKey)
 
 	cps := lib.VectorSwitchKeyProofCreation(cipherVect, *switchedVect, rs, secKey, []abstract.Point{cipherOne.K, cipherOne.K}, pubKeyNew)
-	assert.True(t, lib.PublishedSwitchKeyCheckProof(lib.PublishedSwitchKeyProof{Skp: cps, VectBefore: cipherVect, *switchedVect, pubKey, pubKeyNew}))
+	assert.True(t, lib.PublishedSwitchKeyCheckProof(lib.PublishedSwitchKeyProof{Skp: cps, VectBefore: cipherVect, VectAfter: *switchedVect, K: pubKey, Q: pubKeyNew}))
 
 	assert.False(t, lib.PublishedSwitchKeyCheckProof(lib.PublishedSwitchKeyProof{Skp: cps, VectBefore: cipherVect, VectAfter: cipherVect, K: pubKey, Q: pubKeyNew}))
 	assert.False(t, lib.PublishedSwitchKeyCheckProof(lib.PublishedSwitchKeyProof{Skp: cps, VectBefore: *switchedVect, VectAfter: *switchedVect, K: pubKey, Q: pubKeyNew}))
