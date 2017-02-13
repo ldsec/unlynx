@@ -3,7 +3,6 @@ package services
 import (
 	"strconv"
 
-	"github.com/btcsuite/goleveldb/leveldb/errors"
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"
 	"gopkg.in/dedis/onet.v1"
@@ -44,22 +43,30 @@ func NewMedcoClient(entryPoint *network.ServerIdentity) *API {
 // SendSurveyCreationQuery creates a survey based on a set of entities (servers) and a survey description.
 func (c *API) SendSurveyCreationQuery(entities *onet.Roster, surveyGenID, surveyID lib.SurveyID, surveyDescription lib.SurveyDescription, proofs bool, appFlag bool, querySubject []lib.ClientResponse, clientPubKey abstract.Point, dataToProcess []lib.ClientResponse, nbrDPs map[string]int64, aggregationTotal int64) (*lib.SurveyID, lib.ClientResponse, error) {
 	log.Lvl1(c, "is creating a survey with general id: ", surveyGenID)
-	resp, err := c.Send(c.entryPoint, &SurveyCreationQuery{SurveyGenID: &surveyGenID, SurveyID: &surveyID, Roster: *entities, SurveyDescription: surveyDescription, Proofs: proofs, AppFlag: appFlag, QuerySubject: querySubject, ClientPubKey: clientPubKey, DataToProcess: dataToProcess, NbrDPs: nbrDPs, AggregationTotal: aggregationTotal})
 
-	if err != nil {
-		return nil, lib.ClientResponse{}, err
-	}
 	var newSurveyID lib.SurveyID
 	var results lib.ClientResponse
 
 	// if Unlynx normal use
 	if dataToProcess == nil {
-		log.LLvl1(c, " successfully created the survey with ID ", resp.Msg.(ServiceResponse).SurveyID)
-		newSurveyID = resp.Msg.(ServiceResponse).SurveyID
-	} else { // i2b2 compliant version
-		results = resp.Msg.(SurveyResultResponse).Results[0]
-	}
+		resp := ServiceResponse{}
+		err := c.SendProtobuf(c.entryPoint, &SurveyCreationQuery{SurveyGenID: &surveyGenID, SurveyID: &surveyID, Roster: *entities, SurveyDescription: surveyDescription, Proofs: proofs, AppFlag: appFlag, QuerySubject: querySubject, ClientPubKey: clientPubKey, DataToProcess: dataToProcess, NbrDPs: nbrDPs, AggregationTotal: aggregationTotal},&resp)
+		if err != nil {
+			return nil, lib.ClientResponse{}, err
+		}
 
+		log.LLvl1(c, " successfully created the survey with ID ", resp.SurveyID)
+		newSurveyID = resp.SurveyID
+
+	} else { // i2b2 compliant version
+		resp := SurveyResultResponse{}
+		err := c.SendProtobuf(c.entryPoint, &SurveyCreationQuery{SurveyGenID: &surveyGenID, SurveyID: &surveyID, Roster: *entities, SurveyDescription: surveyDescription, Proofs: proofs, AppFlag: appFlag, QuerySubject: querySubject, ClientPubKey: clientPubKey, DataToProcess: dataToProcess, NbrDPs: nbrDPs, AggregationTotal: aggregationTotal},&resp)
+		if err != nil {
+			return nil, lib.ClientResponse{}, err
+		}
+
+		results = resp.Results[0]
+	}
 	return &newSurveyID, results, nil
 }
 
@@ -69,7 +76,9 @@ func (c *API) SendSurveyResponseQuery(surveyID lib.SurveyID, clearClientResponse
 	var err error
 
 	s := EncryptDataToSurvey(c.String(), surveyID, clearClientResponses, groupKey, dataRepetitions)
-	_, err = c.Send(c.entryPoint, s)
+
+	resp := ServiceResponse{}
+	err = c.SendProtobuf(c.entryPoint, s, &resp)
 
 	if err != nil {
 		log.Fatal("Error while sending data")
@@ -82,27 +91,23 @@ func (c *API) SendSurveyResponseQuery(surveyID lib.SurveyID, clearClientResponse
 // SendGetSurveyResultsQuery to get the result from associated server and decrypt the response using its private key.
 func (c *API) SendGetSurveyResultsQuery(surveyID lib.SurveyID) (*[][]int64, *[][]int64, *[][]int64, error) {
 	log.LLvl1(c, " asks for responses of survey ", surveyID)
-	resp, err := c.Send(c.entryPoint, &SurveyResultsQuery{surveyID, c.public})
+	resp := SurveyResultResponse{}
+	err := c.SendProtobuf(c.entryPoint, &SurveyResultsQuery{surveyID, c.public}, &resp)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	if encResults, ok := resp.Msg.(SurveyResultResponse); ok == true {
-		log.LLvl1(c, " got the survey result from ", c.entryPoint)
 
-		grpClear := make([][]int64, len(encResults.Results))
-		grp := make([][]int64, len(encResults.Results))
-		aggr := make([][]int64, len(encResults.Results))
-		for i, res := range encResults.Results {
-			grpClear[i] = lib.UnKey(res.GroupingAttributesClear)
-			grp[i] = lib.DecryptIntVector(c.private, &res.ProbaGroupingAttributesEnc)
-			aggr[i] = lib.DecryptIntVector(c.private, &res.AggregatingAttributes)
-		}
-		return &grpClear, &grp, &aggr, nil
+	log.LLvl1(c, " got the survey result from ", c.entryPoint)
+
+	grpClear := make([][]int64, len(resp.Results))
+	grp := make([][]int64, len(resp.Results))
+	aggr := make([][]int64, len(resp.Results))
+	for i, res := range resp.Results {
+		grpClear[i] = lib.UnKey(res.GroupingAttributesClear)
+		grp[i] = lib.DecryptIntVector(c.private, &res.ProbaGroupingAttributesEnc)
+		aggr[i] = lib.DecryptIntVector(c.private, &res.AggregatingAttributes)
 	}
-
-	log.Error("Bad response type from service.")
-	return nil, nil, nil, errors.New("Bad response type from service")
-
+	return &grpClear, &grp, &aggr, nil
 }
 
 // Helper Functions

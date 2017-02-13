@@ -217,7 +217,9 @@ func CompareClearResponses(x []lib.ClientClearResponse, y []lib.ClientClearRespo
 	for _, i := range x {
 		test = false
 		for _, j := range y {
-			if reflect.DeepEqual(i, j) {
+			if 	(reflect.DeepEqual(i.GroupingAttributesClear, j.GroupingAttributesClear) || (len(i.GroupingAttributesClear)==0 && len(j.GroupingAttributesClear)==0)) &&
+				(reflect.DeepEqual(i.GroupingAttributesEnc, j.GroupingAttributesEnc) 	 || (len(i.GroupingAttributesEnc)==0 && len(j.GroupingAttributesEnc)==0)) &&
+				(reflect.DeepEqual(i.AggregatingAttributes, j.AggregatingAttributes) 	 || (len(i.AggregatingAttributes)==0 && len(j.AggregatingAttributes)==0)) {
 				test = true
 				break
 			}

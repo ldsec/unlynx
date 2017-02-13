@@ -34,7 +34,7 @@ func init() {
 	network.RegisterMessage(&SurveyResponseQuery{})
 	network.RegisterMessage(&ServiceResponse{})
 	network.RegisterMessage(&SurveyResponseSharing{})
-	network.RegisterMessage(&SurveyFinalResponsesSharing{})
+	network.RegisterMessage(&SurveyFinalResponseSharing{})
 }
 
 // SurveyCreationQuery is used to trigger the creation of a survey.
@@ -80,8 +80,8 @@ type SurveyResponseSharing struct {
 	Survey lib.Survey
 }
 
-// SurveyFinalResponsesSharing represents a message containing survey ids and responses (i2b2)
-type SurveyFinalResponsesSharing struct {
+// SurveyFinalResponseSharing represents a message containing survey ids and responses (i2b2)
+type SurveyFinalResponseSharing struct {
 	Responses []FinalResponsesIds
 }
 
@@ -112,13 +112,15 @@ type Service struct {
 	Mutex                        sync.Mutex
 }
 
-var msgSurveyCreationType = network.RegisterMessage(&SurveyCreationQuery{})
+var msgSurveyCreationQuery = network.RegisterMessage(&SurveyCreationQuery{})
+var msgSurveyResponseSharing = network.RegisterMessage(&SurveyResponseSharing{})
+var msgSurveyFinalResponseSharing = network.RegisterMessage(&SurveyFinalResponseSharing{})
 
 // NewService constructor which registers the needed messages.
-func NewService(c *onet.Context, path string) onet.Service {
+func NewService(c *onet.Context) onet.Service {
 	newMedCoInstance := &Service{
 		ServiceProcessor:             onet.NewServiceProcessor(c),
-		homePath:                     path,
+		//homePath:                     path,
 		survey:                       make(map[lib.SurveyID]lib.Survey, 0),
 		surveyWithResponses:          make(map[lib.SurveyID]lib.Survey, 0),
 		surveyCounter:                make(map[lib.SurveyID]int, 0),
@@ -127,36 +129,41 @@ func NewService(c *onet.Context, path string) onet.Service {
 		sharingResponsesChannel:      make(chan int, 100),
 		sharingFinalResponsesChannel: make(chan int, 100),
 	}
+	if cerr := newMedCoInstance.RegisterHandler(newMedCoInstance.HandleSurveyCreationQuery); cerr !=nil {
+		log.Fatal("Wrong Handler.",cerr)
+	}
+	if cerr := newMedCoInstance.RegisterHandler(newMedCoInstance.HandleSurveyResponseQuery); cerr !=nil {
+		log.Fatal("Wrong Handler.",cerr)
+	}
+	if cerr := newMedCoInstance.RegisterHandler(newMedCoInstance.HandleSurveyResponseSharing); cerr !=nil {
+		log.Fatal("Wrong Handler.",cerr)
+	}
+	if cerr := newMedCoInstance.RegisterHandler(newMedCoInstance.HandleSurveyFinalResponseSharing); cerr !=nil {
+		log.Fatal("Wrong Handler.",cerr)
+	}
+	if cerr := newMedCoInstance.RegisterHandler(newMedCoInstance.HandleGetSurveyResultsQuery); cerr !=nil {
+		log.Fatal("Wrong Handler.",cerr)
+	}
 
-	newMedCoInstance.RegisterHandler(newMedCoInstance.HandleSurveyResponseQuery)
-	newMedCoInstance.RegisterHandler(newMedCoInstance.HandleGetSurveyResultsQuery)
-	newMedCoInstance.RegisterHandler(newMedCoInstance.HandleSurveyCreationQuery)
-	newMedCoInstance.RegisterHandler(newMedCoInstance.HandleSurveyResponseSharing)
-	newMedCoInstance.RegisterHandler(newMedCoInstance.HandleSurveyFinalResponsesSharing)
-
-	SDAinterMessage := network.RegisterMessage(onet.InterServiceMessage{})
-	c.RegisterProcessor(newMedCoInstance, msgSurveyCreationType)
-	c.RegisterProcessor(newMedCoInstance, SDAinterMessage)
+	c.RegisterProcessor(newMedCoInstance, msgSurveyCreationQuery)
+	c.RegisterProcessor(newMedCoInstance, msgSurveyResponseSharing)
+	c.RegisterProcessor(newMedCoInstance, msgSurveyFinalResponseSharing)
 	return newMedCoInstance
 }
 
 // Process implements the processor interface and is used to recognize messages broadcasted between servers
 func (s *Service) Process(msg *network.Envelope) {
-	tmp := (msg.Msg).(onet.InterServiceMessage)
-	datas := tmp.Data
-	msg.UnmarshalBinary(datas)
+	if msg.MsgType.Equal(msgSurveyCreationQuery) {
+		tmp1 := (msg.Msg).(*SurveyCreationQuery)
+		s.HandleSurveyCreationQuery(tmp1)
 
-	if reflect.TypeOf((msg.Msg)) == reflect.TypeOf(SurveyCreationQuery{}) {
-		tmp1 := (msg.Msg).(SurveyCreationQuery)
-		s.HandleSurveyCreationQuery(msg.ServerIdentity, &tmp1)
-
-	} else if reflect.TypeOf((msg.Msg)) == reflect.TypeOf(SurveyResponseSharing{}) {
+	} else if msg.MsgType.Equal(msgSurveyResponseSharing) {
 		tmp1 := (msg.Msg).(SurveyResponseSharing)
-		s.HandleSurveyResponseSharing(msg.ServerIdentity, &tmp1)
+		s.HandleSurveyResponseSharing(&tmp1)
 
-	} else if reflect.TypeOf((msg.Msg)) == reflect.TypeOf(SurveyFinalResponsesSharing{}) {
-		tmp1 := (msg.Msg).(SurveyFinalResponsesSharing)
-		s.HandleSurveyFinalResponsesSharing(msg.ServerIdentity, &tmp1)
+	} else if msg.MsgType.Equal(msgSurveyFinalResponseSharing) {
+		tmp1 := (msg.Msg).(SurveyFinalResponseSharing)
+		s.HandleSurveyFinalResponseSharing(&tmp1)
 	}
 }
 
@@ -173,8 +180,7 @@ func (s *Service) PushData(resp *SurveyResponseQuery) {
 
 // HandleSurveyCreationQuery handles the reception of a survey creation query by instantiating the corresponding survey.
 // in the i2b2 case it will directly run the request response creation
-func (s *Service) HandleSurveyCreationQuery(si *network.ServerIdentity, recq *SurveyCreationQuery) (network.Message, error) {
-
+func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.Message, onet.ClientError) {
 	s.appFlag = recq.AppFlag
 	s.nbrLocalSurveys++
 	s.nbrDPs = recq.NbrDPs[s.ServerIdentity().String()]
@@ -194,7 +200,13 @@ func (s *Service) HandleSurveyCreationQuery(si *network.ServerIdentity, recq *Su
 			handlingServer = true
 		}
 		// broadcasts the query
-		s.SendISMOthers(&recq.Roster, recq)
+		for _,si := range recq.Roster.List{
+			err := s.SendRaw(si,recq)
+
+			if err != nil {
+				log.Error("broadcasting error ", err)
+			}
+		}
 		log.Lvl1(s.ServerIdentity(), " initiated the survey ", newID)
 
 	}
@@ -224,7 +236,7 @@ func (s *Service) HandleSurveyCreationQuery(si *network.ServerIdentity, recq *Su
 		DataToProcess:      recq.DataToProcess,
 		NbrDPs:             recq.NbrDPs,
 		ExecutionMode:      recq.AggregationTotal,
-		Sender:             si.ID,
+		Sender:             s.ServerIdentity().ID,
 	}
 
 	// server is currently handling this survey
@@ -241,7 +253,8 @@ func (s *Service) HandleSurveyCreationQuery(si *network.ServerIdentity, recq *Su
 			s.PushData(resp)
 		} else {
 			//P2D2i2b2
-			return s.HandleI2b2Query(recq, handlingServer)
+			msg,err := s.HandleI2b2Query(recq, handlingServer)
+			return msg,onet.NewClientError(err)
 		}
 	}
 
@@ -251,10 +264,10 @@ func (s *Service) HandleSurveyCreationQuery(si *network.ServerIdentity, recq *Su
 }
 
 // HandleSurveyResponseSharing handles reception of initial results in i2b2 query case
-func (s *Service) HandleSurveyResponseSharing(si *network.ServerIdentity, resp *SurveyResponseSharing) (network.Message, error) {
+func (s *Service) HandleSurveyResponseSharing(resp *SurveyResponseSharing) (network.Message, onet.ClientError) {
 	s.surveyCounter[resp.Survey.GenID]++
 	s.surveyWithResponses[resp.Survey.ID] = resp.Survey
-	log.LLvl1(s.ServerIdentity(), " gets a survey response for ", resp.Survey.GenID, " from ", si.ID)
+	log.LLvl1(s.ServerIdentity(), " gets a survey response for ", resp.Survey.GenID, " from ", s.ServerIdentity().ID)
 	log.LLvl1(s.ServerIdentity(), " now has ", len(s.surveyWithResponses), " surveys with response(s)")
 
 	//if it is the last survey result needed then unblock the channel
@@ -273,9 +286,9 @@ func addDPsNbr(mp map[string]int64) int {
 	return result
 }
 
-// HandleSurveyFinalResponsesSharing handles reception of final shuffled results in i2b2 query case
-func (s *Service) HandleSurveyFinalResponsesSharing(si *network.ServerIdentity, resp *SurveyFinalResponsesSharing) (network.Message, error) {
-	log.LLvl1(s.ServerIdentity(), " gets a final survey response for from ", si.ID)
+// HandleSurveyFinalResponseSharing handles reception of final shuffled results in i2b2 query case
+func (s *Service) HandleSurveyFinalResponseSharing(resp *SurveyFinalResponseSharing) (network.Message, onet.ClientError) {
+	log.LLvl1(s.ServerIdentity(), " gets a final survey response for from ", s.ServerIdentity().ID)
 	s.finalResponses = resp.Responses
 	// this is received only once and then the channel is unblocked to proceed to last step
 	s.sharingFinalResponsesChannel <- 1
@@ -283,7 +296,7 @@ func (s *Service) HandleSurveyFinalResponsesSharing(si *network.ServerIdentity, 
 }
 
 // HandleSurveyResponseQuery handles a survey answers submission by a subject.
-func (s *Service) HandleSurveyResponseQuery(si *network.ServerIdentity, resp *SurveyResponseQuery) (network.Message, error) {
+func (s *Service) HandleSurveyResponseQuery(resp *SurveyResponseQuery) (network.Message, onet.ClientError) {
 	<-s.surveyChannel
 	if s.survey[resp.SurveyID].ID == resp.SurveyID {
 		s.PushData(resp)
@@ -300,7 +313,7 @@ func (s *Service) HandleSurveyResponseQuery(si *network.ServerIdentity, resp *Su
 }
 
 // HandleGetSurveyResultsQuery handles the survey result query by the surveyor.
-func (s *Service) HandleGetSurveyResultsQuery(si *network.ServerIdentity, resq *SurveyResultsQuery) (network.Message, error) {
+func (s *Service) HandleGetSurveyResultsQuery(resq *SurveyResultsQuery) (network.Message, onet.ClientError) {
 
 	log.Lvl1(s.ServerIdentity(), " received a survey result query")
 	tmp := s.survey[resq.SurveyID]
@@ -359,9 +372,13 @@ func (s *Service) HandleI2b2Query(recq *SurveyCreationQuery, handlingServer bool
 
 		//server sends the computed result
 		log.LLvl1(s.ServerIdentity(), " sends survey ", *recq.SurveyID, " to all servers")
-		err := s.SendISMOthers(&recq.Roster, &SurveyResponseSharing{Survey: s.surveyWithResponses[*recq.SurveyID]})
-		if err != nil {
-			log.Error("broadcasting error ", err)
+
+		for _,si := range recq.Roster.List{
+			err := s.SendRaw(si,&SurveyResponseSharing{Survey: s.surveyWithResponses[*recq.SurveyID]})
+
+			if err != nil {
+				log.Error("broadcasting error ", err)
+			}
 		}
 
 		//wait to have one response per data pro
@@ -772,14 +789,17 @@ func (s *Service) finalShufflingAndKeySwitching(recq *SurveyCreationQuery, respo
 
 	// share new list of survey results
 	log.LLvl1(s.ServerIdentity(), " sends final results of ", *recq.SurveyGenID, " (while handling ", *recq.SurveyID, ")")
-	err = s.SendISMOthers(&recq.Roster, &SurveyFinalResponsesSharing{Responses: listToShuffleIds})
+
+	for _,si := range recq.Roster.List{
+		err = s.SendRaw(si,&SurveyFinalResponseSharing{Responses: listToShuffleIds})
+
+		if err != nil {
+			log.Error("broadcasting error ", err)
+		}
+	}
 
 	s.finalResponses = listToShuffleIds
 	s.sharingFinalResponsesChannel <- 1
-
-	if err != nil {
-		log.Error("broadcasting error ", err)
-	}
 }
 
 //TODO do not work as expected

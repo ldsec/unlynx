@@ -52,7 +52,7 @@ func TestServiceOnlyEncGrpAttr(t *testing.T) {
 	surveyID, _, err := client.SendSurveyCreationQuery(el, lib.SurveyID("testSurvey"), lib.SurveyID(""), surveyDesc, proofsService, false, nil, nil, nil, nbrDPs, 0)
 
 	if err != nil {
-		t.Fatal("Service did not start.")
+		t.Fatal("Service did not start.",err)
 	}
 
 	//save values in a map to verify them at the end

@@ -1,0 +1,10 @@
+Simulation = "ServiceMedCo"
+Servers = 5
+Bf = 2
+Rounds = 1
+RunWait = 6000000
+Bandwidth = 1000
+NbrGroupAttributes = [2,5]
+
+Hosts, NbrClients, NbrResponses, NbrGroups, NbrAggrAttributes, RandomGroups, DataRepetitions, Proofs
+5, 5, 100, 2, 1000, true, 1, true
