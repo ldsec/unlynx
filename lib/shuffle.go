@@ -29,7 +29,8 @@ func CompressClientResponse(clientResponse ClientResponse, e []abstract.Scalar) 
 	n := len(clientResponse.AggregatingAttributes)
 
 	// check size of e
-	if len(e) != m+n { //+o
+	if len(e) != m + n {
+		//+o
 		panic("e is not the same size as the list")
 	}
 
@@ -42,13 +43,13 @@ func CompressClientResponse(clientResponse ClientResponse, e []abstract.Scalar) 
 			defer wg.Done()
 		}()
 		go func() {
-			sum2 = compressCipherVector(clientResponse.AggregatingAttributes, e[m:m+n])
+			sum2 = compressCipherVector(clientResponse.AggregatingAttributes, e[m:m + n])
 			defer wg.Done()
 		}()
 		EndParallelize(wg)
 	} else {
 		sum1 = compressCipherVector(clientResponse.ProbaGroupingAttributesEnc, e[0:m])
-		sum2 = compressCipherVector(clientResponse.AggregatingAttributes, e[m:m+n])
+		sum2 = compressCipherVector(clientResponse.AggregatingAttributes, e[m:m + n])
 	}
 
 	sum.Add(sum1, sum2)
@@ -111,7 +112,8 @@ func CompressBeta(beta [][]abstract.Scalar, e []abstract.Scalar) []abstract.Scal
 }
 
 // ShuffleSequence applies shuffling to a list of client responses
-func ShuffleSequence(inputList []ClientResponse, g, h abstract.Point, precomputed []CipherVectorScalar) ([]ClientResponse, []int, [][]abstract.Scalar) { //,  []byte) {
+func ShuffleSequence(inputList []ClientResponse, g, h abstract.Point, precomputed []CipherVectorScalar) ([]ClientResponse, []int, [][]abstract.Scalar) {
+	//,  []byte) {
 	NQ1 := len(inputList[0].ProbaGroupingAttributesEnc)
 	NQ2 := len(inputList[0].AggregatingAttributes)
 
@@ -175,15 +177,15 @@ func clientResponseShuffling(pi []int, i int, inputList, outputList []ClientResp
 				defer wg.Done()
 				if j < NQ1 {
 					outputList[i].ProbaGroupingAttributesEnc.Rerandomize(inputList[index].ProbaGroupingAttributesEnc, b, b, cipher, g, h, j)
-				} else if j < NQ1+NQ2 {
-					outputList[i].AggregatingAttributes.Rerandomize(inputList[index].AggregatingAttributes, b, b, cipher, g, h, j-NQ1)
+				} else if j < NQ1 + NQ2 {
+					outputList[i].AggregatingAttributes.Rerandomize(inputList[index].AggregatingAttributes, b, b, cipher, g, h, j - NQ1)
 				}
 			}(j)
 		} else {
 			if j < NQ1 {
 				outputList[i].ProbaGroupingAttributesEnc.Rerandomize(inputList[index].ProbaGroupingAttributesEnc, b, b, cipher, g, h, j)
-			} else if j < NQ1+NQ2 {
-				outputList[i].AggregatingAttributes.Rerandomize(inputList[index].AggregatingAttributes, b, b, cipher, g, h, j-NQ1)
+			} else if j < NQ1 + NQ2 {
+				outputList[i].AggregatingAttributes.Rerandomize(inputList[index].AggregatingAttributes, b, b, cipher, g, h, j - NQ1)
 			}
 		}
 

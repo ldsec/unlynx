@@ -84,7 +84,7 @@ type CollectiveAggregationProtocol struct {
 	*onet.TreeNodeInstance
 
 	// Protocol feedback channel
-	FeedbackChannel chan CothorityAggregatedData
+	FeedbackChannel      chan CothorityAggregatedData
 
 	// Protocol communication channels
 	DataReferenceChannel chan dataReferenceStruct
@@ -92,8 +92,8 @@ type CollectiveAggregationProtocol struct {
 	ChildDataChannel     chan []childAggregatedDataBytesStruct
 
 	// Protocol state data
-	GroupedData *map[lib.GroupingKey]lib.ClientResponse
-	Proofs      bool
+	GroupedData          *map[lib.GroupingKey]lib.ClientResponse
+	Proofs               bool
 }
 
 // NewCollectiveAggregation initializes the protocol instance.
@@ -185,7 +185,8 @@ func (p *CollectiveAggregationProtocol) ascendingAggregationPhase() *map[lib.Gro
 
 			roundProofs := lib.StartTimer(p.Name() + "_CollectiveAggregation(Proof-1stPart)")
 
-			if p.Proofs { //need to save previous state
+			if p.Proofs {
+				//need to save previous state
 				for i, v := range *p.GroupedData {
 					c1[i] = v
 				}
@@ -282,7 +283,7 @@ func (sm *ChildAggregatedDataMessage) ToBytes() ([]byte, int, int, int, int) {
 
 // FromBytes converts a byte array to a ChildAggregatedDataMessage. Note that you need to create the (empty) object beforehand.
 func (sm *ChildAggregatedDataMessage) FromBytes(data []byte, gacbLength, aabLength, pgaebLength, dtbLength int) {
-	elementLength := (gacbLength + aabLength*64 + pgaebLength*64 + dtbLength) //CAUTION: hardcoded 64 (size of el-gamal element C,K)
+	elementLength := (gacbLength + aabLength * 64 + pgaebLength * 64 + dtbLength) //CAUTION: hardcoded 64 (size of el-gamal element C,K)
 
 	if elementLength != 0 && len(data) > 0 {
 		var nbrChildData int
@@ -291,7 +292,7 @@ func (sm *ChildAggregatedDataMessage) FromBytes(data []byte, gacbLength, aabLeng
 		(*sm).ChildData = make([]lib.ClientResponseDet, nbrChildData)
 		wg := lib.StartParallelize(nbrChildData)
 		for i := 0; i < nbrChildData; i++ {
-			v := data[i*elementLength : i*elementLength+elementLength]
+			v := data[i * elementLength : i * elementLength + elementLength]
 			if lib.PARALLELIZE {
 				go func(v []byte, i int) {
 					defer wg.Done()

@@ -84,7 +84,7 @@ func TestShuffling(t *testing.T) {
 	feedback := protocol.FeedbackChannel
 	go protocol.Start()
 
-	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*5*2) * time.Millisecond
+	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect * 5 * 2) * time.Millisecond
 
 	select {
 	case encryptedResult := <-feedback:

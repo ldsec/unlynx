@@ -74,17 +74,17 @@ type DeterministicTaggingProtocol struct {
 	*onet.TreeNodeInstance
 
 	// Protocol feedback channel
-	FeedbackChannel chan []lib.ClientResponseDet
+	FeedbackChannel           chan []lib.ClientResponseDet
 
 	// Protocol communication channels
 	PreviousNodeInPathChannel chan deterministicTaggingBytesStruct
 	LengthNodeChannel         chan dtmbLengthStruct
 
 	// Protocol state data
-	nextNodeInCircuit *onet.TreeNode
-	TargetOfSwitch    *[]lib.ClientResponse
-	SurveySecretKey   *abstract.Scalar
-	Proofs            bool
+	nextNodeInCircuit         *onet.TreeNode
+	TargetOfSwitch            *[]lib.ClientResponse
+	SurveySecretKey           *abstract.Scalar
+	Proofs                    bool
 }
 
 // NewDeterministicTaggingProtocol constructs tagging switching protocol instances.
@@ -106,7 +106,7 @@ func NewDeterministicTaggingProtocol(n *onet.TreeNodeInstance) (onet.ProtocolIns
 	var nodeList = n.Tree().List()
 	for i, node = range nodeList {
 		if n.TreeNode().Equal(node) {
-			dsp.nextNodeInCircuit = nodeList[(i+1)%len(nodeList)]
+			dsp.nextNodeInCircuit = nodeList[(i + 1) % len(nodeList)]
 			break
 		}
 	}
@@ -128,7 +128,7 @@ func (p *DeterministicTaggingProtocol) Start() error {
 
 	nbrClientResponses := len(*p.TargetOfSwitch)
 
-	log.LLvl1("["+p.Name()+"]", " starts a Deterministic Tagging Protocol on ", nbrClientResponses, " response(s)")
+	log.LLvl1("[" + p.Name() + "]", " starts a Deterministic Tagging Protocol on ", nbrClientResponses, " response(s)")
 
 	// create client response with deterministic tag, at first step the tag creation part is a copy of the proba
 	// grouping attributes
@@ -316,7 +316,7 @@ func (dtm *DeterministicTaggingMessage) FromBytes(data []byte, cvLength int) {
 	wg := lib.StartParallelize(nbrGroupingAttributes)
 	(*dtm).Data = make([]GroupingAttributes, nbrGroupingAttributes)
 	for i := 0; i < nbrGroupingAttributes; i++ {
-		v := data[i*cvByteLength : i*cvByteLength+cvByteLength]
+		v := data[i * cvByteLength : i * cvByteLength + cvByteLength]
 		cv := make(lib.CipherVector, cvLength)
 		if lib.PARALLELIZE {
 			go func(v []byte, i int) {

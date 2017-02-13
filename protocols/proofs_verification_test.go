@@ -75,7 +75,7 @@ func TestProofsVerification(t *testing.T) {
 	for j := 0; j < 2; j++ {
 		for i := range cipherVect {
 			tmp := network.Suite.Point()
-			if j%2 == 0 {
+			if j % 2 == 0 {
 				tmp = network.Suite.Point().Add(cipherVect[i].C, toAdd)
 			} else {
 				tmp = network.Suite.Point().Add(cipherVect[i].C, toAddWrong)
@@ -101,7 +101,7 @@ func TestProofsVerification(t *testing.T) {
 	}
 
 	comparisonMap2 := make(map[lib.GroupingKey]lib.ClientResponse)
-	for i := 0; i < len(detResponses)-2; i++ {
+	for i := 0; i < len(detResponses) - 2; i++ {
 		lib.AddInMap(comparisonMap2, detResponses[i].DetTag, detResponses[i].CR)
 	}
 
@@ -148,7 +148,7 @@ func TestProofsVerification(t *testing.T) {
 	expRes := []bool{true, false, true, true, false, true, true, false, false, true, false, true, false, true, false}
 	go protocol.Start()
 
-	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*5*2) * time.Millisecond
+	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect * 5 * 2) * time.Millisecond
 
 	select {
 	case results := <-feedback:

@@ -66,12 +66,12 @@ type PipelineProtocol struct {
 	TriggerFlushCollectedData chan flushCollectedDataStruct
 	DoneFlushCollectedData    chan []doneFlushCollectedDataStruct
 
-	FeedbackChannel chan DoneProcessingMessage
+	FeedbackChannel           chan DoneProcessingMessage
 
-	MedcoServiceInstance ServiceInterface
-	TargetSurvey         *lib.Survey
+	MedcoServiceInstance      ServiceInterface
+	TargetSurvey              *lib.Survey
 
-	Proofs bool
+	Proofs                    bool
 }
 
 // NewPipelineProcotol constructor of a pipeline protocol.
@@ -109,7 +109,8 @@ func (p *PipelineProtocol) Dispatch() error {
 
 	startT := lib.StartTimer(p.Name() + "_ShufflingPhase+TaggingPhase")
 
-	if p.TargetSurvey.DataToProcess == nil { // normal use of Unlynx/medco
+	if p.TargetSurvey.DataToProcess == nil {
+		// normal use of Unlynx/medco
 		if p.IsRoot() {
 			start := lib.StartTimer(p.Name() + "_ShufflingPhase")
 

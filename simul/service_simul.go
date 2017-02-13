@@ -26,10 +26,10 @@ type SimulationMedCo struct {
 	NbrResponses       int64   //number of survey entries (ClientClearResponse) per host
 	NbrGroups          int64   //number of grouping attributes
 	NbrGroupAttributes []int64 //number of different groups inside a group attribute
-   	NbrAggrAttributes int64    //number of aggregating attributes
-   	RandomGroups      bool     //generate data randomly or num entries == num groups (deterministically)
-   	DataRepetitions   int      //repeat the number of entries x times (e.g. 1 no repetition; 1000 repetitions)
-   	Proofs            bool     //with proofs of correctness everywhere
+	NbrAggrAttributes  int64   //number of aggregating attributes
+	RandomGroups       bool    //generate data randomly or num entries == num groups (deterministically)
+	DataRepetitions    int     //repeat the number of entries x times (e.g. 1 no repetition; 1000 repetitions)
+	Proofs             bool    //with proofs of correctness everywhere
 }
 
 // NewSimulationMedCo constructs a full MedCo service simulation.
@@ -108,14 +108,14 @@ func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
 			start1 := lib.StartTimer(strconv.Itoa(i) + "_IndividualSendingData")
 			if lib.PARALLELIZE {
 				go func(i int, client *services.API) {
-					client = services.NewMedcoClient(el.List[i%nbrHosts])
+					client = services.NewMedcoClient(el.List[i % nbrHosts])
 					client.SendSurveyResponseQuery(*surveyID, testData[strconv.Itoa(i)], el.Aggregate, sim.DataRepetitions)
 					defer wg.Done()
 				}(i, client)
 			} else {
 				start2 := lib.StartTimer(strconv.Itoa(i) + "_IndividualNewMedcoClient")
 
-				client = services.NewMedcoClient(el.List[i%nbrHosts])
+				client = services.NewMedcoClient(el.List[i % nbrHosts])
 
 				lib.EndTimer(start2)
 				start3 := lib.StartTimer(strconv.Itoa(i) + "_IndividualSendSurveyResults")

@@ -26,7 +26,7 @@ type AddRmServerProtocol struct {
 	*onet.TreeNodeInstance
 
 	// Protocol feedback channel
-	FeedbackChannel chan []lib.ClientResponse
+	FeedbackChannel        chan []lib.ClientResponse
 
 	// Protocol state data
 	TargetOfTransformation []lib.ClientResponse

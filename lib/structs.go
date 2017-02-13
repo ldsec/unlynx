@@ -159,17 +159,17 @@ func (cv *ClientResponse) Add(cv1, cv2 ClientResponse) *ClientResponse {
 func (cv *ClientResponse) CipherVectorTag(h abstract.Point) []abstract.Scalar {
 	aggrAttrLen := len((*cv).AggregatingAttributes)
 	grpAttrLen := len((*cv).ProbaGroupingAttributesEnc)
-	es := make([]abstract.Scalar, aggrAttrLen+grpAttrLen)
+	es := make([]abstract.Scalar, aggrAttrLen + grpAttrLen)
 
 	seed, _ := h.MarshalBinary()
 	var wg sync.WaitGroup
 	if PARALLELIZE {
-		for i := 0; i < aggrAttrLen+grpAttrLen; i = i + VPARALLELIZE {
+		for i := 0; i < aggrAttrLen + grpAttrLen; i = i + VPARALLELIZE {
 			wg.Add(1)
 			go func(i int) {
 				defer wg.Done()
-				for j := 0; j < VPARALLELIZE && (j+i < aggrAttrLen+grpAttrLen); j++ {
-					es[i+j] = ComputeE(i+j, (*cv), seed, aggrAttrLen)
+				for j := 0; j < VPARALLELIZE && (j + i < aggrAttrLen + grpAttrLen); j++ {
+					es[i + j] = ComputeE(i + j, (*cv), seed, aggrAttrLen)
 				}
 
 			}(i)
@@ -177,7 +177,8 @@ func (cv *ClientResponse) CipherVectorTag(h abstract.Point) []abstract.Scalar {
 		}
 		wg.Wait()
 	} else {
-		for i := 0; i < aggrAttrLen+grpAttrLen; i++ { //+detAttrLen
+		for i := 0; i < aggrAttrLen + grpAttrLen; i++ {
+			//+detAttrLen
 			es[i] = ComputeE(i, (*cv), seed, aggrAttrLen)
 		}
 
@@ -197,8 +198,8 @@ func ComputeE(index int, cv ClientResponse, seed []byte, aggrAttrLen int) abstra
 		dataK, _ = cv.AggregatingAttributes[index].K.MarshalBinary()
 
 	} else /*if i < aggrAttrLen+grpAttrLen*/ {
-		dataC, _ = cv.ProbaGroupingAttributesEnc[index-aggrAttrLen].C.MarshalBinary()
-		dataK, _ = cv.ProbaGroupingAttributesEnc[index-aggrAttrLen].K.MarshalBinary()
+		dataC, _ = cv.ProbaGroupingAttributesEnc[index - aggrAttrLen].C.MarshalBinary()
+		dataK, _ = cv.ProbaGroupingAttributesEnc[index - aggrAttrLen].K.MarshalBinary()
 	}
 	randomCipher.Message(nil, nil, dataC)
 	randomCipher.Message(nil, nil, dataK)
@@ -287,8 +288,8 @@ func (cv *ClientResponse) FromBytes(data []byte, gacbLength, aabLength, pgaebLen
 	pgaebByteLength := (pgaebLength * 64)
 
 	gacb := data[:gacbLength]
-	aab := data[gacbLength : gacbLength+aabByteLength]
-	pgaeb := data[gacbLength+aabByteLength : gacbLength+aabByteLength+pgaebByteLength]
+	aab := data[gacbLength : gacbLength + aabByteLength]
+	pgaeb := data[gacbLength + aabByteLength : gacbLength + aabByteLength + pgaebByteLength]
 
 	(*cv).GroupingAttributesClear = GroupingKey(string(gacb))
 	(*cv).AggregatingAttributes.FromBytes(aab, aabLength)
@@ -316,9 +317,9 @@ func (crd *ClientResponseDet) FromBytes(data []byte, gacbLength, aabLength, pgae
 	pgaebByteLength := (pgaebLength * 64)
 
 	gacb := data[:gacbLength]
-	aab := data[gacbLength : gacbLength+aabByteLength]
-	pgaeb := data[gacbLength+aabByteLength : gacbLength+aabByteLength+pgaebByteLength]
-	dtb := data[gacbLength+aabByteLength+pgaebByteLength : gacbLength+aabByteLength+pgaebByteLength+dtbLength]
+	aab := data[gacbLength : gacbLength + aabByteLength]
+	pgaeb := data[gacbLength + aabByteLength : gacbLength + aabByteLength + pgaebByteLength]
+	dtb := data[gacbLength + aabByteLength + pgaebByteLength : gacbLength + aabByteLength + pgaebByteLength + dtbLength]
 
 	(*crd).DetTag = GroupingKey(string(dtb))
 	(*crd).CR.GroupingAttributesClear = GroupingKey(string(gacb))

@@ -1,6 +1,8 @@
 import os
 import re
+
 import matplotlib
+
 
 def setHatchThickness(value):
     libpath = matplotlib.__path__[0]
@@ -12,5 +14,6 @@ def setHatchThickness(value):
         with open('/tmp/hatch.tmp', "w") as w:
             w.write(code)
         os.system('sudo mv /tmp/hatch.tmp %s' % backend_pdf)
+
 
 setHatchThickness(1.0)

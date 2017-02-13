@@ -56,7 +56,7 @@ func TestAddRmServer(t *testing.T) {
 
 	go protocol.Start()
 
-	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*5*2) * time.Millisecond
+	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect * 5 * 2) * time.Millisecond
 
 	select {
 	case results := <-feedback:

@@ -89,7 +89,7 @@ func CreateXMLData(surveyID string, pubKey string, priKey string, nbrDataProvide
 			if i == 0 {
 				cols[i].Operation = ""
 			} else {
-				cols[i].Operation = operations[i-1]
+				cols[i].Operation = operations[i - 1]
 			}
 			cols[i].Values = append(cols[i].Values, Result{Value: w})
 
@@ -151,7 +151,7 @@ func ReadXMLData(fileName string, collectiveKey abstract.Point) (surveyID lib.Su
 			}
 			responsesStr[q].ProbaGroupingAttributesEnc = append(responsesStr[q].ProbaGroupingAttributesEnc, ct)
 
-			if j == len(m.Data[0].Columns)-1 {
+			if j == len(m.Data[0].Columns) - 1 {
 				responsesStrFin = append(responsesStrFin, responsesStr[q])
 			}
 		}
@@ -168,14 +168,14 @@ func ReadXMLData(fileName string, collectiveKey abstract.Point) (surveyID lib.Su
 // createClearQuerySubject generates all the combinations of 0,1
 func createClearQuerySubject(operations []string) [][]int64 {
 	if operations != nil {
-		querySubject := make([][]int64, len(operations)+1)
-		repetitions := int(math.Pow(2, float64(len(operations)+1)))
-		for i := 0; i < len(operations)+1; i++ {
+		querySubject := make([][]int64, len(operations) + 1)
+		repetitions := int(math.Pow(2, float64(len(operations) + 1)))
+		for i := 0; i < len(operations) + 1; i++ {
 			count := 0
 			repetitions = repetitions / 2
-			for j := 0; j < int(math.Pow(2, float64(len(operations)+1))); j++ {
+			for j := 0; j < int(math.Pow(2, float64(len(operations) + 1))); j++ {
 				if j == 0 {
-					querySubject[i] = make([]int64, int(math.Pow(2, float64(len(operations)+1))))
+					querySubject[i] = make([]int64, int(math.Pow(2, float64(len(operations) + 1))))
 				}
 				if count < repetitions {
 					querySubject[i][j] = 0
@@ -183,7 +183,7 @@ func createClearQuerySubject(operations []string) [][]int64 {
 				} else {
 					querySubject[i][j] = 1
 					count++
-					if count == 2*repetitions {
+					if count == 2 * repetitions {
 						count = 0
 					}
 				}
@@ -213,9 +213,9 @@ func querySubjectSelectClear(operations []string, subject [][]int64) [][]int64 {
 				tmpsRes = append(tmpsRes, 0)
 				tmpsRes[count] = w
 			} else {
-				if operations[j-1] == "OR" {
+				if operations[j - 1] == "OR" {
 					tmpsRes[count] = tmpsRes[count] + w
-				} else if operations[j-1] == "AND" {
+				} else if operations[j - 1] == "AND" {
 					count++
 					tmpsRes = append(tmpsRes, 0)
 					tmpsRes[count] = tmpsRes[count] + w

@@ -1,18 +1,18 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 
 raw_data = {
     'x_label': ['300', '3K', '30K', '300K'],
-    'y1_label': [0.07, 0.6, 2.7, 25.3],     # DDT (Aggr.)
-    'y2_label': [0.06, 0.5, 2.4, 23.5],     # DDT (Shuffl.)
-    'y3_label': [0.18, 2.1, 13, 190],       # DDT Proof (Aggr.)
-    'y4_label': [0.19, 1.4, 12.5, 175],     # DDT Proof (Shuffl.)
-    'empty': [0, 0, 0, 0]                   # empty
+    'y1_label': [0.07, 0.6, 2.7, 25.3],  # DDT (Aggr.)
+    'y2_label': [0.06, 0.5, 2.4, 23.5],  # DDT (Shuffl.)
+    'y3_label': [0.18, 2.1, 13, 190],  # DDT Proof (Aggr.)
+    'y4_label': [0.19, 1.4, 12.5, 175],  # DDT Proof (Shuffl.)
+    'empty': [0, 0, 0, 0]  # empty
 }
 
-font = {'family' : 'Bitstream Vera Sans',
-        'size'   : 24}
+font = {'family': 'Bitstream Vera Sans',
+        'size': 24}
 
 plt.rc('font', **font)
 
@@ -103,12 +103,12 @@ ax1.set_yscale('log')
 ax1.yaxis.grid(True)
 
 # Labelling
-height=[0, 0, 0, 0, 0, 0, 0, 0]
+height = [0, 0, 0, 0, 0, 0, 0, 0]
 for rects in bars:
-    i=0
+    i = 0
     for rect in rects:
-        height[i]+=rect.get_height()
-        i+=1
+        height[i] += rect.get_height()
+        i += 1
 
 ax1.text(ind[0] + 0.03, height[0] / 15, str(df['y1_label'][0]), color='black', fontweight='bold')
 ax1.text(ind[1] + 0.07, height[1] / 30, str(df['y1_label'][1]), color='black', fontweight='bold')

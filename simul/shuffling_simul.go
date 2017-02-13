@@ -94,7 +94,7 @@ func NewShufflingSimul(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error
 	pap := protocol.(*protocols.ShufflingProtocol)
 	pap.Proofs = proofsShuffle
 	if precompute {
-		pap.Precomputed = lib.CreatePrecomputedRandomize(suite.Point().Base(), tni.Roster().Aggregate, network.Suite.Cipher(tni.Private().Bytes()), int(groupingAttrShuffle)+int(aggrAttrShuffle), 10)
+		pap.Precomputed = lib.CreatePrecomputedRandomize(suite.Point().Base(), tni.Roster().Aggregate, network.Suite.Cipher(tni.Private().Bytes()), int(groupingAttrShuffle) + int(aggrAttrShuffle), 10)
 	}
 	if tni.IsRoot() {
 		aggregateKey := pap.Roster().Aggregate

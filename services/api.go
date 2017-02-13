@@ -50,7 +50,7 @@ func (c *API) SendSurveyCreationQuery(entities *onet.Roster, surveyGenID, survey
 	// if Unlynx normal use
 	if dataToProcess == nil {
 		resp := ServiceResponse{}
-		err := c.SendProtobuf(c.entryPoint, &SurveyCreationQuery{SurveyGenID: &surveyGenID, SurveyID: &surveyID, Roster: *entities, SurveyDescription: surveyDescription, Proofs: proofs, AppFlag: appFlag, QuerySubject: querySubject, ClientPubKey: clientPubKey, DataToProcess: dataToProcess, NbrDPs: nbrDPs, AggregationTotal: aggregationTotal},&resp)
+		err := c.SendProtobuf(c.entryPoint, &SurveyCreationQuery{SurveyGenID: &surveyGenID, SurveyID: &surveyID, Roster: *entities, SurveyDescription: surveyDescription, Proofs: proofs, AppFlag: appFlag, QuerySubject: querySubject, ClientPubKey: clientPubKey, DataToProcess: dataToProcess, NbrDPs: nbrDPs, AggregationTotal: aggregationTotal}, &resp)
 		if err != nil {
 			return nil, lib.ClientResponse{}, err
 		}
@@ -58,9 +58,10 @@ func (c *API) SendSurveyCreationQuery(entities *onet.Roster, surveyGenID, survey
 		log.LLvl1(c, " successfully created the survey with ID ", resp.SurveyID)
 		newSurveyID = resp.SurveyID
 
-	} else { // i2b2 compliant version
+	} else {
+		// i2b2 compliant version
 		resp := SurveyResultResponse{}
-		err := c.SendProtobuf(c.entryPoint, &SurveyCreationQuery{SurveyGenID: &surveyGenID, SurveyID: &surveyID, Roster: *entities, SurveyDescription: surveyDescription, Proofs: proofs, AppFlag: appFlag, QuerySubject: querySubject, ClientPubKey: clientPubKey, DataToProcess: dataToProcess, NbrDPs: nbrDPs, AggregationTotal: aggregationTotal},&resp)
+		err := c.SendProtobuf(c.entryPoint, &SurveyCreationQuery{SurveyGenID: &surveyGenID, SurveyID: &surveyID, Roster: *entities, SurveyDescription: surveyDescription, Proofs: proofs, AppFlag: appFlag, QuerySubject: querySubject, ClientPubKey: clientPubKey, DataToProcess: dataToProcess, NbrDPs: nbrDPs, AggregationTotal: aggregationTotal}, &resp)
 		if err != nil {
 			return nil, lib.ClientResponse{}, err
 		}
@@ -120,7 +121,7 @@ func EncryptDataToSurvey(name string, surveyID lib.SurveyID, clearClientResponse
 	log.Lvl1(name, " responds with ", nbrResponses, " response(s)")
 
 	var clientResponses []lib.ClientResponse
-	clientResponses = make([]lib.ClientResponse, nbrResponses*dataRepetitions)
+	clientResponses = make([]lib.ClientResponse, nbrResponses * dataRepetitions)
 
 	wg := lib.StartParallelize(len(clearClientResponses))
 	round := lib.StartTimer(name + "_ClientEncryption")
@@ -134,10 +135,10 @@ func EncryptDataToSurvey(name string, surveyID lib.SurveyID, clearClientResponse
 				if i < len(clientResponses) {
 					clientResponses[i] = lib.EncryptClientClearResponse(v, groupKey)
 
-					for j := 0; j < dataRepetitions && j+i < len(clientResponses); j++ {
-						clientResponses[i+j].GroupingAttributesClear = clientResponses[i].GroupingAttributesClear
-						clientResponses[i+j].ProbaGroupingAttributesEnc = clientResponses[i].ProbaGroupingAttributesEnc
-						clientResponses[i+j].AggregatingAttributes = clientResponses[i].AggregatingAttributes
+					for j := 0; j < dataRepetitions && j + i < len(clientResponses); j++ {
+						clientResponses[i + j].GroupingAttributesClear = clientResponses[i].GroupingAttributesClear
+						clientResponses[i + j].ProbaGroupingAttributesEnc = clientResponses[i].ProbaGroupingAttributesEnc
+						clientResponses[i + j].AggregatingAttributes = clientResponses[i].AggregatingAttributes
 					}
 				}
 				defer wg.Done()

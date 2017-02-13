@@ -87,17 +87,17 @@ type KeySwitchingProtocol struct {
 	*onet.TreeNodeInstance
 
 	// Protocol feedback channel
-	FeedbackChannel chan []lib.ClientResponse
+	FeedbackChannel           chan []lib.ClientResponse
 
 	// Protocol communication channels
 	PreviousNodeInPathChannel chan keySwitchedCipherBytesStruct
 	LengthNodeChannel         chan kscbLengthStruct
 
 	// Protocol state data
-	nextNodeInCircuit *onet.TreeNode
-	TargetOfSwitch    *[]lib.ClientResponse
-	TargetPublicKey   *abstract.Point
-	Proofs            bool
+	nextNodeInCircuit         *onet.TreeNode
+	TargetOfSwitch            *[]lib.ClientResponse
+	TargetPublicKey           *abstract.Point
+	Proofs                    bool
 }
 
 // NewKeySwitchingProtocol is constructor of Key Switching protocol instances.
@@ -120,7 +120,7 @@ func NewKeySwitchingProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, e
 	var nodeList = n.Tree().List()
 	for i, node = range nodeList {
 		if n.TreeNode().Equal(node) {
-			ksp.nextNodeInCircuit = nodeList[(i+1)%len(nodeList)]
+			ksp.nextNodeInCircuit = nodeList[(i + 1) % len(nodeList)]
 			break
 		}
 	}
@@ -153,11 +153,11 @@ func (p *KeySwitchingProtocol) Start() error {
 		for i := 0; i < len(*p.TargetOfSwitch); i = i + lib.VPARALLELIZE {
 			wg.Add(1)
 			go func(i int) {
-				for j := 0; j < lib.VPARALLELIZE && (j+i < len(*p.TargetOfSwitch)); j++ {
-					initialAttrAttributes, originalAttrEphemKeys := getAttributesAndEphemKeys((*p.TargetOfSwitch)[i+j].AggregatingAttributes)
-					initialGrpAttributes, originalGrpEphemKeys := getAttributesAndEphemKeys((*p.TargetOfSwitch)[i+j].ProbaGroupingAttributesEnc)
+				for j := 0; j < lib.VPARALLELIZE && (j + i < len(*p.TargetOfSwitch)); j++ {
+					initialAttrAttributes, originalAttrEphemKeys := getAttributesAndEphemKeys((*p.TargetOfSwitch)[i + j].AggregatingAttributes)
+					initialGrpAttributes, originalGrpEphemKeys := getAttributesAndEphemKeys((*p.TargetOfSwitch)[i + j].ProbaGroupingAttributesEnc)
 
-					initialTab[i+j] = DataAndOriginalEphemeralKeys{Response: lib.ClientResponse{GroupingAttributesClear: (*p.TargetOfSwitch)[i+j].GroupingAttributesClear, ProbaGroupingAttributesEnc: initialGrpAttributes, AggregatingAttributes: initialAttrAttributes},
+					initialTab[i + j] = DataAndOriginalEphemeralKeys{Response: lib.ClientResponse{GroupingAttributesClear: (*p.TargetOfSwitch)[i + j].GroupingAttributesClear, ProbaGroupingAttributesEnc: initialGrpAttributes, AggregatingAttributes: initialAttrAttributes},
 						OriginalEphemeralKeys: OriginalEphemeralKeys{GroupOriginalKeys: originalGrpEphemKeys, AttrOriginalKeys: originalAttrEphemKeys}}
 				}
 				defer wg.Done()
@@ -313,9 +313,9 @@ func (kscm *KeySwitchedCipherMessage) ToBytes() ([]byte, int, int, int, int, int
 // FromBytes converts a byte array to a KeySwitchedCipherMessage. Note that you need to create the (empty) object beforehand.
 func (kscm *KeySwitchedCipherMessage) FromBytes(data []byte, l1, l2, l3, l4, l5, l6 int) {
 	bb := make([][]byte, 0)
-	tmp := l1 + l2*64 + l3*64 + l4 + l5
-	for i := 0; i < l6-32; i += tmp {
-		bb = append(bb, data[i:i+tmp])
+	tmp := l1 + l2 * 64 + l3 * 64 + l4 + l5
+	for i := 0; i < l6 - 32; i += tmp {
+		bb = append(bb, data[i:i + tmp])
 	}
 
 	wg := lib.StartParallelize(len(bb))
@@ -354,11 +354,11 @@ func (daoek *DataAndOriginalEphemeralKeys) ToBytes() ([]byte, int, int, int, int
 // FromBytes converts a byte array to a DataAndOriginalEphemeralKeys. Note that you need to create the (empty) object beforehand.
 func (daoek *DataAndOriginalEphemeralKeys) FromBytes(data []byte, l1, l2, l3, l4 int) {
 	resp := lib.ClientResponse{}
-	resp.FromBytes(data[:l1+l2*64+l3*64], l1, l2, l3)
+	resp.FromBytes(data[:l1 + l2 * 64 + l3 * 64], l1, l2, l3)
 	(*daoek).Response = resp
 
 	oek := OriginalEphemeralKeys{}
-	oek.FromBytes(data[l1+l2*64+l3*64:], l4)
+	oek.FromBytes(data[l1 + l2 * 64 + l3 * 64:], l4)
 	(*daoek).OriginalEphemeralKeys = oek
 }
 

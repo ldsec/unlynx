@@ -142,8 +142,8 @@ func VectorSwitchKeyProofCreation(vBef, vAft CipherVector, newRandomnesses []abs
 		for i := 0; i < len(vBef); i = i + VPARALLELIZE {
 			wg.Add(1)
 			go func(i int) {
-				for j := 0; j < VPARALLELIZE && (j+i < len(vBef)); j++ {
-					result[i+j] = SwitchKeyProofCreation(vBef[i+j], vAft[i+j], newRandomnesses[i+j], k, originEphemKey[i+j], q)
+				for j := 0; j < VPARALLELIZE && (j + i < len(vBef)); j++ {
+					result[i + j] = SwitchKeyProofCreation(vBef[i + j], vAft[i + j], newRandomnesses[i + j], k, originEphemKey[i + j], q)
 				}
 				defer wg.Done()
 			}(i)
@@ -243,8 +243,8 @@ func VectorAddRmProofCreation(vBef, vAft CipherVector, k abstract.Scalar, toAdd 
 		for i := 0; i < len(vBef); i = i + VPARALLELIZE {
 			wg.Add(1)
 			go func(i int) {
-				for j := 0; j < VPARALLELIZE && (j+i < len(vBef)); j++ {
-					result[i+j] = AddRmProofCreation(vBef[i+j], vAft[i+j], k, toAdd)
+				for j := 0; j < VPARALLELIZE && (j + i < len(vBef)); j++ {
+					result[i + j] = AddRmProofCreation(vBef[i + j], vAft[i + j], k, toAdd)
 				}
 				defer wg.Done()
 			}(i)
@@ -351,8 +351,8 @@ func VectorDeterministicTagProofCreation(vBef, vAft CipherVector, s, k abstract.
 		for i := 0; i < len(vBef); i = i + VPARALLELIZE {
 			wg.Add(1)
 			go func(i int) {
-				for j := 0; j < VPARALLELIZE && (j+i < len(vBef)); j++ {
-					result[i+j] = DeterministicTagProofCreation(vBef[i+j], vAft[i+j], k, s)
+				for j := 0; j < VPARALLELIZE && (j + i < len(vBef)); j++ {
+					result[i + j] = DeterministicTagProofCreation(vBef[i + j], vAft[i + j], k, s)
 				}
 				defer wg.Done()
 			}(i)

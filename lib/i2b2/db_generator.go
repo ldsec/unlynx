@@ -105,7 +105,8 @@ func CreateDatabaseConcept(maxSensitive int, pubKeyString string, delete bool, o
 	colNums := 0
 	colNames := []string{}
 	for rowsGen.Next() {
-		if first { //first line
+		if first {
+			//first line
 			colNames, err = rowsGen.Columns()
 			first = false
 			log.LLvl1("Read first line")
@@ -133,14 +134,17 @@ func CreateDatabaseConcept(maxSensitive int, pubKeyString string, delete bool, o
 		observation := vgGen.ConceptCd
 		checkCount := 0
 		log.LLvl1("Processing: " + observation)
-		if observation != "e" { //if observation not already processed
-			if present { //if observation already has a dedicated column
+		if observation != "e" {
+			//if observation not already processed
+			if present {
+				//if observation already has a dedicated column
 				encryptedOne := hex.EncodeToString((*lib.EncryptInt(pubKey, 1)).ToBytes())
 				q3, err := db.Query("UPDATE i2b2demodata.observation_facttest SET \"" + observation + "\"='" + encryptedOne + "' WHERE encounter_num=" + string(vgGen.EncounterNum) + " AND patient_num=" + string(vgGen.PatientNum) + " AND concept_cd='" + observation + "' AND provider_id='" + vgGen.ProviderID + "' AND start_date='" + vgGen.StartDate + "' AND modifier_cd='" + vgGen.ModifierCd + "' AND instance_num=" + string(vgGen.InstanceNum))
 				checkErr(err)
 				closeRequest(q3)
 			}
-			if !present && (counter < maxSensitive) { //if observation does not already have a dedicated column
+			if !present && (counter < maxSensitive) {
+				//if observation does not already have a dedicated column
 				encryptedObs = append(encryptedObs, observation)
 
 				//create column
@@ -170,7 +174,8 @@ func CreateDatabaseConcept(maxSensitive int, pubKeyString string, delete bool, o
 						q3, err := db.Query("UPDATE i2b2demodata.observation_facttest SET \"" + observation + "\"='" + encryptedZero + "' WHERE encounter_num=" + string(vg.EncounterNum) + " AND patient_num=" + string(vg.PatientNum) + " AND concept_cd='" + vg.ConceptCd + "' AND provider_id='" + vg.ProviderID + "' AND start_date='" + vg.StartDate + "' AND modifier_cd='" + vg.ModifierCd + "' AND instance_num=" + string(vg.InstanceNum))
 						checkErr(err)
 						closeRequest(q3)
-					} else { //for all lines with same ConceptCd -> encrypt a ONE
+					} else {
+						//for all lines with same ConceptCd -> encrypt a ONE
 						encryptedOne := hex.EncodeToString((*lib.EncryptInt(pubKey, 1)).ToBytes())
 						log.LLvl1("ONE encryption")
 						q3, err := db.Query("UPDATE i2b2demodata.observation_facttest SET \"" + observation + "\"='" + encryptedOne + "' WHERE encounter_num=" + string(vgGen.EncounterNum) + " AND patient_num=" + string(vgGen.PatientNum) + " AND concept_cd='" + observation + "' AND provider_id='" + vgGen.ProviderID + "' AND start_date='" + vgGen.StartDate + "' AND modifier_cd='" + vgGen.ModifierCd + "' AND instance_num=" + string(vgGen.InstanceNum))
@@ -178,7 +183,7 @@ func CreateDatabaseConcept(maxSensitive int, pubKeyString string, delete bool, o
 						closeRequest(q3)
 					}
 					checkCount++
-					if checkCount%10 == 0 {
+					if checkCount % 10 == 0 {
 						log.LLvl1(checkCount)
 					}
 
