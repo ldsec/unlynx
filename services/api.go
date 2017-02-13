@@ -91,7 +91,7 @@ func (c *API) SendSurveyResponseQuery(surveyID lib.SurveyID, clearClientResponse
 
 // SendGetSurveyResultsQuery to get the result from associated server and decrypt the response using its private key.
 func (c *API) SendGetSurveyResultsQuery(surveyID lib.SurveyID) (*[][]int64, *[][]int64, *[][]int64, error) {
-	log.LLvl1(c, " asks for responses of survey ", surveyID)
+	log.LLvl1(c, " asks for the results of the survey ", surveyID)
 	resp := SurveyResultResponse{}
 	err := c.SendProtobuf(c.entryPoint, &SurveyResultsQuery{surveyID, c.public}, &resp)
 	if err != nil {

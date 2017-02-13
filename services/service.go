@@ -5,8 +5,6 @@ import (
 	"reflect"
 	"strconv"
 
-	"sync"
-
 	"github.com/JoaoAndreSa/MedCo/lib"
 	"github.com/JoaoAndreSa/MedCo/protocols"
 	"github.com/JoaoAndreSa/MedCo/services/data"
@@ -17,6 +15,8 @@ import (
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"
+	"strings"
+	"sync"
 )
 
 // ServiceName is the registered name for the medco service.
@@ -109,9 +109,8 @@ type Service struct {
 	nbrLocalSurveys              int
 	sentResponses                []FinalResponsesIds
 	finalResponses               []FinalResponsesIds
+	mutex 			     sync.Mutex
 }
-
-var mutex sync.Mutex
 
 var msgSurveyCreationQuery = network.RegisterMessage(&SurveyCreationQuery{})
 var msgSurveyResponseSharing = network.RegisterMessage(&SurveyResponseSharing{})
@@ -177,6 +176,25 @@ func (s *Service) PushData(resp *SurveyResponseQuery) {
 	log.Lvl1(s.ServerIdentity(), " uploaded response data for survey ", resp.SurveyID)
 }
 
+// SendISMOthers sends a message to all other services
+func (s *Service) SendISMOthers(el *onet.Roster, msg interface{}) error {
+	var errStrs []string
+	for _, e := range el.List {
+		if !e.ID.Equal(s.ServerIdentity().ID) {
+			log.Lvl3("Sending to", e)
+			err := s.SendRaw(e, msg)
+			if err != nil {
+				errStrs = append(errStrs, err.Error())
+			}
+		}
+	}
+	var err error
+	if len(errStrs) > 0 {
+		err = errors.New(strings.Join(errStrs, "\n"))
+	}
+	return err
+}
+
 // Query Handlers
 //______________________________________________________________________________________________________________________
 
@@ -206,12 +224,9 @@ func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.
 			handlingServer = true
 		}
 		// broadcasts the query
-		for _, si := range recq.Roster.List {
-			err := s.SendRaw(si, recq)
-
-			if err != nil {
-				log.Error("broadcasting error ", err)
-			}
+		err := s.SendISMOthers(&recq.Roster, recq)
+		if err != nil {
+			log.Error("broadcasting error ", err)
 		}
 		log.Lvl1(s.ServerIdentity(), " initiated the survey ", newID)
 
@@ -229,7 +244,6 @@ func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.
 	}
 
 	// survey instantiation
-	mutex.Lock() // in fact I don't know why the Lock :P TODO: Find out why
 	(s.survey[*recq.SurveyID]) = lib.Survey{
 		Store:              lib.NewStore(),
 		GenID:              *recq.SurveyGenID,
@@ -246,14 +260,13 @@ func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.
 		ExecutionMode:      recq.AggregationTotal,
 		Sender:             s.ServerIdentity().ID,
 	}
-
 	// server is currently handling this survey
-	//TODO this might cause problems since one server has to handle multiple surveys at a time
+	s.mutex.Lock()
 	s.current = *recq.SurveyID
+	s.mutex.Unlock()
 
 	log.Lvl1(s.ServerIdentity(), " created the survey ", *recq.SurveyID)
 	log.Lvl1(s.ServerIdentity(), " has a list of ", len(s.survey), " survey(s)")
-	mutex.Unlock() // oh well... at least there are no Data Races!!
 
 	if s.appFlag {
 		if recq.DataToProcess == nil {
@@ -383,12 +396,9 @@ func (s *Service) HandleI2b2Query(recq *SurveyCreationQuery, handlingServer bool
 		//server sends the computed result
 		log.LLvl1(s.ServerIdentity(), " sends survey ", *recq.SurveyID, " to all servers")
 
-		for _, si := range recq.Roster.List {
-			err := s.SendRaw(si, &SurveyResponseSharing{Survey: s.surveyWithResponses[*recq.SurveyID]})
-
-			if err != nil {
-				log.Error("broadcasting error ", err)
-			}
+		err := s.SendISMOthers(&recq.Roster, &SurveyResponseSharing{Survey: s.surveyWithResponses[*recq.SurveyID]})
+		if err != nil {
+			log.Error("broadcasting error ", err)
 		}
 
 		//wait to have one response per data pro
@@ -500,8 +510,9 @@ func (s *Service) HandleI2b2QueryMode2(recq *SurveyCreationQuery, responses []li
 
 // NewProtocol handles the creation of the right protocol parameters.
 func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfig) (onet.ProtocolInstance, error) {
-	//TODO might need a mutex for this target
+	s.mutex.Lock()
 	target := s.current
+	s.mutex.Unlock()
 	var pi onet.ProtocolInstance
 	var err error
 
@@ -591,7 +602,7 @@ func (s *Service) StartProtocol(name string, targetSurvey lib.SurveyID) (onet.Pr
 	tree := tmp.Roster.GenerateNaryTreeWithRoot(2, s.ServerIdentity())
 	tni := s.NewTreeNodeInstance(tree, tree.Root, name)
 	// set current sruvey to this one
-	s.current = targetSurvey
+	//s.current = targetSurvey
 	s.survey[targetSurvey] = tmp
 	pi, err := s.NewProtocol(tni, nil)
 	s.RegisterProtocolInstance(pi)
@@ -807,12 +818,9 @@ func (s *Service) finalShufflingAndKeySwitching(recq *SurveyCreationQuery, respo
 	// share new list of survey results
 	log.LLvl1(s.ServerIdentity(), " sends final results of ", *recq.SurveyGenID, " (while handling ", *recq.SurveyID, ")")
 
-	for _, si := range recq.Roster.List {
-		err = s.SendRaw(si, &SurveyFinalResponseSharing{Responses: listToShuffleIds})
-
-		if err != nil {
-			log.Error("broadcasting error ", err)
-		}
+	err = s.SendISMOthers(&recq.Roster, &SurveyFinalResponseSharing{Responses: listToShuffleIds})
+	if err != nil {
+		log.Error("broadcasting error ", err)
 	}
 
 	s.finalResponses = listToShuffleIds
