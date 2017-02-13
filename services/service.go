@@ -109,7 +109,7 @@ type Service struct {
 	nbrLocalSurveys              int
 	sentResponses                []FinalResponsesIds
 	finalResponses               []FinalResponsesIds
-	mutex 			     sync.Mutex
+	mutex                        sync.Mutex
 }
 
 var msgSurveyCreationQuery = network.RegisterMessage(&SurveyCreationQuery{})
