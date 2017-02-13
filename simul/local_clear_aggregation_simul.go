@@ -74,7 +74,7 @@ func (sim *LocalClearAggregationSimulation) Run(config *onet.SimulationConfig) e
 		testData := make([]lib.ClientClearResponse, 0)
 		for i := 0; i < sim.NbrGroups; i++ {
 			log.LLvl1("step: ", i, " / ", sim.NbrGroups, " in preparation")
-			for j := 0; j < sim.NbrResponses / sim.NbrGroups; j++ {
+			for j := 0; j < sim.NbrResponses/sim.NbrGroups; j++ {
 				list := lib.ClientClearResponse{GroupingAttributesClear: tabGr, GroupingAttributesEnc: nil, AggregatingAttributes: tab}
 				testData = append(testData, list)
 			}

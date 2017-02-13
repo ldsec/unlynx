@@ -121,8 +121,8 @@ func EncryptIntVector(pubkey abstract.Point, intArray []int64) *CipherVector {
 		for i := 0; i < len(intArray); i = i + VPARALLELIZE {
 			wg.Add(1)
 			go func(i int) {
-				for j := 0; j < VPARALLELIZE && (j + i < len(intArray)); j++ {
-					cv[j + i] = *EncryptInt(pubkey, intArray[j + i])
+				for j := 0; j < VPARALLELIZE && (j+i < len(intArray)); j++ {
+					cv[j+i] = *EncryptInt(pubkey, intArray[j+i])
 				}
 				defer wg.Done()
 			}(i)
@@ -183,7 +183,7 @@ func discreteLog(P abstract.Point) int64 {
 		currentGreatestM = suite.Point().Null()
 	}
 
-	for Bi, m = currentGreatestM, currentGreatestInt; !Bi.Equal(P) && m < MaxHomomorphicInt; Bi, m = Bi.Add(Bi, B), m + 1 {
+	for Bi, m = currentGreatestM, currentGreatestInt; !Bi.Equal(P) && m < MaxHomomorphicInt; Bi, m = Bi.Add(Bi, B), m+1 {
 		PointToInt[Bi.String()] = m
 	}
 	currentGreatestM = Bi
@@ -211,8 +211,8 @@ func (cv *CipherVector) DeterministicTagging(cipher *CipherVector, private, secr
 		for i := 0; i < len(*cipher); i = i + VPARALLELIZE {
 			wg.Add(1)
 			go func(i int) {
-				for j := 0; j < VPARALLELIZE && (j + i < len(*cipher)); j++ {
-					(*cv)[i + j].DeterministicTagging(&(*cipher)[i + j], private, secretContrib)
+				for j := 0; j < VPARALLELIZE && (j+i < len(*cipher)); j++ {
+					(*cv)[i+j].DeterministicTagging(&(*cipher)[i+j], private, secretContrib)
 				}
 				defer wg.Done()
 			}(i)
@@ -269,8 +269,8 @@ func (cv *CipherVector) KeySwitching(cipher CipherVector, originalEphemeralKeys 
 		for i := 0; i < len(cipher); i = i + VPARALLELIZE {
 			wg.Add(1)
 			go func(i int) {
-				for j := 0; j < VPARALLELIZE && (j + i < len(cipher)); j++ {
-					_, r[i + j] = (*cv)[i + j].KeySwitching(cipher[i + j], (originalEphemeralKeys)[i + j], newKey, private)
+				for j := 0; j < VPARALLELIZE && (j+i < len(cipher)); j++ {
+					_, r[i+j] = (*cv)[i+j].KeySwitching(cipher[i+j], (originalEphemeralKeys)[i+j], newKey, private)
 				}
 				defer wg.Done()
 			}(i)
@@ -309,8 +309,8 @@ func (cv *CipherVector) Add(cv1, cv2 CipherVector) *CipherVector {
 		for i := 0; i < len(cv1); i = i + VPARALLELIZE {
 			wg.Add(1)
 			go func(i int) {
-				for j := 0; j < VPARALLELIZE && (j + i < len(cv1)); j++ {
-					(*cv)[i + j].Add(cv1[i + j], cv2[i + j])
+				for j := 0; j < VPARALLELIZE && (j+i < len(cv1)); j++ {
+					(*cv)[i+j].Add(cv1[i+j], cv2[i+j])
 				}
 				defer wg.Done()
 			}(i)
@@ -446,7 +446,7 @@ func RandomPermutation(k int) []int {
 	}
 	for i := k - 1; i > 0; i-- {
 		// Shuffle by random swaps
-		j := int(random.Uint64(rand) % uint64(i + 1))
+		j := int(random.Uint64(rand) % uint64(i+1))
 		if j != i {
 			t := pi[j]
 			pi[j] = pi[i]
@@ -473,9 +473,9 @@ func (cv *CipherVector) ToBytes() ([]byte, int) {
 // FromBytes converts a byte array to a CipherVector. Note that you need to create the (empty) object beforehand.
 func (cv *CipherVector) FromBytes(data []byte, length int) {
 	(*cv) = make(CipherVector, length)
-	for i, pos := 0, 0; i < length * 64; i, pos = i + 64, pos + 1 {
+	for i, pos := 0, 0; i < length*64; i, pos = i+64, pos+1 {
 		ct := CipherText{}
-		ct.FromBytes(data[i : i + 64])
+		ct.FromBytes(data[i : i+64])
 		(*cv)[pos] = ct
 	}
 }
@@ -528,7 +528,7 @@ func BytesToAbstractPoints(target []byte) []abstract.Point {
 
 	for i := 0; i < len(target); i += 32 {
 		ap := network.Suite.Point()
-		if err = ap.UnmarshalBinary(target[i : i + 32]); err != nil {
+		if err = ap.UnmarshalBinary(target[i : i+32]); err != nil {
 			log.Fatal(err)
 		}
 

@@ -12,20 +12,20 @@ import (
 // Store contains all the elements of a survey, it consists of the data structure that each cothority has to
 // maintain locally to perform a collective survey.
 type Store struct {
-	ClientResponses                     []ClientResponse
-	DeliverableResults                  []ClientResponse
-	ShuffledClientResponses             []ClientResponse
+	ClientResponses         []ClientResponse
+	DeliverableResults      []ClientResponse
+	ShuffledClientResponses []ClientResponse
 
 	// LocGroupingAggregating contains the results of the local aggregation.
-	LocAggregatedClientResponse         map[GroupingKey]ClientResponse
+	LocAggregatedClientResponse map[GroupingKey]ClientResponse
 
-	Mutex                               sync.Mutex
+	Mutex sync.Mutex
 
 	// GroupedDeterministicGroupingAttributes & GroupedAggregatingAttributes contain results of the grouping
 	// before they are key switched and combined in the last step (key switching).
 	GroupedDeterministicClientResponses map[GroupingKey]ClientResponse
 
-	lastID                              uint64
+	lastID uint64
 }
 
 // NewStore is the store constructor.
@@ -117,7 +117,7 @@ func int64ArrayToString(s []int64) string {
 	for _, elem := range s {
 		result += fmt.Sprintf("%v ", elem)
 	}
-	return result[:len(result) - 1]
+	return result[:len(result)-1]
 }
 
 // StringToInt64Array transforms an array to a string
@@ -149,8 +149,8 @@ func AddInClear(s []ClientClearResponse) []ClientClearResponse {
 				for i := 0; i < len(dataMap[key]); i = i + VPARALLELIZE {
 					wg.Add(1)
 					go func(i int) {
-						for j := 0; j < VPARALLELIZE && (j + i < len(dataMap[key])); j++ {
-							dataMap[key][j + i] += elem.AggregatingAttributes[j + i]
+						for j := 0; j < VPARALLELIZE && (j+i < len(dataMap[key])); j++ {
+							dataMap[key][j+i] += elem.AggregatingAttributes[j+i]
 						}
 						defer wg.Done()
 					}(i)

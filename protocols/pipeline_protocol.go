@@ -66,12 +66,12 @@ type PipelineProtocol struct {
 	TriggerFlushCollectedData chan flushCollectedDataStruct
 	DoneFlushCollectedData    chan []doneFlushCollectedDataStruct
 
-	FeedbackChannel           chan DoneProcessingMessage
+	FeedbackChannel chan DoneProcessingMessage
 
-	MedcoServiceInstance      ServiceInterface
-	TargetSurvey              *lib.Survey
+	MedcoServiceInstance ServiceInterface
+	TargetSurvey         *lib.Survey
 
-	Proofs                    bool
+	Proofs bool
 }
 
 // NewPipelineProcotol constructor of a pipeline protocol.

@@ -70,20 +70,20 @@ type sbLengthStruct struct {
 type ShufflingProtocol struct {
 	*onet.TreeNodeInstance
 
-						 // Protocol feedback channel
-	FeedbackChannel           chan []lib.ClientResponse
+	// Protocol feedback channel
+	FeedbackChannel chan []lib.ClientResponse
 
-						 // Protocol communication channels
+	// Protocol communication channels
 	LengthNodeChannel         chan sbLengthStruct
 	PreviousNodeInPathChannel chan shufflingBytesStruct
 
-						 // Protocol state data
-	nextNodeInCircuit         *onet.TreeNode
-	TargetOfShuffle           *[]lib.ClientResponse
+	// Protocol state data
+	nextNodeInCircuit *onet.TreeNode
+	TargetOfShuffle   *[]lib.ClientResponse
 
-	CollectiveKey             abstract.Point //only use in order to test the protocol
-	Proofs                    bool
-	Precomputed               []lib.CipherVectorScalar
+	CollectiveKey abstract.Point //only use in order to test the protocol
+	Proofs        bool
+	Precomputed   []lib.CipherVectorScalar
 }
 
 // NewShufflingProtocol constructs neff shuffle protocol instances.
@@ -106,7 +106,7 @@ func NewShufflingProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, erro
 	var nodeList = n.Tree().List()
 	for i, node = range nodeList {
 		if n.TreeNode().Equal(node) {
-			dsp.nextNodeInCircuit = nodeList[(i + 1) % len(nodeList)]
+			dsp.nextNodeInCircuit = nodeList[(i+1)%len(nodeList)]
 			break
 		}
 	}
@@ -123,7 +123,7 @@ func (p *ShufflingProtocol) Start() error {
 	}
 
 	nbrClientResponses := len(*p.TargetOfShuffle)
-	log.Lvl1("[" + p.Name() + "]", " started a Shuffling Protocol (", nbrClientResponses, " responses)")
+	log.Lvl1("["+p.Name()+"]", " started a Shuffling Protocol (", nbrClientResponses, " responses)")
 
 	shuffleTarget := *p.TargetOfShuffle
 	collectiveKey := p.Roster().Aggregate
@@ -288,13 +288,13 @@ func (sm *ShufflingMessage) ToBytes() ([]byte, int, int, int) {
 func (sm *ShufflingMessage) FromBytes(data []byte, gacbLength, aabLength, pgaebLength int) {
 	var nbrData int
 
-	elementLength := (gacbLength + aabLength * 64 + pgaebLength * 64) //CAUTION: hardcoded 64 (size of el-gamal element C,K)
+	elementLength := (gacbLength + aabLength*64 + pgaebLength*64) //CAUTION: hardcoded 64 (size of el-gamal element C,K)
 	nbrData = len(data) / elementLength
 
 	(*sm).Data = make([]lib.ClientResponse, nbrData)
 	wg := lib.StartParallelize(nbrData)
 	for i := 0; i < nbrData; i++ {
-		v := data[i * elementLength : i * elementLength + elementLength]
+		v := data[i*elementLength : i*elementLength+elementLength]
 		if lib.PARALLELIZE {
 			go func(v []byte, i int) {
 				defer wg.Done()

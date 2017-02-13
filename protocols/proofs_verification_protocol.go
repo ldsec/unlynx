@@ -34,7 +34,7 @@ type ProofsVerificationProtocol struct {
 	*onet.TreeNodeInstance
 
 	// Protocol feedback channel
-	FeedbackChannel      chan []bool
+	FeedbackChannel chan []bool
 
 	// Protocol state data
 	TargetOfVerification ProofsToVerify
@@ -88,11 +88,11 @@ func (p *ProofsVerificationProtocol) Start() error {
 	for i, v := range p.TargetOfVerification.DeterministicTaggingProofs {
 		if lib.PARALLELIZE {
 			go func(i int, v lib.PublishedDeterministicTaggingProof) {
-				result[nbrKsProofs + i], _ = lib.PublishedDeterministicTaggingCheckProof(v)
+				result[nbrKsProofs+i], _ = lib.PublishedDeterministicTaggingCheckProof(v)
 				defer wg.Done()
 			}(i, v)
 		} else {
-			result[nbrKsProofs + i], _ = lib.PublishedDeterministicTaggingCheckProof(v)
+			result[nbrKsProofs+i], _ = lib.PublishedDeterministicTaggingCheckProof(v)
 		}
 	}
 
@@ -105,11 +105,11 @@ func (p *ProofsVerificationProtocol) Start() error {
 	for i, v := range p.TargetOfVerification.DetTagAdditionProofs {
 		if lib.PARALLELIZE {
 			go func(i int, v lib.PublishedDetTagAdditionProof) {
-				result[nbrKsProofs + nbrDtProofs + i] = lib.DetTagAdditionProofVerification(v)
+				result[nbrKsProofs+nbrDtProofs+i] = lib.DetTagAdditionProofVerification(v)
 				defer wg.Done()
 			}(i, v)
 		} else {
-			result[nbrKsProofs + nbrDtProofs + i] = lib.DetTagAdditionProofVerification(v)
+			result[nbrKsProofs+nbrDtProofs+i] = lib.DetTagAdditionProofVerification(v)
 		}
 	}
 
@@ -123,11 +123,11 @@ func (p *ProofsVerificationProtocol) Start() error {
 	for i, v := range p.TargetOfVerification.AggregationProofs {
 		if lib.PARALLELIZE {
 			go func(i int, v lib.PublishedAggregationProof) {
-				result[nbrKsProofs + nbrDtProofs + nbrDetTagAddProofs + i] = lib.AggregationProofVerification(v)
+				result[nbrKsProofs+nbrDtProofs+nbrDetTagAddProofs+i] = lib.AggregationProofVerification(v)
 				defer wg.Done()
 			}(i, v)
 		} else {
-			result[nbrKsProofs + nbrDtProofs + nbrDetTagAddProofs + i] = lib.AggregationProofVerification(v)
+			result[nbrKsProofs+nbrDtProofs+nbrDetTagAddProofs+i] = lib.AggregationProofVerification(v)
 		}
 	}
 
@@ -140,11 +140,11 @@ func (p *ProofsVerificationProtocol) Start() error {
 	for i, v := range p.TargetOfVerification.ShufflingProofs {
 		if lib.PARALLELIZE {
 			go func(i int, v lib.PublishedShufflingProof) {
-				result[nbrKsProofs + nbrDtProofs + nbrDetTagAddProofs + nbrAggrProofs + i] = lib.ShufflingProofVerification(v, p.Roster().Aggregate)
+				result[nbrKsProofs+nbrDtProofs+nbrDetTagAddProofs+nbrAggrProofs+i] = lib.ShufflingProofVerification(v, p.Roster().Aggregate)
 				defer wg.Done()
 			}(i, v)
 		} else {
-			result[nbrKsProofs + nbrDtProofs + nbrDetTagAddProofs + nbrAggrProofs + i] = lib.ShufflingProofVerification(v, p.Roster().Aggregate)
+			result[nbrKsProofs+nbrDtProofs+nbrDetTagAddProofs+nbrAggrProofs+i] = lib.ShufflingProofVerification(v, p.Roster().Aggregate)
 
 		}
 	}
@@ -158,11 +158,11 @@ func (p *ProofsVerificationProtocol) Start() error {
 	for i, v := range p.TargetOfVerification.CollectiveAggregationProofs {
 		if lib.PARALLELIZE {
 			go func(i int, v lib.PublishedCollectiveAggregationProof) {
-				result[nbrKsProofs + nbrDtProofs + nbrDetTagAddProofs + nbrAggrProofs + nbrShuffleProofs + i] = lib.CollectiveAggregationProofVerification(v)
+				result[nbrKsProofs+nbrDtProofs+nbrDetTagAddProofs+nbrAggrProofs+nbrShuffleProofs+i] = lib.CollectiveAggregationProofVerification(v)
 				defer wg.Done()
 			}(i, v)
 		} else {
-			result[nbrKsProofs + nbrDtProofs + nbrDetTagAddProofs + nbrAggrProofs + nbrShuffleProofs + i] = lib.CollectiveAggregationProofVerification(v)
+			result[nbrKsProofs+nbrDtProofs+nbrDetTagAddProofs+nbrAggrProofs+nbrShuffleProofs+i] = lib.CollectiveAggregationProofVerification(v)
 
 		}
 	}

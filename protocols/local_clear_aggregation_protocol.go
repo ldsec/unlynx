@@ -23,7 +23,7 @@ type LocalClearAggregationProtocol struct {
 	*onet.TreeNodeInstance
 
 	// Protocol feedback channel
-	FeedbackChannel     chan []lib.ClientClearResponse
+	FeedbackChannel chan []lib.ClientClearResponse
 
 	// Protocol state data
 	TargetOfAggregation []lib.ClientClearResponse

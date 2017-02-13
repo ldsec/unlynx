@@ -4,12 +4,12 @@ import (
 	//"strconv"
 
 	"github.com/BurntSushi/toml"
-	"gopkg.in/dedis/onet.v1/log"
-	"gopkg.in/dedis/onet.v1/simul/monitor"
-	"gopkg.in/dedis/onet.v1"
+	"github.com/JoaoAndreSa/MedCo/lib"
 	"github.com/JoaoAndreSa/MedCo/services"
 	"github.com/JoaoAndreSa/MedCo/services/data"
-	"github.com/JoaoAndreSa/MedCo/lib"
+	"gopkg.in/dedis/onet.v1"
+	"gopkg.in/dedis/onet.v1/log"
+	"gopkg.in/dedis/onet.v1/simul/monitor"
 	"strconv"
 )
 
@@ -108,14 +108,14 @@ func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
 			start1 := lib.StartTimer(strconv.Itoa(i) + "_IndividualSendingData")
 			if lib.PARALLELIZE {
 				go func(i int, client *services.API) {
-					client = services.NewMedcoClient(el.List[i % nbrHosts])
+					client = services.NewMedcoClient(el.List[i%nbrHosts])
 					client.SendSurveyResponseQuery(*surveyID, testData[strconv.Itoa(i)], el.Aggregate, sim.DataRepetitions)
 					defer wg.Done()
 				}(i, client)
 			} else {
 				start2 := lib.StartTimer(strconv.Itoa(i) + "_IndividualNewMedcoClient")
 
-				client = services.NewMedcoClient(el.List[i % nbrHosts])
+				client = services.NewMedcoClient(el.List[i%nbrHosts])
 
 				lib.EndTimer(start2)
 				start3 := lib.StartTimer(strconv.Itoa(i) + "_IndividualSendSurveyResults")

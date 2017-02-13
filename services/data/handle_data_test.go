@@ -3,10 +3,10 @@ package data_test
 import (
 	"testing"
 
-	"gopkg.in/dedis/onet.v1/log"
-	"github.com/JoaoAndreSa/MedCo/services/data"
 	"github.com/JoaoAndreSa/MedCo/lib"
+	"github.com/JoaoAndreSa/MedCo/services/data"
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/dedis/onet.v1/log"
 )
 
 const filename = "medco_test_data.txt"

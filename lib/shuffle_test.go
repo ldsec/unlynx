@@ -30,10 +30,10 @@ func TestShuffleSequence(t *testing.T) {
 		inputList[i] = lib.NewClientResponse(M, N)
 
 		for ii := range inputList[i].ProbaGroupingAttributesEnc {
-			inputList[i].ProbaGroupingAttributesEnc[ii] = *lib.EncryptInt(collectivePubKey, int64(i + 1))
+			inputList[i].ProbaGroupingAttributesEnc[ii] = *lib.EncryptInt(collectivePubKey, int64(i+1))
 		}
 		for iii := range inputList[i].AggregatingAttributes {
-			inputList[i].AggregatingAttributes[iii] = *lib.EncryptInt(collectivePubKey, int64(3 * i + 3))
+			inputList[i].AggregatingAttributes[iii] = *lib.EncryptInt(collectivePubKey, int64(3*i+3))
 		}
 
 	}
@@ -52,11 +52,11 @@ func TestShuffleSequence(t *testing.T) {
 	for i := 0; i < k; i++ {
 		for iii := range inputList[0].ProbaGroupingAttributesEnc {
 			decrypted := lib.DecryptInt(collectivePrivKey, outputlist[piinv[i]].ProbaGroupingAttributesEnc[iii])
-			assert.Equal(t, int64(i + 1), decrypted)
+			assert.Equal(t, int64(i+1), decrypted)
 		}
 		for iiii := range inputList[0].AggregatingAttributes {
 			decrypted := lib.DecryptInt(collectivePrivKey, outputlist[piinv[i]].AggregatingAttributes[iiii])
-			assert.Equal(t, int64(3 * i + 3), decrypted)
+			assert.Equal(t, int64(3*i+3), decrypted)
 		}
 	}
 

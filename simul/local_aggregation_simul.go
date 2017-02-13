@@ -94,7 +94,7 @@ func (sim *LocalAggregationSimulation) Run(config *onet.SimulationConfig) error 
 
 			newDetResponse := lib.ClientResponseDet{CR: cr, DetTag: deterministicGroupAttributes.Key()}
 			log.LLvl1("step: ", i, " / ", sim.NbrGroups, " in preparation")
-			for j := 0; j < sim.NbrResponses / sim.NbrGroups; j++ {
+			for j := 0; j < sim.NbrResponses/sim.NbrGroups; j++ {
 				detResponses = append(detResponses, newDetResponse)
 			}
 		}

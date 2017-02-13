@@ -26,11 +26,11 @@ type ProofsVerificationSimulation struct {
 	AggregationProofsCount           int
 	KeySwitchingProofsCount          int
 
-	NbrResponses                     int
-	NbrGroups                        int
-	NbrGroupAttributes               int
-	NbrAggrAttributes                int
-	Proofs                           bool
+	NbrResponses       int
+	NbrGroups          int
+	NbrGroupAttributes int
+	NbrAggrAttributes  int
+	Proofs             bool
 }
 
 // NewProofsVerificationSimulation constructs a key switching simulation.
@@ -75,7 +75,7 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 		secKeyNew := network.Suite.Scalar().Pick(random.Stream)
 		pubKeyNew := network.Suite.Point().Mul(network.Suite.Point().Base(), secKeyNew)
 
-		tab := make([]int64, sim.NbrAggrAttributes + sim.NbrGroupAttributes)
+		tab := make([]int64, sim.NbrAggrAttributes+sim.NbrGroupAttributes)
 		for i := 0; i < len(tab); i++ {
 			tab[i] = int64(1)
 		}
@@ -131,7 +131,7 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 			deterministicTaggingAddProofs = append(deterministicTaggingAddProofs, prf)
 		}
 		oneVectorProofs := deterministicTaggingAddProofs
-		for i := 0; i < sim.DeterministicTaggingProofsCount - 1; i++ {
+		for i := 0; i < sim.DeterministicTaggingProofsCount-1; i++ {
 			deterministicTaggingAddProofs = append(deterministicTaggingAddProofs, oneVectorProofs...)
 		}
 
@@ -161,7 +161,7 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 			}
 			newDetResponse := lib.ClientResponseDet{CR: lib.ClientResponse{GroupingAttributesClear: "", ProbaGroupingAttributesEnc: cipherVectGr, AggregatingAttributes: testCipherVect1}, DetTag: deterministicGroupAttributes.Key()}
 
-			for j := 0; j < sim.NbrResponses / sim.NbrGroups; j++ {
+			for j := 0; j < sim.NbrResponses/sim.NbrGroups; j++ {
 
 				detResponses = append(detResponses, newDetResponse)
 			}

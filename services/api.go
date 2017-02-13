@@ -3,12 +3,12 @@ package services
 import (
 	"strconv"
 
-	"gopkg.in/dedis/onet.v1/log"
-	"gopkg.in/dedis/onet.v1/network"
-	"gopkg.in/dedis/onet.v1"
 	"github.com/JoaoAndreSa/MedCo/lib"
 	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/crypto.v0/config"
+	"gopkg.in/dedis/onet.v1"
+	"gopkg.in/dedis/onet.v1/log"
+	"gopkg.in/dedis/onet.v1/network"
 )
 
 // API represents a client with the server to which he is connected and its public/private key pair.
@@ -121,7 +121,7 @@ func EncryptDataToSurvey(name string, surveyID lib.SurveyID, clearClientResponse
 	log.Lvl1(name, " responds with ", nbrResponses, " response(s)")
 
 	var clientResponses []lib.ClientResponse
-	clientResponses = make([]lib.ClientResponse, nbrResponses * dataRepetitions)
+	clientResponses = make([]lib.ClientResponse, nbrResponses*dataRepetitions)
 
 	wg := lib.StartParallelize(len(clearClientResponses))
 	round := lib.StartTimer(name + "_ClientEncryption")
@@ -135,10 +135,10 @@ func EncryptDataToSurvey(name string, surveyID lib.SurveyID, clearClientResponse
 				if i < len(clientResponses) {
 					clientResponses[i] = lib.EncryptClientClearResponse(v, groupKey)
 
-					for j := 0; j < dataRepetitions && j + i < len(clientResponses); j++ {
-						clientResponses[i + j].GroupingAttributesClear = clientResponses[i].GroupingAttributesClear
-						clientResponses[i + j].ProbaGroupingAttributesEnc = clientResponses[i].ProbaGroupingAttributesEnc
-						clientResponses[i + j].AggregatingAttributes = clientResponses[i].AggregatingAttributes
+					for j := 0; j < dataRepetitions && j+i < len(clientResponses); j++ {
+						clientResponses[i+j].GroupingAttributesClear = clientResponses[i].GroupingAttributesClear
+						clientResponses[i+j].ProbaGroupingAttributesEnc = clientResponses[i].ProbaGroupingAttributesEnc
+						clientResponses[i+j].AggregatingAttributes = clientResponses[i].AggregatingAttributes
 					}
 				}
 				defer wg.Done()

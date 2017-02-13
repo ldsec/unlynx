@@ -25,7 +25,7 @@ type LocalAggregationProtocol struct {
 	*onet.TreeNodeInstance
 
 	// Protocol feedback channel
-	FeedbackChannel     chan map[lib.GroupingKey]lib.ClientResponse
+	FeedbackChannel chan map[lib.GroupingKey]lib.ClientResponse
 
 	// Protocol state data
 	TargetOfAggregation []lib.ClientResponseDet

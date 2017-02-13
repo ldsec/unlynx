@@ -183,7 +183,7 @@ func CreateDatabaseConcept(maxSensitive int, pubKeyString string, delete bool, o
 						closeRequest(q3)
 					}
 					checkCount++
-					if checkCount % 10 == 0 {
+					if checkCount%10 == 0 {
 						log.LLvl1(checkCount)
 					}
 

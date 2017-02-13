@@ -6,10 +6,10 @@ import (
 
 	"os"
 
-	"gopkg.in/dedis/onet.v1/log"
-	"gopkg.in/dedis/onet.v1"
-	"github.com/JoaoAndreSa/MedCo/services"
 	"github.com/JoaoAndreSa/MedCo/lib"
+	"github.com/JoaoAndreSa/MedCo/services"
+	"gopkg.in/dedis/onet.v1"
+	"gopkg.in/dedis/onet.v1/log"
 )
 
 // numberGrpAttr is the number of group attributes.
@@ -60,7 +60,7 @@ func TestServiceOnlyEncGrpAttr(t *testing.T) {
 	log.Lvl1("Sending response data... ")
 	dataHolder := make([]*services.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
-		dataHolder[i] = services.NewMedcoClient(el.List[i % 5])
+		dataHolder[i] = services.NewMedcoClient(el.List[i%5])
 		grp := [numberGrpAttr]int64{}
 		aggr := make([]int64, numberAttr)
 
@@ -70,7 +70,7 @@ func TestServiceOnlyEncGrpAttr(t *testing.T) {
 		//client3 -> grp:[3 0], aggr:[0 0 3 0 0 0 0 0 0 0]
 		//...
 		grp[0] = int64(i % 4)
-		aggr[i % numberAttr] = 3
+		aggr[i%numberAttr] = 3
 
 		//convert tab in slice (was a tab only for the test)
 		sliceGrp := make([]int64, numberGrpAttr)
@@ -154,7 +154,7 @@ func TestServiceOnlyClearGrpAttr(t *testing.T) {
 	log.Lvl1("Sending response data... ")
 	dataHolder := make([]*services.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
-		dataHolder[i] = services.NewMedcoClient(el.List[i % 5])
+		dataHolder[i] = services.NewMedcoClient(el.List[i%5])
 		grp := [numberGrpAttr]int64{}
 		aggr := make([]int64, 10)
 		grp[0] = int64(i % 4)
@@ -241,7 +241,7 @@ func TestServiceClearAndEncGrpAttr(t *testing.T) {
 	log.Lvl1("Sending response data... ")
 	dataHolder := make([]*services.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
-		dataHolder[i] = services.NewMedcoClient(el.List[i % 5])
+		dataHolder[i] = services.NewMedcoClient(el.List[i%5])
 		grp := [numberGrpAttr + 1]int64{}
 		aggr := make([]int64, 10)
 		grp[0] = int64(i % 4)
@@ -287,7 +287,7 @@ func TestServiceClearAndEncGrpAttr(t *testing.T) {
 	tabVerify = *grp
 
 	for i := range tabVerify {
-		log.Lvl1(i, ")", (*grpClear)[i], (*grp)[i][:len((*grp)[i]) - 1], "->", (*aggr)[i])
+		log.Lvl1(i, ")", (*grpClear)[i], (*grp)[i][:len((*grp)[i])-1], "->", (*aggr)[i])
 
 		//convert from slice to tab in order to test the values
 		grpTab := [numberGrpAttr + 1]int64{}
@@ -341,7 +341,7 @@ func TestAllServersNoDPs(t *testing.T) {
 	log.Lvl1("Sending response data... ")
 	dataHolder := make([]*services.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
-		dataHolder[i] = services.NewMedcoClient(el.List[i % 2])
+		dataHolder[i] = services.NewMedcoClient(el.List[i%2])
 		grp := [numberGrpAttr + 1]int64{}
 		aggr := make([]int64, 10)
 		grp[0] = int64(i % 4)
@@ -387,7 +387,7 @@ func TestAllServersNoDPs(t *testing.T) {
 	tabVerify = *grp
 
 	for i := range tabVerify {
-		log.Lvl1(i, ")", (*grpClear)[i], (*grp)[i][:len((*grp)[i]) - 1], "->", (*aggr)[i])
+		log.Lvl1(i, ")", (*grpClear)[i], (*grp)[i][:len((*grp)[i])-1], "->", (*aggr)[i])
 
 		//convert from slice to tab in order to test the values
 		grpTab := [numberGrpAttr + 1]int64{}
@@ -491,7 +491,7 @@ func TestAllServersRandomDPs(t *testing.T) {
 	tabVerify = *grp
 
 	for i := range tabVerify {
-		log.Lvl1(i, ")", (*grpClear)[i], (*grp)[i][:len((*grp)[i]) - 1], "->", (*aggr)[i])
+		log.Lvl1(i, ")", (*grpClear)[i], (*grp)[i][:len((*grp)[i])-1], "->", (*aggr)[i])
 
 		//convert from slice to tab in order to test the values
 		grpTab := [numberGrpAttr + 1]int64{}

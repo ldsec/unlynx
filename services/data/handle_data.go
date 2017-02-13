@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"gopkg.in/dedis/onet.v1/log"
 	"github.com/JoaoAndreSa/MedCo/lib"
+	"gopkg.in/dedis/onet.v1/log"
 )
 
 // Groups identifies all different groups to be added to the test data file
@@ -26,7 +26,7 @@ func fillInt64Slice(s []int64, v int64) {
 // random generates a random number between min and max
 func random(min, max int) int {
 	rand.Seed(time.Now().UTC().UnixNano())
-	return rand.Intn(max - min) + min
+	return rand.Intn(max-min) + min
 }
 
 // RandomFillInt64Slice fills a slice with random values between 0 and max
@@ -53,7 +53,7 @@ func AllPossibleGroups(numType []int64, group []int64, pos int) {
 			AllPossibleGroups(numType, group, pos)
 			pos--
 
-			group = append(group[:len(group) - 1], group[len(group):]...)
+			group = append(group[:len(group)-1], group[len(group):]...)
 		}
 	}
 }
@@ -127,7 +127,7 @@ func WriteDataToFile(filename string, testData map[string][]lib.ClientClearRespo
 	defer fileHandle.Close()
 
 	for k, v := range testData {
-		fmt.Fprintln(writer, "#" + k)
+		fmt.Fprintln(writer, "#"+k)
 		writer.Flush()
 
 		for _, entry := range v {
@@ -178,11 +178,11 @@ func ReadDataFromFile(filename string) map[string][]lib.ClientClearResponse {
 			}
 			id = line[1:]
 		} else {
-			line = line[:len(line) - 1]
+			line = line[:len(line)-1]
 			grp := lib.StringToInt64Array(line)
 
 			scanner.Scan()
-			aggr := lib.StringToInt64Array(scanner.Text()[:len(scanner.Text()) - 1])
+			aggr := lib.StringToInt64Array(scanner.Text()[:len(scanner.Text())-1])
 
 			container = append(container, lib.ClientClearResponse{GroupingAttributesClear: grp, AggregatingAttributes: aggr})
 		}

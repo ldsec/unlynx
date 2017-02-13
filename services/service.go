@@ -7,16 +7,16 @@ import (
 
 	"sync"
 
-	"github.com/btcsuite/goleveldb/leveldb/errors"
-	"gopkg.in/dedis/onet.v1/log"
-	"gopkg.in/dedis/onet.v1/network"
-	"github.com/JoaoAndreSa/MedCo/protocols"
-	"gopkg.in/dedis/onet.v1"
-	"github.com/JoaoAndreSa/MedCo/services/data"
 	"github.com/JoaoAndreSa/MedCo/lib"
+	"github.com/JoaoAndreSa/MedCo/protocols"
+	"github.com/JoaoAndreSa/MedCo/services/data"
+	"github.com/btcsuite/goleveldb/leveldb/errors"
+	"github.com/satori/go.uuid"
 	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/crypto.v0/random"
-	"github.com/satori/go.uuid"
+	"gopkg.in/dedis/onet.v1"
+	"gopkg.in/dedis/onet.v1/log"
+	"gopkg.in/dedis/onet.v1/network"
 )
 
 // ServiceName is the registered name for the medco service.
@@ -94,7 +94,7 @@ type FinalResponsesIds struct {
 // Service defines a service in medco case with a survey.
 type Service struct {
 	*onet.ServiceProcessor
-	homePath                     string
+	homePath string
 
 	survey                       map[lib.SurveyID]lib.Survey
 	surveyWithResponses          map[lib.SurveyID]lib.Survey
@@ -119,7 +119,7 @@ var msgSurveyFinalResponseSharing = network.RegisterMessage(&SurveyFinalResponse
 // NewService constructor which registers the needed messages.
 func NewService(c *onet.Context) onet.Service {
 	newMedCoInstance := &Service{
-		ServiceProcessor:             onet.NewServiceProcessor(c),
+		ServiceProcessor: onet.NewServiceProcessor(c),
 		//homePath:                     path,
 		survey:                       make(map[lib.SurveyID]lib.Survey, 0),
 		surveyWithResponses:          make(map[lib.SurveyID]lib.Survey, 0),
@@ -723,7 +723,7 @@ func (s *Service) KeySwitchingPhase(targetSurvey lib.SurveyID) error {
 
 func precomputeForShuffling(serverName string, surveyID lib.SurveyID, surveySecret abstract.Scalar, collectiveKey abstract.Point, lineSize int) []lib.CipherVectorScalar {
 	log.Lvl1(serverName, " precomputes for shuffling of survey ", surveyID)
-	precomputeShuffle := lib.CreatePrecomputedRandomize(network.Suite.Point().Base(), collectiveKey, network.Suite.Cipher(surveySecret.Bytes()), lineSize * 2, 10)
+	precomputeShuffle := lib.CreatePrecomputedRandomize(network.Suite.Point().Base(), collectiveKey, network.Suite.Cipher(surveySecret.Bytes()), lineSize*2, 10)
 
 	encoded, err := data.EncodeCipherVectorScalar(precomputeShuffle)
 
@@ -757,7 +757,7 @@ func precomputationWritingForShuffling(appFlag bool, serverName string, surveyID
 	} else {
 		log.Lvl1(serverName, " precomputes for shuffling of survey ", surveyID)
 
-		precomputeShuffle = lib.CreatePrecomputedRandomize(network.Suite.Point().Base(), collectiveKey, network.Suite.Cipher(surveySecret.Bytes()), lineSize * 2, 10)
+		precomputeShuffle = lib.CreatePrecomputedRandomize(network.Suite.Point().Base(), collectiveKey, network.Suite.Cipher(surveySecret.Bytes()), lineSize*2, 10)
 	}
 	return precomputeShuffle
 }

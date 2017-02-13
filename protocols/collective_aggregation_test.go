@@ -40,7 +40,7 @@ func TestCollectiveAggregation(t *testing.T) {
 
 	//run protocol
 	go protocol.Start()
-	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect * 5 * 2) * time.Millisecond
+	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*5*2) * time.Millisecond
 
 	feedback := protocol.FeedbackChannel
 

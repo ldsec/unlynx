@@ -4,9 +4,9 @@ import (
 	"encoding/gob"
 	"os"
 
+	"github.com/JoaoAndreSa/MedCo/lib"
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"
-	"github.com/JoaoAndreSa/MedCo/lib"
 )
 
 // WriteToGobFile stores object (e.g. lib.Enc_CipherVectorScalar) in a gob file. Note that the object must contain serializable stuff, for example byte arrays.
