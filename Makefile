@@ -29,11 +29,11 @@ test_lint:
 test_playground:
 	cd protocols; \
 	for a in $$( seq 10 ); do \
-	  go test -v -race || exit 1 ; \
+	  go test -v -p=1 -race || exit 1 ; \
 	done;
 
 test_verbose:
-	go test -v -race -short ./...
+	go test -v -race -p=1 -short ./...
 
 # use test_verbose instead if you want to use this Makefile locally
 test_go:
