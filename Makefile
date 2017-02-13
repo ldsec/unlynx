@@ -29,7 +29,7 @@ test_lint:
 test_playground:
 	cd protocols; \
 	for a in $$( seq 10 ); do \
-	  go test -v -p=1 -race || exit 1 ; \
+	  go test -v -race -p=1 || exit 1 ; \
 	done;
 
 test_verbose:
