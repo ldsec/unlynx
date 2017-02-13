@@ -39,7 +39,8 @@ test_verbose:
 test_go:
 	./coveralls.sh
 
-# test: test_fmt test_lint test_go
-test: test_fmt test_lint test_verbose
+test: test_fmt test_lint test_go
+
+local: test_fmt test_lint test_verbose
 
 all: install test

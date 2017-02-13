@@ -109,8 +109,9 @@ type Service struct {
 	nbrLocalSurveys              int
 	sentResponses                []FinalResponsesIds
 	finalResponses               []FinalResponsesIds
-	Mutex                        sync.Mutex
 }
+
+var mutex sync.Mutex
 
 var msgSurveyCreationQuery = network.RegisterMessage(&SurveyCreationQuery{})
 var msgSurveyResponseSharing = network.RegisterMessage(&SurveyResponseSharing{})
@@ -148,6 +149,7 @@ func NewService(c *onet.Context) onet.Service {
 	c.RegisterProcessor(newMedCoInstance, msgSurveyCreationQuery)
 	c.RegisterProcessor(newMedCoInstance, msgSurveyResponseSharing)
 	c.RegisterProcessor(newMedCoInstance, msgSurveyFinalResponseSharing)
+
 	return newMedCoInstance
 }
 
@@ -181,6 +183,7 @@ func (s *Service) PushData(resp *SurveyResponseQuery) {
 // HandleSurveyCreationQuery handles the reception of a survey creation query by instantiating the corresponding survey.
 // in the i2b2 case it will directly run the request response creation
 func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.Message, onet.ClientError) {
+
 	s.appFlag = recq.AppFlag
 	s.nbrLocalSurveys++
 	s.nbrDPs = recq.NbrDPs[s.ServerIdentity().String()]
@@ -224,8 +227,9 @@ func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.
 		//only needed if shuffling needed
 		precomputationWritingForShuffling(s.appFlag, s.ServerIdentity().String(), *recq.SurveyID, surveySecret, recq.Roster.Aggregate, lineSize)
 	}
-	// survey instantiation
 
+	// survey instantiation
+	mutex.Lock() // in fact I don't know why the Lock :P TODO: Find out why
 	(s.survey[*recq.SurveyID]) = lib.Survey{
 		Store:              lib.NewStore(),
 		GenID:              *recq.SurveyGenID,
@@ -249,6 +253,7 @@ func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.
 
 	log.Lvl1(s.ServerIdentity(), " created the survey ", *recq.SurveyID)
 	log.Lvl1(s.ServerIdentity(), " has a list of ", len(s.survey), " survey(s)")
+	mutex.Unlock() // oh well... at least there are no Data Races!!
 
 	if s.appFlag {
 		if recq.DataToProcess == nil {
@@ -816,14 +821,12 @@ func (s *Service) finalShufflingAndKeySwitching(recq *SurveyCreationQuery, respo
 
 //TODO do not work as expected
 func (s *Service) responseAlreadySent(responseToCheck FinalResponsesIds) bool {
-	s.Mutex.Lock()
 	result := false
 	for _, v := range s.sentResponses {
 		if reflect.DeepEqual(v, responseToCheck) {
 			result = true
 		}
 	}
-	s.Mutex.Unlock()
 
 	return result
 }

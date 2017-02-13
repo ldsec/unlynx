@@ -11,7 +11,10 @@ import (
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/simul/monitor"
 	"strconv"
+	"sync"
 )
+
+var mutex sync.Mutex
 
 //Defines the simulation for the service-medCo to be run with cothority/simul.
 func init() {
@@ -108,8 +111,12 @@ func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
 			start1 := lib.StartTimer(strconv.Itoa(i) + "_IndividualSendingData")
 			if lib.PARALLELIZE {
 				go func(i int, client *services.API) {
+					mutex.Lock()
+					index := strconv.Itoa(i)
 					client = services.NewMedcoClient(el.List[i%nbrHosts])
-					client.SendSurveyResponseQuery(*surveyID, testData[strconv.Itoa(i)], el.Aggregate, sim.DataRepetitions)
+					mutex.Unlock()
+
+					client.SendSurveyResponseQuery(*surveyID, testData[index], el.Aggregate, sim.DataRepetitions)
 					defer wg.Done()
 				}(i, client)
 			} else {
