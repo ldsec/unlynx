@@ -82,7 +82,7 @@ func TestServiceOnlyEncGrpAttr(t *testing.T) {
 			}
 		}
 
-		dataHolder[i].SendSurveyResponseQuery(*surveyID, []lib.ClientClearResponse{{nil, sliceGrp, aggr}}, el.Aggregate, 1)
+		dataHolder[i].SendSurveyResponseQuery(*surveyID, []lib.ClientClearResponse{{GroupingAttributesClear: nil, GroupingAttributesEnc: sliceGrp, AggregatingAttributes: aggr}}, el.Aggregate, 1)
 
 		//compute expected results
 		_, ok := expectedResults[grp]
@@ -170,7 +170,7 @@ func TestServiceOnlyClearGrpAttr(t *testing.T) {
 			}
 		}
 
-		dataHolder[i].SendSurveyResponseQuery(*surveyID, []lib.ClientClearResponse{{sliceGrp, nil, aggr}}, el.Aggregate, 1)
+		dataHolder[i].SendSurveyResponseQuery(*surveyID, []lib.ClientClearResponse{{GroupingAttributesClear: sliceGrp, GroupingAttributesEnc: nil, AggregatingAttributes: aggr}}, el.Aggregate, 1)
 
 		//compute expected results
 		_, ok := expectedResults[grp]
@@ -262,7 +262,7 @@ func TestServiceClearAndEncGrpAttr(t *testing.T) {
 			valueClear = i
 		}
 
-		dataHolder[i].SendSurveyResponseQuery(*surveyID, []lib.ClientClearResponse{{[]int64{int64(valueClear)}, sliceGrp, aggr}}, el.Aggregate, 1)
+		dataHolder[i].SendSurveyResponseQuery(*surveyID, []lib.ClientClearResponse{{GroupingAttributesClear: []int64{int64(valueClear)}, GroupingAttributesEnc: sliceGrp, AggregatingAttributes: aggr}}, el.Aggregate, 1)
 
 		grp[numberGrpAttr] = int64(valueClear)
 		//compute expected results
@@ -362,7 +362,7 @@ func TestAllServersNoDPs(t *testing.T) {
 			valueClear = i
 		}
 
-		dataHolder[i].SendSurveyResponseQuery(*surveyID, []lib.ClientClearResponse{{[]int64{int64(valueClear)}, sliceGrp, aggr}}, el.Aggregate, 1)
+		dataHolder[i].SendSurveyResponseQuery(*surveyID, []lib.ClientClearResponse{{GroupingAttributesClear: []int64{int64(valueClear)}, GroupingAttributesEnc: sliceGrp, AggregatingAttributes: aggr}}, el.Aggregate, 1)
 
 		grp[numberGrpAttr] = int64(valueClear)
 
@@ -466,7 +466,7 @@ func TestAllServersRandomDPs(t *testing.T) {
 			valueClear = i
 		}
 
-		dataHolder[i].SendSurveyResponseQuery(*surveyID, []lib.ClientClearResponse{{[]int64{int64(valueClear)}, sliceGrp, aggr}}, el.Aggregate, 1)
+		dataHolder[i].SendSurveyResponseQuery(*surveyID, []lib.ClientClearResponse{{GroupingAttributesClear: []int64{int64(valueClear)}, GroupingAttributesEnc: sliceGrp, AggregatingAttributes: aggr}}, el.Aggregate, 1)
 
 		grp[numberGrpAttr] = int64(valueClear)
 		//compute expected results

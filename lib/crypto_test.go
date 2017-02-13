@@ -25,7 +25,7 @@ func TestNullCipherText(t *testing.T) {
 		t.Fatal("Decryption of encryption of 0 should be 0, got", nullDec)
 	}
 
-	var twoTimesNullEnc = lib.CipherText{suite.Point().Null(), suite.Point().Null()}
+	var twoTimesNullEnc = lib.CipherText{K: suite.Point().Null(), C: suite.Point().Null()}
 	twoTimesNullEnc.Add(*nullEnc, *nullEnc)
 	twoTimesNullDec := lib.DecryptInt(secKey, twoTimesNullEnc)
 

@@ -50,18 +50,18 @@ func TestKeySwitchingProof(t *testing.T) {
 	switchedVect, rs := lib.NewCipherVector(2).KeySwitching(cipherVect, origEphemKeys, pubKeyNew, secKey)
 
 	cps := lib.VectorSwitchKeyProofCreation(cipherVect, *switchedVect, rs, secKey, []abstract.Point{cipherOne.K, cipherOne.K}, pubKeyNew)
-	assert.True(t, lib.PublishedSwitchKeyCheckProof(lib.PublishedSwitchKeyProof{cps, cipherVect, *switchedVect, pubKey, pubKeyNew}))
+	assert.True(t, lib.PublishedSwitchKeyCheckProof(lib.PublishedSwitchKeyProof{Skp: cps, VectBefore: cipherVect, *switchedVect, pubKey, pubKeyNew}))
 
-	assert.False(t, lib.PublishedSwitchKeyCheckProof(lib.PublishedSwitchKeyProof{cps, cipherVect, cipherVect, pubKey, pubKeyNew}))
-	assert.False(t, lib.PublishedSwitchKeyCheckProof(lib.PublishedSwitchKeyProof{cps, *switchedVect, *switchedVect, pubKey, pubKeyNew}))
-	assert.False(t, lib.PublishedSwitchKeyCheckProof(lib.PublishedSwitchKeyProof{cps, cipherVect, *switchedVect, pubKeyNew, pubKeyNew}))
-	assert.False(t, lib.PublishedSwitchKeyCheckProof(lib.PublishedSwitchKeyProof{cps, cipherVect, *switchedVect, pubKey, pubKey}))
+	assert.False(t, lib.PublishedSwitchKeyCheckProof(lib.PublishedSwitchKeyProof{Skp: cps, VectBefore: cipherVect, VectAfter: cipherVect, K: pubKey, Q: pubKeyNew}))
+	assert.False(t, lib.PublishedSwitchKeyCheckProof(lib.PublishedSwitchKeyProof{Skp: cps, VectBefore: *switchedVect, VectAfter: *switchedVect, K: pubKey, Q: pubKeyNew}))
+	assert.False(t, lib.PublishedSwitchKeyCheckProof(lib.PublishedSwitchKeyProof{Skp: cps, VectBefore: cipherVect, VectAfter: *switchedVect, K: pubKeyNew, Q: pubKeyNew}))
+	assert.False(t, lib.PublishedSwitchKeyCheckProof(lib.PublishedSwitchKeyProof{Skp: cps, VectBefore: cipherVect, VectAfter: *switchedVect, K: pubKey, Q: pubKey}))
 
 	cps = lib.VectorSwitchKeyProofCreation(cipherVect, *switchedVect, rs, secKeyNew, []abstract.Point{cipherOne.K, cipherOne.K}, pubKeyNew)
-	assert.False(t, lib.PublishedSwitchKeyCheckProof(lib.PublishedSwitchKeyProof{cps, cipherVect, *switchedVect, pubKeyNew, pubKeyNew}))
+	assert.False(t, lib.PublishedSwitchKeyCheckProof(lib.PublishedSwitchKeyProof{Skp: cps, VectBefore: cipherVect, VectAfter: *switchedVect, K: pubKeyNew, Q: pubKeyNew}))
 
 	cps = lib.VectorSwitchKeyProofCreation(cipherVect, *switchedVect, rs, secKey, []abstract.Point{cipherOne.K, cipherOne.K}, pubKey)
-	assert.False(t, lib.PublishedSwitchKeyCheckProof(lib.PublishedSwitchKeyProof{cps, cipherVect, *switchedVect, pubKeyNew, pubKeyNew}))
+	assert.False(t, lib.PublishedSwitchKeyCheckProof(lib.PublishedSwitchKeyProof{Skp: cps, VectBefore: cipherVect, VectAfter: *switchedVect, K: pubKeyNew, Q: pubKeyNew}))
 }
 
 // TestAddRmProof tests ADD/REMOVE SERVER PROTOCOL proofd
@@ -109,29 +109,29 @@ func TestAddRmProof(t *testing.T) {
 		resultSub[j].C = network.Suite.Point().Sub(w.C, tmp)
 	}
 	prfVectAdd := lib.VectorAddRmProofCreation(cipherVect, resultAdd, secKeyNew, true)
-	prfVectAddPub := lib.PublishedAddRmProof{prfVectAdd, cipherVect, resultAdd, pubKeyNew, true}
+	prfVectAddPub := lib.PublishedAddRmProof{Arp: prfVectAdd, VectBefore: cipherVect, VectAfter: resultAdd, Krm: pubKeyNew, ToAdd: true}
 	prfVectSub := lib.VectorAddRmProofCreation(cipherVect, resultSub, secKeyNew, false)
-	prfVectSubPub := lib.PublishedAddRmProof{prfVectSub, cipherVect, resultSub, pubKeyNew, false}
+	prfVectSubPub := lib.PublishedAddRmProof{Arp: prfVectSub, VectBefore: cipherVect, VectAfter: resultSub, Krm: pubKeyNew, ToAdd: false}
 	assert.True(t, lib.PublishedAddRmCheckProof(prfVectAddPub))
 	assert.True(t, lib.PublishedAddRmCheckProof(prfVectSubPub))
 
-	prfVectAddPub = lib.PublishedAddRmProof{prfVectAdd, resultAdd, resultAdd, pubKeyNew, true}
-	prfVectSubPub = lib.PublishedAddRmProof{prfVectSub, resultAdd, resultSub, pubKeyNew, false}
+	prfVectAddPub = lib.PublishedAddRmProof{Arp: prfVectAdd, VectBefore: resultAdd, VectAfter: resultAdd, Krm: pubKeyNew, ToAdd: true}
+	prfVectSubPub = lib.PublishedAddRmProof{Arp: prfVectSub, VectBefore: resultAdd, VectAfter: resultSub, Krm: pubKeyNew, ToAdd: false}
 	assert.False(t, lib.PublishedAddRmCheckProof(prfVectAddPub))
 	assert.False(t, lib.PublishedAddRmCheckProof(prfVectSubPub))
 
-	prfVectAddPub = lib.PublishedAddRmProof{prfVectAdd, cipherVect, resultSub, pubKeyNew, true}
-	prfVectSubPub = lib.PublishedAddRmProof{prfVectSub, cipherVect, resultAdd, pubKeyNew, false}
+	prfVectAddPub = lib.PublishedAddRmProof{Arp: prfVectAdd, VectBefore: cipherVect, VectAfter: resultSub, Krm: pubKeyNew, ToAdd: true}
+	prfVectSubPub = lib.PublishedAddRmProof{Arp: prfVectSub, VectBefore: cipherVect, VectAfter: resultAdd, Krm: pubKeyNew, ToAdd: false}
 	assert.False(t, lib.PublishedAddRmCheckProof(prfVectAddPub))
 	assert.False(t, lib.PublishedAddRmCheckProof(prfVectSubPub))
 
-	prfVectAddPub = lib.PublishedAddRmProof{prfVectAdd, cipherVect, resultAdd, pubKey, true}
-	prfVectSubPub = lib.PublishedAddRmProof{prfVectSub, cipherVect, resultSub, pubKey, false}
+	prfVectAddPub = lib.PublishedAddRmProof{Arp: prfVectAdd, VectBefore: cipherVect, VectAfter: resultAdd, Krm: pubKey, ToAdd: true}
+	prfVectSubPub = lib.PublishedAddRmProof{Arp: prfVectSub, VectBefore: cipherVect, VectAfter: resultSub, Krm: pubKey, ToAdd: false}
 	assert.False(t, lib.PublishedAddRmCheckProof(prfVectAddPub))
 	assert.False(t, lib.PublishedAddRmCheckProof(prfVectSubPub))
 
-	prfVectAddPub = lib.PublishedAddRmProof{prfVectAdd, cipherVect, resultAdd, pubKeyNew, false}
-	prfVectSubPub = lib.PublishedAddRmProof{prfVectSub, cipherVect, resultSub, pubKeyNew, true}
+	prfVectAddPub = lib.PublishedAddRmProof{Arp: prfVectAdd, VectBefore: cipherVect, VectAfter: resultAdd, Krm: pubKeyNew, ToAdd: false}
+	prfVectSubPub = lib.PublishedAddRmProof{Arp: prfVectSub, VectBefore: cipherVect, VectAfter: resultSub, Krm: pubKeyNew, ToAdd: true}
 	assert.False(t, lib.PublishedAddRmCheckProof(prfVectAddPub))
 	assert.False(t, lib.PublishedAddRmCheckProof(prfVectSubPub))
 
@@ -157,27 +157,27 @@ func TestDeterministicTaggingProof(t *testing.T) {
 	TagSwitchedVect := lib.NewCipherVector(2).DeterministicTagging(&cipherVect, secKey, secKeyNew)
 
 	cps1 := lib.VectorDeterministicTagProofCreation(cipherVect, *TagSwitchedVect, secKeyNew, secKey)
-	result, _ := lib.PublishedDeterministicTaggingCheckProof(lib.PublishedDeterministicTaggingProof{cps1, cipherVect, *TagSwitchedVect, pubKey, nil})
+	result, _ := lib.PublishedDeterministicTaggingCheckProof(lib.PublishedDeterministicTaggingProof{Dhp: cps1, VectBefore: cipherVect, VectAfter: *TagSwitchedVect, K: pubKey, SB: nil})
 	assert.True(t, result)
 
 	cps1 = lib.VectorDeterministicTagProofCreation(cipherVect, *TagSwitchedVect, secKeyNew, secKey)
-	result, _ = lib.PublishedDeterministicTaggingCheckProof(lib.PublishedDeterministicTaggingProof{cps1, cipherVect, *TagSwitchedVect, pubKey, network.Suite.Point().Mul(network.Suite.Point().Base(), secKeyNew)})
+	result, _ = lib.PublishedDeterministicTaggingCheckProof(lib.PublishedDeterministicTaggingProof{Dhp: cps1, VectBefore: cipherVect, VectAfter: *TagSwitchedVect, K: pubKey, SB: network.Suite.Point().Mul(network.Suite.Point().Base(), secKeyNew)})
 	assert.True(t, result)
 
 	cps1 = lib.VectorDeterministicTagProofCreation(cipherVect, *TagSwitchedVect, secKey, secKey)
-	result, _ = lib.PublishedDeterministicTaggingCheckProof(lib.PublishedDeterministicTaggingProof{cps1, cipherVect, *TagSwitchedVect, pubKey, network.Suite.Point().Mul(network.Suite.Point().Base(), secKeyNew)})
+	result, _ = lib.PublishedDeterministicTaggingCheckProof(lib.PublishedDeterministicTaggingProof{Dhp: cps1, VectBefore: cipherVect, VectAfter: *TagSwitchedVect, K: pubKey, SB: network.Suite.Point().Mul(network.Suite.Point().Base(), secKeyNew)})
 	assert.False(t, result)
 
 	cps1 = lib.VectorDeterministicTagProofCreation(cipherVect, *TagSwitchedVect, secKeyNew, secKeyNew)
-	result, _ = lib.PublishedDeterministicTaggingCheckProof(lib.PublishedDeterministicTaggingProof{cps1, cipherVect, *TagSwitchedVect, pubKey, network.Suite.Point().Mul(network.Suite.Point().Base(), secKeyNew)})
+	result, _ = lib.PublishedDeterministicTaggingCheckProof(lib.PublishedDeterministicTaggingProof{Dhp: cps1, VectBefore: cipherVect, VectAfter: *TagSwitchedVect, K: pubKey, SB: network.Suite.Point().Mul(network.Suite.Point().Base(), secKeyNew)})
 	assert.False(t, result)
 
 	cps1 = lib.VectorDeterministicTagProofCreation(cipherVect, *TagSwitchedVect, secKeyNew, secKey)
-	result, _ = lib.PublishedDeterministicTaggingCheckProof(lib.PublishedDeterministicTaggingProof{cps1, cipherVect, *TagSwitchedVect, pubKeyNew, network.Suite.Point().Mul(network.Suite.Point().Base(), secKeyNew)})
+	result, _ = lib.PublishedDeterministicTaggingCheckProof(lib.PublishedDeterministicTaggingProof{Dhp: cps1, VectBefore: cipherVect, VectAfter: *TagSwitchedVect, K: pubKeyNew, SB: network.Suite.Point().Mul(network.Suite.Point().Base(), secKeyNew)})
 	assert.False(t, result)
 
 	cps1 = lib.VectorDeterministicTagProofCreation(cipherVect, *TagSwitchedVect, secKeyNew, secKey)
-	result, _ = lib.PublishedDeterministicTaggingCheckProof(lib.PublishedDeterministicTaggingProof{cps1, cipherVect, *TagSwitchedVect, pubKey, network.Suite.Point().Mul(network.Suite.Point().Base(), secKey)})
+	result, _ = lib.PublishedDeterministicTaggingCheckProof(lib.PublishedDeterministicTaggingProof{Dhp: cps1, VectBefore: cipherVect, VectAfter: *TagSwitchedVect, K: pubKey, SB: network.Suite.Point().Mul(network.Suite.Point().Base(), secKey)})
 	assert.False(t, result)
 }
 
@@ -218,7 +218,7 @@ func TestAggregationProof(t *testing.T) {
 	for j, c := range det1 {
 		deterministicGroupAttributes[j] = lib.DeterministCipherText{Point: c.C}
 	}
-	newDetResponse1 := lib.ClientResponseDet{lib.ClientResponse{ProbaGroupingAttributesEnc: testCipherVect2, AggregatingAttributes: testCipherVect1}, deterministicGroupAttributes.Key()}
+	newDetResponse1 := lib.ClientResponseDet{CR: lib.ClientResponse{ProbaGroupingAttributesEnc: testCipherVect2, AggregatingAttributes: testCipherVect1}, DetTag: deterministicGroupAttributes.Key()}
 
 	det2.TaggingDet(secKey, secKey, pubKey, true)
 
@@ -226,14 +226,14 @@ func TestAggregationProof(t *testing.T) {
 	for j, c := range det2 {
 		deterministicGroupAttributes[j] = lib.DeterministCipherText{Point: c.C}
 	}
-	newDetResponse2 := lib.ClientResponseDet{lib.ClientResponse{ProbaGroupingAttributesEnc: testCipherVect1, AggregatingAttributes: testCipherVect1}, deterministicGroupAttributes.Key()}
+	newDetResponse2 := lib.ClientResponseDet{CR: lib.ClientResponse{ProbaGroupingAttributesEnc: testCipherVect1, AggregatingAttributes: testCipherVect1}, DetTag: deterministicGroupAttributes.Key()}
 
 	det3.TaggingDet(secKey, secKey, pubKey, true)
 	deterministicGroupAttributes = make(lib.DeterministCipherVector, len(det3))
 	for j, c := range det3 {
 		deterministicGroupAttributes[j] = lib.DeterministCipherText{Point: c.C}
 	}
-	newDetResponse3 := lib.ClientResponseDet{lib.ClientResponse{ProbaGroupingAttributesEnc: testCipherVect2, AggregatingAttributes: testCipherVect1}, deterministicGroupAttributes.Key()}
+	newDetResponse3 := lib.ClientResponseDet{CR: lib.ClientResponse{ProbaGroupingAttributesEnc: testCipherVect2, AggregatingAttributes: testCipherVect1}, DetTag: deterministicGroupAttributes.Key()}
 
 	detResponses := make([]lib.ClientResponseDet, 3)
 	detResponses[0] = newDetResponse1
@@ -269,7 +269,7 @@ func TestCollectiveAggregationProof(t *testing.T) {
 	for j, c := range det1 {
 		deterministicGroupAttributes[j] = lib.DeterministCipherText{Point: c.C}
 	}
-	newDetResponse1 := lib.ClientResponseDet{lib.ClientResponse{ProbaGroupingAttributesEnc: testCipherVect2, AggregatingAttributes: testCipherVect1}, deterministicGroupAttributes.Key()}
+	newDetResponse1 := lib.ClientResponseDet{CR: lib.ClientResponse{ProbaGroupingAttributesEnc: testCipherVect2, AggregatingAttributes: testCipherVect1}, DetTag: deterministicGroupAttributes.Key()}
 
 	det2.TaggingDet(secKey, secKey, pubKey, true)
 
@@ -277,14 +277,14 @@ func TestCollectiveAggregationProof(t *testing.T) {
 	for j, c := range det2 {
 		deterministicGroupAttributes[j] = lib.DeterministCipherText{Point: c.C}
 	}
-	newDetResponse2 := lib.ClientResponseDet{lib.ClientResponse{ProbaGroupingAttributesEnc: testCipherVect1, AggregatingAttributes: testCipherVect1}, deterministicGroupAttributes.Key()}
+	newDetResponse2 := lib.ClientResponseDet{CR: lib.ClientResponse{ProbaGroupingAttributesEnc: testCipherVect1, AggregatingAttributes: testCipherVect1}, DetTag: deterministicGroupAttributes.Key()}
 
 	det3.TaggingDet(secKey, secKey, pubKey, true)
 	deterministicGroupAttributes = make(lib.DeterministCipherVector, len(det3))
 	for j, c := range det3 {
 		deterministicGroupAttributes[j] = lib.DeterministCipherText{Point: c.C}
 	}
-	newDetResponse3 := lib.ClientResponseDet{lib.ClientResponse{ProbaGroupingAttributesEnc: testCipherVect2, AggregatingAttributes: testCipherVect1}, deterministicGroupAttributes.Key()}
+	newDetResponse3 := lib.ClientResponseDet{CR: lib.ClientResponse{ProbaGroupingAttributesEnc: testCipherVect2, AggregatingAttributes: testCipherVect1}, DetTag: deterministicGroupAttributes.Key()}
 
 	detResponses := make([]lib.ClientResponseDet, 3)
 	detResponses[0] = newDetResponse1

@@ -636,7 +636,7 @@ func (s *Service) TaggingPhase(targetSurvey lib.SurveyID) error {
 	//check if only clear grouping attributes --> no det tag
 	if len(s.survey[targetSurvey].ShuffledClientResponses[0].ProbaGroupingAttributesEnc) == 0 {
 		for _, v := range s.survey[targetSurvey].ShuffledClientResponses {
-			newClientDetResp := []lib.ClientResponseDet{{lib.ClientResponse{GroupingAttributesClear: v.GroupingAttributesClear, ProbaGroupingAttributesEnc: v.ProbaGroupingAttributesEnc, AggregatingAttributes: v.AggregatingAttributes}, v.GroupingAttributesClear}}
+			newClientDetResp := []lib.ClientResponseDet{{CR: lib.ClientResponse{GroupingAttributesClear: v.GroupingAttributesClear, ProbaGroupingAttributesEnc: v.ProbaGroupingAttributesEnc, AggregatingAttributes: v.AggregatingAttributes}, DetTag: v.GroupingAttributesClear}}
 			(s.survey[targetSurvey]).PushDeterministicClientResponses(newClientDetResp, s.ServerIdentity().String(), (s.survey[targetSurvey]).Proofs)
 		}
 		//mcs.survey[targetSurvey].PushDeterministicClientResponses(mcs.survey[targetSurvey].ShuffledClientResponses, mcs.ServerIdentity().String(), mcs.survey[targetSurvey].Proofs)

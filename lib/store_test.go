@@ -25,7 +25,7 @@ func TestStoring(t *testing.T) {
 	storage := lib.NewStore()
 
 	// AddAggregate & GetAggregateLoc Test
-	storage.InsertClientResponse(lib.ClientResponse{"", lib.CipherVector{}, testCipherVect1})
+	storage.InsertClientResponse(lib.ClientResponse{GroupingAttributesClear: "", ProbaGroupingAttributesEnc: lib.CipherVector{}, AggregatingAttributes: testCipherVect1})
 
 	assert.True(t, (len(storage.PullClientResponses()) == 1))
 	assert.Empty(t, storage.ClientResponses)

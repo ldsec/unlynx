@@ -36,7 +36,8 @@ func TestCipherVectorTagging(t *testing.T) {
 
 	target := []int64{1, 2, 3, 4, 5}
 	cv := lib.EncryptIntVector(groupKey, target)
-	cl := lib.ClientResponse{"", *cv, *cv}
+
+	cl := lib.ClientResponse{GroupingAttributesClear: "", ProbaGroupingAttributesEnc: *cv, AggregatingAttributes: *cv}
 	es := cl.CipherVectorTag(groupKey)
 	_ = es
 }
