@@ -25,7 +25,7 @@ func init() {
 type SimulationMedCo struct {
 	onet.SimulationBFTree
 
-	NbrClients         int     //number of clients/hosts (or in other words data holders)
+	NbrDPs             int     //number of clients (or in other words data holders)
 	NbrResponses       int64   //number of survey entries (ClientClearResponse) per host
 	NbrGroupsClear     int64   //number of non-sensitive (clear) grouping attributes
 	NbrGroupsEnc       int64   //number of sensitive (encrypted) grouping attributes
@@ -70,8 +70,8 @@ func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
 	log.Lvl1("Size:", nbrHosts, ", Rounds:", sim.Rounds)
 
 	// Does not make sense to have more servers than clients!!
-	if nbrHosts > sim.NbrClients {
-		log.Fatal("hosts:", nbrHosts, "must be the same or lower as num_clients:", sim.NbrClients)
+	if nbrHosts > sim.NbrDPs {
+		log.Fatal("hosts:", nbrHosts, "must be the same or lower as num_clients:", sim.NbrDPs)
 		return nil
 	}
 	el := (*config.Tree).Roster
@@ -95,7 +95,7 @@ func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
 		}
 
 		// RandomGroups (true/false) is to respectively generate random or non random entries
-		testData := data.GenerateData(int64(sim.NbrClients), sim.NbrResponses, sim.NbrGroupsClear, sim.NbrGroupsEnc, sim.NbrAggrAttributes, sim.NbrGroupAttributes, sim.RandomGroups)
+		testData := data.GenerateData(int64(sim.NbrDPs), sim.NbrResponses, sim.NbrGroupsClear, sim.NbrGroupsEnc, sim.NbrAggrAttributes, sim.NbrGroupAttributes, sim.RandomGroups)
 
 		/// START SERVICE PROTOCOL
 		if lib.TIME {
@@ -103,7 +103,7 @@ func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
 		}
 
 		log.Lvl1("Sending response data... ")
-		dataHolder := make([]*services.API, sim.NbrClients)
+		dataHolder := make([]*services.API, sim.NbrDPs)
 		wg := lib.StartParallelize(len(dataHolder))
 
 		for i, client := range dataHolder {

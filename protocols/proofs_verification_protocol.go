@@ -6,6 +6,7 @@ package protocols
 
 import (
 	"github.com/JoaoAndreSa/MedCo/lib"
+	"github.com/dedis/cothority/log"
 	"gopkg.in/dedis/onet.v1"
 )
 
@@ -62,6 +63,8 @@ func (p *ProofsVerificationProtocol) Start() error {
 	nbrShuffleProofs := len(p.TargetOfVerification.ShufflingProofs)
 	nbrCollectiveAggrProofs := len(p.TargetOfVerification.CollectiveAggregationProofs)
 	resultSize := nbrKsProofs + nbrAggrProofs + nbrDtProofs + nbrDetTagAddProofs + nbrShuffleProofs + nbrCollectiveAggrProofs
+
+	log.Lvl1(nbrKsProofs, nbrDtProofs, nbrDetTagAddProofs, nbrAggrProofs, nbrShuffleProofs, nbrCollectiveAggrProofs, resultSize)
 
 	result := make([]bool, resultSize)
 
