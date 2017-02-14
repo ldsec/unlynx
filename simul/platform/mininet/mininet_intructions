@@ -1,0 +1,45 @@
+/--------------------------------------------------------------------------------/
+/--------------------------Instructions IC cluster (mininet)---------------------/
+/--------------------------------------------------------------------------------/
+
+- Access iccluster website:
+    http://install.iccluster.epfl.ch/Portal/
+
+- Request servers:
+    1. Reservations/Spot Reservations -> Make a reservation
+        a. select date
+        b. select number of machines
+        c. reserve
+
+- Setup servers:
+    1. MyServers/Setup tab
+        a. add servers to setup list
+        b. choose boot option: Ubuntu trusty and64 installation via network
+        c. select password (Customization): sMaukVI886x
+        d. run setup
+
+    2. MyServers/List
+        a. Actions -> Power -> Power Cycle (for each server)
+
+- Run servers:
+    1. on simul/platform/mininet execute (the numbers in that bash file are relative to the number of each machine, e.g. iccluster026 -> 26):
+        ./init_mininet.sh
+
+    2. To watch what is happening do:
+        watch "ps aux | tail"
+
+    3. To check if installation was successful:
+        mn
+        or comment line in setup_servers.sh and re-run setup_icccluster.sh: #ssh -f $login "./install_mininet.sh &> /dev/null"
+
+    4. To see cores execution htop
+
+- Notes:
+    * To access each machine:
+        ssh root@iccluster026.iccluster.epfl.ch
+        and remove keys from .ssh/know_hosts
+
+    * To execute:
+        ./simul -platform mininet [-debug 1] runfiles/medco.toml
+
+    * You can check the log by accessing cat tmp/mininet.log
