@@ -6,7 +6,7 @@ package protocols
 
 import (
 	"github.com/JoaoAndreSa/MedCo/lib"
-	"github.com/dedis/cothority/log"
+	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1"
 )
 
