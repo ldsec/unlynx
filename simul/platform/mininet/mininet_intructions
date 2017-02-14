@@ -23,7 +23,7 @@
 
 - Run servers:
     1. on simul/platform/mininet execute (the numbers in that bash file are relative to the number of each machine, e.g. iccluster026 -> 26):
-        ./init_mininet.sh
+        ./init_mininet[EXECUTE].sh
 
     2. To watch what is happening do:
         watch "ps aux | tail"
