@@ -27,8 +27,9 @@ type SimulationMedCo struct {
 
 	NbrClients         int     //number of clients/hosts (or in other words data holders)
 	NbrResponses       int64   //number of survey entries (ClientClearResponse) per host
-	NbrGroups          int64   //number of grouping attributes
-	NbrGroupAttributes []int64 //number of different groups inside a group attribute
+	NbrGroupsClear     int64   //number of non-sensitive (clear) grouping attributes
+	NbrGroupsEnc       int64   //number of sensitive (encrypted) grouping attributes
+	NbrGroupAttributes []int64 //number of different groups inside each grouping attribute
 	NbrAggrAttributes  int64   //number of aggregating attributes
 	RandomGroups       bool    //generate data randomly or num entries == num groups (deterministically)
 	DataRepetitions    int     //repeat the number of entries x times (e.g. 1 no repetition; 1000 repetitions)
@@ -86,17 +87,15 @@ func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
 		}
 
 		// Generate Survey Data
-		surveyDesc := lib.SurveyDescription{GroupingAttributesEncCount: int32(sim.NbrGroups), AggregatingAttributesCount: uint32(sim.NbrAggrAttributes)}
+		surveyDesc := lib.SurveyDescription{GroupingAttributesClearCount: int32(sim.NbrGroupsClear), GroupingAttributesEncCount: int32(sim.NbrGroupsEnc), AggregatingAttributesCount: uint32(sim.NbrAggrAttributes)}
 		surveyID, _, err := client.SendSurveyCreationQuery(el, lib.SurveyID(""), lib.SurveyID(""), surveyDesc, sim.Proofs, false, nil, nil, nil, nbrDPs, 0)
 
 		if err != nil {
 			log.Fatal("Service did not start.")
 		}
 
-		log.LLvl1(surveyID)
-
 		// RandomGroups (true/false) is to respectively generate random or non random entries
-		testData := data.GenerateData(int64(sim.NbrClients), sim.NbrResponses, sim.NbrGroups, sim.NbrAggrAttributes, sim.NbrGroupAttributes, sim.RandomGroups)
+		testData := data.GenerateData(int64(sim.NbrClients), sim.NbrResponses, sim.NbrGroupsClear, sim.NbrGroupsEnc, sim.NbrAggrAttributes, sim.NbrGroupAttributes, sim.RandomGroups)
 
 		/// START SERVICE PROTOCOL
 		if lib.TIME {
@@ -152,7 +151,7 @@ func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
 		allData := make([]lib.ClientClearResponse, 0)
 		log.Lvl1("Service output:")
 		for i := range *grp {
-			log.Lvl1(i, ")", (*grpClear)[i], ", ", (*grp)[i], "->", (*aggr)[i])
+			log.Lvl1(i, ")", (*grpClear)[i], ",", (*grp)[i], "->", (*aggr)[i])
 			allData = append(allData, lib.ClientClearResponse{GroupingAttributesClear: (*grpClear)[i], GroupingAttributesEnc: (*grp)[i], AggregatingAttributes: (*aggr)[i]})
 		}
 

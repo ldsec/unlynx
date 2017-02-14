@@ -3,6 +3,7 @@ package data
 import (
 	"bufio"
 	"fmt"
+	"math"
 	"math/rand"
 	"os"
 	"reflect"
@@ -62,12 +63,18 @@ func AllPossibleGroups(numType []int64, group []int64, pos int) {
 //
 //  	filename:    name of the file (.txt) where we will store the test data
 //
-//	num_clients: number of clients/hosts (or in other words data holders)
-//  	num_entries: number of survey entries (ClientClearResponse) per host
-//  	num_groups:  number of grouping attributes
-//  	num_type:    number of different groups inside a group attribute
-//  	num_aggr:    number of aggregating attributes
-func GenerateData(numClients, numEntries, numGroups, numAggr int64, numType []int64, randomGroups bool) map[string][]lib.ClientClearResponse {
+//	numClients: 	number of clients/hosts (or in other words data holders)
+//  	numEntries: 	number of survey entries (ClientClearResponse) per host
+//  	numGroupsClear: number of grouping attributes in clear
+//      numGroupsEnc:   number of grouping attributes encrypted
+//  	numType:    	number of different groups inside a group attribute
+//  	numAggr:    	number of aggregating attributes
+func GenerateData(numClients, numEntries, numGroupsClear, numGroupsEnc, numAggr int64, numType []int64, randomGroups bool) map[string][]lib.ClientClearResponse {
+	if int64(len(numType)) != (numGroupsClear + numGroupsEnc) {
+		log.Fatal("Please ensure that you specify the number of group types for each grouping attribute")
+		return nil
+	}
+
 	testData := make(map[string][]lib.ClientClearResponse)
 
 	if !randomGroups {
@@ -91,12 +98,12 @@ func GenerateData(numClients, numEntries, numGroups, numAggr int64, numType []in
 
 		for j := int64(0); j < numEntries; j++ {
 			aggr := make([]int64, numAggr)
-			// Toggle random data or not
+			// Toggle random data or not (just 0's or 1's)
 
 			//FillInt64Slice(aggr,int64(1))
 			randomFillInt64Slice(aggr, 2)
 
-			grp := make([]int64, numGroups)
+			grp := make([]int64, numGroupsClear+numGroupsEnc)
 
 			if randomGroups {
 				for k := range grp {
@@ -106,13 +113,23 @@ func GenerateData(numClients, numEntries, numGroups, numAggr int64, numType []in
 				grp = Groups[j]
 			}
 
-			clientData[j] = lib.ClientClearResponse{GroupingAttributesClear: grp, AggregatingAttributes: aggr}
+			clientData[j] = lib.ClientClearResponse{GroupingAttributesClear: grp[:numGroupsClear], GroupingAttributesEnc: grp[numGroupsClear : numGroupsClear+numGroupsEnc], AggregatingAttributes: aggr}
 
 		}
 		testData[fmt.Sprintf("%v", i)] = clientData
 	}
-
 	return testData
+}
+
+// flushInt64Data writes a slice of int64 data to file (writer is the file handler)
+func flushInt64Data(writer *bufio.Writer, slice []int64) {
+	for _, g := range slice {
+		fmt.Fprint(writer, fmt.Sprintf("%v ", g))
+		writer.Flush()
+	}
+
+	fmt.Fprint(writer, "\n")
+	writer.Flush()
 }
 
 // WriteDataToFile writes the test_data to 'filename'.txt
@@ -131,21 +148,9 @@ func WriteDataToFile(filename string, testData map[string][]lib.ClientClearRespo
 		writer.Flush()
 
 		for _, entry := range v {
-			for _, g := range entry.GroupingAttributesClear {
-				fmt.Fprint(writer, fmt.Sprintf("%v ", g))
-				writer.Flush()
-			}
-
-			fmt.Fprint(writer, "\n")
-			writer.Flush()
-
-			for _, a := range entry.AggregatingAttributes {
-				fmt.Fprint(writer, fmt.Sprintf("%v ", a))
-				writer.Flush()
-			}
-
-			fmt.Fprint(writer, "\n")
-			writer.Flush()
+			flushInt64Data(writer, entry.GroupingAttributesClear)
+			flushInt64Data(writer, entry.GroupingAttributesEnc)
+			flushInt64Data(writer, entry.AggregatingAttributes)
 		}
 	}
 }
@@ -168,8 +173,7 @@ func ReadDataFromFile(filename string) map[string][]lib.ClientClearResponse {
 	scanner := bufio.NewScanner(fileHandle)
 	for scanner.Scan() {
 		line := scanner.Text()
-
-		if strings.Compare(string(line[0]), "#") == 0 {
+		if len(line) > 0 && strings.Compare(string(line[0]), "#") == 0 {
 			if dataIn != false {
 				testData[id] = container
 				container = make([]lib.ClientClearResponse, 0)
@@ -178,13 +182,18 @@ func ReadDataFromFile(filename string) map[string][]lib.ClientClearResponse {
 			}
 			id = line[1:]
 		} else {
-			line = line[:len(line)-1]
-			grp := lib.StringToInt64Array(line)
+			// Grouping Attributes Clear
+			grpClear := lib.StringToInt64Array(line[:int(math.Max(float64(0), float64(len(line)-1)))])
 
+			// Grouping Attributes Encrypted
 			scanner.Scan()
-			aggr := lib.StringToInt64Array(scanner.Text()[:len(scanner.Text())-1])
+			grpEnc := lib.StringToInt64Array(scanner.Text()[:int(math.Max(float64(0), float64(len(scanner.Text())-1)))])
 
-			container = append(container, lib.ClientClearResponse{GroupingAttributesClear: grp, AggregatingAttributes: aggr})
+			// Aggregating Attributes
+			scanner.Scan()
+			aggr := lib.StringToInt64Array(scanner.Text()[:int(math.Max(float64(0), float64(len(scanner.Text())-1)))])
+
+			container = append(container, lib.ClientClearResponse{GroupingAttributesClear: grpClear, GroupingAttributesEnc: grpEnc, AggregatingAttributes: aggr})
 		}
 	}
 	testData[id] = container
@@ -206,7 +215,6 @@ func ComputeExpectedResult(testData map[string][]lib.ClientClearResponse) []lib.
 			allData = append(allData, elem)
 		}
 	}
-
 	expectedResult := lib.AddInClear(allData)
 	return expectedResult
 }

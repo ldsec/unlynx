@@ -30,5 +30,7 @@ _testmain.go
 .idea/
 
 lib/i2b2/*.xml
+
 simul/test_data/*.csv
 simul/build/
+simul/simul

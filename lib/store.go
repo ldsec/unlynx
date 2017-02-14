@@ -113,6 +113,10 @@ func AddInMap(s map[GroupingKey]ClientResponse, key GroupingKey, added ClientRes
 
 // int64ArrayToString transforms an array into a string
 func int64ArrayToString(s []int64) string {
+	if len(s) == 0 {
+		return ""
+	}
+
 	result := ""
 	for _, elem := range s {
 		result += fmt.Sprintf("%v ", elem)
@@ -122,12 +126,18 @@ func int64ArrayToString(s []int64) string {
 
 // StringToInt64Array transforms an array to a string
 func StringToInt64Array(s string) []int64 {
+	if len(s) == 0 {
+		return make([]int64, 0)
+	}
+
 	container := strings.Split(s, " ")
 
-	result := make([]int64, len(container))
-
-	for i, elem := range container {
-		result[i], _ = strconv.ParseInt(elem, 10, 64)
+	result := make([]int64, 0)
+	for _, elem := range container {
+		if elem != "" {
+			aux, _ := strconv.ParseInt(elem, 10, 64)
+			result = append(result, aux)
+		}
 	}
 	return result
 }
@@ -138,7 +148,7 @@ func AddInClear(s []ClientClearResponse) []ClientClearResponse {
 
 	wg := StartParallelize(0)
 	for _, elem := range s {
-		key := int64ArrayToString(elem.GroupingAttributesClear)
+		key := int64ArrayToString(elem.GroupingAttributesClear) + " " + int64ArrayToString(elem.GroupingAttributesEnc)
 
 		if _, ok := dataMap[key]; ok == false {
 			cpy := make([]int64, len(elem.AggregatingAttributes))
@@ -168,8 +178,14 @@ func AddInClear(s []ClientClearResponse) []ClientClearResponse {
 	result := make([]ClientClearResponse, len(dataMap))
 
 	i := 0
+	numGroupsClear := 0
+	if len(s) > 0 {
+		numGroupsClear = len(s[0].GroupingAttributesClear)
+	}
+
 	for k, v := range dataMap {
-		result[i] = ClientClearResponse{GroupingAttributesClear: StringToInt64Array(k), GroupingAttributesEnc: nil, AggregatingAttributes: v}
+		// *2 (to account for the spaces between the numbers)
+		result[i] = ClientClearResponse{GroupingAttributesClear: StringToInt64Array(k[:numGroupsClear*2]), GroupingAttributesEnc: StringToInt64Array(k[numGroupsClear*2:]), AggregatingAttributes: v}
 		i++
 	}
 

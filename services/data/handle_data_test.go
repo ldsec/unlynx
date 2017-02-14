@@ -10,13 +10,14 @@ import (
 )
 
 const filename = "medco_test_data.txt"
-const num_clients = 1
-const num_entries = 10
-const num_groups = 2
+const numClients = 2
+const numEntries = 20
+const numGroupsClear = 2
+const numGroupsEnc = 1
 
-var num_type = [...]int64{2, 5}
+var num_type = [...]int64{2, 5, 2}
 
-const num_aggr = 100
+const num_aggr = 5
 
 var test_data map[string][]lib.ClientClearResponse
 
@@ -30,12 +31,11 @@ func TestAllPossibleGroups(t *testing.T) {
 	for _, el := range num_type {
 		num_elem = num_elem * int(el)
 	}
-	log.LLvl1(data.Groups)
 	assert.Equal(t, num_elem, len(data.Groups), "Some elements are missing")
 }
 
 func TestGenerateData(t *testing.T) {
-	test_data = data.GenerateData(num_clients, num_entries, num_groups, num_aggr, num_type[:], false)
+	test_data = data.GenerateData(numClients, numEntries, numGroupsClear, numGroupsEnc, num_aggr, num_type[:], false)
 }
 
 func TestWriteDataToFile(t *testing.T) {
@@ -47,9 +47,11 @@ func TestReadDataFromFile(t *testing.T) {
 }
 
 func TestComputeExpectedResult(t *testing.T) {
+	log.LLvl1(data.ReadDataFromFile(filename))
 	assert.Equal(t, test_data, data.ReadDataFromFile(filename), "Data should be the same")
 }
 
 func TestCompareClearResponses(t *testing.T) {
+	log.LLvl1(data.ComputeExpectedResult(data.ReadDataFromFile(filename)))
 	assert.Equal(t, data.CompareClearResponses(data.ComputeExpectedResult(test_data), data.ComputeExpectedResult(data.ReadDataFromFile(filename))), true, "Result should be the same")
 }

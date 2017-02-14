@@ -4,7 +4,7 @@ Bf = 2
 Rounds = 1
 RunWait = 6000000
 Bandwidth = 1000
-NbrGroupAttributes = [2,5]
+NbrGroupAttributes = [2,5,2,5]
 
-Hosts, NbrClients, NbrResponses, NbrGroups, NbrAggrAttributes, RandomGroups, DataRepetitions, Proofs
-5, 5, 10, 2, 10, true, 1, false
+Hosts, NbrClients, NbrResponses, NbrGroupsClear, NbrGroupsEnc, NbrAggrAttributes, RandomGroups, DataRepetitions, Proofs
+5, 5, 100, 2, 2, 10, false, 1, false
