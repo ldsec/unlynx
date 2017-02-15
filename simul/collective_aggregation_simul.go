@@ -9,17 +9,16 @@ import (
 	"gopkg.in/dedis/onet.v1/network"
 )
 
-var suite = network.Suite
-var grpattr = lib.DeterministCipherText{Point: suite.Point().Base()}
-var clientPrivate = suite.Scalar().One() //one -> to have the same for each node
-var clientPublic = suite.Point().Mul(suite.Point().Base(), clientPrivate)
-
-var nbrGroups int
-var nbrGroupAttributes int
-var nbrAggrAttributes int
-var attribMap map[lib.GroupingKey]lib.ClientResponse
+//var suite = network.Suite
+//var grpattr = lib.DeterministCipherText{Point: suite.Point().Base()}
+//var clientPrivate = suite.Scalar().One() //one -> to have the same for each node
+//var clientPublic = suite.Point().Mul(suite.Point().Base(), clientPrivate)
 
 func createDataSet(numberGroups, numberAttributes, numberGroupAttr int) map[lib.GroupingKey]lib.ClientResponse {
+	var secContrib = network.Suite.Scalar().One()
+	var clientPrivate = network.Suite.Scalar().One() //one -> to have the same for each node
+	var clientPublic = network.Suite.Point().Mul(network.Suite.Point().Base(), clientPrivate)
+
 	testCVMap := make(map[lib.GroupingKey]lib.ClientResponse)
 
 	tabGrp := make([]int64, numberGroupAttr)
@@ -29,13 +28,6 @@ func createDataSet(numberGroups, numberAttributes, numberGroupAttr int) map[lib.
 
 	dummyGroups := *lib.EncryptIntVector(clientPublic, tabGrp)
 	for i := 0; i < numberGroups; i++ {
-		newGrpattr := grpattr
-		(lib.DeterministCipherText(newGrpattr).Point).Add(lib.DeterministCipherText(newGrpattr).Point,
-			lib.DeterministCipherText(newGrpattr).Point)
-		groupAttributes := lib.DeterministCipherVector{grpattr, newGrpattr}
-
-		grpattr = newGrpattr
-
 		tab := make([]int64, numberAttributes)
 		for i := 0; i < numberAttributes; i++ {
 			tab[i] = int64(1)
@@ -43,14 +35,13 @@ func createDataSet(numberGroups, numberAttributes, numberGroupAttr int) map[lib.
 
 		cipherVect := *lib.EncryptIntVector(clientPublic, tab)
 
-		testCVMap[groupAttributes.Key()] = lib.ClientResponse{GroupingAttributesClear: "", ProbaGroupingAttributesEnc: dummyGroups, AggregatingAttributes: cipherVect}
+		testCVMap[lib.CipherVectorToDeterministicTag(*lib.EncryptIntVector(clientPublic, []int64{int64(i)}), clientPrivate, secContrib, clientPublic, false)] = lib.ClientResponse{GroupingAttributesClear: "", ProbaGroupingAttributesEnc: dummyGroups, AggregatingAttributes: cipherVect}
 	}
 	return testCVMap
 }
 
 func init() {
 	onet.SimulationRegister("CollectiveAggregation", NewCollectiveAggregationSimulation)
-	onet.GlobalProtocolRegister("CollectiveAggregationSimul", NewAggregationProtocolSimul)
 }
 
 // CollectiveAggregationSimulation holds the state of a simulation.
@@ -60,6 +51,7 @@ type CollectiveAggregationSimulation struct {
 	NbrGroups          int
 	NbrGroupAttributes int
 	NbrAggrAttributes  int
+	Proofs             bool
 }
 
 // NewCollectiveAggregationSimulation is the simulation instance constructor.
@@ -69,13 +61,14 @@ func NewCollectiveAggregationSimulation(config string) (onet.Simulation, error) 
 	if err != nil {
 		return nil, err
 	}
+
 	return sim, nil
 }
 
 // Setup initializes the simulation.
 func (sim *CollectiveAggregationSimulation) Setup(dir string, hosts []string) (*onet.SimulationConfig, error) {
 	sc := &onet.SimulationConfig{}
-	sim.CreateRoster(sc, hosts, 20)
+	sim.CreateRoster(sc, hosts, 2000)
 	err := sim.CreateTree(sc)
 
 	if err != nil {
@@ -85,17 +78,20 @@ func (sim *CollectiveAggregationSimulation) Setup(dir string, hosts []string) (*
 	log.Lvl1("Setup done")
 
 	return sc, nil
+}
 
+// Nodes registers a CollectiveAggregationSimul (with access to the CollectiveAggregationSimulation object) for every node
+func (sim *CollectiveAggregationSimulation) Node(config *onet.SimulationConfig) error {
+	config.Server.ProtocolRegister("CollectiveAggregationSimul",
+		func(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
+			return NewAggregationProtocolSimul(tni, sim)
+		})
+
+	return sim.SimulationBFTree.Node(config)
 }
 
 // Run starts the simulation of the protocol and measures its runtime.
 func (sim *CollectiveAggregationSimulation) Run(config *onet.SimulationConfig) error {
-	nbrGroups = sim.NbrGroups
-	nbrGroupAttributes = sim.NbrGroupAttributes
-	nbrAggrAttributes = sim.NbrAggrAttributes
-
-	attribMap = createDataSet(nbrGroups, nbrAggrAttributes, nbrGroupAttributes)
-
 	for round := 0; round < sim.Rounds; round++ {
 		log.Lvl1("Starting round", round)
 		rooti, err := config.Overlay.CreateProtocol("CollectiveAggregationSimul", config.Tree, onet.NilServiceID)
@@ -120,13 +116,12 @@ func (sim *CollectiveAggregationSimulation) Run(config *onet.SimulationConfig) e
 }
 
 // NewAggregationProtocolSimul is a simulation specific protocol instance constructor that injects test data.
-func NewAggregationProtocolSimul(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
+func NewAggregationProtocolSimul(tni *onet.TreeNodeInstance, sim *CollectiveAggregationSimulation) (onet.ProtocolInstance, error) {
 	protocol, err := protocols.NewCollectiveAggregationProtocol(tni)
 	pap := protocol.(*protocols.CollectiveAggregationProtocol)
 
-	pap.GroupedData = &attribMap
-	pap.Proofs = true
-	_ = pap
-	_ = attribMap
+	data := createDataSet(sim.NbrGroups, sim.NbrAggrAttributes, sim.NbrGroupAttributes)
+	pap.GroupedData = &data
+	pap.Proofs = sim.Proofs
 	return pap, err
 }

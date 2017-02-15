@@ -21,6 +21,8 @@ const CollectiveAggregationProtocolName = "CollectiveAggregation"
 func init() {
 	network.RegisterMessage(DataReferenceMessage{})
 	network.RegisterMessage(ChildAggregatedDataMessage{})
+	network.RegisterMessage(ChildAggregatedDataBytesMessage{})
+	network.RegisterMessage(CADBLengthMessage{})
 	onet.GlobalProtocolRegister(CollectiveAggregationProtocolName, NewCollectiveAggregationProtocol)
 }
 

@@ -40,7 +40,7 @@ func NewLocalAggregationSimulation(config string) (onet.Simulation, error) {
 // Setup initializes the simulation.
 func (sim *LocalAggregationSimulation) Setup(dir string, hosts []string) (*onet.SimulationConfig, error) {
 	sc := &onet.SimulationConfig{}
-	sim.CreateRoster(sc, hosts, 20)
+	sim.CreateRoster(sc, hosts, 2000)
 	err := sim.CreateTree(sc)
 
 	if err != nil {

@@ -127,7 +127,6 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 			deterministicTaggingAddProofs = append(deterministicTaggingAddProofs, oneVectorProofs...)
 
 		}
-		log.LLvl1(len(deterministicTaggingAddProofs))
 
 		// local aggregation **************************************************************
 		tab = make([]int64, sim.NbrAggrAttributes)

@@ -23,6 +23,8 @@ const DeterministicTaggingProtocolName = "DeterministicTagging"
 
 func init() {
 	network.RegisterMessage(DeterministicTaggingMessage{})
+	network.RegisterMessage(DeterministicTaggingBytesMessage{})
+	network.RegisterMessage(DTBLengthMessage{})
 	network.RegisterMessage(lib.ClientResponseDet{})
 	onet.GlobalProtocolRegister(DeterministicTaggingProtocolName, NewDeterministicTaggingProtocol)
 }

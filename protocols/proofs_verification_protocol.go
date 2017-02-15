@@ -7,7 +7,6 @@ package protocols
 import (
 	"github.com/JoaoAndreSa/MedCo/lib"
 	"gopkg.in/dedis/onet.v1"
-	"gopkg.in/dedis/onet.v1/log"
 )
 
 // ProofsVerificationProtocolName is the registered name for the proof verification protocol.
@@ -64,7 +63,7 @@ func (p *ProofsVerificationProtocol) Start() error {
 	nbrCollectiveAggrProofs := len(p.TargetOfVerification.CollectiveAggregationProofs)
 	resultSize := nbrKsProofs + nbrAggrProofs + nbrDtProofs + nbrDetTagAddProofs + nbrShuffleProofs + nbrCollectiveAggrProofs
 
-	log.Lvl1(nbrKsProofs, nbrDtProofs, nbrDetTagAddProofs, nbrAggrProofs, nbrShuffleProofs, nbrCollectiveAggrProofs, resultSize)
+	//log.Lvl1(nbrKsProofs, nbrDtProofs, nbrDetTagAddProofs, nbrAggrProofs, nbrShuffleProofs, nbrCollectiveAggrProofs, resultSize)
 
 	result := make([]bool, resultSize)
 

@@ -11,15 +11,8 @@ import (
 	"gopkg.in/dedis/onet.v1/simul/monitor"
 )
 
-var groupingAttr int
-var aggrAttr int
-var k int
-var proofs bool
-
 func init() {
 	onet.SimulationRegister("DeterministicTagging", NewDeterministicTaggingSimulation)
-	onet.GlobalProtocolRegister("DeterministicTaggingSimul", NewDeterministicTaggingSimul)
-
 }
 
 // DeterministicTaggingSimulation is the structure holding the state of the simulation.
@@ -46,7 +39,7 @@ func NewDeterministicTaggingSimulation(config string) (onet.Simulation, error) {
 // Setup initializes a simulation.
 func (sim *DeterministicTaggingSimulation) Setup(dir string, hosts []string) (*onet.SimulationConfig, error) {
 	sc := &onet.SimulationConfig{}
-	sim.CreateRoster(sc, hosts, 20)
+	sim.CreateRoster(sc, hosts, 2000)
 	err := sim.CreateTree(sc)
 
 	if err != nil {
@@ -58,12 +51,18 @@ func (sim *DeterministicTaggingSimulation) Setup(dir string, hosts []string) (*o
 	return sc, nil
 }
 
+// Nodes registers a DeterministicTaggingSimul (with access to the DeterministicTaggingSimulation object) for every node
+func (sim *DeterministicTaggingSimulation) Node(config *onet.SimulationConfig) error {
+	config.Server.ProtocolRegister("DeterministicTaggingSimul",
+		func(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
+			return NewDeterministicTaggingSimul(tni, sim)
+		})
+
+	return sim.SimulationBFTree.Node(config)
+}
+
 // Run starts the simulation.
 func (sim *DeterministicTaggingSimulation) Run(config *onet.SimulationConfig) error {
-	groupingAttr = sim.NbrGroupAttributes
-	aggrAttr = sim.NbrAggrAttributes
-	k = sim.NbrResponses
-	proofs = sim.Proofs
 	for round := 0; round < sim.Rounds; round++ {
 		log.Lvl1("Starting round", round)
 		rooti, err := config.Overlay.CreateProtocol("DeterministicTaggingSimul", config.Tree, onet.NilServiceID)
@@ -87,22 +86,23 @@ func (sim *DeterministicTaggingSimulation) Run(config *onet.SimulationConfig) er
 }
 
 // NewDeterministicTaggingSimul is a custom protocol constructor specific for simulation purposes.
-func NewDeterministicTaggingSimul(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
+func NewDeterministicTaggingSimul(tni *onet.TreeNodeInstance, sim *DeterministicTaggingSimulation) (onet.ProtocolInstance, error) {
 	protocol, err := protocols.NewDeterministicTaggingProtocol(tni)
 	pap := protocol.(*protocols.DeterministicTaggingProtocol)
-	pap.Proofs = proofs
+	pap.Proofs = sim.Proofs
+
 	if tni.IsRoot() {
 		aggregateKey := pap.Roster().Aggregate
 
 		// Creates dummy data...
-		clientResponses := make([]lib.ClientResponse, k)
-		tabGroup := make([]int64, groupingAttr)
-		tabAttr := make([]int64, aggrAttr)
+		clientResponses := make([]lib.ClientResponse, sim.NbrResponses)
+		tabGroup := make([]int64, sim.NbrGroupAttributes)
+		tabAttr := make([]int64, sim.NbrAggrAttributes)
 
-		for i := 0; i < groupingAttr; i++ {
+		for i := 0; i < sim.NbrGroupAttributes; i++ {
 			tabGroup[i] = int64(1)
 		}
-		for i := 0; i < aggrAttr; i++ {
+		for i := 0; i < sim.NbrAggrAttributes; i++ {
 			tabAttr[i] = int64(1)
 		}
 
@@ -110,7 +110,7 @@ func NewDeterministicTaggingSimul(tni *onet.TreeNodeInstance) (onet.ProtocolInst
 		encryptedAttr := *lib.EncryptIntVector(aggregateKey, tabAttr)
 		clientResponse := lib.ClientResponse{ProbaGroupingAttributesEnc: encryptedGrp, AggregatingAttributes: encryptedAttr}
 
-		for i := 0; i < k; i++ {
+		for i := 0; i < sim.NbrResponses; i++ {
 			clientResponses[i] = clientResponse
 		}
 

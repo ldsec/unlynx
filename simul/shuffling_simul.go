@@ -10,16 +10,8 @@ import (
 	"gopkg.in/dedis/onet.v1/network"
 )
 
-var groupingAttrShuffle int // number of grouping attributes
-var aggrAttrShuffle int     // number of aggregating attributes
-var shuffle int             // number of clients (k)
-var proofsShuffle bool
-var precompute bool
-
 func init() {
 	onet.SimulationRegister("Shuffling", NewShufflingSimulation)
-	onet.GlobalProtocolRegister("ShufflingSimul", NewShufflingSimul)
-
 }
 
 // ShufflingSimulation is the structure holding the state of the simulation.
@@ -54,17 +46,21 @@ func (sim *ShufflingSimulation) Setup(dir string, hosts []string) (*onet.Simulat
 		return nil, err
 	}
 	log.Lvl1("Setup done")
-
 	return sc, nil
+}
+
+// Nodes registers a ShufflingSimul (with access to the ShufflingSimulation object) for every node
+func (sim *ShufflingSimulation) Node(config *onet.SimulationConfig) error {
+	config.Server.ProtocolRegister("ShufflingSimul",
+		func(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
+			return NewShufflingSimul(tni, sim)
+		})
+
+	return sim.SimulationBFTree.Node(config)
 }
 
 // Run starts the simulation.
 func (sim *ShufflingSimulation) Run(config *onet.SimulationConfig) error {
-	groupingAttrShuffle = sim.NbrGroupAttributes
-	aggrAttrShuffle = sim.NbrAggrAttributes
-	shuffle = sim.NbrResponses
-	proofsShuffle = sim.Proofs
-	precompute = sim.PreCompute
 	for round := 0; round < sim.Rounds; round++ {
 		log.Lvl1("Starting round", round)
 		rooti, err := config.Overlay.CreateProtocol("ShufflingSimul", config.Tree, onet.NilServiceID)
@@ -88,26 +84,25 @@ func (sim *ShufflingSimulation) Run(config *onet.SimulationConfig) error {
 }
 
 // NewShufflingSimul is a custom protocol constructor specific for simulation purposes.
-func NewShufflingSimul(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
-
+func NewShufflingSimul(tni *onet.TreeNodeInstance, sim *ShufflingSimulation) (onet.ProtocolInstance, error) {
 	protocol, err := protocols.NewShufflingProtocol(tni)
 	pap := protocol.(*protocols.ShufflingProtocol)
-	pap.Proofs = proofsShuffle
-	if precompute {
-		pap.Precomputed = lib.CreatePrecomputedRandomize(suite.Point().Base(), tni.Roster().Aggregate, network.Suite.Cipher(tni.Private().Bytes()), int(groupingAttrShuffle)+int(aggrAttrShuffle), 10)
+	pap.Proofs = sim.Proofs
+	if sim.PreCompute {
+		pap.Precomputed = lib.CreatePrecomputedRandomize(network.Suite.Point().Base(), tni.Roster().Aggregate, network.Suite.Cipher(tni.Private().Bytes()), int(sim.NbrGroupAttributes)+int(sim.NbrAggrAttributes), 10)
 	}
 	if tni.IsRoot() {
 		aggregateKey := pap.Roster().Aggregate
 
 		// Creates dummy data...
-		clientResponses := make([]lib.ClientResponse, shuffle)
-		tabGroup := make([]int64, groupingAttrShuffle)
-		tabAttr := make([]int64, aggrAttrShuffle)
+		clientResponses := make([]lib.ClientResponse, sim.NbrResponses)
+		tabGroup := make([]int64, sim.NbrGroupAttributes)
+		tabAttr := make([]int64, sim.NbrAggrAttributes)
 
-		for i := 0; i < groupingAttrShuffle; i++ {
+		for i := 0; i < sim.NbrGroupAttributes; i++ {
 			tabGroup[i] = int64(1)
 		}
-		for i := 0; i < aggrAttrShuffle; i++ {
+		for i := 0; i < sim.NbrAggrAttributes; i++ {
 			tabAttr[i] = int64(1)
 		}
 
@@ -115,7 +110,7 @@ func NewShufflingSimul(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error
 		encryptedAttr := *lib.EncryptIntVector(aggregateKey, tabAttr)
 		clientResponse := lib.ClientResponse{GroupingAttributesClear: "", ProbaGroupingAttributesEnc: encryptedGrp, AggregatingAttributes: encryptedAttr}
 
-		for i := 0; i < shuffle; i++ {
+		for i := 0; i < sim.NbrResponses; i++ {
 			clientResponses[i] = clientResponse
 		}
 

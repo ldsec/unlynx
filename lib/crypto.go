@@ -229,16 +229,15 @@ func (cv *CipherVector) DeterministicTagging(cipher *CipherVector, private, secr
 
 // TaggingDet performs one step in the distributed deterministic tagging process and creates corresponding proof
 func (cv *CipherVector) TaggingDet(privKey, secretContrib abstract.Scalar, pubKey abstract.Point, proofs bool) {
-
 	switchedVect := *NewCipherVector(len(*cv)).DeterministicTagging(cv, privKey, secretContrib)
 
-	/*if proofs { 	//TODO: Uncomment please
+	if proofs {
 		p1 := VectorDeterministicTagProofCreation(*cv, switchedVect, secretContrib, privKey)
 		//proof publication
 		commitSecret := suite.Point().Mul(suite.Point().Base(), secretContrib)
 		publishedProof := PublishedDeterministicTaggingProof{Dhp: p1, VectBefore: *cv, VectAfter: switchedVect, K: pubKey, SB: commitSecret}
 		_ = publishedProof
-	}*/
+	}
 
 	*cv = switchedVect
 }

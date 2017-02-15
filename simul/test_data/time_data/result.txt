@@ -1,0 +1,75 @@
+
+
+
+|-------------------------------------------------------------------------|
+|----------------------------- SIMULATION #1 -----------------------------|
+|-------------------------------------------------------------------------|
+
+
+PreCompute:                                        true
+Hosts:                                             3
+NbrResponses:                                      1000
+NbrGroupAttributes:                                0
+NbrAggrAttributes:                                 1
+Proofs:                                            true
+
+bf:                                                2
+depth:                                             1
+rounds:                                            1
+runwait:                                           6000000
+servers:                                           3
+
+Shuffling(START):                                  
+Shuffling(DISPATCH):                               
+Shuffling(START-noProof):                          
+Shuffling(DISPATCH-noProof):                       
+Shuffling(START-Proof):                            
+Shuffling(DISPATCH-Proof):                         
+ShufflingPhase:                                    
+
+Rerandomization-2xADDS:                            
+Rerandomization-2xMULTIS:                          
+
+DetTagging(START):                                 
+DetTagging(DISPATCH):                              
+TaggingPhase:                                      
+
+ShufflingPhase+TaggingPhase:                       
+
+CollectiveAggregation(Aggregation):                
+CollectiveAggregation(ascendingAggregation):       
+CollectiveAggregation(Proof-1stPart):              
+CollectiveAggregation(Proof-2ndPart):              
+AggregationPhase:                                  
+
+KeySwitching(START):                               
+KeySwitching(DISPATCH):                            
+KeySwitchingPhase:                                 
+
+SendingData:                                       
+ServerLocalAggregation:                            
+ClientEncryption:                                  
+IndividualSendSurveyResults:                       
+IndividualNewMedcoClient:                          
+
+
+Simulation:                                        
+Sending:                                           
+Receiving:                                         
+Shuffling(SIMULATION):                             
+MethodSending:                                     
+MethodReceiving:                                   
+SendingBytes:                                      
+sendingKey:                                        
+receivingKey:                                      
+KeySwitching(SIMULATION):                          
+
+
+KeySwitchingVerif:                                 
+DetHashVerif:                                      
+LocalAggrVerif:                                    
+ShufflingVerif:                                    
+CollectiveAggrVerif:                               
+AddRmServer(PROTOCOL):                             
+AddRmServer(PROOFS):                               
+AddRmServer(PROOFSVerif):                          

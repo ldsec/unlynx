@@ -13,12 +13,16 @@ import (
 	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
+	"gopkg.in/dedis/onet.v1/network"
 )
 
 // ShufflingProtocolName is the registered name for the neff shuffle protocol.
 const ShufflingProtocolName = "Shuffling"
 
 func init() {
+	network.RegisterMessage(ShufflingMessage{})
+	network.RegisterMessage(ShufflingBytesMessage{})
+	network.RegisterMessage(SBLengthMessage{})
 	onet.GlobalProtocolRegister(ShufflingProtocolName, NewShufflingProtocol)
 }
 

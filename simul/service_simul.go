@@ -49,7 +49,7 @@ func NewSimulationMedCo(config string) (onet.Simulation, error) {
 // Setup creates the tree used for that simulation
 func (sim *SimulationMedCo) Setup(dir string, hosts []string) (*onet.SimulationConfig, error) {
 	sc := &onet.SimulationConfig{}
-	sim.CreateRoster(sc, hosts, 2000) //2000 is the default port
+	sim.CreateRoster(sc, hosts, 2000)
 	err := sim.CreateTree(sc)
 
 	if err != nil {

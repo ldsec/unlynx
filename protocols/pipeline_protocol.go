@@ -18,9 +18,10 @@ import (
 const MedcoServiceProtocolName = "MedcoServiceProtocol"
 
 func init() {
-	onet.GlobalProtocolRegister(MedcoServiceProtocolName, NewPipelineProcotol)
 	network.RegisterMessage(TriggerFlushCollectedDataMessage{})
 	network.RegisterMessage(DoneFlushCollectedDataMessage{})
+	network.RegisterMessage(DoneProcessingMessage{})
+	onet.GlobalProtocolRegister(MedcoServiceProtocolName, NewPipelineProcotol)
 }
 
 // Messages
