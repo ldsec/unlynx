@@ -14,7 +14,7 @@
 - Setup servers:
     1. MyServers/Setup tab
         a. add servers to setup list
-        b. choose boot option: Ubuntu trusty and64 installation via network
+        b. choose boot option: Ubuntu trusty amd64 installation via network
         c. select password (Customization): sMaukVI886x
         d. run setup
 
@@ -22,8 +22,8 @@
         a. Actions -> Power -> Power Cycle (for each server)
 
 - Run servers:
-    1. on simul/platform/mininet execute (the numbers in that bash file are relative to the number of each machine, e.g. iccluster026 -> 26):
-        ./init_mininet[EXECUTE].sh
+    1. on simul/platform/mininet execute (the numbers are relative to the number of each machine, e.g. iccluster029 -> 29):
+        /Users/jagomes/Go/src/gopkg.in/dedis/onet.v1/simul/platform/mininet/setup_iccluster.sh 29 30 31
 
     2. To watch what is happening do:
         watch "ps aux | tail"
@@ -39,7 +39,7 @@
         ssh root@iccluster026.iccluster.epfl.ch
         and remove keys from .ssh/know_hosts
 
-    * To execute:
+    * To execute in simul/:
         ./simul -platform mininet [-debug 1] runfiles/medco.toml
 
     * You can check the log by accessing cat tmp/mininet.log

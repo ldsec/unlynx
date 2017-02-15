@@ -24,6 +24,8 @@ const KeySwitchingProtocolName = "KeySwitching"
 
 func init() {
 	network.RegisterMessage(KeySwitchedCipherMessage{})
+	network.RegisterMessage(KeySwitchedCipherBytesMessage{})
+	network.RegisterMessage(KSCBLengthMessage{})
 	onet.GlobalProtocolRegister(KeySwitchingProtocolName, NewKeySwitchingProtocol)
 }
 
