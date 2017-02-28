@@ -30,10 +30,11 @@ func init() {
 // ServiceInterface defines the 3 phases of a medco pipeline. The service implements this interface so the
 // protocol can trigger them.
 type ServiceInterface interface {
+	ShufflingPhase(lib.SurveyID) error
 	TaggingPhase(lib.SurveyID) error
 	AggregationPhase(lib.SurveyID) error
+	DROPhase(lib.SurveyID) error
 	KeySwitchingPhase(lib.SurveyID) error
-	ShufflingPhase(lib.SurveyID) error
 }
 
 // TriggerFlushCollectedDataMessage is a message trigger the Map phase at all node.
@@ -161,6 +162,15 @@ func (p *PipelineProtocol) Dispatch() error {
 			start := lib.StartTimer(p.Name() + "_AggregationPhase")
 
 			p.MedcoServiceInstance.AggregationPhase(p.TargetSurvey.ID)
+
+			lib.EndTimer(start)
+		}
+
+		// 2nd phase: DRO
+		if p.IsRoot() {
+			start := lib.StartTimer(p.Name() + "_DROPhase")
+
+			p.MedcoServiceInstance.DROPhase(p.TargetSurvey.ID)
 
 			lib.EndTimer(start)
 		}
