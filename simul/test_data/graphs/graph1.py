@@ -6,12 +6,12 @@ font = {'family': 'Bitstream Vera Sans',
 
 plt.rc('font', **font)
 
-raw_data = {'x_label': ['10', '100', '1K', '10K', '100K'],  # Number responses
-            'y1_label': [0.54, 0.76, 1.51, 7.63, 69.2],  # Communication
-            'y2_label': [0.6 - 0.54, 1 - 0.76, 2 - 1.51, 12 - 7.63, 91 - 69.2],  # Shuffling + DDH
-            'y3_label': [0.5, 0.5, 0.5, 0.5, 0.5],  # Other
-            'empty': [0, 0, 0, 0, 0],  # empty
-            'y2text_label': [0.6, 1, 2, 12, 91]}
+raw_data = {'x_label': ['15K', '150K', '1,5M'],                         # Number responses
+            'y1_label': [8.4 - 1.12, 72.4 - 10.1, 672 - 102],           # Communication
+            'y2_label': [1.12, 10.1, 102],                              # Shuffling + DDT
+            'y3_label': [0.1+0.2, 0.1+0.2, 0.1+0.2],                    # Other + DiffPriv
+            'empty': [0, 0, 0],  # empty
+            'y2text_label': [8.4, 72.4, 672]}
 
 df = pd.DataFrame(raw_data, raw_data['x_label'])
 
@@ -63,7 +63,7 @@ bars.append(ax1.bar(bar_l,
                     width=bar_width,
                     # with y1_label on the bottom
                     bottom=df['y1_label'],
-                    label='Shuffl. + DDT',
+                    label='Verif. Shuffle + DDT',
                     # with alpha 0.5
                     alpha=0.5,
                     # with color
@@ -79,7 +79,7 @@ bars.append(ax1.bar(bar_l,
                     bottom=[i + j for i, j in zip(df['y1_label'], df['y2_label'])],
                     label='Other',
                     # with alpha 0.6
-                    alpha=0.6,
+                    alpha=0.5,
                     # with color
                     color='#3232FF'))
 
@@ -99,33 +99,27 @@ for rects in bars:
 ax1.text(tick_pos[0] + 0.3, height[0] - 0.35, str(df['y3_label'][0]), color='#3232FF', fontweight='bold')
 ax1.text(tick_pos[1] + 0.3, height[1] - 0.35, str(df['y3_label'][1]), color='#3232FF', fontweight='bold')
 ax1.text(tick_pos[2] + 0.3, height[2] - 0.35, str(df['y3_label'][2]), color='#3232FF', fontweight='bold')
-ax1.text(tick_pos[3] + 0.3, height[3] - 0.35, str(df['y3_label'][3]), color='#3232FF', fontweight='bold')
-ax1.text(tick_pos[4] + 0.3, height[4] - 20, str(df['y3_label'][4]), color='#3232FF', fontweight='bold')
 
-ax1.text(tick_pos[0] - 0.15, height[0] - height[0] / 1.2, str(df['y2text_label'][0]), color='black', fontweight='bold')
-ax1.text(tick_pos[1] - 0.05, height[1] - height[1] / 1.2, str(int(df['y2text_label'][1])), color='black',
+ax1.text(tick_pos[0] - 0.09, height[0] - height[0] / 1.2, str(df['y2text_label'][0]), color='black', fontweight='bold')
+ax1.text(tick_pos[1] - 0.07, height[1] - height[1] / 1.1, str(int(df['y2text_label'][1])), color='black',
          fontweight='bold')
-ax1.text(tick_pos[2] - 0.05, height[2] - height[2] / 1.2, str(int(df['y2text_label'][2])), color='black',
-         fontweight='bold')
-ax1.text(tick_pos[3] - 0.12, height[3] - height[3] / 1.2, str(int(df['y2text_label'][3])), color='black',
-         fontweight='bold')
-ax1.text(tick_pos[4] - 0.12, height[4] - height[4] / 1.2, str(int(df['y2text_label'][4])), color='black',
+ax1.text(tick_pos[2] - 0.11, height[2] - height[2] / 1.1, str(int(df['y2text_label'][2])), color='black',
          fontweight='bold')
 
 # Set the label and legends
 ax1.set_ylabel("Runtime (s)", fontsize=22)
-ax1.set_xlabel("Number of responses processed per server", fontsize=22)
+ax1.set_xlabel("Total number of responses", fontsize=22)
 plt.legend(loc='upper left')
 
 ax1.tick_params(axis='x', labelsize=22)
 ax1.tick_params(axis='y', labelsize=22)
 
 labels = [item.get_text() for item in ax1.get_yticklabels()]
-labels[0] = '0'
-labels[1] = '0.1'
-labels[2] = '1'
-labels[3] = '10'
-labels[4] = '100'
+labels[1] = '0'
+labels[2] = '10'
+labels[3] = '100'
+labels[4] = '1K'
+labels[5] = '10K'
 ax1.set_yticklabels(labels)
 
 # Set a buffer around the edge

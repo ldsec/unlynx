@@ -240,7 +240,7 @@ func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.
 	var precomputeShuffle []lib.CipherVectorScalar
 	if recq.SurveyDescription.GroupingAttributesEncCount > 0 {
 		//only needed if shuffling needed
-		precomputationWritingForShuffling(s.appFlag, s.ServerIdentity().String(), *recq.SurveyID, surveySecret, recq.Roster.Aggregate, lineSize)
+		precomputeShuffle = precomputationWritingForShuffling(s.appFlag, s.ServerIdentity().String(), *recq.SurveyID, surveySecret, recq.Roster.Aggregate, lineSize)
 	}
 
 	// survey instantiation

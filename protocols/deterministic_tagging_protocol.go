@@ -186,6 +186,9 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 
 	lib.EndParallelize(wg)
 	log.Lvl1(p.ServerIdentity(), " preparation round for deterministic tagging")
+
+
+
 	sendingDet(*p, deterministicTaggingTargetBef)
 
 	//************ ----- second round, deterministic tag creation  ---- ********************
@@ -292,11 +295,11 @@ func (dtm *DeterministicTaggingMessage) ToBytes() ([]byte, int) {
 		if lib.PARALLELIZE {
 			go func(i int) {
 				defer wg.Done()
-				mutexParallel.Lock()
+				//mutexParallel.Lock()
 
 				bb[i], cvLength = (*dtm).Data[i].Vector.ToBytes()
 
-				mutexParallel.Unlock()
+				//mutexParallel.Unlock()
 			}(i)
 		} else {
 			bb[i], cvLength = (*dtm).Data[i].Vector.ToBytes()

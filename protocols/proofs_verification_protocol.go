@@ -7,6 +7,7 @@ package protocols
 import (
 	"github.com/JoaoAndreSa/MedCo/lib"
 	"gopkg.in/dedis/onet.v1"
+	"gopkg.in/dedis/onet.v1/log"
 )
 
 // ProofsVerificationProtocolName is the registered name for the proof verification protocol.
@@ -63,13 +64,13 @@ func (p *ProofsVerificationProtocol) Start() error {
 	nbrCollectiveAggrProofs := len(p.TargetOfVerification.CollectiveAggregationProofs)
 	resultSize := nbrKsProofs + nbrAggrProofs + nbrDtProofs + nbrDetTagAddProofs + nbrShuffleProofs + nbrCollectiveAggrProofs
 
-	//log.Lvl1(nbrKsProofs, nbrDtProofs, nbrDetTagAddProofs, nbrAggrProofs, nbrShuffleProofs, nbrCollectiveAggrProofs, resultSize)
+	log.Lvl1(nbrKsProofs, nbrDtProofs, nbrDetTagAddProofs, nbrAggrProofs, nbrShuffleProofs, nbrCollectiveAggrProofs, resultSize)
 
 	result := make([]bool, resultSize)
 
 	// key switching ***********************************************************************************
-	wg := lib.StartParallelize(nbrKsProofs)
-	keySwitchTime := lib.StartTimer(p.Name() + "KeySwitchingVerif")
+	/*wg := lib.StartParallelize(nbrKsProofs)
+	keySwitchTime := lib.StartTimer(p.Name() + "_KeySwitchingVerif")
 	for i, v := range p.TargetOfVerification.KeySwitchingProofs {
 		if lib.PARALLELIZE {
 			go func(i int, v lib.PublishedSwitchKeyProof) {
@@ -99,10 +100,10 @@ func (p *ProofsVerificationProtocol) Start() error {
 	}
 
 	lib.EndParallelize(wg)
-	lib.EndTimer(detTagTime)
+	lib.EndTimer(detTagTime)*/
 
 	// deterministic tagging 2 ***********************************************************************************
-	wg = lib.StartParallelize(nbrDetTagAddProofs)
+	wg := lib.StartParallelize(nbrDetTagAddProofs)
 	detTagAddTime := lib.StartTimer(p.Name() + "_DetTagAddVerif")
 	for i, v := range p.TargetOfVerification.DetTagAdditionProofs {
 		if lib.PARALLELIZE {

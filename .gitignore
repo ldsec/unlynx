@@ -32,6 +32,7 @@ _testmain.go
 lib/i2b2/*.xml
 
 simul/test_data/*.csv
+simul/test_data/graphs/*.pdf
 simul/build/
 simul/deploy/
 simul/simul

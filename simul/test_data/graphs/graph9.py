@@ -41,7 +41,7 @@ bars.append(ax1.bar(bar_l,
                     width=bar_width,
                     label='Server Transformation',
                     # with alpha 0.6
-                    alpha=0.6,
+                    alpha=0.5,
                     # with color
                     color='#3F62AD'))
 
@@ -69,7 +69,7 @@ bars.append(ax1.bar(bar_l,
                     bottom=[i + j for i, j in zip(df['y1_label'], df['y2_label'])],
                     label='Proof Verif.',
                     # with alpha 0.6
-                    alpha=0.6,
+                    alpha=0.5,
                     # with color
                     color='#A747B8'))
 

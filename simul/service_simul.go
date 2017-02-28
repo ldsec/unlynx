@@ -1,8 +1,6 @@
 package main
 
 import (
-	//"strconv"
-
 	"github.com/BurntSushi/toml"
 	"github.com/JoaoAndreSa/MedCo/lib"
 	"github.com/JoaoAndreSa/MedCo/services"
@@ -13,8 +11,6 @@ import (
 	"strconv"
 	"sync"
 )
-
-var mutex sync.Mutex
 
 //Defines the simulation for the service-medCo to be run with cothority/simul.
 func init() {
@@ -69,6 +65,12 @@ func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
 	nbrHosts := config.Tree.Size()
 	log.Lvl1("Size:", nbrHosts, ", Rounds:", sim.Rounds)
 
+	//TODO: PLEASE REMOVE THIS AFTERWARDS ... it's very ugly
+	/*for i:=0; i< int(sim.NbrGroupsEnc)-2; i++ {
+		sim.NbrGroupAttributes = append(sim.NbrGroupAttributes,int64(1))
+	}
+	log.LLvl1(sim.NbrGroupAttributes)*/
+
 	// Does not make sense to have more servers than clients!!
 	if nbrHosts > sim.NbrDPs {
 		log.Fatal("hosts:", nbrHosts, "must be the same or lower as num_clients:", sim.NbrDPs)
@@ -106,16 +108,18 @@ func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
 		dataHolder := make([]*services.API, sim.NbrDPs)
 		wg := lib.StartParallelize(len(dataHolder))
 
+		var mutex sync.Mutex
 		for i, client := range dataHolder {
 			start1 := lib.StartTimer(strconv.Itoa(i) + "_IndividualSendingData")
 			if lib.PARALLELIZE {
 				go func(i int, client *services.API) {
 					mutex.Lock()
-					index := strconv.Itoa(i)
-					client = services.NewMedcoClient(el.List[i%nbrHosts])
+					data :=  testData[strconv.Itoa(i)]
+					server := el.List[i%nbrHosts]
 					mutex.Unlock()
 
-					client.SendSurveyResponseQuery(*surveyID, testData[index], el.Aggregate, sim.DataRepetitions)
+					client = services.NewMedcoClient(server)
+					client.SendSurveyResponseQuery(*surveyID, data, el.Aggregate, sim.DataRepetitions)
 					defer wg.Done()
 				}(i, client)
 			} else {
@@ -156,7 +160,7 @@ func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
 		}
 
 		// Test Service Simulation
-		if data.CompareClearResponses(data.ComputeExpectedResult(testData), allData) {
+		if data.CompareClearResponses(data.ComputeExpectedResult(testData,sim.DataRepetitions), allData) {
 			log.LLvl1("Result is right! :)")
 		} else {
 			log.LLvl1("Result is wrong! :(")

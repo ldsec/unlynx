@@ -12,10 +12,11 @@ font = {'family': 'Bitstream Vera Sans',
 
 plt.rc('font', **font)
 
-raw_data = {'x_label': ['10', '100', '1K', '10K'],  # Number aggregating attributes
-            'y2_label': [78, 290, 2416, 23751],  # Shuffling + Verification
-            'y1_label': [21, 66, 494, 3746],  # Shuffling + DDH Proof
-            'y3_label': [1.3, 9, 64, 458]}  # Other
+raw_data = {'x_label': ['10', '100', '1K', '10K'],                                      # Number aggregating attributes
+            'y1_label': [57.1-12.6, 335.6-97.5, 3150-1047, 28103-9856],                 # Shuffling + DDT Proof
+            'y2_label': [20.5, 169.2, 1693, 15819],                                     # Shuffling + Verification
+            'y3_label': [(0.14-0.1)+0.1+(5.5-0.2), (1-0.5)+0.7+(5.5-0.2),
+                         (5.1-3.6)+6.6+(5.5-0.2), (42-15.3)+65+(5.5-0.2)]}              # Other
 
 df = pd.DataFrame(raw_data, raw_data['x_label'])
 
@@ -39,7 +40,7 @@ bars.append(ax1.bar(bar_l,
                     df['y1_label'],
                     # set the width
                     width=bar_width,
-                    label='Shuffl. + DDT Proof',
+                    label='Verif. Shuffle + DDT Proof',
                     # with alpha 0.5
                     alpha=0.5,
                     # with color
@@ -54,9 +55,9 @@ bars.append(ax1.bar(bar_l,
                     width=bar_width,
                     # with y1_label on the bottom
                     bottom=df['y1_label'],
-                    label='Shuffl. + DDT Verif.',
+                    label='Verif. Shuffle + DDT Proof Verif.',
                     # with alpha 0.6
-                    alpha=0.6,
+                    alpha=0.5,
                     # with color
                     color='#cccc00'))
 
@@ -70,7 +71,7 @@ bars.append(ax1.bar(bar_l,
                     bottom=[i + j for i, j in zip(df['y1_label'], df['y2_label'])],
                     label='Other',
                     # with alpha 0.6
-                    alpha=0.6,
+                    alpha=0.5,
                     # with color
                     color='#3232FF'))
 
@@ -87,30 +88,30 @@ for rects in bars:
         height[i] += rect.get_height()
         i += 1
 
-ax1.text(tick_pos[0] - 0.12, height[0] + height[0] / 5, str(df['y3_label'][0]), color='#3232FF', fontweight='bold')
-ax1.text(tick_pos[1] - 0.04, height[1] + height[1] / 5, str(int(df['y3_label'][1])), color='#3232FF', fontweight='bold')
-ax1.text(tick_pos[2] - 0.10, height[2] + height[2] / 5, str(int(df['y3_label'][2])), color='#3232FF', fontweight='bold')
-ax1.text(tick_pos[3] - 0.15, height[3] + height[3] / 5, str(int(df['y3_label'][3])), color='#3232FF', fontweight='bold')
-
-ax1.text(tick_pos[0] - 0.10, height[0] - height[0] / 1.15, str(df['y1_label'][0]), color='black', fontweight='bold')
-ax1.text(tick_pos[1] - 0.10, height[1] - height[1] / 1.08, str(int(df['y1_label'][1])), color='black',
+ax1.text(tick_pos[0] - 0.20, height[0] - height[0] / 1.25, str(df['y1_label'][0]), color='black', fontweight='bold')
+ax1.text(tick_pos[1] - 0.15, height[1] - height[1] / 1.1, str(int(df['y1_label'][1])), color='black',
          fontweight='bold')
-ax1.text(tick_pos[2] - 0.16, height[2] - height[2] / 1.05, str(int(df['y1_label'][2])), color='black',
+ax1.text(tick_pos[2] - 0.24, height[2] - height[2] / 1.1, addComma(str(int(df['y1_label'][2])), 1), color='black',
          fontweight='bold')
-ax1.text(tick_pos[3] - 0.24, height[3] - height[3] / 1.05, addComma(str(int(df['y1_label'][3])), 1), color='black',
+ax1.text(tick_pos[3] - 0.30, height[3] - height[3] / 1.1, addComma(str(int(df['y1_label'][3])), 2), color='black',
          fontweight='bold')
 
-ax1.text(tick_pos[0] - 0.10, height[0] - height[0] / 1.5, str(df['y2_label'][0]), color='black', fontweight='bold')
-ax1.text(tick_pos[1] - 0.15, height[1] - height[1] / 1.5, str(df['y2_label'][1]), color='black', fontweight='bold')
-ax1.text(tick_pos[2] - 0.245, height[2] - height[2] / 1.5, addComma(str(df['y2_label'][2]), 1), color='black',
+ax1.text(tick_pos[0] - 0.17, height[0] - height[0] / 3, str(df['y2_label'][0]), color='black', fontweight='bold')
+ax1.text(tick_pos[1] - 0.25, height[1] - height[1] / 2.7, str(df['y2_label'][1]), color='black', fontweight='bold')
+ax1.text(tick_pos[2] - 0.25, height[2] - height[2] / 2.6, addComma(str(int(df['y2_label'][2])), 1), color='black',
          fontweight='bold')
-ax1.text(tick_pos[3] - 0.29, height[3] - height[3] / 1.5, addComma(str(int(df['y2_label'][3])), 2), color='black',
+ax1.text(tick_pos[3] - 0.29, height[3] - height[3] / 2.5, addComma(str(int(df['y2_label'][3])), 2), color='black',
          fontweight='bold')
+
+ax1.text(tick_pos[0] - 0.19, height[0] + height[0] / 5, str(df['y3_label'][0]), color='#3232FF', fontweight='bold')
+ax1.text(tick_pos[1] - 0.13, height[1] + height[1] / 5, str(df['y3_label'][1]), color='#3232FF', fontweight='bold')
+ax1.text(tick_pos[2] - 0.19, height[2] + height[2] / 5, str(df['y3_label'][2]), color='#3232FF', fontweight='bold')
+ax1.text(tick_pos[3] - 0.09, height[3] + height[3] / 5, str(int(df['y3_label'][3])), color='#3232FF', fontweight='bold')
 
 # Set the label and legends
 ax1.set_ylabel("Runtime (s)", fontsize=22)
 ax1.yaxis.set_label_coords(-0.11, 0.5)
-ax1.set_xlabel("Number of aggregating attributes per response", fontsize=22)
+ax1.set_xlabel("Size of the responses", fontsize=22)
 plt.legend(loc='upper left')
 
 labels = [item.get_text() for item in ax1.get_yticklabels()]
@@ -128,4 +129,4 @@ ax1.tick_params(axis='y', labelsize=22)
 # Set a buffer around the edge
 plt.xlim([min(tick_pos) - bar_width, max(tick_pos) + bar_width + 0.35])
 
-plt.savefig('proof_vary_num_aggregating_attr.pdf', format='pdf')
+plt.savefig('proof_vary_size_response.pdf', format='pdf')

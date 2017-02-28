@@ -13,7 +13,7 @@ import (
 	"gopkg.in/dedis/onet.v1/network"
 )
 
-var mutexParallel sync.Mutex
+//var mutexParallel sync.Mutex
 
 // Objects
 //______________________________________________________________________________________________________________________
@@ -233,14 +233,14 @@ func CreatePrecomputedRandomize(g, h abstract.Point, rand cipher.Stream, lineSiz
 		if PARALLELIZE {
 			go func(i int) {
 				defer (*wg).Done()
-				mutexParallel.Lock()
+				//mutexParallel.Lock()
 				for w := range result[i].CipherV {
 					tmp := network.Suite.Scalar().Pick(rand)
 					result[i].S[w] = tmp
 					result[i].CipherV[w].K = network.Suite.Point().Mul(g, tmp)
 					result[i].CipherV[w].C = network.Suite.Point().Mul(h, tmp)
 				}
-				mutexParallel.Unlock()
+				//mutexParallel.Unlock()
 			}(i)
 		} else {
 			for w := range result[i].CipherV {

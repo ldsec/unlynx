@@ -1,14 +1,17 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 
-raw_data = {'x_label': ['1', '10', '20', '100', '1K'],  # Number of groups
-            'y1_label': [0.1, 0.1, 0.1, 0.2, 0.65],  # Communication
-            'y2_label': [0.1 - 0.1, 0.1 - 0.1, 0.2 - 0.1, 0.2 - 0.2, 0.6 - 0.6],  # Collective Aggregation
-            'y3_label': [0.2, 0.2, 0.3, 0.7, 2.54],  # Communication
-            'y4_label': [0.3 - 0.2, 0.3 - 0.2, 0.4 - 0.3, 0.8 - 0.7, 3.2 - 2.54],  # Key Switching
-            'empty': [0, 0, 0, 0, 0],  # empty
-            'y2text_label': [0.1, 0.1, 0.2, 0.2, 0.6],
-            'y4text_label': [0.3, 0.3, 0.4, 0.8, 3.2]}
+raw_data = {'x_label': ['10', '20', '100', '1K'],                                               # Number of groups
+            'y1_label': [0.02 - 0.001, 0.02 - 0.001, 0.07 - 0.008, 0.36 - 0.05],                # Communication
+            'y2_label': [0.001, 0.001, 0.008, 0.05],                                            # Collective Aggregation
+            'y3_label': [0.18-0.01, 0.18-0.01, 0.18-0.01, 0.18-0.01],                           # Communication (DRO)
+            'y4_label': [0.01, 0.01, 0.01, 0.01],                                               # DRO
+            'y5_label': [0.09 - 0.06, 0.11 - 0.06, 0.4 - 0.2, 2.7 - 1.5],                       # Communication
+            'y6_label': [0.06, 0.06, 0.3, 1.5],                                                 # Key Switching
+            'empty': [0, 0, 0, 0],                                                              # empty
+            'y2text_label': [0.02, 0.02, 0.07, 0.36],
+            'y4text_label': [0.2, 0.2, 0.2, 0.2],
+            'y6text_label': [0.09, 0.11, 0.4, 2.7]}
 
 font = {'family': 'Bitstream Vera Sans',
         'size': 18}
@@ -52,7 +55,7 @@ bars.append(ax1.bar(bar_l,
                     # set the width
                     width=bar_width,
                     # with alpha 0.7
-                    alpha=0.7,
+                    alpha=0.5,
                     # with color
                     hatch='//',
                     color='#8B4513'))
@@ -67,7 +70,7 @@ bars.append(ax1.bar(bar_l,
                     bottom=df['y1_label'],
                     label='Collective Aggr.',
                     # with alpha 0.7
-                    alpha=0.7,
+                    alpha=0.5,
                     # with color
                     color='#8B4513'))
 
@@ -83,7 +86,7 @@ bars.append(ax1.bar(bar_l,
                     alpha=0.5,
                     # with color
                     hatch='//',
-                    color='#808080'))
+                    color='#a4bf0d'))
 
 # Create a bar plot, in position bar_l
 bars.append(ax1.bar(bar_l,
@@ -93,7 +96,38 @@ bars.append(ax1.bar(bar_l,
                     width=bar_width,
                     # with y1_label, y2_label, y3_label on the bottom
                     bottom=[i + j + z for i, j, z in zip(df['y1_label'], df['y2_label'], df['y3_label'])],
-                    label='Key Switching',
+                    label='DRO',
+                    # with alpha 0.5
+                    alpha=0.5,
+                    # with color
+                    color='#a4bf0d'))
+
+# Create a bar plot, in position bar_l
+bars.append(ax1.bar(bar_l,
+                    # using the y5_label data
+                    df['y5_label'],
+                    # set the width
+                    width=bar_width,
+                    # with y1_label, y2_label, y3_label and y4_label on the bottom
+                    bottom=[i + j + z + r for i, j, z, r in zip(df['y1_label'], df['y2_label'], df['y3_label'],
+                                                                   df['y4_label'])],
+                    # with alpha 0.5
+                    alpha=0.5,
+                    # with color
+                    hatch='//',
+                    color='#808080'))
+
+# Create a bar plot, in position bar_l
+bars.append(ax1.bar(bar_l,
+                    # using the y6_label data
+                    df['y6_label'],
+                    # set the width
+                    width=bar_width,
+                    # with y1_label, y2_label, y3_label, y4_label and y5_label on the bottom
+                    bottom=[i + j + z + r + t for i, j, z, r, t in zip(df['y1_label'], df['y2_label'],
+                                                                           df['y3_label'], df['y4_label'],
+                                                                           df['y5_label'])],
+                    label='Key Switch',
                     # with alpha 0.5
                     alpha=0.5,
                     # with color
@@ -115,13 +149,16 @@ ax1.text(tick_pos[0] + 0.3, 0.01, str(df['y2text_label'][0]), color='#8B4513', f
 ax1.text(tick_pos[1] + 0.3, 0.01, str(df['y2text_label'][1]), color='#8B4513', fontweight='bold')
 ax1.text(tick_pos[2] + 0.3, 0.05, str(df['y2text_label'][2]), color='#8B4513', fontweight='bold')
 ax1.text(tick_pos[3] + 0.3, 0.05, str(df['y2text_label'][3]), color='#8B4513', fontweight='bold')
-ax1.text(tick_pos[4] + 0.3, 0.3, str(df['y2text_label'][4]), color='#8B4513', fontweight='bold')
 
-ax1.text(tick_pos[0] - 0.15, height[0] - height[0] / 1.5, str(df['y4text_label'][0]), color='black', fontweight='bold')
-ax1.text(tick_pos[1] - 0.15, height[1] - height[1] / 1.5, str(df['y4text_label'][1]), color='black', fontweight='bold')
-ax1.text(tick_pos[2] - 0.15, height[2] - height[2] / 2, str(df['y4text_label'][2]), color='black', fontweight='bold')
-ax1.text(tick_pos[3] - 0.15, height[3] - height[3] / 2, str(df['y4text_label'][3]), color='black', fontweight='bold')
-ax1.text(tick_pos[4] - 0.15, height[4] - height[4] / 2, str(df['y4text_label'][4]), color='black', fontweight='bold')
+ax1.text(tick_pos[0] - 0.13, height[0] - height[0] / 1.15, str(df['y4text_label'][0]), color='black', fontweight='bold')
+ax1.text(tick_pos[1] - 0.13, height[1] - height[1] / 1.15, str(df['y4text_label'][1]), color='black', fontweight='bold')
+ax1.text(tick_pos[2] - 0.13, height[2] - height[2] / 1.15, str(df['y4text_label'][2]), color='black', fontweight='bold')
+ax1.text(tick_pos[3] - 0.13, height[3] - height[3] / 1.135, str(df['y4text_label'][3]), color='black', fontweight='bold')
+
+ax1.text(tick_pos[0] - 0.17, height[0] - height[0] / 3, str(df['y6text_label'][0]), color='black', fontweight='bold')
+ax1.text(tick_pos[1] - 0.17, height[1] - height[1] / 3, str(df['y6text_label'][1]), color='black', fontweight='bold')
+ax1.text(tick_pos[2] - 0.13, height[2] - height[2] / 3, str(df['y6text_label'][2]), color='black', fontweight='bold')
+ax1.text(tick_pos[3] - 0.13, height[3] - height[3] / 3, str(df['y6text_label'][3]), color='black', fontweight='bold')
 
 # Set the label and legends
 ax1.set_ylabel("Runtime (s)", fontsize=22)

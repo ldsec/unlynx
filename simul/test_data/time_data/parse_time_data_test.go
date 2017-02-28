@@ -6,20 +6,21 @@ import (
 	"github.com/JoaoAndreSa/MedCo/simul/test_data/time_data"
 )
 
-const filename_read = "../shuffling.csv"
+const filename_read = "../proofs_verification.csv"
 const filename_write = "result.txt"
-const filename_toml = "../../runfiles/shuffling.toml"
+const filename_toml = "../../runfiles/proofs_verification.toml"
 
 var flags = []string{"bf", "depth", "rounds", "runwait", "servers", "\n",
 	"Shuffling(START)", "Shuffling(DISPATCH)", "Shuffling(START-noProof)", "Shuffling(DISPATCH-noProof)", "Shuffling(START-Proof)", "Shuffling(DISPATCH-Proof)", "ShufflingPhase", "\n",
 	"Rerandomization-2xADDS", "Rerandomization-2xMULTIS", "\n",
-	"DetTagging(START)", "DetTagging(DISPATCH)", "TaggingPhase", "\n",
+	"DetTagging(START)", "DetTagging(DISPATCH)", "DetTagging1(DISPATCH)", "TaggingPhase", "\n",
 	"ShufflingPhase+TaggingPhase", "\n",
 	"CollectiveAggregation(Aggregation)", "CollectiveAggregation(ascendingAggregation)", "CollectiveAggregation(Proof-1stPart)", "CollectiveAggregation(Proof-2ndPart)", "AggregationPhase", "\n",
+	"LocalAggregation(PROTOCOL)","LocalAggregation(PROOFS)","\n",
 	"KeySwitching(START)", "KeySwitching(DISPATCH)", "KeySwitchingPhase", "\n",
 	"SendingData", "ServerLocalAggregation", "ClientEncryption", "IndividualSendSurveyResults", "IndividualNewMedcoClient", "\n", "\n",
 	"Simulation", "Sending", "Receiving", "Shuffling(SIMULATION)", "MethodSending", "MethodReceiving", "SendingBytes", "sendingKey", "receivingKey", "KeySwitching(SIMULATION)", "\n", "\n",
-	"KeySwitchingVerif", "DetHashVerif", "LocalAggrVerif", "ShufflingVerif", "CollectiveAggrVerif", "AddRmServer(PROTOCOL)", "AddRmServer(PROOFS)", "AddRmServer(PROOFSVerif)"}
+	"KeySwitchingVerif", "DetTagVerif", "DetTagAddVerif", "LocalAggrVerif", "ShufflingVerif", "CollectiveAggrVerif", "AddRmServer(PROTOCOL)", "AddRmServer(PROOFS)", "AddRmServer(PROOFSVerif)"}
 
 func TestReadTomlSetup(t *testing.T) {
 	time_data.ReadTomlSetup(filename_toml, 0)

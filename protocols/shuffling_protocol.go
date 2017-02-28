@@ -174,9 +174,10 @@ func (p *ShufflingProtocol) Start() error {
 func (p *ShufflingProtocol) Dispatch() error {
 
 	shufflingLength := <-p.LengthNodeChannel
-	receiving := lib.StartTimer(p.Name() + "_Receiving")
 
+	receiving := lib.StartTimer(p.Name() + "_Receiving")
 	tmp := <-p.PreviousNodeInPathChannel
+
 	sm := ShufflingMessage{}
 	sm.FromBytes(tmp.Data, shufflingLength.GacbLength, shufflingLength.AabLength, shufflingLength.PgaebLength)
 	shufflingTarget := sm.Data
@@ -238,7 +239,6 @@ func (p *ShufflingProtocol) Dispatch() error {
 		p.sendToNext(&message)
 
 		lib.EndTimer(sending)
-
 	}
 
 	return nil
@@ -270,9 +270,9 @@ func (sm *ShufflingMessage) ToBytes() ([]byte, int, int, int) {
 		if lib.PARALLELIZE {
 			go func(i int) {
 				defer wg.Done()
-				mutexParallel.Lock()
+				//mutexParallel.Lock()
 				bb[i], gacbLength, aabLength, pgaebLength = (*sm).Data[i].ToBytes()
-				mutexParallel.Unlock()
+				//mutexParallel.Unlock()
 			}(i)
 		} else {
 			bb[i], gacbLength, aabLength, pgaebLength = (*sm).Data[i].ToBytes()

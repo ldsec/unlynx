@@ -25,7 +25,6 @@ type ProofsVerificationSimulation struct {
 	NbrGroups          int
 	NbrGroupAttributes int
 	NbrAggrAttributes  int
-	Proofs             bool
 }
 
 // NewProofsVerificationSimulation constructs a key switching simulation.
@@ -146,7 +145,7 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 		for i := 0; i < sim.NbrGroups; i++ {
 			cipherVectGr = *lib.NewCipherVector(sim.NbrGroupAttributes).Add(cipherVectGr, cipherVectGr)
 			det1 := cipherVectGr
-			det1.TaggingDet(secKey, secKey, pubKey, sim.Proofs)
+			det1.TaggingDet(secKey, secKey, pubKey, false)
 			deterministicGroupAttributes := make(lib.DeterministCipherVector, len(det1))
 
 			for j, c := range det1 {

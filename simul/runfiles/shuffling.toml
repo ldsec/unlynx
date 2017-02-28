@@ -1,9 +1,9 @@
 Simulation = "Shuffling"
-Servers = 3
+Servers = 7
 Bf = 2
 Rounds = 1
 RunWait = 6000000
 Bandwidth = 1000
 
 Hosts, NbrResponses, NbrGroupAttributes, NbrAggrAttributes, Proofs, PreCompute
-3, 1000, 0, 1, true, true
+7 , 1000, 0, 1, false, true

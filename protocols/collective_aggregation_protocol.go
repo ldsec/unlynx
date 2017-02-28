@@ -128,7 +128,7 @@ func (p *CollectiveAggregationProtocol) Start() error {
 		return errors.New("No data reference provided for aggregation")
 	}
 
-	log.LLvl1(p.ServerIdentity(), " started a Private Aggregate Protocol (", len(*p.GroupedData), "local group(s) )")
+	log.LLvl1(p.ServerIdentity(), " started a Colective Aggregation Protocol (", len(*p.GroupedData), "local group(s) )")
 	p.SendToChildren(&DataReferenceMessage{})
 	return nil
 }
@@ -249,8 +249,8 @@ func (p *CollectiveAggregationProtocol) ascendingAggregationPhase() *map[lib.Gro
 
 // ToBytes converts a ChildAggregatedDataMessage to a byte array
 func (sm *ChildAggregatedDataMessage) ToBytes() ([]byte, int, int, int, int) {
-	mutex.Lock()
-	defer mutex.Unlock()
+	//mutex.Lock()
+	//defer mutex.Unlock()
 
 	b := make([]byte, 0)
 	bb := make([][]byte, len((*sm).ChildData))
@@ -265,9 +265,9 @@ func (sm *ChildAggregatedDataMessage) ToBytes() ([]byte, int, int, int, int) {
 		if lib.PARALLELIZE {
 			go func(i int) {
 				defer wg.Done()
-				mutexParallel.Lock()
+				//mutexParallel.Lock()
 				bb[i], gacbLength, aabLength, pgaebLength, dtbLength = (*sm).ChildData[i].ToBytes()
-				mutexParallel.Unlock()
+				//mutexParallel.Unlock()
 			}(i)
 		} else {
 			bb[i], gacbLength, aabLength, pgaebLength, dtbLength = (*sm).ChildData[i].ToBytes()

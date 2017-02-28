@@ -207,15 +207,23 @@ func ReadDataFromFile(filename string) map[string][]lib.ClientClearResponse {
 }
 
 // ComputeExpectedResult computes the expected results from the test_data (we can then compare with the result obtained by service MedCo)
-func ComputeExpectedResult(testData map[string][]lib.ClientClearResponse) []lib.ClientClearResponse {
+func ComputeExpectedResult(testData map[string][]lib.ClientClearResponse, dataRepetitions int) []lib.ClientClearResponse {
 	allData := make([]lib.ClientClearResponse, 0)
 
 	for _, v := range testData {
 		for _, elem := range v {
+
+			if dataRepetitions>1{
+				for i := range elem.AggregatingAttributes  {
+					elem.AggregatingAttributes[i]=elem.AggregatingAttributes[i]*int64(dataRepetitions)
+				}
+			}
+
 			allData = append(allData, elem)
 		}
 	}
 	expectedResult := lib.AddInClear(allData)
+	log.LLvl1(expectedResult)
 	return expectedResult
 }
 
