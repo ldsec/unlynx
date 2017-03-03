@@ -17,6 +17,7 @@ import (
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"
+	"sync"
 )
 
 // KeySwitchingProtocolName is the registered name for the key switching protocol.
@@ -282,28 +283,30 @@ func clientResponseKeySwitching(cv *lib.ClientResponse, v lib.ClientResponse, or
 
 // ToBytes converts a KeySwitchedCipherMessage to a byte array
 func (kscm *KeySwitchedCipherMessage) ToBytes() ([]byte, int, int, int, int, int, int) {
-	wg := lib.StartParallelize(len(kscm.DataKey))
 	bb := make([][]byte, len(kscm.DataKey))
 	var l1, l2, l3, l4, l5 int
+
+	wg := lib.StartParallelize(len(kscm.DataKey))
+	var mutexDK sync.Mutex
 	for i := range (*kscm).DataKey {
 		if lib.PARALLELIZE {
 			go func(i int) {
 				defer wg.Done()
 
-				mutex.Lock()
+				mutexDK.Lock()
 				data := (*kscm).DataKey[i]
-				mutex.Unlock()
+				mutexDK.Unlock()
 
 				aux, l1Aux, l2Aux, l3Aux, l4Aux, l5Aux := data.ToBytes()
 
-				mutex.Lock()
+				mutexDK.Lock()
 				bb[i] = aux
 				l1 = l1Aux
 				l2 = l2Aux
 				l3 = l3Aux
 				l4 = l4Aux
 				l5 = l5Aux
-				mutex.Unlock()
+				mutexDK.Unlock()
 
 			}(i)
 		} else {

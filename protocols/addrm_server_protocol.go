@@ -9,6 +9,7 @@ import (
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"
+	"sync"
 )
 
 // AddRmServerProtocolName is the registered name for the local aggregation protocol.
@@ -71,23 +72,26 @@ func (p *AddRmServerProtocol) Start() error {
 	result := make([]lib.ClientResponse, len(p.TargetOfTransformation))
 
 	wg := lib.StartParallelize(len(p.TargetOfTransformation))
+	var mutexToT sync.Mutex
 	for i, v := range p.TargetOfTransformation {
 		if lib.PARALLELIZE {
 			go func(i int, v lib.ClientResponse) {
 				defer wg.Done()
 
-				mutex.Lock()
+				mutexToT.Lock()
 				keyToRm := p.KeyToRm
 				add := p.Add
+				mutexToT.Unlock()
 
 				grpAttributes := v.GroupingAttributesClear
 				aggrAttributes := changeEncryptionKeyVector(v.AggregatingAttributes, keyToRm, add)
 				probaGrpAttributes := changeEncryptionKeyVector(v.ProbaGroupingAttributesEnc, keyToRm, add)
 
+				mutexToT.Lock()
 				result[i].GroupingAttributesClear = grpAttributes
 				result[i].AggregatingAttributes = aggrAttributes
 				result[i].ProbaGroupingAttributesEnc = probaGrpAttributes
-				mutex.Unlock()
+				mutexToT.Unlock()
 			}(i, v)
 		} else {
 			result[i].AggregatingAttributes = changeEncryptionKeyVector(v.AggregatingAttributes, p.KeyToRm, p.Add)
@@ -103,16 +107,17 @@ func (p *AddRmServerProtocol) Start() error {
 	pubs := make([]lib.PublishedAddRmProof, 0)
 	if p.Proofs {
 		wg := lib.StartParallelize(len(result))
+		var mutexCR sync.Mutex
 		for i, v := range result {
 			if lib.PARALLELIZE {
 				go func(i int, v lib.ClientResponse) {
 					defer wg.Done()
 
-					mutex.Lock()
+					mutexCR.Lock()
 					targetAggregatingAttributes := p.TargetOfTransformation[i].AggregatingAttributes
 					probaAggregatingAttributes := p.TargetOfTransformation[i].ProbaGroupingAttributesEnc
 					keyToRm := p.KeyToRm
-					mutex.Unlock()
+					mutexCR.Unlock()
 
 					prfAggr := lib.VectorAddRmProofCreation(targetAggregatingAttributes, v.AggregatingAttributes, p.KeyToRm, p.Add)
 					prfGrp := lib.VectorAddRmProofCreation(probaAggregatingAttributes, v.ProbaGroupingAttributesEnc, p.KeyToRm, p.Add)
@@ -120,9 +125,9 @@ func (p *AddRmServerProtocol) Start() error {
 					pub1 := lib.PublishedAddRmProof{Arp: prfAggr, VectBefore: targetAggregatingAttributes, VectAfter: v.AggregatingAttributes, Krm: ktopub, ToAdd: p.Add}
 					pub2 := lib.PublishedAddRmProof{Arp: prfGrp, VectBefore: probaAggregatingAttributes, VectAfter: v.ProbaGroupingAttributesEnc, Krm: ktopub, ToAdd: p.Add}
 
-					mutex.Lock()
+					mutexCR.Lock()
 					pubs = append(pubs, pub1, pub2)
-					mutex.Unlock()
+					mutexCR.Unlock()
 				}(i, v)
 
 			} else {

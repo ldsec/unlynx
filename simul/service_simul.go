@@ -108,15 +108,15 @@ func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
 		dataHolder := make([]*services.API, sim.NbrDPs)
 		wg := lib.StartParallelize(len(dataHolder))
 
-		var mutex sync.Mutex
+		var mutexDH sync.Mutex
 		for i, client := range dataHolder {
 			start1 := lib.StartTimer(strconv.Itoa(i) + "_IndividualSendingData")
 			if lib.PARALLELIZE {
 				go func(i int, client *services.API) {
-					mutex.Lock()
+					mutexDH.Lock()
 					data := testData[strconv.Itoa(i)]
 					server := el.List[i%nbrHosts]
-					mutex.Unlock()
+					mutexDH.Unlock()
 
 					client = services.NewMedcoClient(server, strconv.Itoa(i+1))
 					client.SendSurveyResponseQuery(*surveyID, data, el.Aggregate, sim.DataRepetitions)

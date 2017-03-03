@@ -17,8 +17,3 @@
 //	- a server leyving or joining the cothority can change data encryption to adapt to new collectiv key
 //	  by using addrm_server_protocol
 package protocols
-
-import "sync"
-
-// Global mutexes to handle concurrency in every protocol
-var mutex sync.Mutex

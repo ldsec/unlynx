@@ -13,6 +13,7 @@ import (
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"
+	"sync"
 )
 
 // CollectiveAggregationProtocolName is the registered name for the collective aggregation protocol.
@@ -258,24 +259,25 @@ func (sm *ChildAggregatedDataMessage) ToBytes() ([]byte, int, int, int, int) {
 	var dtbLength int
 
 	wg := lib.StartParallelize(len((*sm).ChildData))
+	var mutexCD sync.Mutex
 	for i := range (*sm).ChildData {
 		if lib.PARALLELIZE {
 			go func(i int) {
 				defer wg.Done()
 
-				mutex.Lock()
+				mutexCD.Lock()
 				data := (*sm).ChildData[i]
-				mutex.Unlock()
+				mutexCD.Unlock()
 
 				aux, gacbAux, aabAux, pgaebAux, dtbAux := data.ToBytes()
 
-				mutex.Lock()
+				mutexCD.Lock()
 				bb[i] = aux
 				gacbLength = gacbAux
 				aabLength = aabAux
 				pgaebLength = pgaebAux
 				dtbLength = dtbAux
-				mutex.Unlock()
+				mutexCD.Unlock()
 
 			}(i)
 		} else {

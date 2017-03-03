@@ -13,8 +13,6 @@ import (
 	"gopkg.in/dedis/onet.v1/network"
 )
 
-var mutex sync.Mutex
-
 // Objects
 //______________________________________________________________________________________________________________________
 
@@ -227,6 +225,7 @@ func EncryptClientClearResponse(ccr ClientClearResponse, encryptionKey abstract.
 func CreatePrecomputedRandomize(g, h abstract.Point, rand cipher.Stream, lineSize, nbrLines int) []CipherVectorScalar {
 	result := make([]CipherVectorScalar, nbrLines)
 	wg := StartParallelize(len(result))
+	var mutex sync.Mutex
 	for i := range result {
 		result[i].CipherV = make(CipherVector, lineSize)
 		result[i].S = make([]abstract.Scalar, lineSize)

@@ -14,6 +14,7 @@ import (
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"
+	"sync"
 )
 
 // ShufflingProtocolName is the registered name for the neff shuffle protocol.
@@ -266,23 +267,24 @@ func (sm *ShufflingMessage) ToBytes() ([]byte, int, int, int) {
 	var pgaebLength int
 
 	wg := lib.StartParallelize(len((*sm).Data))
+	var mutexD sync.Mutex
 	for i := range (*sm).Data {
 		if lib.PARALLELIZE {
 			go func(i int) {
 				defer wg.Done()
 
-				mutex.Lock()
+				mutexD.Lock()
 				data := (*sm).Data[i]
-				mutex.Unlock()
+				mutexD.Unlock()
 
 				aux, gacbAux, aabAux, pgaebAux := data.ToBytes()
 
-				mutex.Lock()
+				mutexD.Lock()
 				bb[i] = aux
 				gacbLength = gacbAux
 				aabLength = aabAux
 				pgaebLength = pgaebAux
-				mutex.Unlock()
+				mutexD.Unlock()
 			}(i)
 		} else {
 			bb[i], gacbLength, aabLength, pgaebLength = (*sm).Data[i].ToBytes()

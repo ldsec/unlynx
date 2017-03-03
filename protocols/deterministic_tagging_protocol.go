@@ -16,6 +16,7 @@ import (
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"
+	"sync"
 )
 
 // DeterministicTaggingProtocolName is the registered name for the deterministic tagging protocol.
@@ -289,21 +290,22 @@ func (dtm *DeterministicTaggingMessage) ToBytes() ([]byte, int) {
 	bb := make([][]byte, length)
 
 	wg := lib.StartParallelize(length)
+	var mutexD sync.Mutex
 	for i := range (*dtm).Data {
 		if lib.PARALLELIZE {
 			go func(i int) {
 				defer wg.Done()
 
-				mutex.Lock()
+				mutexD.Lock()
 				data := (*dtm).Data[i].Vector
-				mutex.Unlock()
+				mutexD.Unlock()
 
 				aux, cvAux := data.ToBytes()
 
-				mutex.Lock()
+				mutexD.Lock()
 				bb[i] = aux
 				cvLength = cvAux
-				mutex.Unlock()
+				mutexD.Unlock()
 			}(i)
 		} else {
 			bb[i], cvLength = (*dtm).Data[i].Vector.ToBytes()
