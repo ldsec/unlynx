@@ -6,9 +6,9 @@ import (
 	"github.com/JoaoAndreSa/MedCo/simul/test_data/time_data"
 )
 
-const filename_read = "../medco.csv"
+const filename_read = "../collective_aggregation.csv"
 const filename_write = "result.txt"
-const filename_toml = "../../runfiles/medco.toml"
+const filename_toml = "../../runfiles/collective_aggregation.toml"
 
 var flags = []string{"bf", "depth", "rounds", "runwait", "servers", "\n",
 	"Shuffling(START)", "Shuffling(DISPATCH)", "Shuffling(START-noProof)", "Shuffling(DISPATCH-noProof)", "Shuffling(START-Proof)", "Shuffling(DISPATCH-Proof)", "ShufflingPhase", "\n",
