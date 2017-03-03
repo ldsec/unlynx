@@ -79,13 +79,11 @@ func (p *AddRmServerProtocol) Start() error {
 				mutex.Lock()
 				keyToRm := p.KeyToRm
 				add := p.Add
-				mutex.Unlock()
 
 				grpAttributes := v.GroupingAttributesClear
 				aggrAttributes := changeEncryptionKeyVector(v.AggregatingAttributes, keyToRm, add)
 				probaGrpAttributes := changeEncryptionKeyVector(v.ProbaGroupingAttributesEnc, keyToRm, add)
 
-				mutex.Lock()
 				result[i].GroupingAttributesClear = grpAttributes
 				result[i].AggregatingAttributes = aggrAttributes
 				result[i].ProbaGroupingAttributesEnc = probaGrpAttributes
