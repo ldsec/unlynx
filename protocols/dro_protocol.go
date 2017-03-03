@@ -2,8 +2,8 @@ package protocols
 
 import (
 	"github.com/JoaoAndreSa/MedCo/lib"
-	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1"
+	"gopkg.in/dedis/onet.v1/log"
 )
 
 // DROProtocolName is the registered name for the neff shuffle protocol.
