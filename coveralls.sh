@@ -14,7 +14,8 @@ all_tests_passed=true
 echo "mode: atomic" > profile.cov
 for dir in $DIR_SOURCE; do
 	if ! echo $DIR_EXCLUDE | grep -q $dir; then
-	    go test -short -race -p=1 -covermode=atomic -coverprofile=$dir/profile.tmp $dir
+	    #go test -short -race -p=1 -covermode=atomic -coverprofile=$dir/profile.tmp $dir
+	    go test -short -p=1 -covermode=atomic -coverprofile=$dir/profile.tmp $dir
 
     	if [ $? -ne 0 ]; then
         	all_tests_passed=false
