@@ -75,13 +75,9 @@ func (p *AddRmServerProtocol) Start() error {
 		if lib.PARALLELIZE {
 			go func(i int, v lib.ClientResponse) {
 				defer wg.Done()
-				//mutexParallel.Lock()
-
 				result[i].GroupingAttributesClear = v.GroupingAttributesClear
 				result[i].AggregatingAttributes = changeEncryptionKeyVector(v.AggregatingAttributes, p.KeyToRm, p.Add)
 				result[i].ProbaGroupingAttributesEnc = changeEncryptionKeyVector(v.ProbaGroupingAttributesEnc, p.KeyToRm, p.Add)
-
-				//mutexParallel.Unlock()
 			}(i, v)
 		} else {
 			result[i].AggregatingAttributes = changeEncryptionKeyVector(v.AggregatingAttributes, p.KeyToRm, p.Add)
@@ -101,16 +97,22 @@ func (p *AddRmServerProtocol) Start() error {
 			if lib.PARALLELIZE {
 				go func(i int, v lib.ClientResponse) {
 					defer wg.Done()
-					//mutexParallel.Lock()
 
-					prfAggr := lib.VectorAddRmProofCreation(p.TargetOfTransformation[i].AggregatingAttributes, v.AggregatingAttributes, p.KeyToRm, p.Add)
-					prfGrp := lib.VectorAddRmProofCreation(p.TargetOfTransformation[i].ProbaGroupingAttributesEnc, v.ProbaGroupingAttributesEnc, p.KeyToRm, p.Add)
-					ktopub := network.Suite.Point().Mul(network.Suite.Point().Base(), p.KeyToRm)
-					pub1 := lib.PublishedAddRmProof{Arp: prfAggr, VectBefore: p.TargetOfTransformation[i].AggregatingAttributes, VectAfter: v.AggregatingAttributes, Krm: ktopub, ToAdd: p.Add}
-					pub2 := lib.PublishedAddRmProof{Arp: prfGrp, VectBefore: p.TargetOfTransformation[i].ProbaGroupingAttributesEnc, VectAfter: v.ProbaGroupingAttributesEnc, Krm: ktopub, ToAdd: p.Add}
+					mutex.Lock()
+					targetAggregatingAttributes := p.TargetOfTransformation[i].AggregatingAttributes
+					probaAggregatingAttributes := p.TargetOfTransformation[i].ProbaGroupingAttributesEnc
+					keyToRm := p.KeyToRm
+					mutex.Unlock()
+
+					prfAggr := lib.VectorAddRmProofCreation(targetAggregatingAttributes, v.AggregatingAttributes, p.KeyToRm, p.Add)
+					prfGrp := lib.VectorAddRmProofCreation(probaAggregatingAttributes, v.ProbaGroupingAttributesEnc, p.KeyToRm, p.Add)
+					ktopub := network.Suite.Point().Mul(network.Suite.Point().Base(), keyToRm)
+					pub1 := lib.PublishedAddRmProof{Arp: prfAggr, VectBefore: targetAggregatingAttributes, VectAfter: v.AggregatingAttributes, Krm: ktopub, ToAdd: p.Add}
+					pub2 := lib.PublishedAddRmProof{Arp: prfGrp, VectBefore: probaAggregatingAttributes, VectAfter: v.ProbaGroupingAttributesEnc, Krm: ktopub, ToAdd: p.Add}
+
+					mutex.Lock()
 					pubs = append(pubs, pub1, pub2)
-
-					//mutexParallel.Unlock()
+					mutex.Unlock()
 				}(i, v)
 
 			} else {
@@ -134,10 +136,7 @@ func (p *AddRmServerProtocol) Start() error {
 		if lib.PARALLELIZE {
 			go func(v lib.PublishedAddRmProof) {
 				defer wg.Done()
-				//mutexParallel.Lock()
-
 				lib.PublishedAddRmCheckProof(v)
-				//mutexParallel.Unlock()
 			}(v)
 		} else {
 			lib.PublishedAddRmCheckProof(v)

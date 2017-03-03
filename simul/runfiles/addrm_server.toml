@@ -7,3 +7,4 @@ Bandwidth = 1000
 
 Hosts, NbrResponses, NbrGroupAttributes, NbrAggrAttributes, Proof, Add
 1, 10, 2, 10, true, false
+1, 10, 2, 10, true, true

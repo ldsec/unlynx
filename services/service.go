@@ -105,7 +105,7 @@ type Service struct {
 	dpChannel                    chan int // To wait for all data to be read before starting medco service protocol.
 	sharingResponsesChannel      chan int
 	sharingFinalResponsesChannel chan int
-	noise			     lib.CipherText
+	noise                        lib.CipherText
 	current                      lib.SurveyID
 	nbrLocalSurveys              int
 	sentResponses                []FinalResponsesIds
@@ -370,7 +370,7 @@ func (s *Service) HandleI2b2Query(recq *SurveyCreationQuery, handlingServer bool
 		<-pi.(*protocols.PipelineProtocol).FeedbackChannel
 
 		// get aggregation results
-		responses := (s.survey[*recq.SurveyID]).PullCothorityAggregatedClientResponses(false,lib.CipherText{})
+		responses := (s.survey[*recq.SurveyID]).PullCothorityAggregatedClientResponses(false, lib.CipherText{})
 
 		// mode 0
 		if (s.survey[*recq.SurveyID]).ExecutionMode == 0 {
@@ -510,13 +510,13 @@ func (s *Service) HandleI2b2QueryMode2(recq *SurveyCreationQuery, responses []li
 //______________________________________________________________________________________________________________________
 
 // generateNoiseValues generates a number of n noise values from a given probabilistic distribution
-func generateNoiseValues(n int) []int64{
+func generateNoiseValues(n int) []int64 {
 
 	//just for testing
-	example := [...]int64{-4,-3,-2,-2,-1,-1,-1,-1,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,2,2,3,4}
-	noise := make([]int64,0)
+	example := [...]int64{-4, -3, -2, -2, -1, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 3, 4}
+	noise := make([]int64, 0)
 
-	for i:=0;i<n;i++ {
+	for i := 0; i < n; i++ {
 		noise = append(noise, example[i%len(example)])
 	}
 	return noise
@@ -588,14 +588,14 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 		pi.(*protocols.CollectiveAggregationProtocol).Proofs = s.survey[target].Proofs
 	case protocols.DROProtocolName:
 		pi, err = protocols.NewShufflingProtocol(tn)
-		shuffle := pi.(* protocols.ShufflingProtocol)
+		shuffle := pi.(*protocols.ShufflingProtocol)
 		shuffle.Proofs = true
 		shuffle.Precomputed = nil
 
 		if tn.IsRoot() {
-			clientResponses := make([]lib.ClientResponse,0)
-			noiseArray:=generateNoiseValues(1000)
-			for _,v:=range noiseArray{
+			clientResponses := make([]lib.ClientResponse, 0)
+			noiseArray := generateNoiseValues(1000)
+			for _, v := range noiseArray {
 				clientResponses = append(clientResponses, lib.ClientResponse{GroupingAttributesClear: "", ProbaGroupingAttributesEnc: nil, AggregatingAttributes: *lib.EncryptIntVector(s.survey[target].Roster.Aggregate, []int64{v})})
 			}
 			shuffle.TargetOfShuffle = &clientResponses
@@ -613,7 +613,8 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 			} else {
 				//Unlynx
 				//true/s.noise to enable the DRO protocol
-				coaggr = s.survey[target].PullCothorityAggregatedClientResponses(true, s.noise)
+				//coaggr = s.survey[target].PullCothorityAggregatedClientResponses(true, s.noise)
+				coaggr = s.survey[target].PullCothorityAggregatedClientResponses(false, s.noise)
 			}
 			keySwitch.TargetOfSwitch = &coaggr
 			tmp1 := s.survey[target].ClientPublic
@@ -760,7 +761,7 @@ func (s *Service) DROPhase(targetSurvey lib.SurveyID) error {
 	}
 	shufflingResult := <-pi.(*protocols.ShufflingProtocol).FeedbackChannel
 
-	s.noise=shufflingResult[0].AggregatingAttributes[0]
+	s.noise = shufflingResult[0].AggregatingAttributes[0]
 	return err
 }
 

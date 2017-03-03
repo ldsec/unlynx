@@ -18,7 +18,7 @@
 //	  by using addrm_server_protocol
 package protocols
 
-//import "sync"
+import "sync"
 
 // Global mutexes to handle concurrency in every protocol
-//var mutex, mutexParallel sync.Mutex
+var mutex sync.Mutex

@@ -167,13 +167,13 @@ func (p *PipelineProtocol) Dispatch() error {
 		}
 
 		// 2nd phase: DRO
-		if p.IsRoot() {
+		/*if p.IsRoot() {
 			start := lib.StartTimer(p.Name() + "_DROPhase")
 
 			p.MedcoServiceInstance.DROPhase(p.TargetSurvey.ID)
 
 			lib.EndTimer(start)
-		}
+		}*/
 
 		// 3rd phase: Key Switching
 		if p.IsRoot() {

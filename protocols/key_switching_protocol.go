@@ -282,9 +282,6 @@ func clientResponseKeySwitching(cv *lib.ClientResponse, v lib.ClientResponse, or
 
 // ToBytes converts a KeySwitchedCipherMessage to a byte array
 func (kscm *KeySwitchedCipherMessage) ToBytes() ([]byte, int, int, int, int, int, int) {
-	//mutex.Lock()
-	//defer mutex.Unlock()
-
 	wg := lib.StartParallelize(len(kscm.DataKey))
 	bb := make([][]byte, len(kscm.DataKey))
 	var l1, l2, l3, l4, l5 int
@@ -292,9 +289,22 @@ func (kscm *KeySwitchedCipherMessage) ToBytes() ([]byte, int, int, int, int, int
 		if lib.PARALLELIZE {
 			go func(i int) {
 				defer wg.Done()
-				//mutexParallel.Lock()
-				bb[i], l1, l2, l3, l4, l5 = (*kscm).DataKey[i].ToBytes()
-				//mutexParallel.Unlock()
+
+				mutex.Lock()
+				data := (*kscm).DataKey[i]
+				mutex.Unlock()
+
+				aux, l1Aux, l2Aux, l3Aux, l4Aux, l5Aux := data.ToBytes()
+
+				mutex.Lock()
+				bb[i] = aux
+				l1 = l1Aux
+				l2 = l2Aux
+				l3 = l3Aux
+				l4 = l4Aux
+				l5 = l5Aux
+				mutex.Unlock()
+
 			}(i)
 		} else {
 			bb[i], l1, l2, l3, l4, l5 = (*kscm).DataKey[i].ToBytes()

@@ -72,7 +72,7 @@ func TestStoring(t *testing.T) {
 	detResponsesMap[detResponses[2].DetTag] = detResponses[2].CR
 	storage.PushCothorityAggregatedClientResponses(detResponsesMap)
 
-	assert.True(t, len(storage.PullCothorityAggregatedClientResponses()) == 2)
+	assert.True(t, len(storage.PullCothorityAggregatedClientResponses(false, lib.CipherText{})) == 2)
 	assert.Empty(t, storage.GroupedDeterministicClientResponses, 0)
 
 	//key switching related part

@@ -1,9 +1,9 @@
 package protocols
 
 import (
-	"gopkg.in/dedis/onet.v1"
 	"github.com/JoaoAndreSa/MedCo/lib"
 	"github.com/dedis/cothority/log"
+	"gopkg.in/dedis/onet.v1"
 )
 
 // DROProtocolName is the registered name for the neff shuffle protocol.
@@ -13,10 +13,9 @@ const DROProtocolName = "DRO"
 // noise values
 var noiseArray []int64
 
-
 func init() {
 	//TODO: number of noise values hardcoded
-	noiseArray=generateNoiseValues(1000)
+	noiseArray = generateNoiseValues(1000)
 
 	onet.GlobalProtocolRegister(DROProtocolName, NewDROProtocol)
 }
@@ -51,10 +50,9 @@ func (p *DROProtocol) Start() error {
 	shuffle.Proofs = true
 	shuffle.Precomputed = nil
 
+	clientResponses := make([]lib.ClientResponse, 0)
 
-	clientResponses := make([]lib.ClientResponse,0)
-
-	for _,v:=range noiseArray{
+	for _, v := range noiseArray {
 		clientResponses = append(clientResponses, lib.ClientResponse{GroupingAttributesClear: "", ProbaGroupingAttributesEnc: nil, AggregatingAttributes: *lib.EncryptIntVector(p.Roster().Aggregate, []int64{v})})
 	}
 
@@ -82,13 +80,13 @@ func (p *DROProtocol) Dispatch() error {
 //______________________________________________________________________________________________________________________
 
 // generateNoiseValues generates a number of n noise values from a given probabilistic distribution
-func generateNoiseValues(n int) []int64{
+func generateNoiseValues(n int) []int64 {
 
 	//just for testing
-	example := [...]int64{-4,-3,-2,-2,-1,-1,-1,-1,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,2,2,3,4}
-	noise := make([]int64,0)
+	example := [...]int64{-4, -3, -2, -2, -1, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 3, 4}
+	noise := make([]int64, 0)
 
-	for i:=0;i<n;i++ {
+	for i := 0; i < n; i++ {
 		noise = append(noise, example[i%len(example)])
 	}
 	return noise

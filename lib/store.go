@@ -209,7 +209,7 @@ func (s *Store) HasNextAggregatedClientResponses() bool {
 var aggregatedGrps []GroupingKey
 
 // PullCothorityAggregatedClientResponses returns the local results of the grouping.
-func (s *Store) PullCothorityAggregatedClientResponses(diffPri bool,noise CipherText) []ClientResponse {
+func (s *Store) PullCothorityAggregatedClientResponses(diffPri bool, noise CipherText) []ClientResponse {
 	aggregatedResults := make([]ClientResponse, len(s.GroupedDeterministicClientResponses))
 	aggregatedGrps = make([]GroupingKey, len(s.GroupedDeterministicClientResponses))
 	count := 0
@@ -221,10 +221,9 @@ func (s *Store) PullCothorityAggregatedClientResponses(diffPri bool,noise Cipher
 
 	s.GroupedDeterministicClientResponses = make(map[GroupingKey]ClientResponse)
 
-	if diffPri == true{
-
-		for _,v := range aggregatedResults{
-			for _,aggr := range v.AggregatingAttributes {
+	if diffPri == true {
+		for _, v := range aggregatedResults {
+			for _, aggr := range v.AggregatingAttributes {
 				aggr.Add(aggr, noise)
 			}
 		}

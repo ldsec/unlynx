@@ -270,9 +270,19 @@ func (sm *ShufflingMessage) ToBytes() ([]byte, int, int, int) {
 		if lib.PARALLELIZE {
 			go func(i int) {
 				defer wg.Done()
-				//mutexParallel.Lock()
-				bb[i], gacbLength, aabLength, pgaebLength = (*sm).Data[i].ToBytes()
-				//mutexParallel.Unlock()
+
+				mutex.Lock()
+				data := (*sm).Data[i]
+				mutex.Unlock()
+
+				aux, gacbAux, aabAux, pgaebAux := data.ToBytes()
+
+				mutex.Lock()
+				bb[i] = aux
+				gacbLength = gacbAux
+				aabLength = aabAux
+				pgaebLength = pgaebAux
+				mutex.Unlock()
 			}(i)
 		} else {
 			bb[i], gacbLength, aabLength, pgaebLength = (*sm).Data[i].ToBytes()
