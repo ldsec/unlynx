@@ -75,9 +75,21 @@ func (p *AddRmServerProtocol) Start() error {
 		if lib.PARALLELIZE {
 			go func(i int, v lib.ClientResponse) {
 				defer wg.Done()
-				result[i].GroupingAttributesClear = v.GroupingAttributesClear
-				result[i].AggregatingAttributes = changeEncryptionKeyVector(v.AggregatingAttributes, p.KeyToRm, p.Add)
-				result[i].ProbaGroupingAttributesEnc = changeEncryptionKeyVector(v.ProbaGroupingAttributesEnc, p.KeyToRm, p.Add)
+
+				mutex.Lock()
+				keyToRm := p.KeyToRm
+				add := p.Add
+				mutex.Unlock()
+
+				grpAttributes := v.GroupingAttributesClear
+				aggrAttributes := changeEncryptionKeyVector(v.AggregatingAttributes, keyToRm, add)
+				probaGrpAttributes := changeEncryptionKeyVector(v.ProbaGroupingAttributesEnc, keyToRm, add)
+
+				mutex.Lock()
+				result[i].GroupingAttributesClear = grpAttributes
+				result[i].AggregatingAttributes = aggrAttributes
+				result[i].ProbaGroupingAttributesEnc = probaGrpAttributes
+				mutex.Unlock()
 			}(i, v)
 		} else {
 			result[i].AggregatingAttributes = changeEncryptionKeyVector(v.AggregatingAttributes, p.KeyToRm, p.Add)
