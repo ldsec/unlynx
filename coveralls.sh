@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-
-#!/usr/bin/env bash
 # Source: https://github.com/h12w/gosweep/blob/master/gosweep.sh
 
 DIR_EXCLUDE="$@"
