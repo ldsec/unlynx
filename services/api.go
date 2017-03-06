@@ -1,8 +1,6 @@
 package services
 
 import (
-	"strconv"
-
 	"github.com/JoaoAndreSa/MedCo/lib"
 	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/crypto.v0/config"
@@ -14,26 +12,23 @@ import (
 // API represents a client with the server to which he is connected and its public/private key pair.
 type API struct {
 	*onet.Client
-	entryPoint        *network.ServerIdentity
-	localClientNumber int64
-	public            abstract.Point
-	private           abstract.Scalar
+	clientID   string
+	entryPoint *network.ServerIdentity
+	public     abstract.Point
+	private    abstract.Scalar
 }
 
-var localClientCounter = int64(0)
-
 // NewMedcoClient constructor of a client.
-func NewMedcoClient(entryPoint *network.ServerIdentity) *API {
+func NewMedcoClient(entryPoint *network.ServerIdentity, clientID string) *API {
 	keys := config.NewKeyPair(network.Suite)
-	newClient := &API{
-		Client:            onet.NewClient(ServiceName),
-		entryPoint:        entryPoint,
-		localClientNumber: localClientCounter,
-		public:            keys.Public,
-		private:           keys.Secret,
-	}
 
-	localClientCounter++
+	newClient := &API{
+		Client:     onet.NewClient(ServiceName),
+		clientID:   clientID,
+		entryPoint: entryPoint,
+		public:     keys.Public,
+		private:    keys.Secret,
+	}
 	return newClient
 }
 
@@ -54,7 +49,6 @@ func (c *API) SendSurveyCreationQuery(entities *onet.Roster, surveyGenID, survey
 		if err != nil {
 			return nil, lib.ClientResponse{}, err
 		}
-
 		log.LLvl1(c, " successfully created the survey with ID ", resp.SurveyID)
 		newSurveyID = resp.SurveyID
 
@@ -155,5 +149,5 @@ func EncryptDataToSurvey(name string, surveyID lib.SurveyID, clearClientResponse
 
 // String permits to have the string representation of a client.
 func (c *API) String() string {
-	return "[Client-" + strconv.FormatInt(c.localClientNumber, 10) + "]"
+	return "[Client-" + c.clientID + "]"
 }

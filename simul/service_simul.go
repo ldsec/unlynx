@@ -80,7 +80,7 @@ func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
 
 	for round := 0; round < sim.Rounds; round++ {
 		log.Lvl1("Starting round", round, el)
-		client := services.NewMedcoClient(el.List[0])
+		client := services.NewMedcoClient(el.List[0], strconv.Itoa(0))
 
 		nbrDPs := make(map[string]int64)
 		//how many data providers for each server
@@ -108,24 +108,24 @@ func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
 		dataHolder := make([]*services.API, sim.NbrDPs)
 		wg := lib.StartParallelize(len(dataHolder))
 
-		var mutex sync.Mutex
+		var mutexDH sync.Mutex
 		for i, client := range dataHolder {
 			start1 := lib.StartTimer(strconv.Itoa(i) + "_IndividualSendingData")
 			if lib.PARALLELIZE {
 				go func(i int, client *services.API) {
-					mutex.Lock()
-					data :=  testData[strconv.Itoa(i)]
+					mutexDH.Lock()
+					data := testData[strconv.Itoa(i)]
 					server := el.List[i%nbrHosts]
-					mutex.Unlock()
+					mutexDH.Unlock()
 
-					client = services.NewMedcoClient(server)
+					client = services.NewMedcoClient(server, strconv.Itoa(i+1))
 					client.SendSurveyResponseQuery(*surveyID, data, el.Aggregate, sim.DataRepetitions)
 					defer wg.Done()
 				}(i, client)
 			} else {
 				start2 := lib.StartTimer(strconv.Itoa(i) + "_IndividualNewMedcoClient")
 
-				client = services.NewMedcoClient(el.List[i%nbrHosts])
+				client = services.NewMedcoClient(el.List[i%nbrHosts], strconv.Itoa(i+1))
 
 				lib.EndTimer(start2)
 				start3 := lib.StartTimer(strconv.Itoa(i) + "_IndividualSendSurveyResults")
@@ -160,7 +160,7 @@ func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
 		}
 
 		// Test Service Simulation
-		if data.CompareClearResponses(data.ComputeExpectedResult(testData,sim.DataRepetitions), allData) {
+		if data.CompareClearResponses(data.ComputeExpectedResult(testData, sim.DataRepetitions), allData) {
 			log.LLvl1("Result is right! :)")
 		} else {
 			log.LLvl1("Result is wrong! :(")

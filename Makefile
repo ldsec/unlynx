@@ -33,7 +33,7 @@ test_playground:
 	done;
 
 test_verbose:
-	go test -v -race -p=1 -short ./...
+    go test -v -p=1 -short ./...
 
 # use test_verbose instead if you want to use this Makefile locally
 test_go:

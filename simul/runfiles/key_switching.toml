@@ -6,4 +6,4 @@ RunWait = 6000000
 Bandwidth = 1000
 
 Hosts, NbrResponses, NbrGroupAttributes, NbrAggrAttributes, Proofs
-3, 100, 1, 1, true
+3, 10, 2, 10, true

@@ -10,6 +10,7 @@ import (
 	"github.com/JoaoAndreSa/MedCo/services"
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
+	"strconv"
 )
 
 // numberGrpAttr is the number of group attributes.
@@ -39,7 +40,7 @@ func TestServiceOnlyEncGrpAttr(t *testing.T) {
 	defer local.CloseAll()
 
 	// Send a request to the service
-	client := services.NewMedcoClient(el.List[0])
+	client := services.NewMedcoClient(el.List[0], strconv.Itoa(0))
 
 	surveyDesc := lib.SurveyDescription{GroupingAttributesClearCount: 0, GroupingAttributesEncCount: numberGrpAttr, AggregatingAttributesCount: numberAttr}
 
@@ -60,7 +61,7 @@ func TestServiceOnlyEncGrpAttr(t *testing.T) {
 	log.Lvl1("Sending response data... ")
 	dataHolder := make([]*services.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
-		dataHolder[i] = services.NewMedcoClient(el.List[i%5])
+		dataHolder[i] = services.NewMedcoClient(el.List[i%5], strconv.Itoa(i+1))
 		grp := [numberGrpAttr]int64{}
 		aggr := make([]int64, numberAttr)
 
@@ -133,7 +134,7 @@ func TestServiceOnlyClearGrpAttr(t *testing.T) {
 	defer local.CloseAll()
 
 	// Send a request to the service
-	client := services.NewMedcoClient(el.List[0])
+	client := services.NewMedcoClient(el.List[0], strconv.Itoa(0))
 
 	surveyDesc := lib.SurveyDescription{GroupingAttributesClearCount: numberGrpAttr, GroupingAttributesEncCount: 0, AggregatingAttributesCount: numberAttr}
 
@@ -154,7 +155,7 @@ func TestServiceOnlyClearGrpAttr(t *testing.T) {
 	log.Lvl1("Sending response data... ")
 	dataHolder := make([]*services.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
-		dataHolder[i] = services.NewMedcoClient(el.List[i%5])
+		dataHolder[i] = services.NewMedcoClient(el.List[i%5], strconv.Itoa(i+1))
 		grp := [numberGrpAttr]int64{}
 		aggr := make([]int64, 10)
 		grp[0] = int64(i % 4)
@@ -220,7 +221,7 @@ func TestServiceClearAndEncGrpAttr(t *testing.T) {
 	defer local.CloseAll()
 
 	// Send a request to the service
-	client := services.NewMedcoClient(el.List[0])
+	client := services.NewMedcoClient(el.List[0], strconv.Itoa(0))
 
 	surveyDesc := lib.SurveyDescription{GroupingAttributesClearCount: numberGrpAttr, GroupingAttributesEncCount: 1, AggregatingAttributesCount: numberAttr}
 
@@ -241,7 +242,7 @@ func TestServiceClearAndEncGrpAttr(t *testing.T) {
 	log.Lvl1("Sending response data... ")
 	dataHolder := make([]*services.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
-		dataHolder[i] = services.NewMedcoClient(el.List[i%5])
+		dataHolder[i] = services.NewMedcoClient(el.List[i%5], strconv.Itoa(i+1))
 		grp := [numberGrpAttr + 1]int64{}
 		aggr := make([]int64, 10)
 		grp[0] = int64(i % 4)
@@ -317,7 +318,7 @@ func TestAllServersNoDPs(t *testing.T) {
 	defer local.CloseAll()
 
 	// Send a request to the service
-	client := services.NewMedcoClient(el.List[0])
+	client := services.NewMedcoClient(el.List[0], strconv.Itoa(0))
 
 	surveyDesc := lib.SurveyDescription{GroupingAttributesClearCount: numberGrpAttr, GroupingAttributesEncCount: 1, AggregatingAttributesCount: numberAttr}
 
@@ -341,7 +342,7 @@ func TestAllServersNoDPs(t *testing.T) {
 	log.Lvl1("Sending response data... ")
 	dataHolder := make([]*services.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
-		dataHolder[i] = services.NewMedcoClient(el.List[i%2])
+		dataHolder[i] = services.NewMedcoClient(el.List[i%2], strconv.Itoa(i+1))
 		grp := [numberGrpAttr + 1]int64{}
 		aggr := make([]int64, 10)
 		grp[0] = int64(i % 4)
@@ -414,7 +415,7 @@ func TestAllServersRandomDPs(t *testing.T) {
 	defer local.CloseAll()
 
 	// Send a request to the service
-	client := services.NewMedcoClient(el.List[0])
+	client := services.NewMedcoClient(el.List[0], strconv.Itoa(0))
 
 	surveyDesc := lib.SurveyDescription{GroupingAttributesClearCount: numberGrpAttr, GroupingAttributesEncCount: 1, AggregatingAttributesCount: numberAttr}
 
@@ -437,13 +438,13 @@ func TestAllServersRandomDPs(t *testing.T) {
 	dataHolder := make([]*services.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
 		if i < 2 {
-			dataHolder[i] = services.NewMedcoClient(el.List[1])
+			dataHolder[i] = services.NewMedcoClient(el.List[1], strconv.Itoa(i+1))
 		} else if i == 2 {
-			dataHolder[i] = services.NewMedcoClient(el.List[2])
+			dataHolder[i] = services.NewMedcoClient(el.List[2], strconv.Itoa(i+1))
 		} else if i < 6 {
-			dataHolder[i] = services.NewMedcoClient(el.List[3])
+			dataHolder[i] = services.NewMedcoClient(el.List[3], strconv.Itoa(i+1))
 		} else {
-			dataHolder[i] = services.NewMedcoClient(el.List[4])
+			dataHolder[i] = services.NewMedcoClient(el.List[4], strconv.Itoa(i+1))
 		}
 
 		grp := [numberGrpAttr + 1]int64{}

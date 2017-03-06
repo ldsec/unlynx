@@ -213,9 +213,9 @@ func ComputeExpectedResult(testData map[string][]lib.ClientClearResponse, dataRe
 	for _, v := range testData {
 		for _, elem := range v {
 
-			if dataRepetitions>1{
-				for i := range elem.AggregatingAttributes  {
-					elem.AggregatingAttributes[i]=elem.AggregatingAttributes[i]*int64(dataRepetitions)
+			if dataRepetitions > 1 {
+				for i := range elem.AggregatingAttributes {
+					elem.AggregatingAttributes[i] = elem.AggregatingAttributes[i] * int64(dataRepetitions)
 				}
 			}
 

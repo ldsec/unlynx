@@ -10,7 +10,7 @@ import (
 //______________________________________________________________________________________________________________________
 
 // TIME is true if we use protocols with time measurements of computations.
-const TIME = true
+const TIME = false
 
 // PARALLELIZE is true if we use protocols with parallelization of computations.
 const PARALLELIZE = true

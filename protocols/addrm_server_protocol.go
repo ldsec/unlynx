@@ -9,6 +9,7 @@ import (
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"
+	"sync"
 )
 
 // AddRmServerProtocolName is the registered name for the local aggregation protocol.
@@ -71,17 +72,26 @@ func (p *AddRmServerProtocol) Start() error {
 	result := make([]lib.ClientResponse, len(p.TargetOfTransformation))
 
 	wg := lib.StartParallelize(len(p.TargetOfTransformation))
+	var mutexToT sync.Mutex
 	for i, v := range p.TargetOfTransformation {
 		if lib.PARALLELIZE {
 			go func(i int, v lib.ClientResponse) {
 				defer wg.Done()
-				//mutexParallel.Lock()
 
-				result[i].GroupingAttributesClear = v.GroupingAttributesClear
-				result[i].AggregatingAttributes = changeEncryptionKeyVector(v.AggregatingAttributes, p.KeyToRm, p.Add)
-				result[i].ProbaGroupingAttributesEnc = changeEncryptionKeyVector(v.ProbaGroupingAttributesEnc, p.KeyToRm, p.Add)
+				mutexToT.Lock()
+				keyToRm := p.KeyToRm
+				add := p.Add
+				mutexToT.Unlock()
 
-				//mutexParallel.Unlock()
+				grpAttributes := v.GroupingAttributesClear
+				aggrAttributes := changeEncryptionKeyVector(v.AggregatingAttributes, keyToRm, add)
+				probaGrpAttributes := changeEncryptionKeyVector(v.ProbaGroupingAttributesEnc, keyToRm, add)
+
+				mutexToT.Lock()
+				result[i].GroupingAttributesClear = grpAttributes
+				result[i].AggregatingAttributes = aggrAttributes
+				result[i].ProbaGroupingAttributesEnc = probaGrpAttributes
+				mutexToT.Unlock()
 			}(i, v)
 		} else {
 			result[i].AggregatingAttributes = changeEncryptionKeyVector(v.AggregatingAttributes, p.KeyToRm, p.Add)
@@ -97,20 +107,27 @@ func (p *AddRmServerProtocol) Start() error {
 	pubs := make([]lib.PublishedAddRmProof, 0)
 	if p.Proofs {
 		wg := lib.StartParallelize(len(result))
+		var mutexCR sync.Mutex
 		for i, v := range result {
 			if lib.PARALLELIZE {
 				go func(i int, v lib.ClientResponse) {
 					defer wg.Done()
-					//mutexParallel.Lock()
 
-					prfAggr := lib.VectorAddRmProofCreation(p.TargetOfTransformation[i].AggregatingAttributes, v.AggregatingAttributes, p.KeyToRm, p.Add)
-					prfGrp := lib.VectorAddRmProofCreation(p.TargetOfTransformation[i].ProbaGroupingAttributesEnc, v.ProbaGroupingAttributesEnc, p.KeyToRm, p.Add)
-					ktopub := network.Suite.Point().Mul(network.Suite.Point().Base(), p.KeyToRm)
-					pub1 := lib.PublishedAddRmProof{Arp: prfAggr, VectBefore: p.TargetOfTransformation[i].AggregatingAttributes, VectAfter: v.AggregatingAttributes, Krm: ktopub, ToAdd: p.Add}
-					pub2 := lib.PublishedAddRmProof{Arp: prfGrp, VectBefore: p.TargetOfTransformation[i].ProbaGroupingAttributesEnc, VectAfter: v.ProbaGroupingAttributesEnc, Krm: ktopub, ToAdd: p.Add}
+					mutexCR.Lock()
+					targetAggregatingAttributes := p.TargetOfTransformation[i].AggregatingAttributes
+					probaAggregatingAttributes := p.TargetOfTransformation[i].ProbaGroupingAttributesEnc
+					keyToRm := p.KeyToRm
+					mutexCR.Unlock()
+
+					prfAggr := lib.VectorAddRmProofCreation(targetAggregatingAttributes, v.AggregatingAttributes, p.KeyToRm, p.Add)
+					prfGrp := lib.VectorAddRmProofCreation(probaAggregatingAttributes, v.ProbaGroupingAttributesEnc, p.KeyToRm, p.Add)
+					ktopub := network.Suite.Point().Mul(network.Suite.Point().Base(), keyToRm)
+					pub1 := lib.PublishedAddRmProof{Arp: prfAggr, VectBefore: targetAggregatingAttributes, VectAfter: v.AggregatingAttributes, Krm: ktopub, ToAdd: p.Add}
+					pub2 := lib.PublishedAddRmProof{Arp: prfGrp, VectBefore: probaAggregatingAttributes, VectAfter: v.ProbaGroupingAttributesEnc, Krm: ktopub, ToAdd: p.Add}
+
+					mutexCR.Lock()
 					pubs = append(pubs, pub1, pub2)
-
-					//mutexParallel.Unlock()
+					mutexCR.Unlock()
 				}(i, v)
 
 			} else {
@@ -134,10 +151,7 @@ func (p *AddRmServerProtocol) Start() error {
 		if lib.PARALLELIZE {
 			go func(v lib.PublishedAddRmProof) {
 				defer wg.Done()
-				//mutexParallel.Lock()
-
 				lib.PublishedAddRmCheckProof(v)
-				//mutexParallel.Unlock()
 			}(v)
 		} else {
 			lib.PublishedAddRmCheckProof(v)
