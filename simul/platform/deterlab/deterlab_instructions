@@ -41,5 +41,5 @@
     Note.
     It takes a lot of time! And if it does not work keep trying (sometimes it crashes suddenly).
 
-- Execute in simul/ :
+- Execute inside simul/ :
     ./simul -platform deterlab [-debug 1] runfiles/medco.toml (the first time it prompts for the creation of a deter.toml)

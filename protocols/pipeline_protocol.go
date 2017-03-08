@@ -24,12 +24,9 @@ func init() {
 	onet.GlobalProtocolRegister(MedcoServiceProtocolName, NewPipelineProcotol)
 }
 
-// Messages
-//______________________________________________________________________________________________________________________
-
-// ServiceInterface defines the 3 phases of a medco pipeline. The service implements this interface so the
+// PipelineServiceInterface defines the 5 phases of a medco pipeline. The service implements this interface so the
 // protocol can trigger them.
-type ServiceInterface interface {
+type PipelineServiceInterface interface {
 	ShufflingPhase(lib.SurveyID) error
 	TaggingPhase(lib.SurveyID) error
 	AggregationPhase(lib.SurveyID) error
@@ -37,9 +34,12 @@ type ServiceInterface interface {
 	KeySwitchingPhase(lib.SurveyID) error
 }
 
+// Messages
+//______________________________________________________________________________________________________________________
+
 // TriggerFlushCollectedDataMessage is a message trigger the Map phase at all node.
 type TriggerFlushCollectedDataMessage struct {
-	SurveyID lib.SurveyID // Currently unused
+	SurveyID lib.SurveyID
 }
 
 // DoneFlushCollectedDataMessage is a message reporting the Map phase completion.
@@ -68,12 +68,12 @@ type PipelineProtocol struct {
 	TriggerFlushCollectedData chan flushCollectedDataStruct
 	DoneFlushCollectedData    chan []doneFlushCollectedDataStruct
 
-	FeedbackChannel chan DoneProcessingMessage
+	FeedbackChannel           chan DoneProcessingMessage
 
-	MedcoServiceInstance ServiceInterface
-	TargetSurvey         *lib.Survey
+	PipelineServiceInstance   PipelineServiceInterface
+	TargetSurvey              *lib.Survey
 
-	Proofs bool
+	Proofs                    bool
 }
 
 // NewPipelineProcotol constructor of a pipeline protocol.
@@ -93,7 +93,7 @@ func NewPipelineProcotol(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, err
 // Start is called at the root. It starts the execution of the protocol.
 func (p *PipelineProtocol) Start() error {
 
-	if p.MedcoServiceInstance == nil {
+	if p.PipelineServiceInstance == nil {
 		return errors.New("No Medco Service pointer provided")
 	}
 	if p.TargetSurvey == nil {
@@ -116,14 +116,14 @@ func (p *PipelineProtocol) Dispatch() error {
 		if p.IsRoot() {
 			start := lib.StartTimer(p.Name() + "_ShufflingPhase")
 
-			p.MedcoServiceInstance.ShufflingPhase(p.TargetSurvey.ID)
+			p.PipelineServiceInstance.ShufflingPhase(p.TargetSurvey.ID)
 			p.Broadcast(&TriggerFlushCollectedDataMessage{p.TargetSurvey.ID})
 			lib.EndTimer(start)
 		} else {
 			msg := <-p.TriggerFlushCollectedData
 			start := lib.StartTimer(p.Name() + "_ShufflingPhase")
 
-			p.MedcoServiceInstance.ShufflingPhase(msg.SurveyID)
+			p.PipelineServiceInstance.ShufflingPhase(msg.SurveyID)
 			p.Broadcast(&TriggerFlushCollectedDataMessage{msg.SurveyID})
 			lib.EndTimer(start)
 		}
@@ -133,7 +133,7 @@ func (p *PipelineProtocol) Dispatch() error {
 		if p.IsRoot() {
 			start := lib.StartTimer(p.Name() + "_TaggingPhase")
 
-			p.MedcoServiceInstance.TaggingPhase(p.TargetSurvey.ID)
+			p.PipelineServiceInstance.TaggingPhase(p.TargetSurvey.ID)
 
 			lib.EndTimer(start)
 
@@ -145,7 +145,7 @@ func (p *PipelineProtocol) Dispatch() error {
 
 			start := lib.StartTimer(p.Name() + "_TaggingPhase")
 
-			p.MedcoServiceInstance.TaggingPhase(msg.SurveyID)
+			p.PipelineServiceInstance.TaggingPhase(msg.SurveyID)
 
 			lib.EndTimer(start)
 			if !p.IsLeaf() {
@@ -161,25 +161,25 @@ func (p *PipelineProtocol) Dispatch() error {
 		if p.IsRoot() {
 			start := lib.StartTimer(p.Name() + "_AggregationPhase")
 
-			p.MedcoServiceInstance.AggregationPhase(p.TargetSurvey.ID)
+			p.PipelineServiceInstance.AggregationPhase(p.TargetSurvey.ID)
 
 			lib.EndTimer(start)
 		}
 
 		// 2nd phase: DRO
-		/*if p.IsRoot() {
+		if p.IsRoot() && lib.DIFFPRI==true {
 			start := lib.StartTimer(p.Name() + "_DROPhase")
 
-			p.MedcoServiceInstance.DROPhase(p.TargetSurvey.ID)
+			p.PipelineServiceInstance.DROPhase(p.TargetSurvey.ID)
 
 			lib.EndTimer(start)
-		}*/
+		}
 
 		// 3rd phase: Key Switching
 		if p.IsRoot() {
 			start := lib.StartTimer(p.Name() + "_KeySwitchingPhase")
 
-			p.MedcoServiceInstance.KeySwitchingPhase(p.TargetSurvey.ID)
+			p.PipelineServiceInstance.KeySwitchingPhase(p.TargetSurvey.ID)
 
 			lib.EndTimer(start)
 
@@ -188,8 +188,8 @@ func (p *PipelineProtocol) Dispatch() error {
 	} else {
 
 		if p.IsRoot() {
-			p.MedcoServiceInstance.TaggingPhase(p.TargetSurvey.ID)
-			p.MedcoServiceInstance.AggregationPhase(p.TargetSurvey.ID)
+			p.PipelineServiceInstance.TaggingPhase(p.TargetSurvey.ID)
+			p.PipelineServiceInstance.AggregationPhase(p.TargetSurvey.ID)
 			p.FeedbackChannel <- DoneProcessingMessage{}
 		}
 

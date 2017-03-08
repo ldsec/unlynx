@@ -22,8 +22,8 @@
         a. Actions -> Power -> Power Cycle (for each server)
 
 - Run servers:
-    1. on simul/platform/mininet execute (the numbers are relative to the number of each machine, e.g. iccluster029 -> 29):
-        /Users/jagomes/Go/src/gopkg.in/dedis/onet.v1/simul/platform/mininet/setup_iccluster.sh 29 30 31
+    1. inside simul/ execute (the numbers are relative to the number of each machine, e.g. iccluster029 -> 29):
+        ~/Go/src/gopkg.in/dedis/onet.v1/simul/platform/mininet/setup_iccluster.sh 29 30 31
 
     2. To watch what is happening do:
         watch "ps aux | tail"
@@ -39,7 +39,7 @@
         ssh root@iccluster026.iccluster.epfl.ch
         and remove keys from .ssh/know_hosts
 
-    * To execute in simul/:
+    * To execute inside simul/:
         ./simul -platform mininet [-debug 1] runfiles/medco.toml
 
     * You can check the log by accessing cat tmp/mininet.log

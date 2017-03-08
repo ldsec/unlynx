@@ -2,5 +2,5 @@
 /--------------------------Instructions localhost--------------------------------/
 /--------------------------------------------------------------------------------/
 
-- Execute in simul/ :
+- Execute inside simul/ :
     ./simul -platform localhost [-debug 1] runfiles/medco.toml

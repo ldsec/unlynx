@@ -96,7 +96,7 @@ func TestServiceOnlyEncGrpAttr(t *testing.T) {
 		}
 	}
 
-	grpClear, grp, aggr, err := client.SendGetSurveyResultsQuery(*surveyID)
+	grpClear, grp, aggr, err := client.SendSurveyResultsQuery(*surveyID)
 
 	if err != nil {
 		t.Fatal("Service could not output the results.")
@@ -184,7 +184,7 @@ func TestServiceOnlyClearGrpAttr(t *testing.T) {
 		}
 	}
 
-	grpClear, grp, aggr, err := client.SendGetSurveyResultsQuery(*surveyID)
+	grpClear, grp, aggr, err := client.SendSurveyResultsQuery(*surveyID)
 
 	if err != nil {
 		t.Fatal("Service could not output the results.")
@@ -277,7 +277,7 @@ func TestServiceClearAndEncGrpAttr(t *testing.T) {
 			expectedResults[grp] = aggr
 		}
 	}
-	grpClear, grp, aggr, err := client.SendGetSurveyResultsQuery(*surveyID)
+	grpClear, grp, aggr, err := client.SendSurveyResultsQuery(*surveyID)
 
 	if err != nil {
 		t.Fatal("Service could not output the results.")
@@ -377,7 +377,7 @@ func TestAllServersNoDPs(t *testing.T) {
 			expectedResults[grp] = aggr
 		}
 	}
-	grpClear, grp, aggr, err := client.SendGetSurveyResultsQuery(*surveyID)
+	grpClear, grp, aggr, err := client.SendSurveyResultsQuery(*surveyID)
 
 	if err != nil {
 		t.Fatal("Service could not output the results.")
@@ -481,7 +481,7 @@ func TestAllServersRandomDPs(t *testing.T) {
 			expectedResults[grp] = aggr
 		}
 	}
-	grpClear, grp, aggr, err := client.SendGetSurveyResultsQuery(*surveyID)
+	grpClear, grp, aggr, err := client.SendSurveyResultsQuery(*surveyID)
 
 	if err != nil {
 		t.Fatal("Service could not output the results.")

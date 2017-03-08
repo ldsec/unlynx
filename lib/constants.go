@@ -18,6 +18,9 @@ const PARALLELIZE = true
 // VPARALLELIZE allows to choose the level of parallelization in the vector computations
 const VPARALLELIZE = 100
 
+// DIFFPRI enables the DRO protocol (Distributed Results Obfuscation)
+const DIFFPRI = false
+
 // StartTimer starts measurement of time
 func StartTimer(name string) *monitor.TimeMeasure {
 	var timer *monitor.TimeMeasure

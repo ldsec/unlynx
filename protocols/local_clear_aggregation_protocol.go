@@ -41,7 +41,7 @@ func NewLocalClearAggregationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolIn
 
 var finalResultClearAggr = make(chan []lib.ClientClearResponse)
 
-// Start is called at the root to start the execution of the key switching.
+// Start is called at the root to start the execution of the local clear aggregation.
 func (p *LocalClearAggregationProtocol) Start() error {
 	log.Lvl1(p.ServerIdentity(), "started a local clear aggregation protocol")
 	roundComput := lib.StartTimer(p.Name() + "_LocalClearAggregation(START)")
