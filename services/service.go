@@ -743,19 +743,34 @@ func (s *Service) StartService(targetSurvey lib.SurveyID, root bool) error {
 			log.Fatal("Error in the Tagging Phase")
 		}
 
+		// broadcasts the query to unlock waiting channel
+		aux :=s.survey[targetSurvey].Roster
+		err = s.SendISMOthers(&aux,&DDTfinished{})
+		if err != nil {
+			log.Error("broadcasting error ", err)
+		}
+
 		lib.EndTimer(start)
 
 		// Aggregation Phase
 		if root==true{
+			start := lib.StartTimer(s.ServerIdentity().String() + "_AggregationPhase")
+
 			err = s.AggregationPhase(s.TargetSurvey.ID)
 			if err != nil {
 				log.Fatal("Error in the Aggregation Phase")
 			}
+
+			lib.EndTimer(start)
 		}
 
 		// DRO Phase
-		if root==true{
+		if root==true && lib.DIFFPRI==true {
+			start := lib.StartTimer(s.ServerIdentity().String() + "_DROPhase")
 
+			s.DROPhase(s.TargetSurvey.ID)
+
+			lib.EndTimer(start)
 		}
 
 		// Key Switch Phase
@@ -783,14 +798,14 @@ func (s *Service) StartService(targetSurvey lib.SurveyID, root bool) error {
 func (s *Service) ShufflingPhase(targetSurvey lib.SurveyID) error {
 	if len(s.survey[targetSurvey].ClientResponses) == 0 {
 		log.Lvl1(s.ServerIdentity(), " no data to shuffle")
-		return errors.New("no data to shuffle")
+		return nil
 	}
 
 	//check if clear grouping attributes --> no shuffling
 	if len(s.survey[targetSurvey].ClientResponses[0].GroupingAttributesClear) != 0 {
 		s.survey[targetSurvey].PushShuffledClientResponses(s.survey[targetSurvey].ClientResponses)
 		log.Lvl1(s.ServerIdentity(), " no shuffle with clear data")
-		return errors.New("no shuffle with clear data")
+		return nil
 	}
 
 	pi, err := s.StartProtocol(protocols.ShufflingProtocolName, targetSurvey)
@@ -808,8 +823,7 @@ func (s *Service) ShufflingPhase(targetSurvey lib.SurveyID) error {
 func (s *Service) TaggingPhase(targetSurvey lib.SurveyID) error {
 	if len(s.survey[targetSurvey].ShuffledClientResponses) == 0 {
 		log.LLvl1(s.ServerIdentity(), "  for survey ", s.survey[targetSurvey].ID, " has no data to det tag")
-
-		return errors.New("no data to det tag")
+		return nil
 	}
 
 	//check if only clear grouping attributes --> no det tag
@@ -820,7 +834,7 @@ func (s *Service) TaggingPhase(targetSurvey lib.SurveyID) error {
 		}
 		//mcs.survey[targetSurvey].PushDeterministicClientResponses(mcs.survey[targetSurvey].ShuffledClientResponses, mcs.ServerIdentity().String(), mcs.survey[targetSurvey].Proofs)
 		log.Lvl1(s.ServerIdentity(), " no det tag with only clear data")
-		return errors.New("no det tag with only clear data")
+		return nil
 	}
 
 	pi, err := s.StartProtocol(protocols.DeterministicTaggingProtocolName, targetSurvey)
@@ -847,14 +861,6 @@ func (s *Service) TaggingPhase(targetSurvey lib.SurveyID) error {
 		log.LLvl1(s.ServerIdentity(), " filtered out responses and kept: ", len(clientResponseToKeep), " valid ones")
 	}
 	s.survey[targetSurvey].PushDeterministicClientResponses(deterministicTaggingResult, s.ServerIdentity().String(), s.survey[targetSurvey].Proofs)
-
-	// broadcasts the query
-	aux :=s.survey[targetSurvey].Roster
-	err = s.SendISMOthers(&aux,&DDTfinished{})
-	if err != nil {
-		log.Error("broadcasting error ", err)
-	}
-
 	return err
 }
 
