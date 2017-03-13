@@ -176,7 +176,7 @@ func NewService(c *onet.Context) onet.Service {
 	c.RegisterProcessor(newMedCoInstance, msgTypes.msgSurveyResultsQuery)
 	c.RegisterProcessor(newMedCoInstance, msgTypes.msgDDTfinished)
 
-	newMedCoInstance.ProtocolRegister("DROInService", newMedCoInstance.NewDROProtocol)
+	newMedCoInstance.ProtocolRegister(DROProtocolName, newMedCoInstance.NewDROProtocol)
 	return newMedCoInstance
 }
 
@@ -409,8 +409,8 @@ func (s *Service) HandleI2b2Query(recq *SurveyCreationQuery, handlingServer bool
 		s.surveyChannel <- 1
 
 		// i2b2 compliant pipeline protocol
-		pi, _ := s.StartProtocol(protocols.MedcoServiceProtocolName, *recq.SurveyID)
-		<-pi.(*protocols.PipelineProtocol).FeedbackChannel
+		//pi, _ := s.StartProtocol(protocols.MedServiceProtocolName, *recq.SurveyID)
+		//<-pi.(*protocols.PipelineProtocol).FeedbackChannel
 
 		// get aggregation results
 		responses := (s.survey[*recq.SurveyID]).PullCothorityAggregatedClientResponses(false, lib.CipherText{})
@@ -627,6 +627,7 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 			for counter > 0 {
 				counter = counter - (<-s.DDTChannel)
 			}
+		case DROProtocolName:
 		case protocols.KeySwitchingProtocolName:
 			pi, err = protocols.NewKeySwitchingProtocol(tn)
 			if (err != nil) {
@@ -908,7 +909,7 @@ func (s *Service) DROPhase(targetSurvey lib.SurveyID) error {
 	tmp := s.survey[targetSurvey]
 	tree := tmp.Roster.GenerateNaryTreeWithRoot(2, s.ServerIdentity())
 
-	pi, err := s.CreateProtocol("DROInService", tree)
+	pi, err := s.CreateProtocol(DROProtocolName, tree)
 	if err != nil {
 		return err
 	}
