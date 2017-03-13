@@ -31,8 +31,8 @@ type Store struct {
 // NewStore is the store constructor.
 func NewStore() *Store {
 	return &Store{
-		LocAggregatedClientResponse:         make(map[GroupingKey]ClientResponse),
-		GroupedDeterministicClientResponses: make(map[GroupingKey]ClientResponse),
+		LocAggregatedClientResponse:         	make(map[GroupingKey]ClientResponse),
+		GroupedDeterministicClientResponses: 	make(map[GroupingKey]ClientResponse),
 	}
 }
 
@@ -80,6 +80,7 @@ func (s *Store) PushDeterministicClientResponses(detClientResponses []ClientResp
 		//publication
 		_ = PublishedAggregationProof
 	}*/
+
 	EndTimer(round)
 }
 
