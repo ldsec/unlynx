@@ -943,7 +943,7 @@ func generateNoiseValues(n int) []int64 {
 }
 
 func precomputeForShuffling(serverName string, surveyID lib.SurveyID, surveySecret abstract.Scalar, collectiveKey abstract.Point, lineSize int) []lib.CipherVectorScalar {
-	log.Lvl1(serverName, " precomputes for shuffling of survey ", surveyID)
+	//log.Lvl1(serverName, " precomputes for shuffling of survey ", surveyID)
 	precomputeShuffle := lib.CreatePrecomputedRandomize(network.Suite.Point().Base(), collectiveKey, network.Suite.Cipher(surveySecret.Bytes()), lineSize*2, 10)
 
 	encoded, err := data.EncodeCipherVectorScalar(precomputeShuffle)
@@ -957,7 +957,7 @@ func precomputeForShuffling(serverName string, surveyID lib.SurveyID, surveySecr
 }
 
 func precomputationWritingForShuffling(appFlag bool, serverName string, surveyID lib.SurveyID, surveySecret abstract.Scalar, collectiveKey abstract.Point, lineSize int) []lib.CipherVectorScalar {
-	log.Lvl1(serverName, " precomputes for shuffling of survey ", surveyID)
+	//log.Lvl1(serverName, " precomputes for shuffling of survey ", surveyID)
 	precomputeShuffle := []lib.CipherVectorScalar{}
 	if appFlag {
 		if _, err := os.Stat(gobFile); os.IsNotExist(err) {

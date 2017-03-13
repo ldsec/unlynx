@@ -1,4 +1,1 @@
 package services
-
-func main() {
-}
