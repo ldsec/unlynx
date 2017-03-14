@@ -51,7 +51,7 @@ func (sim *DeterministicTaggingSimulation) Setup(dir string, hosts []string) (*o
 	return sc, nil
 }
 
-// Nodes registers a DeterministicTaggingSimul (with access to the DeterministicTaggingSimulation object) for every node
+// Node registers a DeterministicTaggingSimul (with access to the DeterministicTaggingSimulation object) for every node
 func (sim *DeterministicTaggingSimulation) Node(config *onet.SimulationConfig) error {
 	config.Server.ProtocolRegister("DeterministicTaggingSimul",
 		func(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {

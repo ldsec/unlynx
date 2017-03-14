@@ -1,4 +1,4 @@
-// Package libmedco contains medco_structs which contains structures and methods built on basic structures defined in crypto
+// Package lib contains medco_structs which contains structures and methods built on basic structures defined in crypto
 package lib
 
 import (

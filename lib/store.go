@@ -80,6 +80,7 @@ func (s *Store) PushDeterministicClientResponses(detClientResponses []ClientResp
 		//publication
 		_ = PublishedAggregationProof
 	}*/
+
 	EndTimer(round)
 }
 

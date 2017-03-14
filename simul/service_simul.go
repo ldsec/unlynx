@@ -65,12 +65,6 @@ func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
 	nbrHosts := config.Tree.Size()
 	log.Lvl1("Size:", nbrHosts, ", Rounds:", sim.Rounds)
 
-	//TODO: PLEASE REMOVE THIS AFTERWARDS ... it's very ugly
-	/*for i:=0; i< int(sim.NbrGroupsEnc)-2; i++ {
-		sim.NbrGroupAttributes = append(sim.NbrGroupAttributes,int64(1))
-	}
-	log.LLvl1(sim.NbrGroupAttributes)*/
-
 	// Does not make sense to have more servers than clients!!
 	if nbrHosts > sim.NbrDPs {
 		log.Fatal("hosts:", nbrHosts, "must be the same or lower as num_clients:", sim.NbrDPs)
@@ -143,7 +137,7 @@ func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
 
 		start := lib.StartTimer("Simulation")
 
-		grpClear, grp, aggr, err := client.SendGetSurveyResultsQuery(*surveyID)
+		grpClear, grp, aggr, err := client.SendSurveyResultsQuery(*surveyID)
 		if err != nil {
 			log.Fatal("Service could not output the results. ", err)
 		}

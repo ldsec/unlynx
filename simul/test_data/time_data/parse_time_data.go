@@ -1,4 +1,4 @@
-package time_data
+package timedata
 
 import (
 	"bufio"

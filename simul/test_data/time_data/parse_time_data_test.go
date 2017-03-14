@@ -1,4 +1,4 @@
-package time_data_test
+package timedata_test
 
 import (
 	"testing"
@@ -23,19 +23,19 @@ var flags = []string{"bf", "depth", "rounds", "runwait", "servers", "\n",
 	"KeySwitchingVerif", "DetTagVerif", "DetTagAddVerif", "LocalAggrVerif", "ShufflingVerif", "CollectiveAggrVerif", "AddRmServer(PROTOCOL)", "AddRmServer(PROOFS)", "AddRmServer(PROOFSVerif)"}
 
 func TestReadTomlSetup(t *testing.T) {
-	time_data.ReadTomlSetup(filename_toml, 0)
+	timedata.ReadTomlSetup(filename_toml, 0)
 }
 
 func TestReadDataToCSVFile(t *testing.T) {
-	time_data.ReadDataFromCSVFile(filename_read, flags)
+	timedata.ReadDataFromCSVFile(filename_read, flags)
 }
 
 func TestWriteDataFromCSVFile(t *testing.T) {
-	test_time_data := time_data.ReadDataFromCSVFile(filename_read, flags)
+	test_time_data := timedata.ReadDataFromCSVFile(filename_read, flags)
 
-	time_data.CreateCSVFile(filename_write)
+	timedata.CreateCSVFile(filename_write)
 	for i := 0; i < len(test_time_data[flags[0]]); i++ {
-		setup := time_data.ReadTomlSetup(filename_toml, i)
-		time_data.WriteDataFromCSVFile(filename_write, flags, test_time_data, i, setup)
+		setup := timedata.ReadTomlSetup(filename_toml, i)
+		timedata.WriteDataFromCSVFile(filename_write, flags, test_time_data, i, setup)
 	}
 }

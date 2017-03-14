@@ -1,4 +1,4 @@
-package lib_i2b2_test
+package libi2b2_test
 
 import (
 	"encoding/hex"
@@ -52,9 +52,9 @@ func TestCreateXMLforTestonI2B2(t *testing.T) {
 		}
 		tabStrData[i] = col
 	}
-	lib_i2b2.CreateXMLData("123", pubKeyString, priKeyString, "3", "2", tabStrData, []string{"OR"}, "data.xml")
+	libi2b2.CreateXMLData("123", pubKeyString, priKeyString, "3", "2", tabStrData, []string{"OR"}, "data.xml")
 
 	//read xml data file
-	lib_i2b2.ReadXMLData("data.xml", el.Aggregate)
+	libi2b2.ReadXMLData("data.xml", el.Aggregate)
 
 }

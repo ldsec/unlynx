@@ -95,7 +95,7 @@ bars.append(ax1.bar(bar_l,
                     width=bar_width,
                     # with y1_label, y2_label, y3_label on the bottom
                     bottom=[i + j + q for i, j, q in zip(df['y1_label'], df['y2_label'], df['y3_label'])],
-                    label='DDT',
+                    label='Dist. Deterministic Tagging',
                     # with alpha 1
                     alpha=1,
                     # with color
@@ -110,7 +110,7 @@ bars.append(ax1.bar(bar_l,
                     # with y1_label, y2_label, y3_label, y4_label on the bottom
                     bottom=[i + j + q + w for i, j, q, w in
                             zip(df['y1_label'], df['y2_label'], df['y3_label'], df['y4_label'])],
-                    label='DDT Proof',
+                    label='Dist. Deterministic Tagging Proof',
                     # with alpha 0.8
                     alpha=0.8,
                     # with color
@@ -126,7 +126,7 @@ bars.append(ax1.bar(bar_l,
                     # with y1_label, y2_label, y3_label, y4_label, y5_label on the bottom
                     bottom=[i + j + q + w + e for i, j, q, w, e in
                             zip(df['y1_label'], df['y2_label'], df['y3_label'], df['y4_label'], df['y5_label'])],
-                    label='DDT Proof Verif.',
+                    label='Dist. Deterministic Tagging Proof Verif.',
                     # with alpha 0.6
                     alpha=0.5,
                     # with color
@@ -194,7 +194,7 @@ bars.append(ax1.bar(bar_l,
                     bottom=[i + j + q + w + e + r + t + z + u for i, j, q, w, e, r, t, z, u in
                             zip(df['y1_label'], df['y2_label'], df['y3_label'], df['y4_label'], df['y5_label'],
                                 df['y6_label'], df['y7_label'], df['y8_label'], df['y9_label'])],
-                    label='DRO',
+                    label='Dist. Results Obfuscation',
                     # with alpha 1
                     alpha=1,
                     # with color
@@ -214,7 +214,7 @@ bars.append(ax1.bar(bar_l,
                     bottom=[i + j + q + w + e + r for i, j, q, w, e, r in
                             zip(df['y1_label'], df['y2_label'], df['y3_label'], df['y4_label'], df['y5_label'],
                                 df['y6_label'])],
-                    label='DRO Proof',
+                    label='Dist. Results Obfuscation Proof',
                     # with alpha 0.8
                     alpha=0.8,
                     # with color
@@ -236,7 +236,7 @@ bars.append(ax1.bar(bar_l,
                     bottom=[i + j + q + w + e + r + t for i, j, q, w, e, r, t in
                             zip(df['y1_label'], df['y2_label'], df['y3_label'], df['y4_label'], df['y5_label'],
                                 df['y6_label'], df['y11_label'])],
-                    label='DRO Proof Verif.',
+                    label='Dist. Results Obfuscation Proof Verif.',
                     # with alpha 0.6
                     alpha=0.5,
                     # with color

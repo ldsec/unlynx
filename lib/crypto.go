@@ -105,12 +105,17 @@ func encryptPoint(pubkey abstract.Point, M abstract.Point) *CipherText {
 	return &CipherText{K, C}
 }
 
-// EncryptInt encodes i as iB, encrypt it into a CipherText and returns a pointer to it.
-func EncryptInt(pubkey abstract.Point, integer int64) *CipherText {
+// IntToPoint maps an integer to a point in the elliptic curve
+func IntToPoint(integer int64) abstract.Point {
 	B := suite.Point().Base()
 	i := suite.Scalar().SetInt64(integer)
 	M := suite.Point().Mul(B, i)
-	return encryptPoint(pubkey, M)
+	return M
+}
+
+// EncryptInt encodes i as iB, encrypt it into a CipherText and returns a pointer to it.
+func EncryptInt(pubkey abstract.Point, integer int64) *CipherText {
+	return encryptPoint(pubkey, IntToPoint(integer))
 }
 
 // EncryptIntVector encrypts a []int into a CipherVector and returns a pointer to it.
