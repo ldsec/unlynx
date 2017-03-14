@@ -23,23 +23,23 @@ type LocalClearAggregationProtocol struct {
 	*onet.TreeNodeInstance
 
 	// Protocol feedback channel
-	FeedbackChannel chan []lib.ClientClearResponse
+	FeedbackChannel chan []lib.DpClearResponse
 
 	// Protocol state data
-	TargetOfAggregation []lib.ClientClearResponse
+	TargetOfAggregation []lib.DpClearResponse
 }
 
 // NewLocalClearAggregationProtocol is constructor of Proofs Verification protocol instances.
 func NewLocalClearAggregationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 	pvp := &LocalClearAggregationProtocol{
 		TreeNodeInstance: n,
-		FeedbackChannel:  make(chan []lib.ClientClearResponse),
+		FeedbackChannel:  make(chan []lib.DpClearResponse),
 	}
 
 	return pvp, nil
 }
 
-var finalResultClearAggr = make(chan []lib.ClientClearResponse)
+var finalResultClearAggr = make(chan []lib.DpClearResponse)
 
 // Start is called at the root to start the execution of the local clear aggregation.
 func (p *LocalClearAggregationProtocol) Start() error {

@@ -33,11 +33,11 @@ func TestKeySwitching(t *testing.T) {
 	testCipherVect := *lib.EncryptIntVector(aggregateKey, expRes)
 	expRes1 := []int64{7, 8, 9, 7}
 	testCipherVect1 := *lib.EncryptIntVector(aggregateKey, expRes1)
-	var tabi []lib.ClientResponse
-	tabi = make([]lib.ClientResponse, 2)
+	var tabi []lib.FilteredResponse
+	tabi = make([]lib.FilteredResponse, 2)
 
-	tabi[0] = lib.ClientResponse{GroupingAttributesClear: "", ProbaGroupingAttributesEnc: testCipherVect1, AggregatingAttributes: testCipherVect}
-	tabi[1] = lib.ClientResponse{GroupingAttributesClear: "", ProbaGroupingAttributesEnc: testCipherVect, AggregatingAttributes: testCipherVect1}
+	tabi[0] = lib.FilteredResponse{GroupByEnc: testCipherVect1, AggregatingAttributes: testCipherVect}
+	tabi[1] = lib.FilteredResponse{GroupByEnc: testCipherVect, AggregatingAttributes: testCipherVect1}
 
 	clientPrivate := suite.Scalar().Pick(random.Stream)
 	clientPublic := suite.Point().Mul(suite.Point().Base(), clientPrivate)
@@ -56,12 +56,12 @@ func TestKeySwitching(t *testing.T) {
 	case encryptedResult := <-feedback:
 		cv1 := encryptedResult[0]
 		res := lib.DecryptIntVector(clientPrivate, &cv1.AggregatingAttributes)
-		resGrp := lib.DecryptIntVector(clientPrivate, &cv1.ProbaGroupingAttributesEnc)
+		resGrp := lib.DecryptIntVector(clientPrivate, &cv1.GroupByEnc)
 		log.Lvl1("Recieved results (attributes) ", res)
 		log.Lvl1("Recieved results (groups) ", resGrp)
 		cv2 := encryptedResult[1]
 		res1 := lib.DecryptIntVector(clientPrivate, &cv2.AggregatingAttributes)
-		resGrp1 := lib.DecryptIntVector(clientPrivate, &cv2.ProbaGroupingAttributesEnc)
+		resGrp1 := lib.DecryptIntVector(clientPrivate, &cv2.GroupByEnc)
 		log.Lvl1("Recieved results (attributes) ", res1)
 		log.Lvl1("Recieved results (groups) ", resGrp1)
 

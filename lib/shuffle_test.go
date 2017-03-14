@@ -13,9 +13,9 @@ func TestShuffleSequence(t *testing.T) {
 	// number of clients
 	k := 10
 	// number of responses (aggregating attributes)
-	N := 8
+	//N := 8
 	// number of grouping attributes
-	M := 2
+	//M := 2
 
 	collectivePubKey, priv, _ := lib.GenKeys(k)
 	collectivePrivKey := network.Suite.Scalar()
@@ -24,13 +24,13 @@ func TestShuffleSequence(t *testing.T) {
 		collectivePrivKey = network.Suite.Scalar().Add(collectivePrivKey, priv[i])
 	}
 
-	inputList := make([]lib.ClientResponse, k)
+	inputList := make([]lib.ProcessResponse, k)
 
 	for i := 0; i < k; i++ {
-		inputList[i] = lib.NewClientResponse(M, N)
+		inputList[i] = lib.ProcessResponse{}
 
-		for ii := range inputList[i].ProbaGroupingAttributesEnc {
-			inputList[i].ProbaGroupingAttributesEnc[ii] = *lib.EncryptInt(collectivePubKey, int64(i+1))
+		for ii := range inputList[i].GroupByEnc {
+			inputList[i].GroupByEnc[ii] = *lib.EncryptInt(collectivePubKey, int64(i+1))
 		}
 		for iii := range inputList[i].AggregatingAttributes {
 			inputList[i].AggregatingAttributes[iii] = *lib.EncryptInt(collectivePubKey, int64(3*i+3))
@@ -50,8 +50,8 @@ func TestShuffleSequence(t *testing.T) {
 	}
 
 	for i := 0; i < k; i++ {
-		for iii := range inputList[0].ProbaGroupingAttributesEnc {
-			decrypted := lib.DecryptInt(collectivePrivKey, outputlist[piinv[i]].ProbaGroupingAttributesEnc[iii])
+		for iii := range inputList[0].GroupByEnc {
+			decrypted := lib.DecryptInt(collectivePrivKey, outputlist[piinv[i]].GroupByEnc[iii])
 			assert.Equal(t, int64(i+1), decrypted)
 		}
 		for iiii := range inputList[0].AggregatingAttributes {

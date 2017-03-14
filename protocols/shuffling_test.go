@@ -34,7 +34,7 @@ func TestShuffling(t *testing.T) {
 		groupSec.Add(groupSec, priv[i])
 	}
 	for i := 0; i < nbrNodes; i++ {
-		precomputes[i] = lib.CreatePrecomputedRandomize(network.Suite.Point().Base(), groupPub, network.Suite.Cipher(priv[i].Bytes()), 2, 10)
+		precomputes[i] = lib.CreatePrecomputedRandomize(network.Suite.Point().Base(), groupPub, network.Suite.Cipher(priv[i].Bytes()), 4, 10)
 	}
 	aggregateKey := groupPub
 
@@ -52,23 +52,23 @@ func TestShuffling(t *testing.T) {
 	for i, p := range expRes {
 		testCipherVect[i] = *lib.EncryptInt(aggregateKey, p)
 	}
-	clientResponse1 := lib.ClientResponse{ProbaGroupingAttributesEnc: testCipherVect, AggregatingAttributes: testCipherVect}
+	clientResponse1 := lib.ProcessResponse{GroupByEnc: testCipherVect, WhereEnc: testCipherVect, AggregatingAttributes: testCipherVect}
 
 	testCipherVect1 := make(lib.CipherVector, 1)
 	expRes1 := []int64{1}
 	for i, p := range expRes1 {
 		testCipherVect1[i] = *lib.EncryptInt(aggregateKey, p)
 	}
-	clientResponse2 := lib.ClientResponse{ProbaGroupingAttributesEnc: testCipherVect1, AggregatingAttributes: testCipherVect1}
+	clientResponse2 := lib.ProcessResponse{GroupByEnc: testCipherVect1, WhereEnc: testCipherVect1, AggregatingAttributes: testCipherVect1}
 
 	testCipherVect2 := make(lib.CipherVector, 1)
 	expRes2 := []int64{2}
 	for i, p := range expRes2 {
 		testCipherVect2[i] = *lib.EncryptInt(aggregateKey, p)
 	}
-	clientResponse3 := lib.ClientResponse{ProbaGroupingAttributesEnc: testCipherVect2, AggregatingAttributes: testCipherVect2}
+	clientResponse3 := lib.ProcessResponse{GroupByEnc: testCipherVect2, WhereEnc: testCipherVect2, AggregatingAttributes: testCipherVect2}
 
-	mapi := make([]lib.ClientResponse, 4)
+	mapi := make([]lib.ProcessResponse, 4)
 	mapi[0] = clientResponse1
 	mapi[1] = clientResponse2
 	mapi[2] = clientResponse3
@@ -91,11 +91,12 @@ func TestShuffling(t *testing.T) {
 
 		for _, v := range encryptedResult {
 			decryptedVAggr := lib.DecryptIntVector(groupSec, &v.AggregatingAttributes)
-			decryptedVGrp := lib.DecryptIntVector(groupSec, &v.ProbaGroupingAttributesEnc)
+			log.LLvl1(decryptedVAggr)
+			decryptedVGrp := lib.DecryptIntVector(groupSec, &v.GroupByEnc)
 			present := false
 			for _, w := range mapi {
 				decryptedWAggr := lib.DecryptIntVector(groupSec, &w.AggregatingAttributes)
-				decryptedWGrp := lib.DecryptIntVector(groupSec, &w.ProbaGroupingAttributesEnc)
+				decryptedWGrp := lib.DecryptIntVector(groupSec, &w.GroupByEnc)
 				if reflect.DeepEqual(decryptedWAggr, decryptedVAggr) && reflect.DeepEqual(decryptedWGrp, decryptedVGrp) {
 					present = true
 				}

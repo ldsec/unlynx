@@ -32,7 +32,7 @@ func init() {
 
 // ShufflingMessage represents a message containing data to shuffle
 type ShufflingMessage struct {
-	Data []lib.ClientResponse
+	Data []lib.ProcessResponse
 }
 
 // ShufflingBytesMessage represents a shuffling message in bytes
@@ -76,7 +76,7 @@ type ShufflingProtocol struct {
 	*onet.TreeNodeInstance
 
 	// Protocol feedback channel
-	FeedbackChannel chan []lib.ClientResponse
+	FeedbackChannel chan []lib.ProcessResponse
 
 	// Protocol communication channels
 	LengthNodeChannel         chan sbLengthStruct
@@ -84,7 +84,7 @@ type ShufflingProtocol struct {
 
 	// Protocol state data
 	nextNodeInCircuit *onet.TreeNode
-	TargetOfShuffle   *[]lib.ClientResponse
+	TargetOfShuffle   *[]lib.ProcessResponse
 
 	CollectiveKey abstract.Point //only use in order to test the protocol
 	Proofs        bool
@@ -95,7 +95,7 @@ type ShufflingProtocol struct {
 func NewShufflingProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 	dsp := &ShufflingProtocol{
 		TreeNodeInstance: n,
-		FeedbackChannel:  make(chan []lib.ClientResponse),
+		FeedbackChannel:  make(chan []lib.ProcessResponse),
 	}
 
 	if err := dsp.RegisterChannel(&dsp.PreviousNodeInPathChannel); err != nil {
@@ -144,7 +144,6 @@ func (p *ShufflingProtocol) Start() error {
 	}
 
 	shuffledData, pi, beta := lib.ShuffleSequence(shuffleTarget, nil, collectiveKey, p.Precomputed)
-
 	lib.EndTimer(roundShufflingStart)
 	roundShufflingStartProof := lib.StartTimer(p.Name() + "_Shuffling(START-Proof)")
 
@@ -304,10 +303,10 @@ func (sm *ShufflingMessage) ToBytes() ([]byte, int, int, int) {
 func (sm *ShufflingMessage) FromBytes(data []byte, gacbLength, aabLength, pgaebLength int) {
 	var nbrData int
 
-	elementLength := (gacbLength + aabLength*64 + pgaebLength*64) //CAUTION: hardcoded 64 (size of el-gamal element C,K)
+	elementLength := (gacbLength*64 + aabLength*64 + pgaebLength*64) //CAUTION: hardcoded 64 (size of el-gamal element C,K)
 	nbrData = len(data) / elementLength
 
-	(*sm).Data = make([]lib.ClientResponse, nbrData)
+	(*sm).Data = make([]lib.ProcessResponse, nbrData)
 	wg := lib.StartParallelize(nbrData)
 	for i := 0; i < nbrData; i++ {
 		v := data[i*elementLength : i*elementLength+elementLength]

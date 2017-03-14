@@ -26,7 +26,7 @@ func init() {
 	network.RegisterMessage(DeterministicTaggingMessage{})
 	network.RegisterMessage(DeterministicTaggingBytesMessage{})
 	network.RegisterMessage(DTBLengthMessage{})
-	network.RegisterMessage(lib.ClientResponseDet{})
+	network.RegisterMessage(lib.ProcessResponseDet{})
 	onet.GlobalProtocolRegister(DeterministicTaggingProtocolName, NewDeterministicTaggingProtocol)
 }
 
@@ -77,7 +77,7 @@ type DeterministicTaggingProtocol struct {
 	*onet.TreeNodeInstance
 
 	// Protocol feedback channel
-	FeedbackChannel chan []lib.ClientResponseDet
+	FeedbackChannel chan []lib.ProcessResponseDet
 
 	// Protocol communication channels
 	PreviousNodeInPathChannel chan deterministicTaggingBytesStruct
@@ -85,16 +85,19 @@ type DeterministicTaggingProtocol struct {
 
 	// Protocol state data
 	nextNodeInCircuit *onet.TreeNode
-	TargetOfSwitch    *[]lib.ClientResponse
+	TargetOfSwitch    *[]lib.ProcessResponse
 	SurveySecretKey   *abstract.Scalar
 	Proofs            bool
+
+	// Nbr of query attributes
+	NbrQueryAttributes int
 }
 
 // NewDeterministicTaggingProtocol constructs tagging switching protocol instances.
 func NewDeterministicTaggingProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 	dsp := &DeterministicTaggingProtocol{
 		TreeNodeInstance: n,
-		FeedbackChannel:  make(chan []lib.ClientResponseDet),
+		FeedbackChannel:  make(chan []lib.ProcessResponseDet),
 	}
 
 	if err := dsp.RegisterChannel(&dsp.PreviousNodeInPathChannel); err != nil {
@@ -137,9 +140,8 @@ func (p *DeterministicTaggingProtocol) Start() error {
 	// grouping attributes
 	detTarget := make([]GroupingAttributes, nbrClientResponses)
 	for i, v := range *p.TargetOfSwitch {
-		detTarget[i].Vector = v.ProbaGroupingAttributesEnc
+		detTarget[i].Vector = append(v.GroupByEnc, v.WhereEnc...)
 	}
-
 	lib.EndTimer(roundTotalStart)
 
 	sendingDet(*p, DeterministicTaggingMessage{detTarget})
@@ -153,8 +155,7 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 	lengthBef := (<-p.LengthNodeChannel).CVLength
 	deterministicTaggingTargetBytesBef := <-p.PreviousNodeInPathChannel
 	deterministicTaggingTargetBef := DeterministicTaggingMessage{Data: make([]GroupingAttributes, 0)}
-	deterministicTaggingTargetBef.FromBytes(deterministicTaggingTargetBytesBef.Data, lengthBef)
-
+	deterministicTaggingTargetBef.FromBytes(deterministicTaggingTargetBytesBef.Data, lengthBef, p.NbrQueryAttributes)
 	wg := lib.StartParallelize(len(deterministicTaggingTargetBef.Data))
 	toAdd := network.Suite.Point().Mul(network.Suite.Point().Base(), *p.SurveySecretKey)
 	for i := range deterministicTaggingTargetBef.Data {
@@ -194,7 +195,7 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 	length := (<-p.LengthNodeChannel).CVLength
 	deterministicTaggingTargetBytes := <-p.PreviousNodeInPathChannel
 	deterministicTaggingTarget := DeterministicTaggingMessage{Data: make([]GroupingAttributes, 0)}
-	deterministicTaggingTarget.FromBytes(deterministicTaggingTargetBytes.Data, length)
+	deterministicTaggingTarget.FromBytes(deterministicTaggingTargetBytes.Data, length, p.NbrQueryAttributes)
 
 	roundTotalComputation := lib.StartTimer(p.Name() + "_DetTagging(DISPATCH)")
 
@@ -214,11 +215,11 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 
 	lib.EndParallelize(wg)
 
-	var TaggedData []lib.ClientResponseDet
+	var TaggedData []lib.ProcessResponseDet
 
 	if p.IsRoot() {
 		detCreatedData := deterministicTaggingTarget.Data
-		TaggedData = make([]lib.ClientResponseDet, len(*p.TargetOfSwitch))
+		TaggedData = make([]lib.ProcessResponseDet, len(*p.TargetOfSwitch))
 
 		wg1 := lib.StartParallelize(len(detCreatedData))
 		for i, v := range detCreatedData {
@@ -234,10 +235,9 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 		}
 
 		lib.EndParallelize(wg1)
-
 		log.Lvl1(p.ServerIdentity(), " completed deterministic Tagging (", len(detCreatedData), "row )")
 	} else {
-		log.Lvl1(p.ServerIdentity(), " carried on deterministic Tagging.")
+		log.Lvl1(p.ServerIdentity(), " carried on deterministic Tagging.", len(deterministicTaggingTarget.Data))
 	}
 
 	lib.EndTimer(roundTotalComputation)
@@ -264,25 +264,34 @@ func (p *DeterministicTaggingProtocol) sendToNext(msg interface{}) {
 
 // sendingDet sends DeterministicTaggingBytes messages
 func sendingDet(p DeterministicTaggingProtocol, detTarget DeterministicTaggingMessage) {
-	data, cvLength := detTarget.ToBytes()
+	data, cvLength := detTarget.ToBytes(p.NbrQueryAttributes)
 	p.sendToNext(&DTBLengthMessage{CVLength: cvLength})
 	p.sendToNext(&DeterministicTaggingBytesMessage{Data: data})
 }
 
 // DeterministicTagFormat creates a response with a deterministic tag
-func deterministicTagFormat(i int, v GroupingAttributes, targetofSwitch *[]lib.ClientResponse) lib.ClientResponseDet {
-	deterministicGroupAttributes := make(lib.DeterministCipherVector, len(v.Vector))
+func deterministicTagFormat(i int, v GroupingAttributes, targetofSwitch *[]lib.ProcessResponse) lib.ProcessResponseDet {
+	tmp := *targetofSwitch
+
+	deterministicGroupAttributes := make(lib.DeterministCipherVector, len(tmp[i].GroupByEnc))
+	deterministicWhereAttributes := make([]lib.GroupingKey, len(tmp[i].WhereEnc))
 	for j, c := range v.Vector {
-		deterministicGroupAttributes[j] = lib.DeterministCipherText{Point: c.C}
+		if j < len(tmp[i].GroupByEnc) {
+			deterministicGroupAttributes[j] = lib.DeterministCipherText{Point: c.C}
+		} else if j < len(tmp[i].GroupByEnc)+len(tmp[i].WhereEnc) {
+			tmp1 := (lib.DeterministCipherVector{lib.DeterministCipherText{Point: c.C}})
+			deterministicWhereAttributes[j-len(tmp[i].GroupByEnc)] = tmp1.Key()
+		}
+
 	}
-	return lib.ClientResponseDet{CR: (*targetofSwitch)[i], DetTag: (*targetofSwitch)[i].GroupingAttributesClear + deterministicGroupAttributes.Key()}
+	return lib.ProcessResponseDet{CR: (*targetofSwitch)[i], DetTagGroupBy: deterministicGroupAttributes.Key(), DetTagWhere: deterministicWhereAttributes}
 }
 
 // Conversion
 //______________________________________________________________________________________________________________________
 
 // ToBytes converts a DeterministicTaggingMessage to a byte array
-func (dtm *DeterministicTaggingMessage) ToBytes() ([]byte, int) {
+func (dtm *DeterministicTaggingMessage) ToBytes(nbrQueryAttributes int) ([]byte, int) {
 	var cvLength int
 
 	length := len((*dtm).Data)
@@ -299,16 +308,23 @@ func (dtm *DeterministicTaggingMessage) ToBytes() ([]byte, int) {
 				mutexD.Lock()
 				data := (*dtm).Data[i].Vector
 				mutexD.Unlock()
-
 				aux, cvAux := data.ToBytes()
 
 				mutexD.Lock()
 				bb[i] = aux
-				cvLength = cvAux
+				if i >= nbrQueryAttributes {
+					cvLength = cvAux
+				}
+
 				mutexD.Unlock()
 			}(i)
 		} else {
-			bb[i], cvLength = (*dtm).Data[i].Vector.ToBytes()
+			if i > nbrQueryAttributes {
+				bb[i], cvLength = (*dtm).Data[i].Vector.ToBytes()
+			} else {
+				bb[i], _ = (*dtm).Data[i].Vector.ToBytes()
+			}
+
 		}
 
 	}
@@ -320,14 +336,23 @@ func (dtm *DeterministicTaggingMessage) ToBytes() ([]byte, int) {
 }
 
 // FromBytes converts a byte array to a DeterministicTaggingMessage. Note that you need to create the (empty) object beforehand.
-func (dtm *DeterministicTaggingMessage) FromBytes(data []byte, cvLength int) {
+func (dtm *DeterministicTaggingMessage) FromBytes(data []byte, cvLength int, nbrQueryAttributes int) {
 	cvByteLength := (cvLength * 64) //TODO: hardcoded 64 (size of el-gamal element C,K)
-	nbrGroupingAttributes := len(data) / cvByteLength
+	nbrQueryAttrBytes := nbrQueryAttributes * 64
+	nbrGroupingAttributes := (len(data) - nbrQueryAttrBytes) / cvByteLength
+
+	(*dtm).Data = make([]GroupingAttributes, nbrGroupingAttributes+nbrQueryAttributes)
+	for i := 0; i < nbrQueryAttributes; i++ {
+		cv := make(lib.CipherVector, 1)
+		cv.FromBytes(data[i*64:i*64+64], 1)
+		(*dtm).Data[i] = GroupingAttributes{cv}
+	}
+	data = data[nbrQueryAttrBytes:]
 
 	wg := lib.StartParallelize(nbrGroupingAttributes)
-	(*dtm).Data = make([]GroupingAttributes, nbrGroupingAttributes)
-	for i := 0; i < nbrGroupingAttributes; i++ {
-		v := data[i*cvByteLength : i*cvByteLength+cvByteLength]
+
+	for i := nbrQueryAttributes; i < nbrQueryAttributes+nbrGroupingAttributes; i++ {
+		v := data[(i-nbrQueryAttributes)*cvByteLength : (i-nbrQueryAttributes)*cvByteLength+cvByteLength]
 		cv := make(lib.CipherVector, cvLength)
 		if lib.PARALLELIZE {
 			go func(v []byte, i int) {

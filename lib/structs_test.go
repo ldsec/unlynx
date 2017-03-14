@@ -17,16 +17,17 @@ func TestAddClientResponse(t *testing.T) {
 
 	secKey, pubKey := lib.GenKey()
 
-	cr1 := newClientResponse(pubKey, grouping, aggregating)
-	cr2 := newClientResponse(pubKey, grouping, aggregating)
+	cr1 := lib.FilteredResponse{*lib.EncryptIntVector(pubKey, grouping), *lib.EncryptIntVector(pubKey, aggregating)}
+	cr2 := lib.FilteredResponse{*lib.EncryptIntVector(pubKey, grouping), *lib.EncryptIntVector(pubKey, aggregating)}
 
-	newCr := lib.NewClientResponse(1, 5)
-	newCr.GroupingAttributesClear = lib.Key(grouping)
+	newCr := lib.FilteredResponse{}
+	newCr.GroupByEnc = *lib.EncryptIntVector(pubKey, grouping)
+	newCr.AggregatingAttributes = *lib.NewCipherVector(len(cr1.AggregatingAttributes))
 	newCr.Add(cr1, cr2)
 
-	assert.Equal(t, grouping, lib.UnKey(newCr.GroupingAttributesClear))
+	//assert.Equal(t, grouping, lib.UnKey(newCr.GroupingAttributesClear))
 	assert.Equal(t, sum, lib.DecryptIntVector(secKey, &newCr.AggregatingAttributes))
-	assert.Equal(t, grouping, lib.DecryptIntVector(secKey, &newCr.ProbaGroupingAttributesEnc))
+	assert.Equal(t, grouping, lib.DecryptIntVector(secKey, &newCr.GroupByEnc))
 }
 
 // TestCipherVectorTagging tests the ciphervector tag method
@@ -37,7 +38,7 @@ func TestCipherVectorTagging(t *testing.T) {
 	target := []int64{1, 2, 3, 4, 5}
 	cv := lib.EncryptIntVector(groupKey, target)
 
-	cl := lib.ClientResponse{GroupingAttributesClear: "", ProbaGroupingAttributesEnc: *cv, AggregatingAttributes: *cv}
+	cl := lib.ProcessResponse{GroupByEnc: *cv, AggregatingAttributes: *cv}
 	es := cl.CipherVectorTag(groupKey)
 	_ = es
 }
@@ -50,17 +51,17 @@ func TestEncryptClientClearResponse(t *testing.T) {
 	grouping := []int64{1}
 	aggregating := []int64{0, 1, 2, 3, 4}
 
-	ccr := lib.NewClientClearResponse(1, 1, 5)
+	ccr := lib.DpClearResponse{[]int64{1}, []int64{1}, []int64{1}, []int64{1}, []int64{5}}
 
-	ccr.GroupingAttributesClear = groupingClear
+	ccr.GroupByClear = groupingClear
 	ccr.AggregatingAttributes = aggregating
-	ccr.GroupingAttributesEnc = grouping
+	ccr.GroupByEnc = grouping
 
 	cr := lib.EncryptClientClearResponse(ccr, pubKey)
 
-	assert.Equal(t, groupingClear, lib.UnKey(cr.GroupingAttributesClear))
+	//assert.Equal(t, groupingClear, lib.UnKey(cr.GroupingAttributesClear))
 	assert.Equal(t, aggregating, lib.DecryptIntVector(secKey, &cr.AggregatingAttributes))
-	assert.Equal(t, grouping, lib.DecryptIntVector(secKey, &cr.ProbaGroupingAttributesEnc))
+	assert.Equal(t, grouping, lib.DecryptIntVector(secKey, &cr.GroupByEnc))
 }
 
 // TestClientResponseConverter tests the ClientResponse converter (to bytes). In the meantime we also test the Key and UnKey function ... That is the way to go :D
@@ -89,17 +90,17 @@ func TestClientResponseDetConverter(t *testing.T) {
 	grouping := []int64{1}
 	aggregating := []int64{0, 1, 3, 103, 103}
 
-	crd := newClientResponseDet(pubKey, grouping, aggregating)
+	crd := lib.FilteredResponseDet{DetTagGroupBy: lib.Key([]int64{1}), Fr: lib.FilteredResponse{GroupByEnc: *lib.EncryptIntVector(pubKey, grouping), AggregatingAttributes: *lib.EncryptIntVector(pubKey, aggregating)}}
 
-	crb, acbLength, aabLength, pgaebLength, dtbLength := crd.ToBytes()
+	crb, acbLength, aabLength, dtbLength := crd.ToBytes()
 
-	newCrd := lib.ClientResponseDet{}
-	newCrd.FromBytes(crb, acbLength, aabLength, pgaebLength, dtbLength)
+	newCrd := lib.FilteredResponseDet{}
+	newCrd.FromBytes(crb, acbLength, aabLength, dtbLength)
 
-	assert.Equal(t, grouping, lib.UnKey(newCrd.DetTag))
-	assert.Equal(t, grouping, lib.UnKey(newCrd.CR.GroupingAttributesClear))
-	assert.Equal(t, aggregating, lib.DecryptIntVector(secKey, &newCrd.CR.AggregatingAttributes))
-	assert.Equal(t, grouping, lib.DecryptIntVector(secKey, &newCrd.CR.ProbaGroupingAttributesEnc))
+	assert.Equal(t, grouping, lib.UnKey(newCrd.DetTagGroupBy))
+	//assert.Equal(t, grouping, lib.UnKey(newCrd.Fr.))
+	assert.Equal(t, aggregating, lib.DecryptIntVector(secKey, &newCrd.Fr.AggregatingAttributes))
+	assert.Equal(t, grouping, lib.DecryptIntVector(secKey, &newCrd.Fr.GroupByEnc))
 }
 
 // newClientResponse creates a new ClientResponse object with actual data
@@ -113,10 +114,10 @@ func newClientResponse(pubKey abstract.Point, grouping, aggregating []int64) lib
 }
 
 // newClientResponseDet creates a new ClientResponseDet object with actual data
-func newClientResponseDet(pubKey abstract.Point, grouping, aggregating []int64) lib.ClientResponseDet {
-	cr := lib.ClientResponseDet{}
-	cr.CR = newClientResponse(pubKey, grouping, aggregating)
-	cr.DetTag = lib.Key(grouping)
+func newClientResponseDet(pubKey abstract.Point, grouping, aggregating []int64) lib.FilteredResponseDet {
+	cr := lib.FilteredResponseDet{}
+	cr.Fr = lib.FilteredResponse{*lib.EncryptIntVector(pubKey, grouping), *lib.EncryptIntVector(pubKey, aggregating)}
+	cr.DetTagGroupBy = lib.Key(grouping)
 
 	return cr
 }

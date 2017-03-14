@@ -1,20 +1,21 @@
 package services_test
 
 import (
-	"reflect"
 	"testing"
-
-	"os"
 
 	"github.com/JoaoAndreSa/MedCo/lib"
 	"github.com/JoaoAndreSa/MedCo/services"
-	"gopkg.in/dedis/onet.v1"
+
 	"gopkg.in/dedis/onet.v1/log"
+
+	"gopkg.in/dedis/onet.v1"
+	"os"
+	"reflect"
 	"strconv"
 )
 
 // numberGrpAttr is the number of group attributes.
-const numberGrpAttr = 2
+const numberGrpAttr = 3
 
 // numberAttr is the number of attributes.
 const numberAttr = 10
@@ -27,8 +28,7 @@ func TestMain(m *testing.M) {
 
 // TEST BATCH 1 -> encrypted or/and non-encrypted grouping attributes
 //______________________________________________________________________________________________________________________
-
-// Only encrypted attributes
+/// Only encrypted attributes
 func TestServiceOnlyEncGrpAttr(t *testing.T) {
 	log.LLvl1("***************************************************************************************************")
 	os.Remove("pre_compute_multiplications.gob")
@@ -42,15 +42,14 @@ func TestServiceOnlyEncGrpAttr(t *testing.T) {
 	// Send a request to the service
 	client := services.NewMedcoClient(el.List[0], strconv.Itoa(0))
 
-	surveyDesc := lib.SurveyDescription{GroupingAttributesClearCount: 0, GroupingAttributesEncCount: numberGrpAttr, AggregatingAttributesCount: numberAttr}
-
 	nbrDPs := make(map[string]int64)
 	//how many data providers for each server
 	for _, server := range el.List {
 		nbrDPs[server.String()] = 2 // 2 DPs for each server
 	}
-
-	surveyID, _, err := client.SendSurveyCreationQuery(el, lib.SurveyID("testSurvey"), lib.SurveyID(""), surveyDesc, proofsService, false, nil, nil, nil, nbrDPs, 0)
+	pred := "(v0 == v1 || v2 == v3) && v4 == v5"
+	whereQueryValues := []lib.WhereQueryAttribute{{"age", *lib.EncryptInt(el.Aggregate, 1)}, {"salary", *lib.EncryptInt(el.Aggregate, 1)}, {"joao", *lib.EncryptInt(el.Aggregate, 1)}}
+	surveyID, _, err := client.SendSurveyCreationQuery(el, lib.SurveyID("testSurvey"), lib.SurveyID(""), []string{"anything"}, false, whereQueryValues, pred, []string{"anything", "anything", "anything"}, nil, nil, nbrDPs, 0, proofsService, false)
 
 	if err != nil {
 		t.Fatal("Service did not start.", err)
@@ -65,35 +64,46 @@ func TestServiceOnlyEncGrpAttr(t *testing.T) {
 		grp := [numberGrpAttr]int64{}
 		aggr := make([]int64, numberAttr)
 
-		//just random data
-		//client1 -> grp:[1 0], aggr:[3 0 0 0 0 0 0 0 0 0]
-		//client2 -> grp:[2 0], aggr:[0 3 0 0 0 0 0 0 0 0]
-		//client3 -> grp:[3 0], aggr:[0 0 3 0 0 0 0 0 0 0]
-		//...
 		grp[0] = int64(i % 4)
 		aggr[i%numberAttr] = 3
 
 		//convert tab in slice (was a tab only for the test)
+		val := int64(1)
+		if i == 2 {
+			val = int64(2)
+		}
+		sliceWhere := make([]int64, numberGrpAttr)
+		for j := range grp {
+			if j == 0 {
+				sliceWhere = []int64{val}
+			} else {
+				sliceWhere = append(sliceWhere, val)
+			}
+		}
+
 		sliceGrp := make([]int64, numberGrpAttr)
-		for i, v := range grp {
-			if i == 0 {
+		for j, v := range grp {
+			if j == 0 {
 				sliceGrp = []int64{v}
 			} else {
 				sliceGrp = append(sliceGrp, v)
 			}
 		}
 
-		dataHolder[i].SendSurveyResponseQuery(*surveyID, []lib.ClientClearResponse{{GroupingAttributesClear: nil, GroupingAttributesEnc: sliceGrp, AggregatingAttributes: aggr}}, el.Aggregate, 1)
+		dataHolder[i].SendSurveyResponseQuery(*surveyID, []lib.DpClearResponse{{WhereEnc: sliceWhere, GroupByEnc: sliceGrp, AggregatingAttributes: aggr}}, el.Aggregate, 1)
 
 		//compute expected results
-		_, ok := expectedResults[grp]
-		if ok {
-			for ind, v := range expectedResults[grp] {
-				expectedResults[grp][ind] = v + aggr[ind]
+		if i != 2 {
+			_, ok := expectedResults[grp]
+			if ok {
+				for ind, v := range expectedResults[grp] {
+					expectedResults[grp][ind] = v + aggr[ind]
+				}
+			} else {
+				expectedResults[grp] = aggr
 			}
-		} else {
-			expectedResults[grp] = aggr
 		}
+
 	}
 
 	grpClear, grp, aggr, err := client.SendSurveyResultsQuery(*surveyID)
@@ -121,6 +131,7 @@ func TestServiceOnlyEncGrpAttr(t *testing.T) {
 	}
 }
 
+/*
 // Only clear grouping attributes
 func TestServiceOnlyClearGrpAttr(t *testing.T) {
 	log.LLvl1("***************************************************************************************************")
@@ -171,7 +182,7 @@ func TestServiceOnlyClearGrpAttr(t *testing.T) {
 			}
 		}
 
-		dataHolder[i].SendSurveyResponseQuery(*surveyID, []lib.ClientClearResponse{{GroupingAttributesClear: sliceGrp, GroupingAttributesEnc: nil, AggregatingAttributes: aggr}}, el.Aggregate, 1)
+		dataHolder[i].SendSurveyResponseQuery(*surveyID, []lib.DpClearResponse{{GroupingAttributesClear: sliceGrp, GroupingAttributesEnc: nil, AggregatingAttributes: aggr}}, el.Aggregate, 1)
 
 		//compute expected results
 		_, ok := expectedResults[grp]
@@ -263,7 +274,7 @@ func TestServiceClearAndEncGrpAttr(t *testing.T) {
 			valueClear = i
 		}
 
-		dataHolder[i].SendSurveyResponseQuery(*surveyID, []lib.ClientClearResponse{{GroupingAttributesClear: []int64{int64(valueClear)}, GroupingAttributesEnc: sliceGrp, AggregatingAttributes: aggr}}, el.Aggregate, 1)
+		dataHolder[i].SendSurveyResponseQuery(*surveyID, []lib.DpClearResponse{{GroupingAttributesClear: []int64{int64(valueClear)}, GroupingAttributesEnc: sliceGrp, AggregatingAttributes: aggr}}, el.Aggregate, 1)
 
 		grp[numberGrpAttr] = int64(valueClear)
 		//compute expected results
@@ -363,7 +374,7 @@ func TestAllServersNoDPs(t *testing.T) {
 			valueClear = i
 		}
 
-		dataHolder[i].SendSurveyResponseQuery(*surveyID, []lib.ClientClearResponse{{GroupingAttributesClear: []int64{int64(valueClear)}, GroupingAttributesEnc: sliceGrp, AggregatingAttributes: aggr}}, el.Aggregate, 1)
+		dataHolder[i].SendSurveyResponseQuery(*surveyID, []lib.DpClearResponse{{GroupingAttributesClear: []int64{int64(valueClear)}, GroupingAttributesEnc: sliceGrp, AggregatingAttributes: aggr}}, el.Aggregate, 1)
 
 		grp[numberGrpAttr] = int64(valueClear)
 
@@ -467,7 +478,7 @@ func TestAllServersRandomDPs(t *testing.T) {
 			valueClear = i
 		}
 
-		dataHolder[i].SendSurveyResponseQuery(*surveyID, []lib.ClientClearResponse{{GroupingAttributesClear: []int64{int64(valueClear)}, GroupingAttributesEnc: sliceGrp, AggregatingAttributes: aggr}}, el.Aggregate, 1)
+		dataHolder[i].SendSurveyResponseQuery(*surveyID, []lib.DpClearResponse{{GroupingAttributesClear: []int64{int64(valueClear)}, GroupingAttributesEnc: sliceGrp, AggregatingAttributes: aggr}}, el.Aggregate, 1)
 
 		grp[numberGrpAttr] = int64(valueClear)
 		//compute expected results
@@ -506,4 +517,17 @@ func TestAllServersRandomDPs(t *testing.T) {
 		}
 	}
 
+}
+*/
+func TestFilteringFunc(t *testing.T) {
+	/*secKey := network.Suite.Scalar().Pick(random.Stream)
+	pubKey := network.Suite.Point().Mul(network.Suite.Point().Base(), secKey)
+	cipher := *lib.EncryptInt(pubKey,1)*/
+	pred := "(v0 == v1 && v2 == v3) && v4 == v5"
+	whereQueryValues := []lib.WhereQueryAttributeTagged{{"age", lib.GroupingKey("1")}, {"salary", lib.GroupingKey("1")}, {"joao", lib.GroupingKey("1")}}
+	responsesToFilter := []lib.ProcessResponseDet{{DetTagWhere: []lib.GroupingKey{lib.GroupingKey("1"), lib.GroupingKey("1"), lib.GroupingKey("1")}}, {DetTagWhere: []lib.GroupingKey{lib.GroupingKey("1"), lib.GroupingKey("1"), lib.GroupingKey("2")}}}
+	log.LLvl1(pred)
+	log.LLvl1(responsesToFilter)
+	log.LLvl1(whereQueryValues)
+	log.LLvl1(services.FilterResponses(pred, whereQueryValues, responsesToFilter))
 }

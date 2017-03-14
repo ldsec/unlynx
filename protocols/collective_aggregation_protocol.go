@@ -32,7 +32,7 @@ func init() {
 
 // CothorityAggregatedData is the collective aggregation result.
 type CothorityAggregatedData struct {
-	GroupedData map[lib.GroupingKey]lib.ClientResponse
+	GroupedData map[lib.GroupingKey]lib.FilteredResponse
 }
 
 // DataReferenceMessage message sent to trigger an aggregation protocol.
@@ -40,7 +40,7 @@ type DataReferenceMessage struct{}
 
 // ChildAggregatedDataMessage contains one node's aggregated data.
 type ChildAggregatedDataMessage struct {
-	ChildData []lib.ClientResponseDet
+	ChildData []lib.FilteredResponseDet
 }
 
 // ChildAggregatedDataBytesMessage is ChildAggregatedDataMessage in bytes.
@@ -50,10 +50,10 @@ type ChildAggregatedDataBytesMessage struct {
 
 // CADBLengthMessage is a message containing the lengths to read a shuffling message in bytes
 type CADBLengthMessage struct {
-	GacbLength  int
-	AabLength   int
-	PgaebLength int
-	DtbLength   int
+	GacbLength int
+	AabLength  int
+	//PgaebLength int
+	DtbLength int
 }
 
 // Structs
@@ -95,7 +95,7 @@ type CollectiveAggregationProtocol struct {
 	ChildDataChannel     chan []childAggregatedDataBytesStruct
 
 	// Protocol state data
-	GroupedData *map[lib.GroupingKey]lib.ClientResponse
+	GroupedData *map[lib.GroupingKey]lib.FilteredResponse
 	Proofs      bool
 }
 
@@ -128,7 +128,6 @@ func (p *CollectiveAggregationProtocol) Start() error {
 	if p.GroupedData == nil {
 		return errors.New("No data reference provided for aggregation")
 	}
-
 	log.LLvl1(p.ServerIdentity(), " started a Colective Aggregation Protocol (", len(*p.GroupedData), "local group(s) )")
 	p.SendToChildren(&DataReferenceMessage{})
 	return nil
@@ -162,10 +161,10 @@ func (p *CollectiveAggregationProtocol) aggregationAnnouncementPhase() {
 }
 
 // Results pushing up the tree containing aggregation results.
-func (p *CollectiveAggregationProtocol) ascendingAggregationPhase() *map[lib.GroupingKey]lib.ClientResponse {
+func (p *CollectiveAggregationProtocol) ascendingAggregationPhase() *map[lib.GroupingKey]lib.FilteredResponse {
 
 	if p.GroupedData == nil {
-		emptyMap := make(map[lib.GroupingKey]lib.ClientResponse, 0)
+		emptyMap := make(map[lib.GroupingKey]lib.FilteredResponse, 0)
 		p.GroupedData = &emptyMap
 	}
 
@@ -183,9 +182,8 @@ func (p *CollectiveAggregationProtocol) ascendingAggregationPhase() *map[lib.Gro
 		}
 		for i, v := range length {
 			childrenContribution := ChildAggregatedDataMessage{}
-			childrenContribution.FromBytes(datas[i].Data, v.GacbLength, v.AabLength, v.PgaebLength, v.DtbLength)
-			c1 := make(map[lib.GroupingKey]lib.ClientResponse)
-
+			childrenContribution.FromBytes(datas[i].Data, v.GacbLength, v.AabLength, v.DtbLength)
+			c1 := make(map[lib.GroupingKey]lib.FilteredResponse)
 			roundProofs := lib.StartTimer(p.Name() + "_CollectiveAggregation(Proof-1stPart)")
 
 			if p.Proofs {
@@ -198,13 +196,13 @@ func (p *CollectiveAggregationProtocol) ascendingAggregationPhase() *map[lib.Gro
 			roundComput := lib.StartTimer(p.Name() + "_CollectiveAggregation(Aggregation)")
 
 			for _, aggr := range childrenContribution.ChildData {
-				localAggr, ok := (*p.GroupedData)[aggr.DetTag]
+				localAggr, ok := (*p.GroupedData)[aggr.DetTagGroupBy]
 				if ok {
-					localAggr.AggregatingAttributes = *lib.NewCipherVector(len(localAggr.AggregatingAttributes)).Add(localAggr.AggregatingAttributes, aggr.CR.AggregatingAttributes)
+					localAggr.AggregatingAttributes = *lib.NewCipherVector(len(localAggr.AggregatingAttributes)).Add(localAggr.AggregatingAttributes, aggr.Fr.AggregatingAttributes)
 				} else {
-					localAggr = aggr.CR
+					localAggr = aggr.Fr
 				}
-				(*p.GroupedData)[aggr.DetTag] = localAggr
+				(*p.GroupedData)[aggr.DetTagGroupBy] = localAggr
 			}
 
 			lib.EndTimer(roundComput)
@@ -221,24 +219,23 @@ func (p *CollectiveAggregationProtocol) ascendingAggregationPhase() *map[lib.Gro
 	lib.EndTimer(roundTotComput)
 
 	if !p.IsRoot() {
-		detAggrResponses := make([]lib.ClientResponseDet, len(*p.GroupedData))
+		detAggrResponses := make([]lib.FilteredResponseDet, len(*p.GroupedData))
 		count := 0
 		for i, v := range *p.GroupedData {
-			detAggrResponses[count].DetTag = i
-			detAggrResponses[count].CR = v
+			detAggrResponses[count].DetTagGroupBy = i
+			detAggrResponses[count].Fr = v
 			count++
 		}
 
 		message := ChildAggregatedDataBytesMessage{}
 
-		var gacbLength, aabLength, pgaebLength, dtbLength int
+		var gacbLength, aabLength, dtbLength int
 
-		message.Data, gacbLength, aabLength, pgaebLength, dtbLength = (&ChildAggregatedDataMessage{detAggrResponses}).ToBytes()
-
+		message.Data, gacbLength, aabLength, dtbLength = (&ChildAggregatedDataMessage{detAggrResponses}).ToBytes()
 		childrenContribution := ChildAggregatedDataMessage{}
-		childrenContribution.FromBytes(message.Data, gacbLength, aabLength, pgaebLength, dtbLength)
+		childrenContribution.FromBytes(message.Data, gacbLength, aabLength, dtbLength)
 
-		p.SendToParent(&CADBLengthMessage{gacbLength, aabLength, pgaebLength, dtbLength})
+		p.SendToParent(&CADBLengthMessage{gacbLength, aabLength, dtbLength})
 		p.SendToParent(&message)
 	}
 
@@ -249,13 +246,14 @@ func (p *CollectiveAggregationProtocol) ascendingAggregationPhase() *map[lib.Gro
 //______________________________________________________________________________________________________________________
 
 // ToBytes converts a ChildAggregatedDataMessage to a byte array
-func (sm *ChildAggregatedDataMessage) ToBytes() ([]byte, int, int, int, int) {
+func (sm *ChildAggregatedDataMessage) ToBytes() ([]byte, int, int, int) {
+
 	b := make([]byte, 0)
 	bb := make([][]byte, len((*sm).ChildData))
 
 	var gacbLength int
 	var aabLength int
-	var pgaebLength int
+	//var pgaebLength int
 	var dtbLength int
 
 	wg := lib.StartParallelize(len((*sm).ChildData))
@@ -269,19 +267,18 @@ func (sm *ChildAggregatedDataMessage) ToBytes() ([]byte, int, int, int, int) {
 				data := (*sm).ChildData[i]
 				mutexCD.Unlock()
 
-				aux, gacbAux, aabAux, pgaebAux, dtbAux := data.ToBytes()
+				aux, gacbAux, aabAux, dtbAux := data.ToBytes()
 
 				mutexCD.Lock()
 				bb[i] = aux
 				gacbLength = gacbAux
 				aabLength = aabAux
-				pgaebLength = pgaebAux
 				dtbLength = dtbAux
 				mutexCD.Unlock()
 
 			}(i)
 		} else {
-			bb[i], gacbLength, aabLength, pgaebLength, dtbLength = (*sm).ChildData[i].ToBytes()
+			bb[i], gacbLength, aabLength, dtbLength = (*sm).ChildData[i].ToBytes()
 		}
 
 	}
@@ -290,29 +287,28 @@ func (sm *ChildAggregatedDataMessage) ToBytes() ([]byte, int, int, int, int) {
 	for _, el := range bb {
 		b = append(b, el...)
 	}
-
-	return b, gacbLength, aabLength, pgaebLength, dtbLength
+	return b, gacbLength, aabLength, dtbLength
 }
 
 // FromBytes converts a byte array to a ChildAggregatedDataMessage. Note that you need to create the (empty) object beforehand.
-func (sm *ChildAggregatedDataMessage) FromBytes(data []byte, gacbLength, aabLength, pgaebLength, dtbLength int) {
-	elementLength := (gacbLength + aabLength*64 + pgaebLength*64 + dtbLength) //CAUTION: hardcoded 64 (size of el-gamal element C,K)
+func (sm *ChildAggregatedDataMessage) FromBytes(data []byte, gacbLength, aabLength, dtbLength int) {
+	elementLength := (gacbLength*64 + aabLength*64 + dtbLength) //CAUTION: hardcoded 64 (size of el-gamal element C,K)
 
 	if elementLength != 0 && len(data) > 0 {
 		var nbrChildData int
 		nbrChildData = len(data) / elementLength
 
-		(*sm).ChildData = make([]lib.ClientResponseDet, nbrChildData)
+		(*sm).ChildData = make([]lib.FilteredResponseDet, nbrChildData)
 		wg := lib.StartParallelize(nbrChildData)
 		for i := 0; i < nbrChildData; i++ {
 			v := data[i*elementLength : i*elementLength+elementLength]
 			if lib.PARALLELIZE {
 				go func(v []byte, i int) {
 					defer wg.Done()
-					(*sm).ChildData[i].FromBytes(v, gacbLength, aabLength, pgaebLength, dtbLength)
+					(*sm).ChildData[i].FromBytes(v, gacbLength, aabLength, dtbLength)
 				}(v, i)
 			} else {
-				(*sm).ChildData[i].FromBytes(v, gacbLength, aabLength, pgaebLength, dtbLength)
+				(*sm).ChildData[i].FromBytes(v, gacbLength, aabLength, dtbLength)
 			}
 
 		}

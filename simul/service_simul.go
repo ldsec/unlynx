@@ -146,11 +146,11 @@ func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
 		// END SERVICE PROTOCOL
 
 		// Print Output
-		allData := make([]lib.ClientClearResponse, 0)
+		allData := make([]lib.DpClearResponse, 0)
 		log.Lvl1("Service output:")
 		for i := range *grp {
 			log.Lvl1(i, ")", (*grpClear)[i], ",", (*grp)[i], "->", (*aggr)[i])
-			allData = append(allData, lib.ClientClearResponse{GroupingAttributesClear: (*grpClear)[i], GroupingAttributesEnc: (*grp)[i], AggregatingAttributes: (*aggr)[i]})
+			allData = append(allData, lib.DpClearResponse{GroupingAttributesClear: (*grpClear)[i], GroupingAttributesEnc: (*grp)[i], AggregatingAttributes: (*aggr)[i]})
 		}
 
 		// Test Service Simulation

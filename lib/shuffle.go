@@ -24,48 +24,55 @@ func compressCipherVector(ciphervector CipherVector, e []abstract.Scalar) Cipher
 }
 
 // CompressClientResponse applies shuffling compression to a client response
-func CompressClientResponse(clientResponse ClientResponse, e []abstract.Scalar) CipherText {
-	m := len(clientResponse.ProbaGroupingAttributesEnc)
-	n := len(clientResponse.AggregatingAttributes)
+func CompressClientResponse(clientResponse ProcessResponse, e []abstract.Scalar) CipherText {
+	m := len(clientResponse.GroupByEnc)
+	n := len(clientResponse.WhereEnc)
+	o := len(clientResponse.AggregatingAttributes)
 
 	// check size of e
-	if len(e) != m+n {
+	if len(e) != m+n+o {
 		//+o
 		panic("e is not the same size as the list")
 	}
 
 	sum := *NewCipherText()
-	var sum1, sum2 CipherText
+	var sum1, sum2, sum3 CipherText
 	if PARALLELIZE {
-		wg := StartParallelize(2)
+		wg := StartParallelize(3)
 		go func() {
-			sum1 = compressCipherVector(clientResponse.ProbaGroupingAttributesEnc, e[0:m])
+			sum1 = compressCipherVector(clientResponse.GroupByEnc, e[0:m])
 			defer wg.Done()
 		}()
 		go func() {
-			sum2 = compressCipherVector(clientResponse.AggregatingAttributes, e[m:m+n])
+			sum2 = compressCipherVector(clientResponse.WhereEnc, e[m:m+n])
+			defer wg.Done()
+		}()
+		go func() {
+			sum3 = compressCipherVector(clientResponse.AggregatingAttributes, e[m+n:m+n+o])
 			defer wg.Done()
 		}()
 		EndParallelize(wg)
 	} else {
-		sum1 = compressCipherVector(clientResponse.ProbaGroupingAttributesEnc, e[0:m])
-		sum2 = compressCipherVector(clientResponse.AggregatingAttributes, e[m:m+n])
+		sum1 = compressCipherVector(clientResponse.GroupByEnc, e[0:m])
+		sum2 = compressCipherVector(clientResponse.WhereEnc, e[m:m+n])
+		sum3 = compressCipherVector(clientResponse.AggregatingAttributes, e[m+n:m+n+o])
 	}
 
 	sum.Add(sum1, sum2)
+	sum.Add(sum, sum3)
 
 	return sum
 }
 
 // CompressListClientResponse applies shuffling compression to a list of client responses
-func CompressListClientResponse(clientResponses []ClientResponse, e []abstract.Scalar) ([]abstract.Point, []abstract.Point) {
+func CompressListClientResponse(clientResponses []ProcessResponse, e []abstract.Scalar) ([]abstract.Point, []abstract.Point) {
 	xC := make([]abstract.Point, len(clientResponses))
 	xK := make([]abstract.Point, len(clientResponses))
 
 	wg := StartParallelize(len(clientResponses))
 	for i, v := range clientResponses {
 		if PARALLELIZE {
-			go func(i int, v ClientResponse) {
+			go func(i int, v ProcessResponse) {
 				tmp := CompressClientResponse(v, e)
 				xK[i] = tmp.K
 				xC[i] = tmp.C
@@ -112,13 +119,14 @@ func CompressBeta(beta [][]abstract.Scalar, e []abstract.Scalar) []abstract.Scal
 }
 
 // ShuffleSequence applies shuffling to a list of client responses
-func ShuffleSequence(inputList []ClientResponse, g, h abstract.Point, precomputed []CipherVectorScalar) ([]ClientResponse, []int, [][]abstract.Scalar) {
+func ShuffleSequence(inputList []ProcessResponse, g, h abstract.Point, precomputed []CipherVectorScalar) ([]ProcessResponse, []int, [][]abstract.Scalar) {
 	//,  []byte) {
-	NQ1 := len(inputList[0].ProbaGroupingAttributesEnc)
-	NQ2 := len(inputList[0].AggregatingAttributes)
+	NQ1 := len(inputList[0].GroupByEnc)
+	NQ2 := len(inputList[0].WhereEnc)
+	NQ3 := len(inputList[0].AggregatingAttributes)
 
 	// number of elgamal pairs
-	NQ := NQ1 + NQ2 //+ NQ3
+	NQ := NQ1 + NQ2 + NQ3
 
 	k := len(inputList) // number of clients
 
@@ -140,17 +148,17 @@ func ShuffleSequence(inputList []ClientResponse, g, h abstract.Point, precompute
 	// Pick a random permutation
 	pi := RandomPermutation(k)
 
-	outputList := make([]ClientResponse, k)
+	outputList := make([]ProcessResponse, k)
 
 	wg := StartParallelize(k)
 	for i := 0; i < k; i++ {
 		if PARALLELIZE {
-			go func(outputList []ClientResponse, i int) {
+			go func(outputList []ProcessResponse, i int) {
 				defer wg.Done()
-				clientResponseShuffling(pi, i, inputList, outputList, NQ1, NQ2, NQ, beta, precomputedPoints, g, h)
+				clientResponseShuffling(pi, i, inputList, outputList, NQ1, NQ2, NQ3, NQ, beta, precomputedPoints, g, h)
 			}(outputList, i)
 		} else {
-			clientResponseShuffling(pi, i, inputList, outputList, NQ1, NQ2, NQ, beta, precomputedPoints, g, h)
+			clientResponseShuffling(pi, i, inputList, outputList, NQ1, NQ2, NQ3, NQ, beta, precomputedPoints, g, h)
 		}
 	}
 	EndParallelize(wg)
@@ -159,10 +167,11 @@ func ShuffleSequence(inputList []ClientResponse, g, h abstract.Point, precompute
 }
 
 // ClientResponseShuffling applies shuffling and rerandomization to a list of client responses
-func clientResponseShuffling(pi []int, i int, inputList, outputList []ClientResponse, NQ1, NQ2, NQ int, beta [][]abstract.Scalar, precomputedPoints []CipherVector, g, h abstract.Point) {
+func clientResponseShuffling(pi []int, i int, inputList, outputList []ProcessResponse, NQ1, NQ2, NQ3, NQ int, beta [][]abstract.Scalar, precomputedPoints []CipherVector, g, h abstract.Point) {
 	index := pi[i]
-	outputList[i].ProbaGroupingAttributesEnc = *NewCipherVector(NQ1)
-	outputList[i].AggregatingAttributes = *NewCipherVector(NQ2)
+	outputList[i].GroupByEnc = *NewCipherVector(NQ1)
+	outputList[i].WhereEnc = *NewCipherVector(NQ2)
+	outputList[i].AggregatingAttributes = *NewCipherVector(NQ3)
 	wg := StartParallelize(NQ)
 	for j := 0; j < NQ; j++ {
 		var b abstract.Scalar
@@ -176,16 +185,20 @@ func clientResponseShuffling(pi []int, i int, inputList, outputList []ClientResp
 			go func(j int) {
 				defer wg.Done()
 				if j < NQ1 {
-					outputList[i].ProbaGroupingAttributesEnc.Rerandomize(inputList[index].ProbaGroupingAttributesEnc, b, b, cipher, g, h, j)
+					outputList[i].GroupByEnc.Rerandomize(inputList[index].GroupByEnc, b, b, cipher, g, h, j)
 				} else if j < NQ1+NQ2 {
-					outputList[i].AggregatingAttributes.Rerandomize(inputList[index].AggregatingAttributes, b, b, cipher, g, h, j-NQ1)
+					outputList[i].WhereEnc.Rerandomize(inputList[index].WhereEnc, b, b, cipher, g, h, j-NQ1)
+				} else {
+					outputList[i].AggregatingAttributes.Rerandomize(inputList[index].AggregatingAttributes, b, b, cipher, g, h, j-(NQ1+NQ2))
 				}
 			}(j)
 		} else {
 			if j < NQ1 {
-				outputList[i].ProbaGroupingAttributesEnc.Rerandomize(inputList[index].ProbaGroupingAttributesEnc, b, b, cipher, g, h, j)
+				outputList[i].GroupByEnc.Rerandomize(inputList[index].GroupByEnc, b, b, cipher, g, h, j)
 			} else if j < NQ1+NQ2 {
-				outputList[i].AggregatingAttributes.Rerandomize(inputList[index].AggregatingAttributes, b, b, cipher, g, h, j-NQ1)
+				outputList[i].WhereEnc.Rerandomize(inputList[index].WhereEnc, b, b, cipher, g, h, j-NQ1)
+			} else {
+				outputList[i].AggregatingAttributes.Rerandomize(inputList[index].AggregatingAttributes, b, b, cipher, g, h, j-(NQ1+NQ2))
 			}
 		}
 
@@ -194,7 +207,7 @@ func clientResponseShuffling(pi []int, i int, inputList, outputList []ClientResp
 }
 
 // CompressClientResponseMultiple applies shuffling compression to 2 list of client responses corresponding to input and output of shuffling
-func CompressClientResponseMultiple(inputList, outputList []ClientResponse, i int, e []abstract.Scalar, Xhat, XhatBar, Yhat, YhatBar []abstract.Point) {
+func CompressClientResponseMultiple(inputList, outputList []ProcessResponse, i int, e []abstract.Scalar, Xhat, XhatBar, Yhat, YhatBar []abstract.Point) {
 	tmp := CompressClientResponse(inputList[i], e)
 	Xhat[i] = tmp.K
 	Yhat[i] = tmp.C
