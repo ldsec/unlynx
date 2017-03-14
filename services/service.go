@@ -170,7 +170,7 @@ func NewService(c *onet.Context) onet.Service {
 // Process implements the processor interface and is used to recognize messages broadcasted between servers
 func (s *Service) Process(msg *network.Envelope) {
 	if msg.MsgType.Equal(msgTypes.msgSurveyCreationQuery) {
-		tmp := (msg.Msg).(*SurveyCreationQuery)
+		tmp := (msg.Msg).(*lib.SurveyCreationQuery)
 		s.HandleSurveyCreationQuery(tmp)
 	} else if msg.MsgType.Equal(msgTypes.msgSurveyResponseSharing) {
 		tmp := (msg.Msg).(SurveyResponseSharing)
@@ -227,7 +227,7 @@ func (s *Service) HandleSurveyCreationQuery(recq *lib.SurveyCreationQuery) (netw
 
 	log.LLvl1(s.ServerIdentity().String(), " received a Survey Creation Query")
 
-	handlingServer := false
+	//handlingServer := false
 
 	if *recq.SurveyGenID == "" || *recq.SurveyID == "" {
 		// if this server is the one receiving the query from the client
@@ -240,7 +240,7 @@ func (s *Service) HandleSurveyCreationQuery(recq *lib.SurveyCreationQuery) (netw
 
 		} else {
 			// P2D2i2b2
-			handlingServer = true
+			//handlingServer = true
 		}
 		// broadcasts the query
 		err := s.SendISMOthers(&recq.Roster, recq)
@@ -283,8 +283,8 @@ func (s *Service) HandleSurveyCreationQuery(recq *lib.SurveyCreationQuery) (netw
 			s.PushData(resp)
 		} else {
 			//P2D2i2b2
-			msg, err := s.HandleI2b2Query(recq, handlingServer)
-			return msg, onet.NewClientError(err)
+			//msg, err := s.HandleI2b2Query(recq, handlingServer)
+			//return msg, onet.NewClientError(err)
 		}
 	}
 
@@ -353,7 +353,7 @@ func (s *Service) HandleSurveyResultsQuery(resq *SurveyResultsQuery) (network.Me
 	if resq.IntraMessage == false {
 		resq.IntraMessage = true
 
-		err := s.SendISMOthers(&tmp.Roster, resq)
+		err := s.SendISMOthers(&tmp.Query.Roster, resq)
 		if err != nil {
 			log.Error("broadcasting error ", err)
 		}
@@ -555,8 +555,8 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 			shuffle := pi.(*protocols.ShufflingProtocol)
 
 			shuffle.Proofs = s.survey[target].Query.Proofs
-			aux := s.survey[target].SurveyResponses
-			shuffle.TargetOfShuffle = &aux
+			//aux := s.survey[target].SurveyResponses
+			//shuffle.TargetOfShuffle = &aux
 		} else {
 			// Unlynx
 			pi, err = protocols.NewShufflingProtocol(tn)
@@ -656,10 +656,10 @@ func (s *Service) NewDROProtocol(tn *onet.TreeNodeInstance) (onet.ProtocolInstan
 	shuffle.Precomputed = nil
 
 	if tn.IsRoot() {
-		clientResponses := make([]lib.ClientResponse, 0)
+		clientResponses := make([]lib.ProcessResponse, 0)
 		noiseArray := lib.GenerateNoiseValues(1000, 0, 1, 0.001)
 		for _, v := range noiseArray {
-			clientResponses = append(clientResponses, lib.ClientResponse{GroupingAttributesClear: "", ProbaGroupingAttributesEnc: nil, AggregatingAttributes: *lib.EncryptIntVector(s.survey[s.current].Roster.Aggregate, []int64{int64(v)})})
+			clientResponses = append(clientResponses, lib.ProcessResponse{GroupByEnc: nil, AggregatingAttributes: *lib.EncryptIntVector(s.survey[s.current].Query.Roster.Aggregate, []int64{int64(v)})})
 		}
 		shuffle.TargetOfShuffle = &clientResponses
 	}
@@ -711,7 +711,7 @@ func (s *Service) StartService(targetSurvey lib.SurveyID, root bool) error {
 		// Shuffling Phase
 		start := lib.StartTimer(s.ServerIdentity().String() + "_ShufflingPhase")
 
-		err := s.ShufflingPhase(s.TargetSurvey.Query.SurveyID)
+		err := s.ShufflingPhase(*s.TargetSurvey.Query.SurveyID)
 		if err != nil {
 			log.Fatal("Error in the Shuffling Phase")
 		}
@@ -721,7 +721,7 @@ func (s *Service) StartService(targetSurvey lib.SurveyID, root bool) error {
 		// Tagging Phase
 		start = lib.StartTimer(s.ServerIdentity().String() + "_TaggingPhase")
 
-		err = s.TaggingPhase(s.TargetSurvey.Query.SurveyID)
+		err = s.TaggingPhase(*s.TargetSurvey.Query.SurveyID)
 		if err != nil {
 			log.Fatal("Error in the Tagging Phase")
 		}
@@ -739,7 +739,7 @@ func (s *Service) StartService(targetSurvey lib.SurveyID, root bool) error {
 		if root == true {
 			start := lib.StartTimer(s.ServerIdentity().String() + "_AggregationPhase")
 
-			err = s.AggregationPhase(s.TargetSurvey.Query.SurveyID)
+			err = s.AggregationPhase(*s.TargetSurvey.Query.SurveyID)
 			if err != nil {
 				log.Fatal("Error in the Aggregation Phase")
 			}
@@ -751,7 +751,7 @@ func (s *Service) StartService(targetSurvey lib.SurveyID, root bool) error {
 		if root == true && lib.DIFFPRI == true {
 			start := lib.StartTimer(s.ServerIdentity().String() + "_DROPhase")
 
-			s.DROPhase(s.TargetSurvey.Query.SurveyID)
+			s.DROPhase(*s.TargetSurvey.Query.SurveyID)
 
 			lib.EndTimer(start)
 		}
@@ -760,7 +760,7 @@ func (s *Service) StartService(targetSurvey lib.SurveyID, root bool) error {
 		if root == true {
 			start := lib.StartTimer(s.ServerIdentity().String() + "_KeySwitchingPhase")
 
-			s.KeySwitchingPhase(s.TargetSurvey.Query.SurveyID)
+			s.KeySwitchingPhase(*s.TargetSurvey.Query.SurveyID)
 
 			lib.EndTimer(start)
 		}
@@ -768,8 +768,8 @@ func (s *Service) StartService(targetSurvey lib.SurveyID, root bool) error {
 		// i2b2 Unlynx
 	} else {
 		if root == true {
-			s.TaggingPhase(s.TargetSurvey.Query.SurveyID)
-			s.AggregationPhase(s.TargetSurvey.Query.SurveyID)
+			s.TaggingPhase(*s.TargetSurvey.Query.SurveyID)
+			s.AggregationPhase(*s.TargetSurvey.Query.SurveyID)
 		}
 	}
 
