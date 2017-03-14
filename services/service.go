@@ -674,9 +674,9 @@ func (s *Service) NewDROProtocol(tn *onet.TreeNodeInstance)(onet.ProtocolInstanc
 
 	if tn.IsRoot() {
 		clientResponses := make([]lib.ClientResponse, 0)
-		noiseArray := generateNoiseValues(1000)
+		noiseArray := lib.GenerateNoiseValues(1000,0,1,0.001)
 		for _, v := range noiseArray {
-			clientResponses = append(clientResponses, lib.ClientResponse{GroupingAttributesClear: "", ProbaGroupingAttributesEnc: nil, AggregatingAttributes: *lib.EncryptIntVector(s.survey[s.current].Roster.Aggregate, []int64{v})})
+			clientResponses = append(clientResponses, lib.ClientResponse{GroupingAttributesClear: "", ProbaGroupingAttributesEnc: nil, AggregatingAttributes: *lib.EncryptIntVector(s.survey[s.current].Roster.Aggregate, []int64{int64(v)})})
 		}
 		shuffle.TargetOfShuffle = &clientResponses
 	}
@@ -935,19 +935,6 @@ func (s *Service) KeySwitchingPhase(targetSurvey lib.SurveyID) error {
 
 // Other Stuff.... (related with the protocols)
 //______________________________________________________________________________________________________________________
-
-// generateNoiseValues generates a number of n noise values from a given probabilistic distribution
-func generateNoiseValues(n int) []int64 {
-
-	//just for testing
-	example := [...]int64{-4, -3, -2, -2, -1, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 3, 4}
-	noise := make([]int64, 0)
-
-	for i := 0; i < n; i++ {
-		noise = append(noise, example[i%len(example)])
-	}
-	return noise
-}
 
 func precomputeForShuffling(serverName string, surveyID lib.SurveyID, surveySecret abstract.Scalar, collectiveKey abstract.Point, lineSize int) []lib.CipherVectorScalar {
 	//log.Lvl1(serverName, " precomputes for shuffling of survey ", surveyID)
