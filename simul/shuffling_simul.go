@@ -49,7 +49,7 @@ func (sim *ShufflingSimulation) Setup(dir string, hosts []string) (*onet.Simulat
 	return sc, nil
 }
 
-// Nodes registers a ShufflingSimul (with access to the ShufflingSimulation object) for every node
+// Node registers a ShufflingSimul (with access to the ShufflingSimulation object) for every node
 func (sim *ShufflingSimulation) Node(config *onet.SimulationConfig) error {
 	config.Server.ProtocolRegister("ShufflingSimul",
 		func(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {

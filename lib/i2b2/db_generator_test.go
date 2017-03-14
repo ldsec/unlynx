@@ -1,4 +1,4 @@
-package lib_i2b2_test
+package libi2b2_test
 
 import (
 	"testing"

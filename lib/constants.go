@@ -19,7 +19,7 @@ const PARALLELIZE = true
 const VPARALLELIZE = 100
 
 // DIFFPRI enables the DRO protocol (Distributed Results Obfuscation)
-const DIFFPRI = true
+const DIFFPRI = false
 
 // StartTimer starts measurement of time
 func StartTimer(name string) *monitor.TimeMeasure {

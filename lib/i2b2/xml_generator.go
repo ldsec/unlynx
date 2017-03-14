@@ -1,4 +1,4 @@
-package lib_i2b2
+package libi2b2
 
 import (
 	"encoding/hex"

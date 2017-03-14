@@ -80,7 +80,7 @@ func (sim *CollectiveAggregationSimulation) Setup(dir string, hosts []string) (*
 	return sc, nil
 }
 
-// Nodes registers a CollectiveAggregationSimul (with access to the CollectiveAggregationSimulation object) for every node
+// Node registers a CollectiveAggregationSimul (with access to the CollectiveAggregationSimulation object) for every node
 func (sim *CollectiveAggregationSimulation) Node(config *onet.SimulationConfig) error {
 	config.Server.ProtocolRegister("CollectiveAggregationSimul",
 		func(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {

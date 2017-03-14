@@ -99,7 +99,7 @@ type CollectiveAggregationProtocol struct {
 	Proofs      bool
 }
 
-// NewCollectiveAggregation initializes the protocol instance.
+// NewCollectiveAggregationProtocol initializes the protocol instance.
 func NewCollectiveAggregationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 	pap := &CollectiveAggregationProtocol{
 		TreeNodeInstance: n,

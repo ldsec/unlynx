@@ -28,12 +28,13 @@ const DROProtocolName = "DRO"
 const gobFile = "pre_compute_multiplications.gob"
 const testDataFile = "medco_test_data.txt"
 
+// MsgTypes defines the Message Type ID for all the service's intra-messages.
 type MsgTypes struct {
-	msgSurveyCreationQuery 			network.MessageTypeID
-	msgSurveyResponseSharing  		network.MessageTypeID
-	msgSurveyFinalResponseSharing      	network.MessageTypeID
-	msgSurveyResultsQuery             	network.MessageTypeID
-	msgDDTfinished				network.MessageTypeID
+	msgSurveyCreationQuery        network.MessageTypeID
+	msgSurveyResponseSharing      network.MessageTypeID
+	msgSurveyFinalResponseSharing network.MessageTypeID
+	msgSurveyResultsQuery         network.MessageTypeID
+	msgDDTfinished                network.MessageTypeID
 }
 
 var msgTypes = MsgTypes{}
@@ -132,8 +133,8 @@ type Service struct {
 	finalResponses               []FinalResponsesIds
 	mutex                        sync.Mutex
 
-	TargetSurvey              *lib.Survey
-	Proofs                    bool
+	TargetSurvey *lib.Survey
+	Proofs       bool
 }
 
 // NewService constructor which registers the needed messages.
@@ -229,7 +230,6 @@ func (s *Service) SendISMOthers(el *onet.Roster, msg interface{}) error {
 
 // Query Handlers
 //______________________________________________________________________________________________________________________
-
 
 // HandleSurveyCreationQuery handles the reception of a survey creation query by instantiating the corresponding survey.
 // in the i2b2 case it will directly run the request response creation
@@ -369,7 +369,7 @@ func (s *Service) HandleSurveyResponseQuery(resp *SurveyResponseQuery) (network.
 	return &ServiceResponse{resp.SurveyID}, nil
 }
 
-// HandleGetSurveyResultsQuery handles the survey result query by the surveyor.
+// HandleSurveyResultsQuery handles the survey result query by the surveyor.
 func (s *Service) HandleSurveyResultsQuery(resq *SurveyResultsQuery) (network.Message, onet.ClientError) {
 
 	log.Lvl1(s.ServerIdentity(), " received a survey result query")
@@ -377,23 +377,23 @@ func (s *Service) HandleSurveyResultsQuery(resq *SurveyResultsQuery) (network.Me
 	tmp.ClientPublic = resq.ClientPublic
 	s.survey[resq.SurveyID] = tmp
 
-	if resq.IntraMessage==false{
-		resq.IntraMessage=true;
+	if resq.IntraMessage == false {
+		resq.IntraMessage = true
 
 		err := s.SendISMOthers(&tmp.Roster, resq)
 		if err != nil {
 			log.Error("broadcasting error ", err)
 		}
-		s.StartService(resq.SurveyID,true)
+		s.StartService(resq.SurveyID, true)
 
 		<-s.EndService
 		log.Lvl1(s.ServerIdentity(), " completed the query processing...")
 
 		return &SurveyResultResponse{Results: s.survey[resq.SurveyID].PullDeliverableResults()}, nil
-	} else {
-		s.StartService(resq.SurveyID,false)
-		return nil, nil
 	}
+
+	s.StartService(resq.SurveyID, false)
+	return nil, nil
 }
 
 // HandleI2b2Query used to respond to an i2b2 query
@@ -549,9 +549,10 @@ func (s *Service) HandleI2b2QueryMode2(recq *SurveyCreationQuery, responses []li
 	return &SurveyResultResponse{}, nil
 }
 
+// HandleDDTfinished handles the message
 func (s *Service) HandleDDTfinished(recq *DDTfinished) (network.Message, onet.ClientError) {
 	s.DDTChannel <- 1
-	return nil,nil
+	return nil, nil
 }
 
 // Protocol Handlers
@@ -567,105 +568,105 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 	var err error
 
 	switch tn.ProtocolName() {
-		case protocols.ShufflingProtocolName:
+	case protocols.ShufflingProtocolName:
+		aux := s.survey[target].Final
+		if aux {
+			// i2b2 case
+			log.LLvl1(s.ServerIdentity(), " starts a final shuffling protocol for survey ", target)
+			pi, err = protocols.NewShufflingProtocol(tn)
+			if err != nil {
+				return nil, err
+			}
+
+			shuffle := pi.(*protocols.ShufflingProtocol)
+
+			shuffle.Proofs = s.survey[target].Proofs
+			aux := s.survey[target].SurveyResponses
+			shuffle.TargetOfShuffle = &aux
+		} else {
+			// Unlynx
+			pi, err = protocols.NewShufflingProtocol(tn)
+			if err != nil {
+				return nil, err
+			}
+
+			shuffle := pi.(*protocols.ShufflingProtocol)
+
+			shuffle.Proofs = s.survey[target].Proofs
+			shuffle.Precomputed = s.survey[target].ShufflePrecompute
+			if tn.IsRoot() {
+				clientResponses := s.survey[target].PullClientResponses()
+				shuffle.TargetOfShuffle = &clientResponses
+			}
+		}
+	case protocols.DeterministicTaggingProtocolName:
+		pi, err = protocols.NewDeterministicTaggingProtocol(tn)
+		if err != nil {
+			return nil, err
+		}
+		hashCreation := pi.(*protocols.DeterministicTaggingProtocol)
+
+		aux := s.survey[target].SurveySecretKey
+		hashCreation.SurveySecretKey = &aux
+		hashCreation.Proofs = s.survey[target].Proofs
+		if tn.IsRoot() {
+			shuffledClientResponses := s.survey[target].PullShuffledClientResponses()
+			hashCreation.TargetOfSwitch = &shuffledClientResponses
+		}
+	case protocols.CollectiveAggregationProtocolName:
+		pi, err = protocols.NewCollectiveAggregationProtocol(tn)
+		if err != nil {
+			return nil, err
+		}
+
+		groupedData := s.survey[target].PullLocallyAggregatedResponses()
+		pi.(*protocols.CollectiveAggregationProtocol).GroupedData = &groupedData
+		pi.(*protocols.CollectiveAggregationProtocol).Proofs = s.survey[target].Proofs
+
+		// waits for all other nodes to finish the tagging phase
+		counter := len(tn.Roster().List) - 1
+		for counter > 0 {
+			counter = counter - (<-s.DDTChannel)
+		}
+	case DROProtocolName:
+	case protocols.KeySwitchingProtocolName:
+		pi, err = protocols.NewKeySwitchingProtocol(tn)
+		if err != nil {
+			return nil, err
+		}
+
+		keySwitch := pi.(*protocols.KeySwitchingProtocol)
+		keySwitch.Proofs = s.survey[target].Proofs
+
+		if tn.IsRoot() {
+			coaggr := []lib.ClientResponse{}
 			aux := s.survey[target].Final
 			if aux {
-				// i2b2 case
-				log.LLvl1(s.ServerIdentity(), " starts a final shuffling protocol for survey ", target)
-				pi, err = protocols.NewShufflingProtocol(tn)
-				if (err != nil) {
-					return nil, err
-				}
-
-				shuffle := pi.(*protocols.ShufflingProtocol)
-
-				shuffle.Proofs = s.survey[target].Proofs
-				aux := s.survey[target].SurveyResponses
-				shuffle.TargetOfShuffle = &aux
+				//if key switching in i2b2 case
+				coaggr = s.survey[target].SurveyResponses
 			} else {
-				// Unlynx
-				pi, err = protocols.NewShufflingProtocol(tn)
-				if (err != nil) {
-					return nil, err
-				}
-
-				shuffle := pi.(*protocols.ShufflingProtocol)
-
-				shuffle.Proofs = s.survey[target].Proofs
-				shuffle.Precomputed = s.survey[target].ShufflePrecompute
-				if tn.IsRoot() {
-					clientResponses := s.survey[target].PullClientResponses()
-					shuffle.TargetOfShuffle = &clientResponses
-				}
-			}
-		case protocols.DeterministicTaggingProtocolName:
-			pi, err = protocols.NewDeterministicTaggingProtocol(tn)
-			if (err != nil) {
-				return nil, err
-			}
-			hashCreation := pi.(*protocols.DeterministicTaggingProtocol)
-
-			aux := s.survey[target].SurveySecretKey
-			hashCreation.SurveySecretKey = &aux
-			hashCreation.Proofs = s.survey[target].Proofs
-			if tn.IsRoot() {
-				shuffledClientResponses := s.survey[target].PullShuffledClientResponses()
-				hashCreation.TargetOfSwitch = &shuffledClientResponses
-			}
-		case protocols.CollectiveAggregationProtocolName:
-			pi, err = protocols.NewCollectiveAggregationProtocol(tn)
-			if (err != nil) {
-				return nil, err
-			}
-
-			groupedData := s.survey[target].PullLocallyAggregatedResponses()
-			pi.(*protocols.CollectiveAggregationProtocol).GroupedData = &groupedData
-			pi.(*protocols.CollectiveAggregationProtocol).Proofs = s.survey[target].Proofs
-
-			// waits for all other nodes to finish the tagging phase
-			counter := len(tn.Roster().List)-1
-			for counter > 0 {
-				counter = counter - (<-s.DDTChannel)
-			}
-		case DROProtocolName:
-		case protocols.KeySwitchingProtocolName:
-			pi, err = protocols.NewKeySwitchingProtocol(tn)
-			if (err != nil) {
-				return nil, err
-			}
-
-			keySwitch := pi.(*protocols.KeySwitchingProtocol)
-			keySwitch.Proofs = s.survey[target].Proofs
-
-			if tn.IsRoot() {
-				coaggr := []lib.ClientResponse{}
-				aux := s.survey[target].Final
-				if aux {
-					//if key switching in i2b2 case
-					coaggr = s.survey[target].SurveyResponses
+				//Unlynx
+				if lib.DIFFPRI == true {
+					coaggr = s.survey[target].PullCothorityAggregatedClientResponses(true, s.noise)
 				} else {
-					//Unlynx
-					if lib.DIFFPRI==true{
-						coaggr = s.survey[target].PullCothorityAggregatedClientResponses(true, s.noise)
-					}else {
-						coaggr = s.survey[target].PullCothorityAggregatedClientResponses(false, lib.CipherText{})
-					}
+					coaggr = s.survey[target].PullCothorityAggregatedClientResponses(false, lib.CipherText{})
 				}
-				keySwitch.TargetOfSwitch = &coaggr
-				tmp := s.survey[target].ClientPublic
-				keySwitch.TargetPublicKey = &tmp
 			}
-		default:
-			return nil, errors.New("Service attempts to start an unknown protocol: " + tn.ProtocolName() + ".")
+			keySwitch.TargetOfSwitch = &coaggr
+			tmp := s.survey[target].ClientPublic
+			keySwitch.TargetPublicKey = &tmp
+		}
+	default:
+		return nil, errors.New("Service attempts to start an unknown protocol: " + tn.ProtocolName() + ".")
 	}
 
 	return pi, nil
 }
 
 // NewDROProtocol implements the DRO protocol - shuffling the noise list
-func (s *Service) NewDROProtocol(tn *onet.TreeNodeInstance)(onet.ProtocolInstance, error){
+func (s *Service) NewDROProtocol(tn *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 	pi, err := protocols.NewShufflingProtocol(tn)
-	if err != nil{
+	if err != nil {
 		return nil, err
 	}
 	shuffle := pi.(*protocols.ShufflingProtocol)
@@ -674,7 +675,7 @@ func (s *Service) NewDROProtocol(tn *onet.TreeNodeInstance)(onet.ProtocolInstanc
 
 	if tn.IsRoot() {
 		clientResponses := make([]lib.ClientResponse, 0)
-		noiseArray := lib.GenerateNoiseValues(1000,0,1,0.001)
+		noiseArray := lib.GenerateNoiseValues(1000, 0, 1, 0.001)
 		for _, v := range noiseArray {
 			clientResponses = append(clientResponses, lib.ClientResponse{GroupingAttributesClear: "", ProbaGroupingAttributesEnc: nil, AggregatingAttributes: *lib.EncryptIntVector(s.survey[s.current].Roster.Aggregate, []int64{int64(v)})})
 		}
@@ -701,7 +702,6 @@ func (s *Service) StartProtocol(name string, targetSurvey lib.SurveyID) (onet.Pr
 
 	return pi, err
 }
-
 
 // Service Phases
 //______________________________________________________________________________________________________________________
@@ -745,8 +745,8 @@ func (s *Service) StartService(targetSurvey lib.SurveyID, root bool) error {
 		}
 
 		// broadcasts the query to unlock waiting channel
-		aux :=s.survey[targetSurvey].Roster
-		err = s.SendISMOthers(&aux,&DDTfinished{})
+		aux := s.survey[targetSurvey].Roster
+		err = s.SendISMOthers(&aux, &DDTfinished{})
 		if err != nil {
 			log.Error("broadcasting error ", err)
 		}
@@ -754,7 +754,7 @@ func (s *Service) StartService(targetSurvey lib.SurveyID, root bool) error {
 		lib.EndTimer(start)
 
 		// Aggregation Phase
-		if root==true{
+		if root == true {
 			start := lib.StartTimer(s.ServerIdentity().String() + "_AggregationPhase")
 
 			err = s.AggregationPhase(s.TargetSurvey.ID)
@@ -766,7 +766,7 @@ func (s *Service) StartService(targetSurvey lib.SurveyID, root bool) error {
 		}
 
 		// DRO Phase
-		if root==true && lib.DIFFPRI==true {
+		if root == true && lib.DIFFPRI == true {
 			start := lib.StartTimer(s.ServerIdentity().String() + "_DROPhase")
 
 			s.DROPhase(s.TargetSurvey.ID)
@@ -775,7 +775,7 @@ func (s *Service) StartService(targetSurvey lib.SurveyID, root bool) error {
 		}
 
 		// Key Switch Phase
-		if root==true{
+		if root == true {
 			start := lib.StartTimer(s.ServerIdentity().String() + "_KeySwitchingPhase")
 
 			s.KeySwitchingPhase(s.TargetSurvey.ID)
@@ -783,17 +783,16 @@ func (s *Service) StartService(targetSurvey lib.SurveyID, root bool) error {
 			lib.EndTimer(start)
 		}
 		s.EndService <- 1
-	// i2b2 Unlynx
+		// i2b2 Unlynx
 	} else {
-		if root==true {
+		if root == true {
 			s.TaggingPhase(s.TargetSurvey.ID)
 			s.AggregationPhase(s.TargetSurvey.ID)
 		}
 	}
 
-	return nil;
+	return nil
 }
-
 
 // ShufflingPhase performs the shuffling of the ClientResponses
 func (s *Service) ShufflingPhase(targetSurvey lib.SurveyID) error {

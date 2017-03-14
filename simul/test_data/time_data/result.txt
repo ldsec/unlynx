@@ -6,14 +6,14 @@
 |-------------------------------------------------------------------------|
 
 
-Hosts:                                             3
 NbrDPs:                                            3
 NbrGroupsClear:                                    0
+NbrGroupsEnc:                                      2
 RandomGroups:                                      true
 DataRepetitions:                                   1
 Proofs:                                            true
+Hosts:                                             3
 NbrResponses:                                      10
-NbrGroupsEnc:                                      2
 NbrAggrAttributes:                                 10
 
 bf:                                                2
