@@ -26,14 +26,14 @@ test_lint:
 # You can use `test_playground` to run any test or part of cothority
 # for more than once in Travis. Change `make test` in .travis.yml
 # to `make test_playground`.
-test_playground:
-	cd protocols; \
-	for a in $$( seq 10 ); do \
-	  go test -v -race -p=1 || exit 1 ; \
-	done;
-
 test_verbose:
-    go test -v -p=1 -short ./...
+	go test -v -race -p=1 ./...;
+
+test_playground:
+    cd protocols; \
+    for a in $$( seq 10 ); do \
+      go test -v -race -p=1 || exit 1 ; \
+    done;
 
 # use test_verbose instead if you want to use this Makefile locally
 test_go:

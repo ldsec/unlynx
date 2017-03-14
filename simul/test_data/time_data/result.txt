@@ -6,15 +6,15 @@
 |-------------------------------------------------------------------------|
 
 
-NbrDPs:                                            3
-NbrGroupsClear:                                    0
-NbrGroupsEnc:                                      2
 RandomGroups:                                      true
 DataRepetitions:                                   1
 Proofs:                                            true
 Hosts:                                             3
 NbrResponses:                                      10
+NbrGroupsClear:                                    0
 NbrAggrAttributes:                                 10
+NbrDPs:                                            3
+NbrGroupsEnc:                                      2
 
 bf:                                                2
 depth:                                             1
