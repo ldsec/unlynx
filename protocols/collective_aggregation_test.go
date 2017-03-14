@@ -67,7 +67,7 @@ func TestCollectiveAggregation(t *testing.T) {
 				assert.True(t, ok)
 				_ = v1
 				_ = v2
-				assert.True(t, reflect.DeepEqual(v1, lib.DecryptIntVector(clientPrivate, &v2.ProbaGroupingAttributesEnc)))
+				assert.True(t, reflect.DeepEqual(v1, lib.DecryptIntVector(clientPrivate, &v2.GroupByEnc)))
 				delete(encryptedResult.GroupedData, k)
 			}
 		}
@@ -84,26 +84,26 @@ func NewCollectiveAggregationTest(tni *onet.TreeNodeInstance) (onet.ProtocolInst
 	pi, err := protocols.NewCollectiveAggregationProtocol(tni)
 	protocol := pi.(*protocols.CollectiveAggregationProtocol)
 
-	testCVMap := make(map[lib.GroupingKey]lib.ClientResponse)
+	testCVMap := make(map[lib.GroupingKey]lib.FilteredResponse)
 
 	switch tni.Index() {
 	case 0:
 		log.LLvl1("0")
-		testCVMap[groupingAttrA.Key()] = lib.ClientResponse{ProbaGroupingAttributesEnc: *lib.EncryptIntVector(clientPublic, []int64{1, 1}), AggregatingAttributes: *lib.EncryptIntVector(clientPublic, []int64{1, 2, 3, 4, 5})}
-		testCVMap[groupingAttrB.Key()] = lib.ClientResponse{ProbaGroupingAttributesEnc: *lib.EncryptIntVector(clientPublic, []int64{1, 2}), AggregatingAttributes: *lib.EncryptIntVector(clientPublic, []int64{0, 0, 0, 0, 0})}
+		testCVMap[groupingAttrA.Key()] = lib.FilteredResponse{GroupByEnc: *lib.EncryptIntVector(clientPublic, []int64{1, 1}), AggregatingAttributes: *lib.EncryptIntVector(clientPublic, []int64{1, 2, 3, 4, 5})}
+		testCVMap[groupingAttrB.Key()] = lib.FilteredResponse{GroupByEnc: *lib.EncryptIntVector(clientPublic, []int64{1, 2}), AggregatingAttributes: *lib.EncryptIntVector(clientPublic, []int64{0, 0, 0, 0, 0})}
 	case 1:
 		log.LLvl1("1")
-		testCVMap[groupingAttrB.Key()] = lib.ClientResponse{ProbaGroupingAttributesEnc: *lib.EncryptIntVector(clientPublic, []int64{1, 2}), AggregatingAttributes: *lib.EncryptIntVector(clientPublic, []int64{1, 2, 3, 4, 5})}
+		testCVMap[groupingAttrB.Key()] = lib.FilteredResponse{GroupByEnc: *lib.EncryptIntVector(clientPublic, []int64{1, 2}), AggregatingAttributes: *lib.EncryptIntVector(clientPublic, []int64{1, 2, 3, 4, 5})}
 	case 2:
 		log.LLvl1("2")
-		testCVMap[groupingAttrA.Key()] = lib.ClientResponse{ProbaGroupingAttributesEnc: *lib.EncryptIntVector(clientPublic, []int64{1, 1}), AggregatingAttributes: *lib.EncryptIntVector(clientPublic, []int64{1, 1, 1, 1, 1})}
+		testCVMap[groupingAttrA.Key()] = lib.FilteredResponse{GroupByEnc: *lib.EncryptIntVector(clientPublic, []int64{1, 1}), AggregatingAttributes: *lib.EncryptIntVector(clientPublic, []int64{1, 1, 1, 1, 1})}
 	case 9:
 		log.LLvl1("9")
-		testCVMap[groupingAttrC.Key()] = lib.ClientResponse{ProbaGroupingAttributesEnc: *lib.EncryptIntVector(clientPublic, []int64{3, 3}), AggregatingAttributes: *lib.EncryptIntVector(clientPublic, []int64{1, 0, 1, 0, 1})}
-		testCVMap[groupingAttrA.Key()] = lib.ClientResponse{ProbaGroupingAttributesEnc: *lib.EncryptIntVector(clientPublic, []int64{1, 1}), AggregatingAttributes: *lib.EncryptIntVector(clientPublic, []int64{1, 2, 3, 4, 5})}
+		testCVMap[groupingAttrC.Key()] = lib.FilteredResponse{GroupByEnc: *lib.EncryptIntVector(clientPublic, []int64{3, 3}), AggregatingAttributes: *lib.EncryptIntVector(clientPublic, []int64{1, 0, 1, 0, 1})}
+		testCVMap[groupingAttrA.Key()] = lib.FilteredResponse{GroupByEnc: *lib.EncryptIntVector(clientPublic, []int64{1, 1}), AggregatingAttributes: *lib.EncryptIntVector(clientPublic, []int64{1, 2, 3, 4, 5})}
 	case 5:
 		log.LLvl1("5")
-		testCVMap[groupingAttrC.Key()] = lib.ClientResponse{ProbaGroupingAttributesEnc: *lib.EncryptIntVector(clientPublic, []int64{3, 3}), AggregatingAttributes: *lib.EncryptIntVector(clientPublic, []int64{0, 1, 0, 1, 0})}
+		testCVMap[groupingAttrC.Key()] = lib.FilteredResponse{GroupByEnc: *lib.EncryptIntVector(clientPublic, []int64{3, 3}), AggregatingAttributes: *lib.EncryptIntVector(clientPublic, []int64{0, 1, 0, 1, 0})}
 
 	default:
 	}

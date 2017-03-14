@@ -18,17 +18,17 @@ func init() {
 // Protocol
 //______________________________________________________________________________________________________________________
 
-var finalResultAggr = make(chan map[lib.GroupingKey]lib.ClientResponse)
+var finalResultAggr = make(chan map[lib.GroupingKey]lib.FilteredResponse)
 
 // LocalAggregationProtocol is a struct holding the state of a protocol instance.
 type LocalAggregationProtocol struct {
 	*onet.TreeNodeInstance
 
 	// Protocol feedback channel
-	FeedbackChannel chan map[lib.GroupingKey]lib.ClientResponse
+	FeedbackChannel chan map[lib.GroupingKey]lib.FilteredResponse
 
 	// Protocol state data
-	TargetOfAggregation []lib.ClientResponseDet
+	TargetOfAggregation []lib.FilteredResponseDet
 	Proofs              bool
 }
 
@@ -36,7 +36,7 @@ type LocalAggregationProtocol struct {
 func NewLocalAggregationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 	pvp := &LocalAggregationProtocol{
 		TreeNodeInstance: n,
-		FeedbackChannel:  make(chan map[lib.GroupingKey]lib.ClientResponse),
+		FeedbackChannel:  make(chan map[lib.GroupingKey]lib.FilteredResponse),
 	}
 
 	return pvp, nil
@@ -48,10 +48,10 @@ func (p *LocalAggregationProtocol) Start() error {
 	log.Lvl1(p.ServerIdentity(), "started a local aggregation Protocol")
 	roundComput := lib.StartTimer(p.Name() + "_LocalAggregation(PROTOCOL)")
 
-	resultingMap := make(map[lib.GroupingKey]lib.ClientResponse)
+	resultingMap := make(map[lib.GroupingKey]lib.FilteredResponse)
 
 	for _, v := range p.TargetOfAggregation {
-		lib.AddInMap(resultingMap, v.DetTag, v.CR)
+		lib.AddInMap(resultingMap, v.DetTagGroupBy, v.Fr)
 	}
 
 	lib.EndTimer(roundComput)

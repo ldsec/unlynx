@@ -6,73 +6,112 @@ import (
 	"strings"
 	"sync"
 
+	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/onet.v1/log"
 )
 
 // Store contains all the elements of a survey, it consists of the data structure that each cothority has to
 // maintain locally to perform a collective survey.
 type Store struct {
-	ClientResponses         []ClientResponse
-	DeliverableResults      []ClientResponse
-	ShuffledClientResponses []ClientResponse
+	DpResponses             []ProcessResponse
+	DeliverableResults      []FilteredResponse
+	ShuffledClientResponses []ProcessResponse
 
+	dpResponsesAggr map[GroupingKeyTuple]DpResponse
 	// LocGroupingAggregating contains the results of the local aggregation.
-	LocAggregatedClientResponse map[GroupingKey]ClientResponse
+	LocAggregatedClientResponse map[GroupingKey]FilteredResponse
 
 	Mutex sync.Mutex
 
 	// GroupedDeterministicGroupingAttributes & GroupedAggregatingAttributes contain results of the grouping
 	// before they are key switched and combined in the last step (key switching).
-	GroupedDeterministicClientResponses map[GroupingKey]ClientResponse
+	GroupedDeterministicClientResponses map[GroupingKey]FilteredResponse
 
 	lastID uint64
+}
+
+type GroupingKeyTuple struct {
+	gkt1 GroupingKey
+	gkt2 GroupingKey
 }
 
 // NewStore is the store constructor.
 func NewStore() *Store {
 	return &Store{
-		LocAggregatedClientResponse:         make(map[GroupingKey]ClientResponse),
-		GroupedDeterministicClientResponses: make(map[GroupingKey]ClientResponse),
+		dpResponsesAggr:                     make(map[GroupingKeyTuple]DpResponse),
+		LocAggregatedClientResponse:         make(map[GroupingKey]FilteredResponse),
+		GroupedDeterministicClientResponses: make(map[GroupingKey]FilteredResponse),
 	}
 }
 
 // InsertClientResponse handles the local storage of a new client response in aggregation or grouping cases.
-func (s *Store) InsertClientResponse(cr ClientResponse) {
-	s.ClientResponses = append(s.ClientResponses, cr)
+func (s *Store) InsertDpResponse(cr DpResponse, pubKey abstract.Point) {
+	if cr.WhereEnc != nil || cr.GroupByEnc != nil {
+		newResp := ProcessResponse{}
+		newResp.GroupByEnc = append(*EncryptIntVector(pubKey, cr.GroupByClear), cr.GroupByEnc...)
+		newResp.WhereEnc = append(*EncryptIntVector(pubKey, cr.WhereClear), cr.WhereEnc...)
+		log.LLvl1("STORE ", newResp.WhereEnc)
+		newResp.AggregatingAttributes = cr.AggregatingAttributes
+		s.DpResponses = append(s.DpResponses, newResp)
+	} else {
+		value, ok := s.dpResponsesAggr[GroupingKeyTuple{Key(cr.GroupByClear), Key(cr.WhereClear)}]
+		if ok {
+			tmp := *NewCipherVector(len(value.AggregatingAttributes)).Add(value.AggregatingAttributes, cr.AggregatingAttributes)
+			mapValue := s.dpResponsesAggr[GroupingKeyTuple{Key(cr.GroupByClear), Key(cr.WhereClear)}]
+			mapValue.AggregatingAttributes = tmp
+			s.dpResponsesAggr[GroupingKeyTuple{Key(cr.GroupByClear), Key(cr.WhereClear)}] = mapValue
+		} else {
+			s.dpResponsesAggr[GroupingKeyTuple{Key(cr.GroupByClear), Key(cr.WhereClear)}] = cr
+		}
+	}
+
 }
 
 // HasNextClientResponse permits to verify if there are new client responses to be processed.
 func (s *Store) HasNextClientResponse() bool {
-	return len(s.ClientResponses) > 0
+	return len(s.DpResponses) > 0
 }
 
 // PullClientResponses permits to get the received client responses
-func (s *Store) PullClientResponses() []ClientResponse {
-	result := s.ClientResponses
-	s.ClientResponses = s.ClientResponses[:0] //clear table
+func (s *Store) PullDpResponses(pubKey abstract.Point) []ProcessResponse {
+	result := []ProcessResponse{}
+	if len(s.DpResponses) > 0 {
+		result = s.DpResponses
+	} else {
+		for _, v := range s.dpResponsesAggr {
+			//TODO function
+			newResp := ProcessResponse{}
+			newResp.GroupByEnc = append(*EncryptIntVector(pubKey, v.GroupByClear), v.GroupByEnc...)
+			newResp.WhereEnc = append(*EncryptIntVector(pubKey, v.WhereClear), v.WhereEnc...)
+			newResp.AggregatingAttributes = v.AggregatingAttributes
+			result = append(result, newResp)
+		}
+	}
+
+	s.DpResponses = s.DpResponses[:0] //clear table
 	return result
 }
 
 // PushShuffledClientResponses stores shuffled responses
-func (s *Store) PushShuffledClientResponses(newShuffledClientResponses []ClientResponse) {
+func (s *Store) PushShuffledClientResponses(newShuffledClientResponses []ProcessResponse) {
 	s.ShuffledClientResponses = append(s.ShuffledClientResponses, newShuffledClientResponses...)
 }
 
 // PullShuffledClientResponses gets shuffled client responses
-func (s *Store) PullShuffledClientResponses() []ClientResponse {
+func (s *Store) PullShuffledClientResponses() []ProcessResponse {
 	result := s.ShuffledClientResponses
 	s.ShuffledClientResponses = s.ShuffledClientResponses[:0] //clear table
 	return result
 }
 
 // PushDeterministicClientResponses permits to store results of deterministic tagging
-func (s *Store) PushDeterministicClientResponses(detClientResponses []ClientResponseDet, serverName string, proofs bool) {
+func (s *Store) PushDeterministicClientResponses(detClientResponses []FilteredResponseDet, serverName string, proofs bool) {
 
 	round := StartTimer(serverName + "_ServerLocalAggregation")
 
 	for _, v := range detClientResponses {
 		s.Mutex.Lock()
-		AddInMap(s.LocAggregatedClientResponse, v.DetTag, v.CR)
+		AddInMap(s.LocAggregatedClientResponse, v.DetTagGroupBy, v.Fr)
 		s.Mutex.Unlock()
 	}
 	/*if proofs {	//TODO: Uncomment
@@ -89,9 +128,9 @@ func (s *Store) HasNextAggregatedResponse() bool {
 }
 
 // PullLocallyAggregatedResponses permits to get the result of the collective and grouped aggregation
-func (s *Store) PullLocallyAggregatedResponses() map[GroupingKey]ClientResponse {
+func (s *Store) PullLocallyAggregatedResponses() map[GroupingKey]FilteredResponse {
 	LocGroupingAggregatingReturn := s.LocAggregatedClientResponse
-	s.LocAggregatedClientResponse = make(map[GroupingKey]ClientResponse)
+	s.LocAggregatedClientResponse = make(map[GroupingKey]FilteredResponse)
 	return LocGroupingAggregatingReturn
 
 }
@@ -102,11 +141,11 @@ func (s *Store) nextID() TempID {
 }
 
 // AddInMap permits to add a client response with its deterministic tag in a map
-func AddInMap(s map[GroupingKey]ClientResponse, key GroupingKey, added ClientResponse) {
+func AddInMap(s map[GroupingKey]FilteredResponse, key GroupingKey, added FilteredResponse) {
 	if localResult, ok := s[key]; !ok {
 		s[key] = added
 	} else {
-		tmp := NewClientResponse(len(added.ProbaGroupingAttributesEnc), len(added.AggregatingAttributes))
+		tmp := NewClientResponse(len(added.GroupByEnc), len(added.AggregatingAttributes))
 		s[key] = *tmp.Add(localResult, added)
 	}
 }
@@ -143,12 +182,12 @@ func StringToInt64Array(s string) []int64 {
 }
 
 // AddInClear permits to add non-encrypted client responses
-func AddInClear(s []ClientClearResponse) []ClientClearResponse {
+func AddInClear(s []DpClearResponse) []DpClearResponse {
 	dataMap := make(map[string][]int64)
 
 	wg := StartParallelize(0)
 	for _, elem := range s {
-		key := int64ArrayToString(elem.GroupingAttributesClear) + " " + int64ArrayToString(elem.GroupingAttributesEnc)
+		key := int64ArrayToString(elem.GroupByClear) + " " + int64ArrayToString(elem.GroupByEnc)
 
 		if _, ok := dataMap[key]; ok == false {
 			cpy := make([]int64, len(elem.AggregatingAttributes))
@@ -175,25 +214,26 @@ func AddInClear(s []ClientClearResponse) []ClientClearResponse {
 		}
 	}
 
-	result := make([]ClientClearResponse, len(dataMap))
+	result := make([]DpClearResponse, len(dataMap))
 
 	i := 0
 	numGroupsClear := 0
 	if len(s) > 0 {
-		numGroupsClear = len(s[0].GroupingAttributesClear)
+		numGroupsClear = len(s[0].GroupByClear)
 	}
 
 	for k, v := range dataMap {
 		// *2 (to account for the spaces between the numbers)
-		result[i] = ClientClearResponse{GroupingAttributesClear: StringToInt64Array(k[:numGroupsClear*2]), GroupingAttributesEnc: StringToInt64Array(k[numGroupsClear*2:]), AggregatingAttributes: v}
+		result[i] = DpClearResponse{GroupByClear: StringToInt64Array(k[:numGroupsClear*2]), GroupByEnc: StringToInt64Array(k[numGroupsClear*2:]), AggregatingAttributes: v}
 		i++
 	}
 
 	return result
+
 }
 
 // PushCothorityAggregatedClientResponses handles the collective aggregation locally.
-func (s *Store) PushCothorityAggregatedClientResponses(sNew map[GroupingKey]ClientResponse) {
+func (s *Store) PushCothorityAggregatedClientResponses(sNew map[GroupingKey]FilteredResponse) {
 	for key, value := range sNew {
 		s.Mutex.Lock()
 		AddInMap(s.GroupedDeterministicClientResponses, key, value)
@@ -209,8 +249,8 @@ func (s *Store) HasNextAggregatedClientResponses() bool {
 var aggregatedGrps []GroupingKey
 
 // PullCothorityAggregatedClientResponses returns the local results of the grouping.
-func (s *Store) PullCothorityAggregatedClientResponses(diffPri bool, noise CipherText) []ClientResponse {
-	aggregatedResults := make([]ClientResponse, len(s.GroupedDeterministicClientResponses))
+func (s *Store) PullCothorityAggregatedClientResponses(diffPri bool, noise CipherText) []FilteredResponse {
+	aggregatedResults := make([]FilteredResponse, len(s.GroupedDeterministicClientResponses))
 	aggregatedGrps = make([]GroupingKey, len(s.GroupedDeterministicClientResponses))
 	count := 0
 	for i, value := range s.GroupedDeterministicClientResponses {
@@ -219,7 +259,7 @@ func (s *Store) PullCothorityAggregatedClientResponses(diffPri bool, noise Ciphe
 		count++
 	}
 
-	s.GroupedDeterministicClientResponses = make(map[GroupingKey]ClientResponse)
+	s.GroupedDeterministicClientResponses = make(map[GroupingKey]FilteredResponse)
 
 	if diffPri == true {
 		for _, v := range aggregatedResults {
@@ -233,13 +273,13 @@ func (s *Store) PullCothorityAggregatedClientResponses(diffPri bool, noise Ciphe
 }
 
 // PushQuerierKeyEncryptedResponses handles the reception of the key switched (for the querier) results.
-func (s *Store) PushQuerierKeyEncryptedResponses(keySwitchedResponse []ClientResponse) {
+func (s *Store) PushQuerierKeyEncryptedResponses(keySwitchedResponse []FilteredResponse) {
 	s.DeliverableResults = keySwitchedResponse
 
 }
 
 // PullDeliverableResults gets the results.
-func (s *Store) PullDeliverableResults() []ClientResponse {
+func (s *Store) PullDeliverableResults() []FilteredResponse {
 	results := s.DeliverableResults
 	s.DeliverableResults = s.DeliverableResults[:0]
 	return results
@@ -248,6 +288,6 @@ func (s *Store) PullDeliverableResults() []ClientResponse {
 // DisplayResults shows results and is useful for debugging.
 func (s *Store) DisplayResults() {
 	for _, v := range s.DeliverableResults {
-		log.LLvl1("[ ", v.GroupingAttributesClear, ", ", v.ProbaGroupingAttributesEnc, " ] : ", v.AggregatingAttributes, ")")
+		log.LLvl1("[ ", v.GroupByEnc, ", ", v.GroupByEnc, " ] : ", v.AggregatingAttributes, ")")
 	}
 }

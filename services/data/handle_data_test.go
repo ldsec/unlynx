@@ -19,7 +19,7 @@ var num_type = [...]int64{2, 5, 2}
 
 const num_aggr = 5
 
-var test_data map[string][]lib.ClientClearResponse
+var test_data map[string][]lib.DpClearResponse
 
 func TestAllPossibleGroups(t *testing.T) {
 	data.Groups = make([][]int64, 0)

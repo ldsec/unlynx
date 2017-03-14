@@ -42,7 +42,7 @@ type OriginalEphemeralKeys struct {
 
 // DataAndOriginalEphemeralKeys contains data being switched and the original ephemeral keys needed at each step
 type DataAndOriginalEphemeralKeys struct {
-	Response              lib.ClientResponse
+	Response              lib.FilteredResponse
 	OriginalEphemeralKeys OriginalEphemeralKeys
 }
 
@@ -61,7 +61,6 @@ type KeySwitchedCipherBytesMessage struct {
 type KSCBLengthMessage struct {
 	L1 int
 	L2 int
-	L3 int
 	L4 int
 	L5 int
 	L6 int
@@ -90,7 +89,7 @@ type KeySwitchingProtocol struct {
 	*onet.TreeNodeInstance
 
 	// Protocol feedback channel
-	FeedbackChannel chan []lib.ClientResponse
+	FeedbackChannel chan []lib.FilteredResponse
 
 	// Protocol communication channels
 	PreviousNodeInPathChannel chan keySwitchedCipherBytesStruct
@@ -98,7 +97,7 @@ type KeySwitchingProtocol struct {
 
 	// Protocol state data
 	nextNodeInCircuit *onet.TreeNode
-	TargetOfSwitch    *[]lib.ClientResponse
+	TargetOfSwitch    *[]lib.FilteredResponse
 	TargetPublicKey   *abstract.Point
 	Proofs            bool
 }
@@ -107,7 +106,7 @@ type KeySwitchingProtocol struct {
 func NewKeySwitchingProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 	ksp := &KeySwitchingProtocol{
 		TreeNodeInstance: n,
-		FeedbackChannel:  make(chan []lib.ClientResponse),
+		FeedbackChannel:  make(chan []lib.FilteredResponse),
 	}
 
 	if err := ksp.RegisterChannel(&ksp.PreviousNodeInPathChannel); err != nil {
@@ -158,9 +157,9 @@ func (p *KeySwitchingProtocol) Start() error {
 			go func(i int) {
 				for j := 0; j < lib.VPARALLELIZE && (j+i < len(*p.TargetOfSwitch)); j++ {
 					initialAttrAttributes, originalAttrEphemKeys := getAttributesAndEphemKeys((*p.TargetOfSwitch)[i+j].AggregatingAttributes)
-					initialGrpAttributes, originalGrpEphemKeys := getAttributesAndEphemKeys((*p.TargetOfSwitch)[i+j].ProbaGroupingAttributesEnc)
+					initialGrpAttributes, originalGrpEphemKeys := getAttributesAndEphemKeys((*p.TargetOfSwitch)[i+j].GroupByEnc)
 
-					initialTab[i+j] = DataAndOriginalEphemeralKeys{Response: lib.ClientResponse{GroupingAttributesClear: (*p.TargetOfSwitch)[i+j].GroupingAttributesClear, ProbaGroupingAttributesEnc: initialGrpAttributes, AggregatingAttributes: initialAttrAttributes},
+					initialTab[i+j] = DataAndOriginalEphemeralKeys{Response: lib.FilteredResponse{GroupByEnc: initialGrpAttributes, AggregatingAttributes: initialAttrAttributes},
 						OriginalEphemeralKeys: OriginalEphemeralKeys{GroupOriginalKeys: originalGrpEphemKeys, AttrOriginalKeys: originalAttrEphemKeys}}
 				}
 				defer wg.Done()
@@ -171,9 +170,9 @@ func (p *KeySwitchingProtocol) Start() error {
 	} else {
 		for k, v := range *p.TargetOfSwitch {
 			initialAttrAttributes, originalAttrEphemKeys := getAttributesAndEphemKeys(v.AggregatingAttributes)
-			initialGrpAttributes, originalGrpEphemKeys := getAttributesAndEphemKeys(v.ProbaGroupingAttributesEnc)
+			initialGrpAttributes, originalGrpEphemKeys := getAttributesAndEphemKeys(v.GroupByEnc)
 
-			initialTab[k] = DataAndOriginalEphemeralKeys{Response: lib.ClientResponse{GroupingAttributesClear: v.GroupingAttributesClear, ProbaGroupingAttributesEnc: initialGrpAttributes, AggregatingAttributes: initialAttrAttributes},
+			initialTab[k] = DataAndOriginalEphemeralKeys{Response: lib.FilteredResponse{GroupByEnc: initialGrpAttributes, AggregatingAttributes: initialAttrAttributes},
 				OriginalEphemeralKeys: OriginalEphemeralKeys{GroupOriginalKeys: originalGrpEphemKeys, AttrOriginalKeys: originalAttrEphemKeys}}
 		}
 	}
@@ -201,8 +200,7 @@ func (p *KeySwitchingProtocol) Dispatch() error {
 	length := <-p.LengthNodeChannel
 	keySwitchingTargetBytes := (<-p.PreviousNodeInPathChannel).KeySwitchedCipherBytesMessage.Data
 	keySwitchingTarget := &KeySwitchedCipherMessage{}
-	(*keySwitchingTarget).FromBytes(keySwitchingTargetBytes, length.L1, length.L2, length.L3, length.L4, length.L5, length.L6)
-
+	(*keySwitchingTarget).FromBytes(keySwitchingTargetBytes, length.L1, length.L2, length.L4, length.L5, length.L6)
 	round := lib.StartTimer(p.Name() + "_KeySwitching(DISPATCH)")
 
 	wg := lib.StartParallelize(len(keySwitchingTarget.DataKey))
@@ -228,7 +226,7 @@ func (p *KeySwitchingProtocol) Dispatch() error {
 	// If the tree node is the root then protocol returns.
 	if p.IsRoot() {
 		log.Lvl1(p.ServerIdentity(), " completed key switching.")
-		result := make([]lib.ClientResponse, len(keySwitchingTarget.DataKey))
+		result := make([]lib.FilteredResponse, len(keySwitchingTarget.DataKey))
 		for i, v := range keySwitchingTarget.DataKey {
 			result[i] = v.Response
 		}
@@ -252,26 +250,26 @@ func (p *KeySwitchingProtocol) sendToNext(msg interface{}) {
 
 // sending sends KeySwitchedCipherBytes messages
 func sending(p *KeySwitchingProtocol, kscm *KeySwitchedCipherMessage) {
-	data, l1, l2, l3, l4, l5, l6 := kscm.ToBytes()
-	p.sendToNext(&KSCBLengthMessage{l1, l2, l3, l4, l5, l6})
+	data, l1, l2, l4, l5, l6 := kscm.ToBytes()
+	p.sendToNext(&KSCBLengthMessage{l1, l2, l4, l5, l6})
 	p.sendToNext(&KeySwitchedCipherBytesMessage{data})
 }
 
 //ClientResponseKeySwitching applies key switching on a client response
-func clientResponseKeySwitching(cv *lib.ClientResponse, v lib.ClientResponse, origGrpEphemKeys, origAttrEphemKeys []abstract.Point, newKey abstract.Point, secretContrib abstract.Scalar, proofs bool) {
+func clientResponseKeySwitching(cv *lib.FilteredResponse, v lib.FilteredResponse, origGrpEphemKeys, origAttrEphemKeys []abstract.Point, newKey abstract.Point, secretContrib abstract.Scalar, proofs bool) {
 
 	tmp, r1 := lib.NewCipherVector(len(v.AggregatingAttributes)).KeySwitching(v.AggregatingAttributes, origAttrEphemKeys, newKey, secretContrib)
 	cv.AggregatingAttributes = *tmp
-	tmp1, r2 := lib.NewCipherVector(len(v.ProbaGroupingAttributesEnc)).KeySwitching(v.ProbaGroupingAttributesEnc, origGrpEphemKeys, newKey, secretContrib)
-	cv.ProbaGroupingAttributesEnc = *tmp1
+	tmp1, r2 := lib.NewCipherVector(len(v.GroupByEnc)).KeySwitching(v.GroupByEnc, origGrpEphemKeys, newKey, secretContrib)
+	cv.GroupByEnc = *tmp1
 
 	if proofs {
 		proofAggr := lib.VectorSwitchKeyProofCreation(v.AggregatingAttributes, cv.AggregatingAttributes, r1, secretContrib, origAttrEphemKeys, newKey)
-		proofGrp := lib.VectorSwitchKeyProofCreation(v.ProbaGroupingAttributesEnc, cv.ProbaGroupingAttributesEnc, r2, secretContrib, origGrpEphemKeys, newKey)
+		proofGrp := lib.VectorSwitchKeyProofCreation(v.GroupByEnc, cv.GroupByEnc, r2, secretContrib, origGrpEphemKeys, newKey)
 		//create published value
 		pubKey := network.Suite.Point().Mul(network.Suite.Point().Base(), secretContrib)
 		pub1 := lib.PublishedSwitchKeyProof{Skp: proofAggr, VectBefore: v.AggregatingAttributes, VectAfter: cv.AggregatingAttributes, K: pubKey, Q: newKey}
-		pub2 := lib.PublishedSwitchKeyProof{Skp: proofGrp, VectBefore: v.ProbaGroupingAttributesEnc, VectAfter: cv.ProbaGroupingAttributesEnc, K: pubKey, Q: newKey}
+		pub2 := lib.PublishedSwitchKeyProof{Skp: proofGrp, VectBefore: v.GroupByEnc, VectAfter: cv.GroupByEnc, K: pubKey, Q: newKey}
 		//publication
 		_ = pub1
 		_ = pub2
@@ -282,9 +280,9 @@ func clientResponseKeySwitching(cv *lib.ClientResponse, v lib.ClientResponse, or
 //______________________________________________________________________________________________________________________
 
 // ToBytes converts a KeySwitchedCipherMessage to a byte array
-func (kscm *KeySwitchedCipherMessage) ToBytes() ([]byte, int, int, int, int, int, int) {
+func (kscm *KeySwitchedCipherMessage) ToBytes() ([]byte, int, int, int, int, int) {
 	bb := make([][]byte, len(kscm.DataKey))
-	var l1, l2, l3, l4, l5 int
+	var l1, l2, l4, l5 int
 
 	wg := lib.StartParallelize(len(kscm.DataKey))
 	var mutexDK sync.Mutex
@@ -297,20 +295,19 @@ func (kscm *KeySwitchedCipherMessage) ToBytes() ([]byte, int, int, int, int, int
 				data := (*kscm).DataKey[i]
 				mutexDK.Unlock()
 
-				aux, l1Aux, l2Aux, l3Aux, l4Aux, l5Aux := data.ToBytes()
+				aux, l1Aux, l2Aux, l4Aux, l5Aux := data.ToBytes()
 
 				mutexDK.Lock()
 				bb[i] = aux
 				l1 = l1Aux
 				l2 = l2Aux
-				l3 = l3Aux
 				l4 = l4Aux
 				l5 = l5Aux
 				mutexDK.Unlock()
 
 			}(i)
 		} else {
-			bb[i], l1, l2, l3, l4, l5 = (*kscm).DataKey[i].ToBytes()
+			bb[i], l1, l2, l4, l5 = (*kscm).DataKey[i].ToBytes()
 		}
 
 	}
@@ -322,13 +319,13 @@ func (kscm *KeySwitchedCipherMessage) ToBytes() ([]byte, int, int, int, int, int
 		b = append(b, bb[i]...)
 	}
 	l6 := len(b)
-	return append(b, nkb...), l1, l2, l3, l4, l5, l6
+	return append(b, nkb...), l1, l2, l4, l5, l6
 }
 
 // FromBytes converts a byte array to a KeySwitchedCipherMessage. Note that you need to create the (empty) object beforehand.
-func (kscm *KeySwitchedCipherMessage) FromBytes(data []byte, l1, l2, l3, l4, l5, l6 int) {
+func (kscm *KeySwitchedCipherMessage) FromBytes(data []byte, l1, l2, l4, l5, l6 int) {
 	bb := make([][]byte, 0)
-	tmp := l1 + l2*64 + l3*64 + l4 + l5
+	tmp := l1*64 + l2*64 + l4 + l5
 	for i := 0; i < l6-32; i += tmp {
 		bb = append(bb, data[i:i+tmp])
 	}
@@ -340,40 +337,39 @@ func (kscm *KeySwitchedCipherMessage) FromBytes(data []byte, l1, l2, l3, l4, l5,
 			go func(i int) {
 				defer wg.Done()
 				daoek := DataAndOriginalEphemeralKeys{}
-				daoek.FromBytes(bb[i], l1, l2, l3, l4)
+				daoek.FromBytes(bb[i], l1, l2, l4)
 				(*kscm).DataKey[i] = daoek
 			}(i)
 		} else {
 			daoek := DataAndOriginalEphemeralKeys{}
-			daoek.FromBytes(bb[i], l1, l2, l3, l4)
+			daoek.FromBytes(bb[i], l1, l2, l4)
 			(*kscm).DataKey[i] = daoek
 		}
 	}
 	lib.EndParallelize(wg)
-
 	point := (data)[l6:]
 	temp := lib.BytesToAbstractPoints(point)
 	(*kscm).NewKey = temp[0]
 }
 
 // ToBytes converts a DataAndOriginalEphemeralKeys to a byte array
-func (daoek *DataAndOriginalEphemeralKeys) ToBytes() ([]byte, int, int, int, int, int) {
+func (daoek *DataAndOriginalEphemeralKeys) ToBytes() ([]byte, int, int, int, int) {
 	b := make([]byte, 0)
-	b1, l1, l2, l3 := (*daoek).Response.ToBytes()
+	b1, l1, l2 := (*daoek).Response.ToBytes()
 	b2, l4, l5 := daoek.OriginalEphemeralKeys.ToBytes()
 	b = append(b1, b2...)
 
-	return b, l1, l2, l3, l4, l5
+	return b, l1, l2, l4, l5
 }
 
 // FromBytes converts a byte array to a DataAndOriginalEphemeralKeys. Note that you need to create the (empty) object beforehand.
-func (daoek *DataAndOriginalEphemeralKeys) FromBytes(data []byte, l1, l2, l3, l4 int) {
-	resp := lib.ClientResponse{}
-	resp.FromBytes(data[:l1+l2*64+l3*64], l1, l2, l3)
+func (daoek *DataAndOriginalEphemeralKeys) FromBytes(data []byte, l1, l2, l4 int) {
+	resp := lib.FilteredResponse{}
+	resp.FromBytes(data[:l1*64+l2*64], l2, l1)
 	(*daoek).Response = resp
 
 	oek := OriginalEphemeralKeys{}
-	oek.FromBytes(data[l1+l2*64+l3*64:], l4)
+	oek.FromBytes(data[l1*64+l2*64:], l4)
 	(*daoek).OriginalEphemeralKeys = oek
 }
 

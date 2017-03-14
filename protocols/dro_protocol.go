@@ -28,14 +28,14 @@ type DROProtocol struct {
 	*onet.TreeNodeInstance
 
 	// Protocol feedback channel
-	FeedbackChannel chan lib.ClientResponse
+	FeedbackChannel chan lib.ProcessResponse
 }
 
 // NewDROProtocol constructs the Distributed Results Obfuscation protocol instances.
 func NewDROProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 	dsp := &DROProtocol{
 		TreeNodeInstance: n,
-		FeedbackChannel:  make(chan lib.ClientResponse),
+		FeedbackChannel:  make(chan lib.ProcessResponse),
 	}
 	return dsp, nil
 }
@@ -50,10 +50,10 @@ func (p *DROProtocol) Start() error {
 	shuffle.Proofs = true
 	shuffle.Precomputed = nil
 
-	clientResponses := make([]lib.ClientResponse, 0)
+	clientResponses := make([]lib.ProcessResponse, 0)
 
 	for _, v := range noiseArray {
-		clientResponses = append(clientResponses, lib.ClientResponse{GroupingAttributesClear: "", ProbaGroupingAttributesEnc: nil, AggregatingAttributes: *lib.EncryptIntVector(p.Roster().Aggregate, []int64{v})})
+		clientResponses = append(clientResponses, lib.ProcessResponse{GroupByEnc: nil, WhereEnc: nil, AggregatingAttributes: *lib.EncryptIntVector(p.Roster().Aggregate, []int64{v})})
 	}
 
 	if tn.IsRoot() {

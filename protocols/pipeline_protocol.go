@@ -101,7 +101,7 @@ func (p *PipelineProtocol) Start() error {
 	}
 
 	log.Lvl1(p.ServerIdentity(), " starts a Medco Service Protocol.")
-	p.Broadcast(&TriggerFlushCollectedDataMessage{p.TargetSurvey.ID})
+	p.Broadcast(&TriggerFlushCollectedDataMessage{*p.TargetSurvey.Query.SurveyID})
 
 	return nil
 }
@@ -111,13 +111,13 @@ func (p *PipelineProtocol) Dispatch() error {
 
 	startT := lib.StartTimer(p.Name() + "_ShufflingPhase+TaggingPhase")
 
-	if p.TargetSurvey.DataToProcess == nil {
+	if p.TargetSurvey.Query.DataToProcess == nil {
 		// normal use of Unlynx/medco
 		if p.IsRoot() {
 			start := lib.StartTimer(p.Name() + "_ShufflingPhase")
 
-			p.MedcoServiceInstance.ShufflingPhase(p.TargetSurvey.ID)
-			p.Broadcast(&TriggerFlushCollectedDataMessage{p.TargetSurvey.ID})
+			p.MedcoServiceInstance.ShufflingPhase(*p.TargetSurvey.Query.SurveyID)
+			p.Broadcast(&TriggerFlushCollectedDataMessage{*p.TargetSurvey.Query.SurveyID})
 			lib.EndTimer(start)
 		} else {
 			msg := <-p.TriggerFlushCollectedData
@@ -133,7 +133,7 @@ func (p *PipelineProtocol) Dispatch() error {
 		if p.IsRoot() {
 			start := lib.StartTimer(p.Name() + "_TaggingPhase")
 
-			p.MedcoServiceInstance.TaggingPhase(p.TargetSurvey.ID)
+			p.MedcoServiceInstance.TaggingPhase(*p.TargetSurvey.Query.SurveyID)
 
 			lib.EndTimer(start)
 
@@ -161,7 +161,7 @@ func (p *PipelineProtocol) Dispatch() error {
 		if p.IsRoot() {
 			start := lib.StartTimer(p.Name() + "_AggregationPhase")
 
-			p.MedcoServiceInstance.AggregationPhase(p.TargetSurvey.ID)
+			p.MedcoServiceInstance.AggregationPhase(*p.TargetSurvey.Query.SurveyID)
 
 			lib.EndTimer(start)
 		}
@@ -178,8 +178,8 @@ func (p *PipelineProtocol) Dispatch() error {
 		// 3rd phase: Key Switching
 		if p.IsRoot() {
 			start := lib.StartTimer(p.Name() + "_KeySwitchingPhase")
-
-			p.MedcoServiceInstance.KeySwitchingPhase(p.TargetSurvey.ID)
+			log.LLvl1("SHOULD BE LAST PHASE")
+			p.MedcoServiceInstance.KeySwitchingPhase(*p.TargetSurvey.Query.SurveyID)
 
 			lib.EndTimer(start)
 
@@ -188,8 +188,8 @@ func (p *PipelineProtocol) Dispatch() error {
 	} else {
 
 		if p.IsRoot() {
-			p.MedcoServiceInstance.TaggingPhase(p.TargetSurvey.ID)
-			p.MedcoServiceInstance.AggregationPhase(p.TargetSurvey.ID)
+			p.MedcoServiceInstance.TaggingPhase(*p.TargetSurvey.Query.SurveyID)
+			p.MedcoServiceInstance.AggregationPhase(*p.TargetSurvey.Query.SurveyID)
 			p.FeedbackChannel <- DoneProcessingMessage{}
 		}
 

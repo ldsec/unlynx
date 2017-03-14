@@ -218,7 +218,7 @@ func TestAggregationProof(t *testing.T) {
 	for j, c := range det1 {
 		deterministicGroupAttributes[j] = lib.DeterministCipherText{Point: c.C}
 	}
-	newDetResponse1 := lib.ClientResponseDet{CR: lib.ClientResponse{ProbaGroupingAttributesEnc: testCipherVect2, AggregatingAttributes: testCipherVect1}, DetTag: deterministicGroupAttributes.Key()}
+	newDetResponse1 := lib.FilteredResponseDet{Fr: lib.FilteredResponse{GroupByEnc: testCipherVect2, AggregatingAttributes: testCipherVect1}, DetTagGroupBy: deterministicGroupAttributes.Key()}
 
 	det2.TaggingDet(secKey, secKey, pubKey, true)
 
@@ -226,23 +226,23 @@ func TestAggregationProof(t *testing.T) {
 	for j, c := range det2 {
 		deterministicGroupAttributes[j] = lib.DeterministCipherText{Point: c.C}
 	}
-	newDetResponse2 := lib.ClientResponseDet{CR: lib.ClientResponse{ProbaGroupingAttributesEnc: testCipherVect1, AggregatingAttributes: testCipherVect1}, DetTag: deterministicGroupAttributes.Key()}
+	newDetResponse2 := lib.FilteredResponseDet{Fr: lib.FilteredResponse{GroupByEnc: testCipherVect1, AggregatingAttributes: testCipherVect1}, DetTagGroupBy: deterministicGroupAttributes.Key()}
 
 	det3.TaggingDet(secKey, secKey, pubKey, true)
 	deterministicGroupAttributes = make(lib.DeterministCipherVector, len(det3))
 	for j, c := range det3 {
 		deterministicGroupAttributes[j] = lib.DeterministCipherText{Point: c.C}
 	}
-	newDetResponse3 := lib.ClientResponseDet{CR: lib.ClientResponse{ProbaGroupingAttributesEnc: testCipherVect2, AggregatingAttributes: testCipherVect1}, DetTag: deterministicGroupAttributes.Key()}
+	newDetResponse3 := lib.FilteredResponseDet{Fr: lib.FilteredResponse{GroupByEnc: testCipherVect2, AggregatingAttributes: testCipherVect1}, DetTagGroupBy: deterministicGroupAttributes.Key()}
 
-	detResponses := make([]lib.ClientResponseDet, 3)
+	detResponses := make([]lib.FilteredResponseDet, 3)
 	detResponses[0] = newDetResponse1
 	detResponses[1] = newDetResponse2
 	detResponses[2] = newDetResponse3
 
-	comparisonMap := make(map[lib.GroupingKey]lib.ClientResponse)
+	comparisonMap := make(map[lib.GroupingKey]lib.FilteredResponse)
 	for _, v := range detResponses {
-		lib.AddInMap(comparisonMap, v.DetTag, v.CR)
+		lib.AddInMap(comparisonMap, v.DetTagGroupBy, v.Fr)
 	}
 
 	PublishedAggregationProof := lib.AggregationProofCreation(detResponses, comparisonMap)
@@ -269,7 +269,7 @@ func TestCollectiveAggregationProof(t *testing.T) {
 	for j, c := range det1 {
 		deterministicGroupAttributes[j] = lib.DeterministCipherText{Point: c.C}
 	}
-	newDetResponse1 := lib.ClientResponseDet{CR: lib.ClientResponse{ProbaGroupingAttributesEnc: testCipherVect2, AggregatingAttributes: testCipherVect1}, DetTag: deterministicGroupAttributes.Key()}
+	newDetResponse1 := lib.FilteredResponseDet{Fr: lib.FilteredResponse{GroupByEnc: testCipherVect2, AggregatingAttributes: testCipherVect1}, DetTagGroupBy: deterministicGroupAttributes.Key()}
 
 	det2.TaggingDet(secKey, secKey, pubKey, true)
 
@@ -277,26 +277,26 @@ func TestCollectiveAggregationProof(t *testing.T) {
 	for j, c := range det2 {
 		deterministicGroupAttributes[j] = lib.DeterministCipherText{Point: c.C}
 	}
-	newDetResponse2 := lib.ClientResponseDet{CR: lib.ClientResponse{ProbaGroupingAttributesEnc: testCipherVect1, AggregatingAttributes: testCipherVect1}, DetTag: deterministicGroupAttributes.Key()}
+	newDetResponse2 := lib.FilteredResponseDet{Fr: lib.FilteredResponse{GroupByEnc: testCipherVect1, AggregatingAttributes: testCipherVect1}, DetTagGroupBy: deterministicGroupAttributes.Key()}
 
 	det3.TaggingDet(secKey, secKey, pubKey, true)
 	deterministicGroupAttributes = make(lib.DeterministCipherVector, len(det3))
 	for j, c := range det3 {
 		deterministicGroupAttributes[j] = lib.DeterministCipherText{Point: c.C}
 	}
-	newDetResponse3 := lib.ClientResponseDet{CR: lib.ClientResponse{ProbaGroupingAttributesEnc: testCipherVect2, AggregatingAttributes: testCipherVect1}, DetTag: deterministicGroupAttributes.Key()}
+	newDetResponse3 := lib.FilteredResponseDet{Fr: lib.FilteredResponse{GroupByEnc: testCipherVect2, AggregatingAttributes: testCipherVect1}, DetTagGroupBy: deterministicGroupAttributes.Key()}
 
-	detResponses := make([]lib.ClientResponseDet, 3)
+	detResponses := make([]lib.FilteredResponseDet, 3)
 	detResponses[0] = newDetResponse1
 	detResponses[1] = newDetResponse2
 	detResponses[2] = newDetResponse3
 
-	comparisonMap := make(map[lib.GroupingKey]lib.ClientResponse)
+	comparisonMap := make(map[lib.GroupingKey]lib.FilteredResponse)
 	for _, v := range detResponses {
-		lib.AddInMap(comparisonMap, v.DetTag, v.CR)
+		lib.AddInMap(comparisonMap, v.DetTagGroupBy, v.Fr)
 	}
 
-	resultingMap := make(map[lib.GroupingKey]lib.ClientResponse)
+	resultingMap := make(map[lib.GroupingKey]lib.FilteredResponse)
 	for i, v := range comparisonMap {
 		lib.AddInMap(resultingMap, i, v)
 		lib.AddInMap(resultingMap, i, v)
@@ -316,10 +316,10 @@ func TestShufflingProof(t *testing.T) {
 	tab2 := []int64{2, 4, 8, 6}
 	testCipherVect2 := *lib.EncryptIntVector(pubKey, tab2)
 
-	responses := make([]lib.ClientResponse, 3)
-	responses[0] = lib.ClientResponse{ProbaGroupingAttributesEnc: testCipherVect2, AggregatingAttributes: testCipherVect2}
-	responses[1] = lib.ClientResponse{ProbaGroupingAttributesEnc: testCipherVect1, AggregatingAttributes: testCipherVect1}
-	responses[2] = lib.ClientResponse{ProbaGroupingAttributesEnc: testCipherVect2, AggregatingAttributes: testCipherVect1}
+	responses := make([]lib.ProcessResponse, 3)
+	responses[0] = lib.ProcessResponse{GroupByEnc: testCipherVect2, AggregatingAttributes: testCipherVect2}
+	responses[1] = lib.ProcessResponse{GroupByEnc: testCipherVect1, AggregatingAttributes: testCipherVect1}
+	responses[2] = lib.ProcessResponse{GroupByEnc: testCipherVect2, AggregatingAttributes: testCipherVect1}
 
 	responsesShuffled, pi, beta := lib.ShuffleSequence(responses, nil, pubKey, nil)
 	PublishedShufflingProof := lib.ShufflingProofCreation(responses, responsesShuffled, nil, pubKey, beta, pi)
