@@ -141,7 +141,7 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 		cipherVectGr := *lib.EncryptIntVector(pubKey, tab1)
 		testCipherVect1 := *lib.EncryptIntVector(pubKey, tab)
 
-		detResponses := make([]lib.ClientResponseDet, 0)
+		detResponses := make([]lib.FilteredResponseDet, 0)
 		for i := 0; i < sim.NbrGroups; i++ {
 			cipherVectGr = *lib.NewCipherVector(sim.NbrGroupAttributes).Add(cipherVectGr, cipherVectGr)
 			det1 := cipherVectGr
@@ -152,15 +152,15 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 				deterministicGroupAttributes[j] = lib.DeterministCipherText{Point: c.C}
 			}
 
-			newDetResponse := lib.ClientResponseDet{CR: lib.ClientResponse{GroupingAttributesClear: "", ProbaGroupingAttributesEnc: cipherVectGr, AggregatingAttributes: testCipherVect1}, DetTag: deterministicGroupAttributes.Key()}
+			newDetResponse := lib.FilteredResponseDet{Fr: lib.FilteredResponse{GroupByEnc: cipherVectGr, AggregatingAttributes: testCipherVect1}, DetTagGroupBy: deterministicGroupAttributes.Key()}
 			for j := 0; j < (sim.NbrResponses/sim.NbrServers)/sim.NbrGroups; j++ {
 				detResponses = append(detResponses, newDetResponse)
 			}
 		}
 
-		comparisonMap := make(map[lib.GroupingKey]lib.ClientResponse)
+		comparisonMap := make(map[lib.GroupingKey]lib.FilteredResponse)
 		for _, v := range detResponses {
-			lib.AddInMap(comparisonMap, v.DetTag, v.CR)
+			lib.AddInMap(comparisonMap, v.DetTagGroupBy, v.Fr)
 		}
 
 		PublishedAggregationProof := lib.AggregationProofCreation(detResponses, comparisonMap)
@@ -170,15 +170,11 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 		}
 
 		//shuffling *****************************************************************************
-		responsesDetCreation := make([]lib.ClientResponseDetCreation, sim.NbrResponses/sim.NbrServers)
-		for i := 0; i < sim.NbrResponses/sim.NbrServers; i++ {
-			responsesDetCreation[i] = lib.ClientResponseDetCreation{CR: lib.ClientResponse{GroupingAttributesClear: "", ProbaGroupingAttributesEnc: cipherVectGr, AggregatingAttributes: testCipherVect1}, DetCreaVect: cipherVectGr}
-		}
 
 		log.LLvl1("Starting shuffling (can take some time)")
-		responsesToShuffle := make([]lib.ClientResponse, sim.NbrResponses/sim.NbrServers)
+		responsesToShuffle := make([]lib.ProcessResponse, sim.NbrResponses/sim.NbrServers)
 		for i := 0; i < sim.NbrResponses/sim.NbrServers; i++ {
-			responsesToShuffle[i] = lib.ClientResponse{GroupingAttributesClear: "", ProbaGroupingAttributesEnc: cipherVectGr, AggregatingAttributes: testCipherVect1}
+			responsesToShuffle[i] = lib.ProcessResponse{GroupByEnc: cipherVectGr, AggregatingAttributes: testCipherVect1}
 		}
 
 		clientResponsesShuffled, pi, beta := lib.ShuffleSequence(responsesToShuffle, nil, root.Roster().Aggregate, nil)
@@ -190,12 +186,12 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 		}
 
 		//collective aggregation ***********************************************************************
-		c1 := make(map[lib.GroupingKey]lib.ClientResponse)
+		c1 := make(map[lib.GroupingKey]lib.FilteredResponse)
 		for _, v := range detResponses {
-			lib.AddInMap(c1, v.DetTag, v.CR)
+			lib.AddInMap(c1, v.DetTagGroupBy, v.Fr)
 		}
 
-		c3 := make(map[lib.GroupingKey]lib.ClientResponse)
+		c3 := make(map[lib.GroupingKey]lib.FilteredResponse)
 		for i, v := range c1 {
 			lib.AddInMap(c3, i, v)
 			lib.AddInMap(c3, i, v)

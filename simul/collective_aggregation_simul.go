@@ -14,12 +14,12 @@ import (
 //var clientPrivate = suite.Scalar().One() //one -> to have the same for each node
 //var clientPublic = suite.Point().Mul(suite.Point().Base(), clientPrivate)
 
-func createDataSet(numberGroups, numberAttributes, numberGroupAttr int) map[lib.GroupingKey]lib.ClientResponse {
+func createDataSet(numberGroups, numberAttributes, numberGroupAttr int) map[lib.GroupingKey]lib.FilteredResponse {
 	var secContrib = network.Suite.Scalar().One()
 	var clientPrivate = network.Suite.Scalar().One() //one -> to have the same for each node
 	var clientPublic = network.Suite.Point().Mul(network.Suite.Point().Base(), clientPrivate)
 
-	testCVMap := make(map[lib.GroupingKey]lib.ClientResponse)
+	testCVMap := make(map[lib.GroupingKey]lib.FilteredResponse)
 
 	tabGrp := make([]int64, numberGroupAttr)
 	for i := 0; i < numberGroupAttr; i++ {
@@ -35,7 +35,7 @@ func createDataSet(numberGroups, numberAttributes, numberGroupAttr int) map[lib.
 
 		cipherVect := *lib.EncryptIntVector(clientPublic, tab)
 
-		testCVMap[lib.CipherVectorToDeterministicTag(*lib.EncryptIntVector(clientPublic, []int64{int64(i)}), clientPrivate, secContrib, clientPublic, false)] = lib.ClientResponse{GroupingAttributesClear: "", ProbaGroupingAttributesEnc: dummyGroups, AggregatingAttributes: cipherVect}
+		testCVMap[lib.CipherVectorToDeterministicTag(*lib.EncryptIntVector(clientPublic, []int64{int64(i)}), clientPrivate, secContrib, clientPublic, false)] = lib.FilteredResponse{GroupByEnc: dummyGroups, AggregatingAttributes: cipherVect}
 	}
 	return testCVMap
 }

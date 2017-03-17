@@ -82,8 +82,8 @@ func (sim *AddRmSimulation) Run(config *onet.SimulationConfig) error {
 		// aggregation
 		testCipherVect1 := *lib.EncryptIntVector(pubKey, tab)
 		groupCipherVect := *lib.EncryptIntVector(pubKey, tabGr)
-		cr := lib.ClientResponse{ProbaGroupingAttributesEnc: groupCipherVect, AggregatingAttributes: testCipherVect1}
-		detResponses := make([]lib.ClientResponse, 0)
+		cr := lib.DpResponse{GroupByEnc: groupCipherVect, AggregatingAttributes: testCipherVect1}
+		detResponses := make([]lib.DpResponse, 0)
 		for i := 0; i < sim.NbrResponses; i++ {
 			detResponses = append(detResponses, cr)
 		}

@@ -57,23 +57,23 @@ type PublishedDeterministicTaggingProof struct {
 	SB         abstract.Point
 }
 
-// PublishedAggregationProof contains all infos about proofs for aggregation of two client responses
+// PublishedAggregationProof contains all infos about proofs for aggregation of two filtered responses
 type PublishedAggregationProof struct {
-	ClientResponses    []ClientResponseDet
-	AggregationResults map[GroupingKey]ClientResponse
+	FilteredResponses    []FilteredResponseDet
+	AggregationResults map[GroupingKey]FilteredResponse
 }
 
-// PublishedCollectiveAggregationProof contains all infos about proofs for coll aggregation of client responses
+// PublishedCollectiveAggregationProof contains all infos about proofs for coll aggregation of filtered responses
 type PublishedCollectiveAggregationProof struct {
-	Aggregation1       map[GroupingKey]ClientResponse
-	Aggregation2       []ClientResponseDet
-	AggregationResults map[GroupingKey]ClientResponse
+	Aggregation1       map[GroupingKey]FilteredResponse
+	Aggregation2       []FilteredResponseDet
+	AggregationResults map[GroupingKey]FilteredResponse
 }
 
 // PublishedShufflingProof contains all infos about proofs for shuffling of a ciphervector
 type PublishedShufflingProof struct {
-	OriginalList []ClientResponse
-	ShuffledList []ClientResponse
+	OriginalList []ProcessResponse
+	ShuffledList []ProcessResponse
 	G            abstract.Point
 	H            abstract.Point
 	HashProof    []byte
@@ -85,6 +85,12 @@ type PublishedDetTagAdditionProof struct {
 	C2    abstract.Point
 	R     abstract.Point
 	Proof []byte
+}
+
+type PublishedSimpleAdditionProof struct {
+	C1 CipherVector
+	C2 CipherVector
+	C1PlusC2 CipherVector
 }
 
 // ************************************************** KEY SWITCHING ****************************************************
@@ -404,15 +410,15 @@ func PublishedDeterministicTaggingCheckProof(php PublishedDeterministicTaggingPr
 // ************************************************** AGGREGATION ****************************************************
 
 // AggregationProofCreation creates a proof for responses aggregation and grouping
-func AggregationProofCreation(responses []ClientResponseDet, aggregatedResults map[GroupingKey]ClientResponse) PublishedAggregationProof {
-	return PublishedAggregationProof{ClientResponses: responses, AggregationResults: aggregatedResults}
+func AggregationProofCreation(responses []FilteredResponseDet, aggregatedResults map[GroupingKey]FilteredResponse) PublishedAggregationProof {
+	return PublishedAggregationProof{FilteredResponses: responses, AggregationResults: aggregatedResults}
 }
 
 // AggregationProofVerification checks a proof for responses aggregation and grouping
 func AggregationProofVerification(pap PublishedAggregationProof) bool {
-	comparisonMap := make(map[GroupingKey]ClientResponse)
-	for _, v := range pap.ClientResponses {
-		AddInMap(comparisonMap, v.DetTag, v.CR)
+	comparisonMap := make(map[GroupingKey]FilteredResponse)
+	for _, v := range pap.FilteredResponses {
+		AddInMap(comparisonMap, v.DetTagGroupBy, v.Fr)
 	}
 	return reflect.DeepEqual(comparisonMap, pap.AggregationResults)
 }
@@ -420,18 +426,18 @@ func AggregationProofVerification(pap PublishedAggregationProof) bool {
 // *****************************************COLLECTIVE AGGREGATION ****************************************************
 
 // CollectiveAggregationProofCreation creates a proof for responses collective aggregation and grouping
-func CollectiveAggregationProofCreation(aggregated1 map[GroupingKey]ClientResponse, aggregated2 []ClientResponseDet, aggregatedResults map[GroupingKey]ClientResponse) PublishedCollectiveAggregationProof {
+func CollectiveAggregationProofCreation(aggregated1 map[GroupingKey]FilteredResponse, aggregated2 []FilteredResponseDet, aggregatedResults map[GroupingKey]FilteredResponse) PublishedCollectiveAggregationProof {
 	return PublishedCollectiveAggregationProof{Aggregation1: aggregated1, Aggregation2: aggregated2, AggregationResults: aggregatedResults}
 }
 
 // CollectiveAggregationProofVerification checks a proof for responses collective aggregation and grouping
 func CollectiveAggregationProofVerification(pcap PublishedCollectiveAggregationProof) bool {
-	c1 := make(map[GroupingKey]ClientResponse)
+	c1 := make(map[GroupingKey]FilteredResponse)
 	for i, v := range pcap.Aggregation1 {
 		AddInMap(c1, i, v)
 	}
 	for _, v := range pcap.Aggregation2 {
-		AddInMap(c1, v.DetTag, v.CR)
+		AddInMap(c1, v.DetTagGroupBy, v.Fr)
 	}
 
 	//compare maps
@@ -448,11 +454,11 @@ func CollectiveAggregationProofVerification(pcap PublishedCollectiveAggregationP
 				result = false
 			}
 		}
-		for j, w := range v.ProbaGroupingAttributesEnc {
-			if !w.C.Equal(pcap.AggregationResults[i].ProbaGroupingAttributesEnc[j].C) {
+		for j, w := range v.GroupByEnc {
+			if !w.C.Equal(pcap.AggregationResults[i].GroupByEnc[j].C) {
 				result = false
 			}
-			if !w.K.Equal(pcap.AggregationResults[i].ProbaGroupingAttributesEnc[j].K) {
+			if !w.K.Equal(pcap.AggregationResults[i].GroupByEnc[j].K) {
 				result = false
 			}
 		}
@@ -463,8 +469,8 @@ func CollectiveAggregationProofVerification(pcap PublishedCollectiveAggregationP
 
 // ************************************************ SHUFFLING **********************************************************
 
-// ShuffleProofCreation creates a proof for one shuffle on a list of client response
-func shuffleProofCreation(inputList, outputList []ClientResponse, beta [][]abstract.Scalar, pi []int, h abstract.Point) []byte {
+// ShuffleProofCreation creates a proof for one shuffle on a list of process response
+func shuffleProofCreation(inputList, outputList []ProcessResponse, beta [][]abstract.Scalar, pi []int, h abstract.Point) []byte {
 	e := inputList[0].CipherVectorTag(h)
 	k := len(inputList)
 	// compress data for each line (each list) into one element
@@ -477,12 +483,12 @@ func shuffleProofCreation(inputList, outputList []ClientResponse, beta [][]abstr
 	wg1 := StartParallelize(k)
 	for i := 0; i < k; i++ {
 		if PARALLELIZE {
-			go func(inputList, outputList []ClientResponse, i int) {
+			go func(inputList, outputList []ProcessResponse, i int) {
 				defer (*wg1).Done()
-				CompressClientResponseMultiple(inputList, outputList, i, e, Xhat, XhatBar, Yhat, YhatBar)
+				CompressProcessResponseMultiple(inputList, outputList, i, e, Xhat, XhatBar, Yhat, YhatBar)
 			}(inputList, outputList, i)
 		} else {
-			CompressClientResponseMultiple(inputList, outputList, i, e, Xhat, XhatBar, Yhat, YhatBar)
+			CompressProcessResponseMultiple(inputList, outputList, i, e, Xhat, XhatBar, Yhat, YhatBar)
 		}
 	}
 	EndParallelize(wg1)
@@ -512,7 +518,7 @@ func shuffleProofCreation(inputList, outputList []ClientResponse, beta [][]abstr
 }
 
 // ShufflingProofCreation creates a shuffle proof in its publishable version
-func ShufflingProofCreation(originalList, shuffledList []ClientResponse, g, h abstract.Point, beta [][]abstract.Scalar, pi []int) PublishedShufflingProof {
+func ShufflingProofCreation(originalList, shuffledList []ProcessResponse, g, h abstract.Point, beta [][]abstract.Scalar, pi []int) PublishedShufflingProof {
 	prf := shuffleProofCreation(originalList, shuffledList, beta, pi, h)
 	return PublishedShufflingProof{originalList, shuffledList, g, h, prf}
 }
@@ -537,18 +543,18 @@ func ShufflingProofVerification(psp PublishedShufflingProof, seed abstract.Point
 	if PARALLELIZE {
 		wg := StartParallelize(2)
 		go func() {
-			x, y = CompressListClientResponse(psp.OriginalList, e)
+			x, y = CompressListProcessResponse(psp.OriginalList, e)
 			defer (*wg).Done()
 		}()
 		go func() {
-			xbar, ybar = CompressListClientResponse(psp.ShuffledList, e)
+			xbar, ybar = CompressListProcessResponse(psp.ShuffledList, e)
 			defer (*wg).Done()
 		}()
 
 		EndParallelize(wg)
 	} else {
-		x, y = CompressListClientResponse(psp.OriginalList, e)
-		xbar, ybar = CompressListClientResponse(psp.ShuffledList, e)
+		x, y = CompressListProcessResponse(psp.OriginalList, e)
+		xbar, ybar = CompressListProcessResponse(psp.ShuffledList, e)
 	}
 
 	return checkShuffleProof(psp.G, psp.H, x, y, xbar, ybar, psp.HashProof)

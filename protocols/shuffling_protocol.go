@@ -1,7 +1,7 @@
-// Package protocols contains the shuffling protocol which permits to rerandomize and shuffle a list of client responses.
-// The El-Gamal encrypted client response should be encrypted by the collective public key of the cothority.
-// In that case, each cothority server (node) can  homomorphically rerandomize and shuffle the client responses.
-// This is done by creating a circuit between the servers. The client response is sent through this circuit and
+// Package protocols contains the shuffling protocol which permits to rerandomize and shuffle a list of DP responses.
+// The El-Gamal encrypted DP response should be encrypted by the collective public key of the cothority.
+// In that case, each cothority server (node) can  homomorphically rerandomize and shuffle the DP responses.
+// This is done by creating a circuit between the servers. The DP response is sent through this circuit and
 // each server applies its transformation on it and forwards it to the next node in the circuit
 // until it comes back to the server who started the protocol.
 package protocols
@@ -32,7 +32,7 @@ func init() {
 
 // ShufflingMessage represents a message containing data to shuffle
 type ShufflingMessage struct {
-	Data []lib.ClientResponse
+	Data []lib.ProcessResponse
 }
 
 // ShufflingBytesMessage represents a shuffling message in bytes
@@ -76,7 +76,7 @@ type ShufflingProtocol struct {
 	*onet.TreeNodeInstance
 
 	// Protocol feedback channel
-	FeedbackChannel chan []lib.ClientResponse
+	FeedbackChannel chan []lib.ProcessResponse
 
 	// Protocol communication channels
 	LengthNodeChannel         chan sbLengthStruct
@@ -84,7 +84,7 @@ type ShufflingProtocol struct {
 
 	// Protocol state data
 	nextNodeInCircuit *onet.TreeNode
-	TargetOfShuffle   *[]lib.ClientResponse
+	TargetOfShuffle   *[]lib.ProcessResponse
 
 	CollectiveKey abstract.Point //only use in order to test the protocol
 	Proofs        bool
@@ -95,7 +95,7 @@ type ShufflingProtocol struct {
 func NewShufflingProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 	dsp := &ShufflingProtocol{
 		TreeNodeInstance: n,
-		FeedbackChannel:  make(chan []lib.ClientResponse),
+		FeedbackChannel:  make(chan []lib.ProcessResponse),
 	}
 
 	if err := dsp.RegisterChannel(&dsp.PreviousNodeInPathChannel); err != nil {
@@ -127,8 +127,8 @@ func (p *ShufflingProtocol) Start() error {
 		return errors.New("No map given as shuffling target")
 	}
 
-	nbrClientResponses := len(*p.TargetOfShuffle)
-	log.Lvl1("["+p.Name()+"]", " started a Shuffling Protocol (", nbrClientResponses, " responses)")
+	nbrProcessResponses := len(*p.TargetOfShuffle)
+	log.Lvl1("["+p.Name()+"]", " started a Shuffling Protocol (", nbrProcessResponses, " responses)")
 
 	shuffleTarget := *p.TargetOfShuffle
 	collectiveKey := p.Roster().Aggregate
@@ -144,7 +144,6 @@ func (p *ShufflingProtocol) Start() error {
 	}
 
 	shuffledData, pi, beta := lib.ShuffleSequence(shuffleTarget, nil, collectiveKey, p.Precomputed)
-
 	lib.EndTimer(roundShufflingStart)
 	roundShufflingStartProof := lib.StartTimer(p.Name() + "_Shuffling(START-Proof)")
 
@@ -304,10 +303,10 @@ func (sm *ShufflingMessage) ToBytes() ([]byte, int, int, int) {
 func (sm *ShufflingMessage) FromBytes(data []byte, gacbLength, aabLength, pgaebLength int) {
 	var nbrData int
 
-	elementLength := (gacbLength + aabLength*64 + pgaebLength*64) //CAUTION: hardcoded 64 (size of el-gamal element C,K)
+	elementLength := (gacbLength*64 + aabLength*64 + pgaebLength*64) //CAUTION: hardcoded 64 (size of el-gamal element C,K)
 	nbrData = len(data) / elementLength
 
-	(*sm).Data = make([]lib.ClientResponse, nbrData)
+	(*sm).Data = make([]lib.ProcessResponse, nbrData)
 	wg := lib.StartParallelize(nbrData)
 	for i := 0; i < nbrData; i++ {
 		v := data[i*elementLength : i*elementLength+elementLength]

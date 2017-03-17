@@ -63,19 +63,20 @@ func AllPossibleGroups(numType []int64, group []int64, pos int) {
 //
 //  	filename:    name of the file (.txt) where we will store the test data
 //
-//	numClients: 	number of clients/hosts (or in other words data holders)
+//	numDPs: 	number of clients/hosts (or in other words data holders)
 //  	numEntries: 	number of survey entries (ClientClearResponse) per host
 //  	numGroupsClear: number of grouping attributes in clear
 //      numGroupsEnc:   number of grouping attributes encrypted
 //  	numType:    	number of different groups inside a group attribute
 //  	numAggr:    	number of aggregating attributes
-func GenerateData(numClients, numEntries, numGroupsClear, numGroupsEnc, numAggr int64, numType []int64, randomGroups bool) map[string][]lib.ClientClearResponse {
+//TODO where + whereClear
+func GenerateData(numDPs, numEntries, numGroupsClear, numGroupsEnc, numAggr int64, numType []int64, randomGroups bool) map[string][]lib.DpClearResponse {
 	if int64(len(numType)) != (numGroupsClear + numGroupsEnc) {
 		log.Fatal("Please ensure that you specify the number of group types for each grouping attribute")
 		return nil
 	}
 
-	testData := make(map[string][]lib.ClientClearResponse)
+	testData := make(map[string][]lib.DpClearResponse)
 
 	if !randomGroups {
 		numElem := 1
@@ -93,8 +94,8 @@ func GenerateData(numClients, numEntries, numGroupsClear, numGroupsEnc, numAggr 
 		}
 	}
 
-	for i := int64(0); i < numClients; i++ {
-		clientData := make([]lib.ClientClearResponse, numEntries)
+	for i := int64(0); i < numDPs; i++ {
+		dpData := make([]lib.DpClearResponse, numEntries)
 
 		for j := int64(0); j < numEntries; j++ {
 			aggr := make([]int64, numAggr)
@@ -113,10 +114,10 @@ func GenerateData(numClients, numEntries, numGroupsClear, numGroupsEnc, numAggr 
 				grp = Groups[j]
 			}
 
-			clientData[j] = lib.ClientClearResponse{GroupingAttributesClear: grp[:numGroupsClear], GroupingAttributesEnc: grp[numGroupsClear : numGroupsClear+numGroupsEnc], AggregatingAttributes: aggr}
+			dpData[j] = lib.DpClearResponse{GroupByClear: grp[:numGroupsClear], GroupByEnc: grp[numGroupsClear : numGroupsClear+numGroupsEnc], AggregatingAttributes: aggr}
 
 		}
-		testData[fmt.Sprintf("%v", i)] = clientData
+		testData[fmt.Sprintf("%v", i)] = dpData
 	}
 	return testData
 }
@@ -133,7 +134,7 @@ func flushInt64Data(writer *bufio.Writer, slice []int64) {
 }
 
 // WriteDataToFile writes the test_data to 'filename'.txt
-func WriteDataToFile(filename string, testData map[string][]lib.ClientClearResponse) {
+func WriteDataToFile(filename string, testData map[string][]lib.DpClearResponse) {
 	fileHandle, err := os.Create(filename)
 
 	if err != nil {
@@ -148,16 +149,16 @@ func WriteDataToFile(filename string, testData map[string][]lib.ClientClearRespo
 		writer.Flush()
 
 		for _, entry := range v {
-			flushInt64Data(writer, entry.GroupingAttributesClear)
-			flushInt64Data(writer, entry.GroupingAttributesEnc)
+			flushInt64Data(writer, entry.GroupByClear)
+			flushInt64Data(writer, entry.GroupByEnc)
 			flushInt64Data(writer, entry.AggregatingAttributes)
 		}
 	}
 }
 
 // ReadDataFromFile reads the test_data from 'filename'.txt
-func ReadDataFromFile(filename string) map[string][]lib.ClientClearResponse {
-	testData := make(map[string][]lib.ClientClearResponse)
+func ReadDataFromFile(filename string) map[string][]lib.DpClearResponse {
+	testData := make(map[string][]lib.DpClearResponse)
 
 	fileHandle, err := os.Open(filename)
 	if err != nil {
@@ -168,7 +169,7 @@ func ReadDataFromFile(filename string) map[string][]lib.ClientClearResponse {
 
 	var id string
 	dataIn := false
-	var container []lib.ClientClearResponse
+	var container []lib.DpClearResponse
 
 	scanner := bufio.NewScanner(fileHandle)
 	for scanner.Scan() {
@@ -176,7 +177,7 @@ func ReadDataFromFile(filename string) map[string][]lib.ClientClearResponse {
 		if len(line) > 0 && strings.Compare(string(line[0]), "#") == 0 {
 			if dataIn != false {
 				testData[id] = container
-				container = make([]lib.ClientClearResponse, 0)
+				container = make([]lib.DpClearResponse, 0)
 			} else {
 				dataIn = true
 			}
@@ -193,7 +194,7 @@ func ReadDataFromFile(filename string) map[string][]lib.ClientClearResponse {
 			scanner.Scan()
 			aggr := lib.StringToInt64Array(scanner.Text()[:int(math.Max(float64(0), float64(len(scanner.Text())-1)))])
 
-			container = append(container, lib.ClientClearResponse{GroupingAttributesClear: grpClear, GroupingAttributesEnc: grpEnc, AggregatingAttributes: aggr})
+			container = append(container, lib.DpClearResponse{GroupByClear: grpClear, GroupByEnc: grpEnc, AggregatingAttributes: aggr})
 		}
 	}
 	testData[id] = container
@@ -207,8 +208,8 @@ func ReadDataFromFile(filename string) map[string][]lib.ClientClearResponse {
 }
 
 // ComputeExpectedResult computes the expected results from the test_data (we can then compare with the result obtained by service MedCo)
-func ComputeExpectedResult(testData map[string][]lib.ClientClearResponse, dataRepetitions int) []lib.ClientClearResponse {
-	allData := make([]lib.ClientClearResponse, 0)
+func ComputeExpectedResult(testData map[string][]lib.DpClearResponse, dataRepetitions int) []lib.DpClearResponse {
+	allData := make([]lib.DpClearResponse, 0)
 
 	for _, v := range testData {
 		for _, elem := range v {
@@ -227,14 +228,14 @@ func ComputeExpectedResult(testData map[string][]lib.ClientClearResponse, dataRe
 	return expectedResult
 }
 
-// CompareClearResponses compares two ClientClearResponse arrays and returns true if they are the same or false otherwise
-func CompareClearResponses(x []lib.ClientClearResponse, y []lib.ClientClearResponse) bool {
+// CompareClearResponses compares two DP ClearResponse arrays and returns true if they are the same or false otherwise
+func CompareClearResponses(x []lib.DpClearResponse, y []lib.DpClearResponse) bool {
 	var test bool
 	for _, i := range x {
 		test = false
 		for _, j := range y {
-			if (reflect.DeepEqual(i.GroupingAttributesClear, j.GroupingAttributesClear) || (len(i.GroupingAttributesClear) == 0 && len(j.GroupingAttributesClear) == 0)) &&
-				(reflect.DeepEqual(i.GroupingAttributesEnc, j.GroupingAttributesEnc) || (len(i.GroupingAttributesEnc) == 0 && len(j.GroupingAttributesEnc) == 0)) &&
+			if (reflect.DeepEqual(i.GroupByClear, j.GroupByClear) || (len(i.GroupByClear) == 0 && len(j.GroupByClear) == 0)) &&
+				(reflect.DeepEqual(i.GroupByEnc, j.GroupByEnc) || (len(i.GroupByEnc) == 0 && len(j.GroupByEnc) == 0)) &&
 				(reflect.DeepEqual(i.AggregatingAttributes, j.AggregatingAttributes) || (len(i.AggregatingAttributes) == 0 && len(j.AggregatingAttributes) == 0)) {
 				test = true
 				break

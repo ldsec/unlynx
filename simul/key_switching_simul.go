@@ -63,7 +63,7 @@ func (sim *KeySwitchingSimulation) Run(config *onet.SimulationConfig) error {
 		suite := root.Suite()
 		aggregateKey := root.Roster().Aggregate
 
-		responses := make([]lib.ClientResponse, sim.NbrResponses)
+		responses := make([]lib.FilteredResponse, sim.NbrResponses)
 		tabAttrs := make([]int64, sim.NbrAggrAttributes)
 		for i := 0; i < sim.NbrAggrAttributes; i++ {
 			tabAttrs[i] = int64(1)
@@ -73,7 +73,7 @@ func (sim *KeySwitchingSimulation) Run(config *onet.SimulationConfig) error {
 			tabGrps[i] = int64(1)
 		}
 		for i := 0; i < sim.NbrResponses; i++ {
-			responses[i] = lib.ClientResponse{GroupingAttributesClear: "", ProbaGroupingAttributesEnc: *lib.EncryptIntVector(aggregateKey, tabGrps), AggregatingAttributes: *lib.EncryptIntVector(aggregateKey, tabAttrs)}
+			responses[i] = lib.FilteredResponse{GroupByEnc: *lib.EncryptIntVector(aggregateKey, tabGrps), AggregatingAttributes: *lib.EncryptIntVector(aggregateKey, tabAttrs)}
 		}
 
 		clientSecret := suite.Scalar().Pick(random.Stream)

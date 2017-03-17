@@ -38,27 +38,27 @@ func TestDeterministicTagging(t *testing.T) {
 	for i, p := range expRes {
 		testCipherVect[i] = *lib.EncryptInt(aggregateKey, p)
 	}
-	clientResponse1 := lib.ClientResponse{ProbaGroupingAttributesEnc: testCipherVect, AggregatingAttributes: testCipherVect}
+	processResponse1 := lib.ProcessResponse{GroupByEnc: testCipherVect, WhereEnc: testCipherVect, AggregatingAttributes: testCipherVect}
 
 	testCipherVect1 := make(lib.CipherVector, 1)
 	expRes1 := []int64{1}
 	for i, p := range expRes1 {
 		testCipherVect1[i] = *lib.EncryptInt(aggregateKey, p)
 	}
-	clientResponse2 := lib.ClientResponse{ProbaGroupingAttributesEnc: testCipherVect1, AggregatingAttributes: testCipherVect1}
+	processResponse2 := lib.ProcessResponse{GroupByEnc: testCipherVect1, WhereEnc: testCipherVect1, AggregatingAttributes: testCipherVect1}
 
 	testCipherVect2 := make(lib.CipherVector, 1)
 	expRes2 := []int64{2}
 	for i, p := range expRes2 {
 		testCipherVect2[i] = *lib.EncryptInt(aggregateKey, p)
 	}
-	clientResponse3 := lib.ClientResponse{ProbaGroupingAttributesEnc: testCipherVect2, AggregatingAttributes: testCipherVect2}
+	processResponse3 := lib.ProcessResponse{GroupByEnc: testCipherVect2, WhereEnc: testCipherVect2, AggregatingAttributes: testCipherVect2}
 
-	mapi := make([]lib.ClientResponse, 4)
-	mapi[0] = clientResponse1
-	mapi[1] = clientResponse2
-	mapi[2] = clientResponse3
-	mapi[3] = clientResponse1
+	mapi := make([]lib.ProcessResponse, 4)
+	mapi[0] = processResponse1
+	mapi[1] = processResponse2
+	mapi[2] = processResponse3
+	mapi[3] = processResponse1
 
 	log.LLvl1("Data to be Tagged ", mapi)
 
@@ -73,24 +73,28 @@ func TestDeterministicTagging(t *testing.T) {
 		for _, v := range encryptedResult {
 			present := false
 			for _, w := range mapi {
-				if reflect.DeepEqual(v.CR, w) {
+				if reflect.DeepEqual(v.PR, w) {
 					present = true
 				}
 			}
 			if !present {
-				t.Fatal("client responses changed and shouldn't")
+				t.Fatal("DP responses changed and shouldn't")
 			}
 		}
 		threeSame := 0
+		threeSame1 := 0
 		for i, v := range encryptedResult {
 			for j, w := range encryptedResult {
-				if reflect.DeepEqual(v.DetTag, w.DetTag) && j != i {
+				if reflect.DeepEqual(v.DetTagGroupBy, w.DetTagGroupBy) && j != i {
 					threeSame++
-					log.LLvl1(threeSame)
+				}
+				if reflect.DeepEqual(v.DetTagWhere, w.DetTagWhere) && j != i {
+					threeSame1++
 				}
 			}
 		}
 		assert.True(t, threeSame == 6)
+		assert.True(t, threeSame1 == 6)
 		for _, v := range encryptedResult {
 			log.LLvl1(v)
 		}

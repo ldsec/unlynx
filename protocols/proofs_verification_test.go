@@ -90,19 +90,19 @@ func TestProofsVerification(t *testing.T) {
 	cipherOne2 := *lib.EncryptInt(pubKey, 10)
 	cipherVect2 := lib.CipherVector{cipherOne2, cipherOne2}
 
-	detResponses := make([]lib.ClientResponseDet, 3)
-	detResponses[0] = lib.ClientResponseDet{CR: lib.ClientResponse{ProbaGroupingAttributesEnc: cipherVect2, AggregatingAttributes: cipherVect}, DetTag: lib.CipherVectorToDeterministicTag(*switchedVect, secKey, secKey, pubKey, true)}
-	detResponses[1] = lib.ClientResponseDet{CR: lib.ClientResponse{ProbaGroupingAttributesEnc: cipherVect, AggregatingAttributes: cipherVect}, DetTag: lib.CipherVectorToDeterministicTag(cipherVect2, secKey, secKey, pubKey, true)}
-	detResponses[2] = lib.ClientResponseDet{CR: lib.ClientResponse{ProbaGroupingAttributesEnc: cipherVect2, AggregatingAttributes: cipherVect}, DetTag: lib.CipherVectorToDeterministicTag(*switchedVect, secKey, secKey, pubKey, true)}
+	detResponses := make([]lib.FilteredResponseDet, 3)
+	detResponses[0] = lib.FilteredResponseDet{Fr: lib.FilteredResponse{GroupByEnc: cipherVect2, AggregatingAttributes: cipherVect}, DetTagGroupBy: lib.CipherVectorToDeterministicTag(*switchedVect, secKey, secKey, pubKey, true)}
+	detResponses[1] = lib.FilteredResponseDet{Fr: lib.FilteredResponse{GroupByEnc: cipherVect, AggregatingAttributes: cipherVect}, DetTagGroupBy: lib.CipherVectorToDeterministicTag(cipherVect2, secKey, secKey, pubKey, true)}
+	detResponses[2] = lib.FilteredResponseDet{Fr: lib.FilteredResponse{GroupByEnc: cipherVect2, AggregatingAttributes: cipherVect}, DetTagGroupBy: lib.CipherVectorToDeterministicTag(*switchedVect, secKey, secKey, pubKey, true)}
 
-	comparisonMap := make(map[lib.GroupingKey]lib.ClientResponse)
+	comparisonMap := make(map[lib.GroupingKey]lib.FilteredResponse)
 	for _, v := range detResponses {
-		lib.AddInMap(comparisonMap, v.DetTag, v.CR)
+		lib.AddInMap(comparisonMap, v.DetTagGroupBy, v.Fr)
 	}
 
-	comparisonMap2 := make(map[lib.GroupingKey]lib.ClientResponse)
+	comparisonMap2 := make(map[lib.GroupingKey]lib.FilteredResponse)
 	for i := 0; i < len(detResponses)-2; i++ {
-		lib.AddInMap(comparisonMap2, detResponses[i].DetTag, detResponses[i].CR)
+		lib.AddInMap(comparisonMap2, detResponses[i].DetTagGroupBy, detResponses[i].Fr)
 	}
 
 	PublishedAggregationProof1 := lib.AggregationProofCreation(detResponses, comparisonMap)
@@ -112,25 +112,25 @@ func TestProofsVerification(t *testing.T) {
 	aggregationProofs := []lib.PublishedAggregationProof{PublishedAggregationProof1, PublishedAggregationProof2}
 
 	// shuffling ***************************************************************************************************
-	clientResponsesToShuffle := make([]lib.ClientResponse, 3)
-	clientResponsesToShuffle[0] = lib.ClientResponse{ProbaGroupingAttributesEnc: cipherVect2, AggregatingAttributes: cipherVect2}
-	clientResponsesToShuffle[1] = lib.ClientResponse{ProbaGroupingAttributesEnc: cipherVect1, AggregatingAttributes: cipherVect1}
-	clientResponsesToShuffle[2] = lib.ClientResponse{ProbaGroupingAttributesEnc: cipherVect2, AggregatingAttributes: cipherVect1}
-	detResponsesCreationShuffled, pi, beta := lib.ShuffleSequence(clientResponsesToShuffle, nil, protocol.Roster().Aggregate, nil)
+	processResponsesToShuffle := make([]lib.ProcessResponse, 3)
+	processResponsesToShuffle[0] = lib.ProcessResponse{GroupByEnc: cipherVect2, WhereEnc: cipherVect2, AggregatingAttributes: cipherVect2}
+	processResponsesToShuffle[1] = lib.ProcessResponse{GroupByEnc: cipherVect1, WhereEnc: cipherVect1, AggregatingAttributes: cipherVect1}
+	processResponsesToShuffle[2] = lib.ProcessResponse{GroupByEnc: cipherVect2, WhereEnc: cipherVect2, AggregatingAttributes: cipherVect1}
+	detResponsesCreationShuffled, pi, beta := lib.ShuffleSequence(processResponsesToShuffle, nil, protocol.Roster().Aggregate, nil)
 
-	PublishedShufflingProof1 := lib.ShufflingProofCreation(clientResponsesToShuffle, detResponsesCreationShuffled, nil, protocol.Roster().Aggregate, beta, pi)
+	PublishedShufflingProof1 := lib.ShufflingProofCreation(processResponsesToShuffle, detResponsesCreationShuffled, nil, protocol.Roster().Aggregate, beta, pi)
 
-	PublishedShufflingProof2 := lib.ShufflingProofCreation(clientResponsesToShuffle, clientResponsesToShuffle, nil, pubKey, beta, pi)
+	PublishedShufflingProof2 := lib.ShufflingProofCreation(processResponsesToShuffle, processResponsesToShuffle, nil, pubKey, beta, pi)
 
 	shufflingProofs := []lib.PublishedShufflingProof{PublishedShufflingProof1, PublishedShufflingProof2}
 
 	// collective aggregation **************************************************************************************
-	c1 := make(map[lib.GroupingKey]lib.ClientResponse)
+	c1 := make(map[lib.GroupingKey]lib.FilteredResponse)
 	for _, v := range detResponses {
-		lib.AddInMap(c1, v.DetTag, v.CR)
+		lib.AddInMap(c1, v.DetTagGroupBy, v.Fr)
 	}
 
-	c3 := make(map[lib.GroupingKey]lib.ClientResponse)
+	c3 := make(map[lib.GroupingKey]lib.FilteredResponse)
 	for i, v := range c1 {
 		lib.AddInMap(c3, i, v)
 		lib.AddInMap(c3, i, v)

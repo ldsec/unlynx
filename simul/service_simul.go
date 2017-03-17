@@ -2,14 +2,15 @@ package main
 
 import (
 	"github.com/BurntSushi/toml"
-	"github.com/JoaoAndreSa/MedCo/lib"
-	"github.com/JoaoAndreSa/MedCo/services"
-	"github.com/JoaoAndreSa/MedCo/services/data"
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
-	"gopkg.in/dedis/onet.v1/simul/monitor"
+
 	"strconv"
 	"sync"
+	"gopkg.in/dedis/onet.v1/simul/monitor"
+	"github.com/JoaoAndreSa/MedCo/services"
+	"github.com/JoaoAndreSa/MedCo/lib"
+	"github.com/JoaoAndreSa/MedCo/services/data"
 )
 
 //Defines the simulation for the service-medCo to be run with cothority/simul.
@@ -22,11 +23,15 @@ type SimulationMedCo struct {
 	onet.SimulationBFTree
 
 	NbrDPs             int     //number of clients (or in other words data holders)
-	NbrResponses       int64   //number of survey entries (ClientClearResponse) per host
+	NbrResponsesTot    int64   //number of survey entries (ClientClearResponse) per host
+	NbrResponsesFiltered 	int64
 	NbrGroupsClear     int64   //number of non-sensitive (clear) grouping attributes
 	NbrGroupsEnc       int64   //number of sensitive (encrypted) grouping attributes
+	NbrWhereClear	   int64
+	NbrWhereEncrypted  int64
 	NbrGroupAttributes []int64 //number of different groups inside each grouping attribute
 	NbrAggrAttributes  int64   //number of aggregating attributes
+	Count 		   bool
 	RandomGroups       bool    //generate data randomly or num entries == num groups (deterministically)
 	DataRepetitions    int     //repeat the number of entries x times (e.g. 1 no repetition; 1000 repetitions)
 	Proofs             bool    //with proofs of correctness everywhere
@@ -83,14 +88,34 @@ func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
 		}
 
 		// Generate Survey Data
-		surveyDesc := lib.SurveyDescription{GroupingAttributesClearCount: int32(sim.NbrGroupsClear), GroupingAttributesEncCount: int32(sim.NbrGroupsEnc), AggregatingAttributesCount: uint32(sim.NbrAggrAttributes)}
-		surveyID, _, err := client.SendSurveyCreationQuery(el, lib.SurveyID(""), lib.SurveyID(""), surveyDesc, sim.Proofs, false, nil, nil, nil, nbrDPs, 0)
+		sum := [sim.NbrAggrAttributes]string{}
+		for i := 0 ; i < sim.NbrAggrAttributes; i++{
+			sum[i] = "sum"+strconv.Itoa(i)
+		}
+		count := sim.Count
+
+		whereQueryValues := [sim.NbrWhereClear+sim.NbrWhereEncrypted]lib.WhereQueryAttribute{}
+		pred := string{}
+		counter := 0
+		for i := 0 ; i < sim.NbrWhereClear+sim.NbrWhereEncrypted; i++{
+			whereQueryValues[i] = lib.WhereQueryAttribute{"w"+strconv.Itoa(i), *lib.EncryptInt(el.Aggregate, 1)}
+			pred = pred + " v" + strconv.Itoa(counter) + " == v" + strconv.Itoa(counter+1) + " &&"
+			counter = counter + 2
+		}
+
+		groupBy := [sim.NbrGroupsClear+sim.NbrGroupsEnc]string{}
+		for i := 0 ; i < sim.NbrGroupsClear+sim.NbrGroupsEnc; i++{
+			groupBy[i] = "g"+strconv.Itoa(i)
+		}
+
+		surveyID, _, err := client.SendSurveyCreationQuery(el, lib.SurveyID("testSurvey"), lib.SurveyID(""), sum, count, whereQueryValues, pred, groupBy, nil, nil, nbrDPs, 0, sim.Proofs, false)
 
 		if err != nil {
 			log.Fatal("Service did not start.")
 		}
 
 		// RandomGroups (true/false) is to respectively generate random or non random entries
+		//TODO change generate data
 		testData := data.GenerateData(int64(sim.NbrDPs), sim.NbrResponses, sim.NbrGroupsClear, sim.NbrGroupsEnc, sim.NbrAggrAttributes, sim.NbrGroupAttributes, sim.RandomGroups)
 
 		/// START SERVICE PROTOCOL
@@ -113,7 +138,7 @@ func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
 					mutexDH.Unlock()
 
 					client = services.NewMedcoClient(server, strconv.Itoa(i+1))
-					client.SendSurveyResponseQuery(*surveyID, data, el.Aggregate, sim.DataRepetitions)
+					client.SendSurveyResponseQuery(*surveyID, data, el.Aggregate, sim.DataRepetitions, count)
 					defer wg.Done()
 				}(i, client)
 			} else {
@@ -124,7 +149,7 @@ func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
 				lib.EndTimer(start2)
 				start3 := lib.StartTimer(strconv.Itoa(i) + "_IndividualSendSurveyResults")
 
-				client.SendSurveyResponseQuery(*surveyID, testData[strconv.Itoa(i)], el.Aggregate, sim.DataRepetitions)
+				client.SendSurveyResponseQuery(*surveyID, testData[strconv.Itoa(i)], el.Aggregate, sim.DataRepetitions, count)
 
 				lib.EndTimer(start3)
 
@@ -146,11 +171,11 @@ func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
 		// END SERVICE PROTOCOL
 
 		// Print Output
-		allData := make([]lib.ClientClearResponse, 0)
+		allData := make([]lib.DpClearResponse, 0)
 		log.Lvl1("Service output:")
 		for i := range *grp {
 			log.Lvl1(i, ")", (*grpClear)[i], ",", (*grp)[i], "->", (*aggr)[i])
-			allData = append(allData, lib.ClientClearResponse{GroupingAttributesClear: (*grpClear)[i], GroupingAttributesEnc: (*grp)[i], AggregatingAttributes: (*aggr)[i]})
+			//allData = append(allData, lib.DpClearResponse{GroupingAttributesClear: (*grpClear)[i], GroupingAttributesEnc: (*grp)[i], AggregatingAttributes: (*aggr)[i]})
 		}
 
 		// Test Service Simulation

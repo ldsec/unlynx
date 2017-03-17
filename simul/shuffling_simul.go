@@ -95,7 +95,7 @@ func NewShufflingSimul(tni *onet.TreeNodeInstance, sim *ShufflingSimulation) (on
 		aggregateKey := pap.Roster().Aggregate
 
 		// Creates dummy data...
-		clientResponses := make([]lib.ClientResponse, sim.NbrResponses)
+		clientResponses := make([]lib.ProcessResponse, sim.NbrResponses)
 		tabGroup := make([]int64, sim.NbrGroupAttributes)
 		tabAttr := make([]int64, sim.NbrAggrAttributes)
 
@@ -108,7 +108,7 @@ func NewShufflingSimul(tni *onet.TreeNodeInstance, sim *ShufflingSimulation) (on
 
 		encryptedGrp := *lib.EncryptIntVector(aggregateKey, tabGroup)
 		encryptedAttr := *lib.EncryptIntVector(aggregateKey, tabAttr)
-		clientResponse := lib.ClientResponse{GroupingAttributesClear: "", ProbaGroupingAttributesEnc: encryptedGrp, AggregatingAttributes: encryptedAttr}
+		clientResponse := lib.ProcessResponse{GroupByEnc: encryptedGrp, AggregatingAttributes: encryptedAttr}
 
 		for i := 0; i < sim.NbrResponses; i++ {
 			clientResponses[i] = clientResponse

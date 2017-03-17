@@ -113,6 +113,22 @@ func IntToPoint(integer int64) abstract.Point {
 	return M
 }
 
+func PointToCipherText(point abstract.Point) CipherText {
+	return CipherText{K: suite.Point().Null(), C: point}
+}
+
+func IntToCiphertext(integer int64) CipherText{
+	return PointToCipherText(IntToPoint(integer))
+}
+
+func IntArrayToCipherVector(integers []int64) CipherVector{
+	result := make (CipherVector, len(integers))
+	for i,v := range integers{
+		result[i] = PointToCipherText(IntToPoint(v))
+	}
+	return result
+}
+
 // EncryptInt encodes i as iB, encrypt it into a CipherText and returns a pointer to it.
 func EncryptInt(pubkey abstract.Point, integer int64) *CipherText {
 	return encryptPoint(pubkey, IntToPoint(integer))

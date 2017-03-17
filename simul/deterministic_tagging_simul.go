@@ -95,7 +95,7 @@ func NewDeterministicTaggingSimul(tni *onet.TreeNodeInstance, sim *Deterministic
 		aggregateKey := pap.Roster().Aggregate
 
 		// Creates dummy data...
-		clientResponses := make([]lib.ClientResponse, sim.NbrResponses)
+		processResponses := make([]lib.ProcessResponse, sim.NbrResponses)
 		tabGroup := make([]int64, sim.NbrGroupAttributes)
 		tabAttr := make([]int64, sim.NbrAggrAttributes)
 
@@ -108,13 +108,13 @@ func NewDeterministicTaggingSimul(tni *onet.TreeNodeInstance, sim *Deterministic
 
 		encryptedGrp := *lib.EncryptIntVector(aggregateKey, tabGroup)
 		encryptedAttr := *lib.EncryptIntVector(aggregateKey, tabAttr)
-		clientResponse := lib.ClientResponse{ProbaGroupingAttributesEnc: encryptedGrp, AggregatingAttributes: encryptedAttr}
+		processResponse := lib.ProcessResponse{GroupByEnc: encryptedGrp, AggregatingAttributes: encryptedAttr}
 
 		for i := 0; i < sim.NbrResponses; i++ {
-			clientResponses[i] = clientResponse
+			processResponses[i] = processResponse
 		}
 
-		pap.TargetOfSwitch = &clientResponses
+		pap.TargetOfSwitch = &processResponses
 	}
 	tempKey := network.Suite.Scalar().Pick(random.Stream)
 	pap.SurveySecretKey = &tempKey

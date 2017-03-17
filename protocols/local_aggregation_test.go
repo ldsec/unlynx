@@ -31,14 +31,14 @@ func TestLocalAggregation(t *testing.T) {
 	cipherVect2 := *lib.NewCipherVector(len(cipherVect)).Add(cipherVect, cipherVect)
 
 	// aggregation
-	detResponses := make([]lib.ClientResponseDet, 3)
-	detResponses[0] = lib.ClientResponseDet{CR: lib.ClientResponse{ProbaGroupingAttributesEnc: cipherVect2, AggregatingAttributes: cipherVect}, DetTag: lib.CipherVectorToDeterministicTag(cipherVect2, secKey, secKey, pubKey, true)}
-	detResponses[1] = lib.ClientResponseDet{CR: lib.ClientResponse{ProbaGroupingAttributesEnc: cipherVect, AggregatingAttributes: cipherVect}, DetTag: lib.CipherVectorToDeterministicTag(cipherVect, secKey, secKey, pubKey, true)}
-	detResponses[2] = lib.ClientResponseDet{CR: lib.ClientResponse{ProbaGroupingAttributesEnc: cipherVect2, AggregatingAttributes: cipherVect}, DetTag: lib.CipherVectorToDeterministicTag(cipherVect2, secKey, secKey, pubKey, true)}
+	detResponses := make([]lib.FilteredResponseDet, 3)
+	detResponses[0] = lib.FilteredResponseDet{Fr: lib.FilteredResponse{GroupByEnc: cipherVect2, AggregatingAttributes: cipherVect}, DetTagGroupBy: lib.CipherVectorToDeterministicTag(cipherVect2, secKey, secKey, pubKey, true)}
+	detResponses[1] = lib.FilteredResponseDet{Fr: lib.FilteredResponse{GroupByEnc: cipherVect, AggregatingAttributes: cipherVect}, DetTagGroupBy: lib.CipherVectorToDeterministicTag(cipherVect, secKey, secKey, pubKey, true)}
+	detResponses[2] = lib.FilteredResponseDet{Fr: lib.FilteredResponse{GroupByEnc: cipherVect2, AggregatingAttributes: cipherVect}, DetTagGroupBy: lib.CipherVectorToDeterministicTag(cipherVect2, secKey, secKey, pubKey, true)}
 
-	comparisonMap := make(map[lib.GroupingKey]lib.ClientResponse)
+	comparisonMap := make(map[lib.GroupingKey]lib.FilteredResponse)
 	for _, v := range detResponses {
-		lib.AddInMap(comparisonMap, v.DetTag, v.CR)
+		lib.AddInMap(comparisonMap, v.DetTagGroupBy, v.Fr)
 	}
 
 	protocol.TargetOfAggregation = detResponses

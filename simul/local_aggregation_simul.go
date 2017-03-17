@@ -80,10 +80,10 @@ func (sim *LocalAggregationSimulation) Run(config *onet.SimulationConfig) error 
 		// aggregation
 		testCipherVect1 := *lib.EncryptIntVector(pubKey, tab)
 		groupCipherVect := *lib.EncryptIntVector(pubKey, tabGr)
-		detResponses := make([]lib.ClientResponseDet, 0)
+		detResponses := make([]lib.FilteredResponseDet, 0)
 		for i := 0; i < sim.NbrGroups; i++ {
 			groupCipherVect = *lib.NewCipherVector(sim.NbrGroupAttributes).Add(groupCipherVect, groupCipherVect)
-			cr := lib.ClientResponse{GroupingAttributesClear: "", ProbaGroupingAttributesEnc: testCipherVect1, AggregatingAttributes: testCipherVect1}
+			cr := lib.FilteredResponse{GroupByEnc: testCipherVect1, AggregatingAttributes: testCipherVect1}
 			det1 := groupCipherVect
 			det1.TaggingDet(secKey, newSecKey, pubKey, sim.Proofs)
 
@@ -92,7 +92,7 @@ func (sim *LocalAggregationSimulation) Run(config *onet.SimulationConfig) error 
 				deterministicGroupAttributes[j] = lib.DeterministCipherText{Point: c.C}
 			}
 
-			newDetResponse := lib.ClientResponseDet{CR: cr, DetTag: deterministicGroupAttributes.Key()}
+			newDetResponse := lib.FilteredResponseDet{Fr: cr, DetTagGroupBy: deterministicGroupAttributes.Key()}
 			log.LLvl1("step: ", i, " / ", sim.NbrGroups, " in preparation")
 			for j := 0; j < sim.NbrResponses/sim.NbrGroups; j++ {
 				detResponses = append(detResponses, newDetResponse)
