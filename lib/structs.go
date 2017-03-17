@@ -71,7 +71,8 @@ type DpClearResponse struct {
 	WhereEnc              map[string]int64
 	GroupByClear          map[string]int64
 	GroupByEnc            map[string]int64
-	AggregatingAttributes map[string]int64
+	AggregatingAttributesClear map[string]int64
+	AggregatingAttributesEnc map[string]int64
 }
 
 /*
@@ -278,6 +279,7 @@ func EncryptDpClearResponse(ccr DpClearResponse, encryptionKey abstract.Point, c
 		cr.WhereEnc[i] = *EncryptInt(encryptionKey, v)
 	}
 	//cr.WhereEnc = *EncryptIntVector(encryptionKey, ccr.WhereEnc)
+	cr.AggregatingAttributesClear = ccr.AggregatingAttributes
 	cr.AggregatingAttributes = make(map[string]CipherText, len(ccr.AggregatingAttributes))
 	for i,v := range ccr.AggregatingAttributes{
 		cr.AggregatingAttributes[i] = *EncryptInt(encryptionKey, v)
