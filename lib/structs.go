@@ -40,7 +40,9 @@ type DpResponse struct {
 	WhereEnc              map[string]CipherText
 	GroupByClear          map[string]int64
 	GroupByEnc            map[string]CipherText
-	AggregatingAttributes map[string]CipherText
+	AggregatingAttributesClear map[string]int64
+	AggregatingAttributesEnc map[string]CipherText
+
 }
 
 type ProcessResponse struct {
