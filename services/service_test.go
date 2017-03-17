@@ -97,7 +97,7 @@ func TestServiceClearAttr(t *testing.T) {
 			}
 		}
 
-		responses:= []lib.DpClearResponse{{WhereClear: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributes: aggr},{WhereClear: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributes: aggr}}
+		responses:= []lib.DpClearResponse{{WhereClear: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr, AggregatingAttributesClear: aggr},{WhereClear: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr, AggregatingAttributesClear: aggr}}
 		dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
 
 		//compute expected results
@@ -211,7 +211,7 @@ func TestServiceClearGrpEncWhereAttr(t *testing.T) {
 			}
 		}
 
-		responses:= []lib.DpClearResponse{{WhereEnc: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributes: aggr},{WhereEnc: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributes: aggr}}
+		responses:= []lib.DpClearResponse{{WhereEnc: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr, AggregatingAttributesClear: aggr},{WhereEnc: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr, AggregatingAttributesClear: aggr}}
 		dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
 
 		//compute expected results
@@ -325,7 +325,7 @@ func TestServiceEncGrpClearWhereAttr(t *testing.T) {
 			}
 		}
 
-		responses:= []lib.DpClearResponse{{WhereClear: sliceWhere, GroupByEnc: sliceGrp, AggregatingAttributes: aggr},{WhereClear: sliceWhere, GroupByEnc: sliceGrp, AggregatingAttributes: aggr}}
+		responses:= []lib.DpClearResponse{{WhereClear: sliceWhere, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr, AggregatingAttributesClear: aggr},{WhereClear: sliceWhere, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr, AggregatingAttributesClear: aggr}}
 		dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
 
 		//compute expected results
@@ -439,7 +439,7 @@ func TestServiceEncGrpAndWhereAttr(t *testing.T) {
 			}
 		}
 
-		responses:= []lib.DpClearResponse{{WhereEnc: sliceWhere, GroupByEnc: sliceGrp, AggregatingAttributes: aggr},{WhereEnc: sliceWhere, GroupByEnc: sliceGrp, AggregatingAttributes: aggr}}
+		responses:= []lib.DpClearResponse{{WhereEnc: sliceWhere, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr, AggregatingAttributesClear: aggr},{WhereEnc: sliceWhere, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr, AggregatingAttributesClear: aggr}}
 		dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
 
 		//compute expected results
@@ -552,7 +552,7 @@ func TestServiceEncGrpAndWhereAttrWithCount(t *testing.T) {
 			}
 		}
 
-		responses:= []lib.DpClearResponse{{WhereEnc: sliceWhere, GroupByEnc: sliceGrp, AggregatingAttributes: aggr},{WhereEnc: sliceWhere, GroupByEnc: sliceGrp, AggregatingAttributes: aggr}}
+		responses:= []lib.DpClearResponse{{WhereEnc: sliceWhere, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr, AggregatingAttributesClear: aggr},{WhereEnc: sliceWhere, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr, AggregatingAttributesClear: aggr}}
 		dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
 
 		//compute expected results
@@ -673,7 +673,7 @@ func TestAllServersNoDPs(t *testing.T) {
 		}
 
 
-		responses:= []lib.DpClearResponse{{WhereEnc: sliceWhere, GroupByEnc: sliceGrp, AggregatingAttributes: aggr},{WhereEnc: sliceWhere, GroupByEnc: sliceGrp, AggregatingAttributes: aggr}}
+		responses:= []lib.DpClearResponse{{WhereEnc: sliceWhere, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr, AggregatingAttributesClear: aggr},{WhereEnc: sliceWhere, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr, AggregatingAttributesClear: aggr}}
 		dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
 
 		if i != 2 { // i = 2 is the only response for which the where is not satisfied
@@ -793,7 +793,7 @@ func TestAllServersRandomDPs(t *testing.T) {
 			}
 		}
 
-		responses:= []lib.DpClearResponse{{WhereEnc: sliceWhere, GroupByEnc: sliceGrp, AggregatingAttributes: aggr},{WhereEnc: sliceWhere, GroupByEnc: sliceGrp, AggregatingAttributes: aggr}}
+		responses:= []lib.DpClearResponse{{WhereEnc: sliceWhere, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr, AggregatingAttributesClear: aggr},{WhereEnc: sliceWhere, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr, AggregatingAttributesClear: aggr}}
 		dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
 
 		if i != 2 { // i = 2 is the only response for which the where is not satisfied

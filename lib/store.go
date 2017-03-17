@@ -226,7 +226,7 @@ func AddInMap(s map[GroupingKey]FilteredResponse, key GroupingKey, added Filtere
 }
 
 // int64ArrayToString transforms an array into a string
-func int64ArrayToString(s []int64) string {
+func int64MapToString(s map[string]int64) string {
 	if len(s) == 0 {
 		return ""
 	}
@@ -258,14 +258,14 @@ func StringToInt64Array(s string) []int64 {
 
 // AddInClear permits to add non-encrypted DP responses
 func AddInClear(s []DpClearResponse) []DpClearResponse {
-	/*dataMap := make(map[string][]int64)
+	/*dataMap := make(map[string]{[]int64})
 
 	wg := StartParallelize(0)
 	for _, elem := range s {
-		key := int64ArrayToString(elem.GroupByClear) + " " + int64ArrayToString(elem.GroupByEnc) + " " + int64ArrayToString(elem.WhereClear) + " " + int64ArrayToString(elem.WhereEnc)
+		key := int64MapToString(elem.GroupByClear) + " " + int64MapToString(elem.GroupByEnc) + " " + int64MapToString(elem.WhereClear) + " " + int64MapToString(elem.WhereEnc)
 
 		if _, ok := dataMap[key]; ok == false {
-			cpy := make([]int64, len(elem.AggregatingAttributes))
+			cpy := make([]int64, len(elem.AggregatingAttributesEnc))
 			copy(cpy, elem.AggregatingAttributes)
 			dataMap[key] = cpy
 		} else {
