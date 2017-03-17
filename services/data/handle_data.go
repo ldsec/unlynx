@@ -1,21 +1,11 @@
 package data
 
 import (
-	"bufio"
-	"fmt"
-	"math"
-	"math/rand"
-	"os"
-	"reflect"
-	"strings"
-	"time"
 
-	"github.com/JoaoAndreSa/MedCo/lib"
-	"gopkg.in/dedis/onet.v1/log"
 )
 
 // Groups identifies all different groups to be added to the test data file
-var Groups [][]int64
+/*var Groups [][]int64
 
 // fillInt64Slice fills a slice with the same value v
 func fillInt64Slice(s []int64, v int64) {
@@ -248,4 +238,4 @@ func CompareClearResponses(x []lib.DpClearResponse, y []lib.DpClearResponse) boo
 	}
 
 	return test
-}
+}*/

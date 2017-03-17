@@ -18,7 +18,7 @@ import (
 const numberGrpAttr = 3
 
 // numberAttr is the number of attributes.
-const numberAttr = 10
+const numberAttr = 2
 
 const proofsService = true
 
@@ -44,7 +44,7 @@ func TestServiceClearAttr(t *testing.T) {
 	client := services.NewMedcoClient(el.List[0], strconv.Itoa(0))
 
 
-	sum := []string{"sum1"}
+	sum := []string{"sum1", "sum2"}
 	count := false
 	whereQueryValues := []lib.WhereQueryAttribute{{"w1", *lib.EncryptInt(el.Aggregate, 1)}, {"w2", *lib.EncryptInt(el.Aggregate, 1)}, {"w3", *lib.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
 	pred := "(v0 == v1 || v2 == v3) && v4 == v5"
@@ -69,35 +69,29 @@ func TestServiceClearAttr(t *testing.T) {
 	for i := 0; i < len(dataHolder); i++ {
 		dataHolder[i] = services.NewMedcoClient(el.List[i%5], strconv.Itoa(i+1))
 		grp := [numberGrpAttr]int64{}
-		aggr := make([]int64, numberAttr)
+		aggr := make(map[string]int64, numberAttr)
 
 		grp[0] = int64(i % 4)
-		aggr[i%numberAttr] = 3
+		aggr["sum"+strconv.Itoa(i+1)] = 3
 
 		//convert tab in slice (was a tab only for the test)
 		val := int64(1)
 		if i == 2 {
 			val = int64(2)
 		}
-		sliceWhere := make([]int64, numberGrpAttr)
+		sliceWhere := make(map[string]int64, numberGrpAttr)
 		for j := range grp {
-			if j == 0 {
-				sliceWhere = []int64{val}
-			} else {
-				sliceWhere = append(sliceWhere, val)
-			}
+			sliceWhere["w"+strconv.Itoa(j+1)] = int64(val)
+
 		}
 
-		sliceGrp := make([]int64, numberGrpAttr)
-		for j, v := range grp {
-			if j == 0 {
-				sliceGrp = []int64{v}
-			} else {
-				sliceGrp = append(sliceGrp, v)
-			}
+		sliceGrp := make(map[string]int64, numberGrpAttr)
+		for j := range grp {
+			sliceGrp["g"+strconv.Itoa(j+1)] = int64(j)
+
 		}
 
-		responses:= []lib.DpClearResponse{{WhereClear: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr, AggregatingAttributesClear: aggr},{WhereClear: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr, AggregatingAttributesClear: aggr}}
+		responses:= []lib.DpClearResponse{{WhereClear: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr, AggregatingAttributesClear: aggr},{WhereClear: sliceWhere, GroupByClear: sliceWhere, AggregatingAttributesEnc: aggr, AggregatingAttributesClear: aggr}}
 		dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
 
 		//compute expected results
@@ -105,12 +99,12 @@ func TestServiceClearAttr(t *testing.T) {
 			_, ok := expectedResults[grp]
 			if ok {
 				for ind, v := range expectedResults[grp] {
-					expectedResults[grp][ind] = v + aggr[ind] + aggr[ind]
+					expectedResults[grp][ind] = v + aggr[strconv.Itoa(ind)] + aggr[strconv.Itoa(ind)]
 				}
 			} else {
 				expectedResults[grp] = make([]int64, len(aggr))
 				for ind := range expectedResults[grp] {
-					expectedResults[grp][ind] = aggr[ind] + aggr[ind]
+					expectedResults[grp][ind] = aggr[strconv.Itoa(ind)] + aggr[strconv.Itoa(ind)]
 				}
 			}
 		}
@@ -141,7 +135,7 @@ func TestServiceClearAttr(t *testing.T) {
 		}
 	}
 }
-
+/*
 //______________________________________________________________________________________________________________________
 /// Only encrypted where and clear group by attributes
 func TestServiceClearGrpEncWhereAttr(t *testing.T) {
@@ -834,7 +828,7 @@ func TestAllServersRandomDPs(t *testing.T) {
 		}
 	}
 
-}
+}*/
 
 func TestFilteringFunc(t *testing.T) {
 	pred := "(v0 == v1 && v2 == v3) && v4 == v5"

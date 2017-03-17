@@ -43,15 +43,16 @@ func NewStore() *Store {
 }
 
 // proccessParameters converts the sum, where and group by data to a collection of CipherTexts (CipherVector)
-func proccessParameters (data []string, clear map[string]int64, encrypted map[string]CipherText, noEnc bool) ([]int64, []CipherVector) {
+func proccessParameters (data []string, clear map[string]int64, encrypted map[string]CipherText, noEnc bool) ([]int64, CipherVector) {
 	containerClear := []int64{}
-	containerEnc := []CipherVector{}
+	containerEnc := CipherVector{}
 
 	for _,v := range data {
 		// all where and group by attributes are in clear
-		if noEnc && len(clear)>0 {
+		if noEnc {
 			containerClear = append(containerClear,clear[v])
-		} else if  noEnc == false{
+			log.LLvl1(containerClear)
+		} else if !noEnc{
 			if  value, ok := encrypted[v]; ok {
 				containerEnc = append(containerEnc, value)
 			} else {
@@ -62,19 +63,7 @@ func proccessParameters (data []string, clear map[string]int64, encrypted map[st
 	return containerClear,containerEnc
 }
 
-// InsertDPResponse handles the local storage of a new DP response in aggregation or grouping cases.
-func (s *Store) InsertDpResponse(cr DpResponse, proofs bool, scq SurveyCreationQuery) {
-	newResp := ProcessResponse{}
-	clearGrp := []int64{}
-	clearWhr := []int64{}
-	clearAggr := []int64{}
-
-	noEnc := (cr.WhereEnc == nil || cr.GroupByEnc == nil)
-	clearGrp, newResp.GroupByEnc = proccessParameters(scq.GroupBy, cr.GroupByClear, cr.GroupByEnc, noEnc)
-	clearWhr, newResp.WhereEnc = proccessParameters(scq.Where, cr.WhereClear, cr.WhereEnc,,noEnc)
-	clearAggr, newResp.AggregatingAttributes = proccessParameters(scq.Sum, cr.AggregatingAttributesClear, cr.AggregatingAttributesClear, noEnc)
-
-	/*for _,v := range grpAttrOrder{
+/*for _,v := range grpAttrOrder{
 		log.LLvl1(v)
 		log.LLvl1(cr.GroupByClear)
 		grp, ok := cr.GroupByClear[v]
@@ -112,7 +101,24 @@ func (s *Store) InsertDpResponse(cr DpResponse, proofs bool, scq SurveyCreationQ
 		newResp.AggregatingAttributes = append(newResp.AggregatingAttributes, grp)
 	}*/
 
-	if cr.WhereEnc != nil || cr.GroupByEnc != nil {
+// InsertDPResponse handles the local storage of a new DP response in aggregation or grouping cases.
+func (s *Store) InsertDpResponse(cr DpResponse, proofs bool, scq SurveyCreationQuery) {
+	newResp := ProcessResponse{}
+	clearGrp := []int64{}
+	clearWhr := []int64{}
+	//clearAggr := []int64{}
+
+	noEnc := (cr.WhereEnc == nil || cr.GroupByEnc == nil)
+	clearGrp, newResp.GroupByEnc = proccessParameters(scq.GroupBy, cr.GroupByClear, cr.GroupByEnc, noEnc)
+	log.LLvl1("LAL ", clearGrp)
+	whereStrings := make([]string,len(scq.Where))
+	for i,v := range scq.Where{
+		whereStrings[i] = v.Name
+	}
+	clearWhr, newResp.WhereEnc = proccessParameters(whereStrings, cr.WhereClear, cr.WhereEnc, noEnc)
+	_, newResp.AggregatingAttributes = proccessParameters(scq.Sum, cr.AggregatingAttributesClear, cr.AggregatingAttributesEnc, false)
+	log.LLvl1(newResp.AggregatingAttributes)
+	if !noEnc {
 		s.DpResponses = append(s.DpResponses, newResp)
 
 	} else {
@@ -121,12 +127,12 @@ func (s *Store) InsertDpResponse(cr DpResponse, proofs bool, scq SurveyCreationQ
 			tmp := *NewCipherVector(len(value.AggregatingAttributes)).Add(value.AggregatingAttributes, newResp.AggregatingAttributes)
 			mapValue := s.DpResponsesAggr[GroupingKeyTuple{Key(clearGrp), Key(clearWhr)}]
 			mapValue.AggregatingAttributes = tmp
-			if mapValue.GroupByEnc == nil {
+			/*if mapValue.GroupByEnc == nil { //first response in this "group"
 				mapValue.GroupByEnc = IntArrayToCipherVector(clearGrp)
 			}
 			if mapValue.WhereEnc == nil {
 				mapValue.GroupByEnc = IntArrayToCipherVector(clearWhr)
-			}
+			}*/
 			s.DpResponsesAggr[GroupingKeyTuple{Key(clearGrp), Key(clearWhr)}] = mapValue
 
 			if proofs {
@@ -148,20 +154,17 @@ func (s *Store) HasNextDpResponse() bool {
 
 // PullDpResponses permits to get the received DP responses
 func (s *Store) PullDpResponses() []ProcessResponse {
-	result := []ProcessResponse{}
-	if len(s.DpResponses) > 0 {
-		result = s.DpResponses
-	} else {
-		for _, v := range s.DpResponsesAggr {
-			log.LLvl1("PULLDPRESPONSE")
-			//newResp := ProcessResponse{}
-			//newResp.GroupByEnc = append(IntArrayToCipherVector(v.GroupByEnc))
-			//newResp.WhereEnc = append(IntArrayToCipherVector(v.WhereClear), v.WhereEnc...)
-			//newResp.AggregatingAttributes = v.AggregatingAttributes
-			result = append(result, v)
-		}
+	//result := []ProcessResponse{}
+	result := s.DpResponses
+	for _, v := range s.DpResponsesAggr {
+		log.LLvl1("PULLDPRESPONSE")
+		log.LLvl1(v)
+		//newResp := ProcessResponse{}
+		//newResp.GroupByEnc = append(IntArrayToCipherVector(v.GroupByEnc))
+		//newResp.WhereEnc = append(IntArrayToCipherVector(v.WhereClear), v.WhereEnc...)
+		//newResp.AggregatingAttributes = v.AggregatingAttributes
+		result = append(result, v)
 	}
-
 	s.DpResponses = s.DpResponses[:0] //clear table
 	return result
 }
@@ -371,3 +374,5 @@ func (s *Store) DisplayResults() {
 		log.LLvl1("[ ", v.GroupByEnc, " ] : ", v.AggregatingAttributes, ")")
 	}
 }
+
+

@@ -4,17 +4,17 @@
 package protocols
 
 import (
-	"github.com/JoaoAndreSa/MedCo/lib"
-	"gopkg.in/dedis/crypto.v0/abstract"
-	"gopkg.in/dedis/onet.v1"
-	"gopkg.in/dedis/onet.v1/log"
-	"gopkg.in/dedis/onet.v1/network"
-	"sync"
+	//"github.com/JoaoAndreSa/MedCo/lib"
+	//"gopkg.in/dedis/crypto.v0/abstract"
+	//"gopkg.in/dedis/onet.v1"
+	//"gopkg.in/dedis/onet.v1/log"
+	//"gopkg.in/dedis/onet.v1/network"
+	//"sync"
 )
 
 // AddRmServerProtocolName is the registered name for the local aggregation protocol.
 const AddRmServerProtocolName = "AddRmServer"
-
+/*
 func init() {
 	onet.GlobalProtocolRegister(AddRmServerProtocolName, NewAddRmProtocol)
 }
@@ -178,4 +178,4 @@ func proofsCreation (pubs []lib.PublishedAddRmProof, mutexCR sync.Mutex, target,
 	pubs = append(pubs, pub1, pub2, pub3)
 	mutexCR.Unlock()
 }
-
+*/
