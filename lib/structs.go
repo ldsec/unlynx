@@ -113,20 +113,20 @@ type FilteredResponse struct {
 type SurveyID string
 
 type SurveyCreationQuery struct {
-	SurveyGenID *SurveyID
-	SurveyID    *SurveyID
-	Roster      onet.Roster
-	Sum     []string
-	Count   bool
-	Where   []WhereQueryAttribute
-	Pred    string
-	GroupBy []string
-	ClientPubKey  abstract.Point
-	DataToProcess []DpResponse
-	NbrDPs        map[string]int64
-	QueryMode     int64
-	Proofs        bool
-	AppFlag       bool
+	SurveyGenID 	*SurveyID
+	SurveyID    	*SurveyID
+	Roster      	onet.Roster
+	Sum     	[]string
+	Count   	bool
+	Where   	[]WhereQueryAttribute
+	Pred    	string
+	GroupBy 	[]string
+	ClientPubKey  	abstract.Point
+	DataToProcess 	[]DpResponse
+	NbrDPs        	map[string]int64
+	QueryMode     	int64
+	Proofs        	bool
+	AppFlag       	bool
 }
 
 // Survey represents a survey with the corresponding params

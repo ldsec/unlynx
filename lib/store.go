@@ -42,16 +42,39 @@ func NewStore() *Store {
 	}
 }
 
+// proccessParameters converts the sum, where and group by data to a collection of CipherTexts (CipherVector)
+func proccessParameters (data []string, clear map[string]int64, encrypted map[string]CipherText, noEnc bool) ([]int64, []CipherVector) {
+	containerClear := []int64{}
+	containerEnc := []CipherVector{}
+
+	for _,v := range data {
+		// all where and group by attributes are in clear
+		if noEnc && len(clear)>0 {
+			containerClear = append(containerClear,clear[v])
+		} else if  noEnc == false{
+			if  value, ok := encrypted[v]; ok {
+				containerEnc = append(containerEnc, value)
+			} else {
+				containerEnc = append(containerEnc, IntToCiphertext(clear[v]))
+			}
+		}
+	}
+	return containerClear,containerEnc
+}
+
 // InsertDPResponse handles the local storage of a new DP response in aggregation or grouping cases.
 func (s *Store) InsertDpResponse(cr DpResponse, proofs bool, scq SurveyCreationQuery) {
-	grpAttrOrder := scq.GroupBy
-	whereAttrOrder := scq.Where
-	aggrAttrOrder := scq.Sum
-
 	newResp := ProcessResponse{}
 	clearGrp := []int64{}
 	clearWhr := []int64{}
-	for _,v := range grpAttrOrder{
+	clearAggr := []int64{}
+
+	noEnc := (cr.WhereEnc == nil || cr.GroupByEnc == nil)
+	clearGrp, newResp.GroupByEnc = proccessParameters(scq.GroupBy, cr.GroupByClear, cr.GroupByEnc, noEnc)
+	clearWhr, newResp.WhereEnc = proccessParameters(scq.Where, cr.WhereClear, cr.WhereEnc,,noEnc)
+	clearAggr, newResp.AggregatingAttributes = proccessParameters(scq.Sum, cr.AggregatingAttributesClear, cr.AggregatingAttributesClear, noEnc)
+
+	/*for _,v := range grpAttrOrder{
 		log.LLvl1(v)
 		log.LLvl1(cr.GroupByClear)
 		grp, ok := cr.GroupByClear[v]
@@ -82,15 +105,17 @@ func (s *Store) InsertDpResponse(cr DpResponse, proofs bool, scq SurveyCreationQ
 		}
 	}
 	for _,v := range aggrAttrOrder{
+		grp, ok :=
+
+
 		grp  := cr.AggregatingAttributes[v]
 		newResp.AggregatingAttributes = append(newResp.AggregatingAttributes, grp)
-	}
+	}*/
 
 	if cr.WhereEnc != nil || cr.GroupByEnc != nil {
 		s.DpResponses = append(s.DpResponses, newResp)
 
 	} else {
-		log.LLvl1("YOUHOU AMIGO")
 		value, ok := s.DpResponsesAggr[GroupingKeyTuple{Key(clearGrp), Key(clearWhr)}]
 		if ok {
 			tmp := *NewCipherVector(len(value.AggregatingAttributes)).Add(value.AggregatingAttributes, newResp.AggregatingAttributes)
