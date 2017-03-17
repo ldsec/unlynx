@@ -128,17 +128,19 @@ func (p *AddRmServerProtocol) Dispatch() error {
 	return nil
 }
 
-func changeEncryptionKeyVector(cv lib.CipherVector, serverAddRmKey abstract.Scalar, toAdd bool) lib.CipherVector {
-	result := make(lib.CipherVector, len(cv))
+func changeEncryptionKeyMapCipherTexts(cv map[string]lib.CipherText, serverAddRmKey abstract.Scalar, toAdd bool) map[string]lib.CipherText {
+	result := make(map[string]lib.CipherText, len(cv))
 	for j, w := range cv {
 		tmp := network.Suite.Point().Mul(w.K, serverAddRmKey)
-		result[j].K = w.K
+		copy := result[j]
+		copy.K = w.K
 		if toAdd {
-			result[j].C = network.Suite.Point().Add(w.C, tmp)
+			copy.C = network.Suite.Point().Add(w.C, tmp)
 
 		} else {
-			result[j].C = network.Suite.Point().Sub(w.C, tmp)
+			copy.C = network.Suite.Point().Sub(w.C, tmp)
 		}
+		result[j] = copy
 	}
 	return result
 }
@@ -148,26 +150,27 @@ func changeEncryption(response lib.DpResponse, keyToRm abstract.Scalar, add bool
 
 	mutexToT.Lock()
 	result.GroupByClear = response.GroupByClear
-	result.AggregatingAttributes = changeEncryptionKeyVector(response.AggregatingAttributes, keyToRm, add)
-	result.GroupByEnc = changeEncryptionKeyVector(response.GroupByEnc, keyToRm, add)
+	result.GroupByEnc = changeEncryptionKeyMapCipherTexts(response.GroupByEnc, keyToRm, add)
 	result.WhereClear = response.WhereClear
-	result.WhereEnc = changeEncryptionKeyVector(response.WhereEnc, keyToRm, add)
+	result.WhereEnc = changeEncryptionKeyMapCipherTexts(response.WhereEnc, keyToRm, add)
+	result.AggregatingAttributesEnc = changeEncryptionKeyMapCipherTexts(response.AggregatingAttributesEnc, keyToRm, add)
+	result.AggregatingAttributesClear = response.AggregatingAttributesClear
 	mutexToT.Unlock()
 	return result
 }
 
 func proofsCreation (pubs []lib.PublishedAddRmProof, mutexCR sync.Mutex, target, v lib.DpResponse, keyToRm abstract.Scalar, add bool) {
 	mutexCR.Lock()
-	targetAggregatingAttributes := target.AggregatingAttributes
+	targetAggregatingAttributesEnc := target.AggregatingAttributesEnc
 	targetGroupingAttributes := target.GroupByEnc
 	targetWhereAttributes := target.WhereEnc
 	mutexCR.Unlock()
 
-	prfAggr := lib.VectorAddRmProofCreation(targetAggregatingAttributes, v.AggregatingAttributes, keyToRm, add)
+	prfAggr := lib.VectorAddRmProofCreation(targetAggregatingAttributesEnc, v.AggregatingAttributesEnc, keyToRm, add)
 	prfGrp := lib.VectorAddRmProofCreation(targetGroupingAttributes, v.GroupByEnc, keyToRm, add)
 	prfWhere := lib.VectorAddRmProofCreation(targetWhereAttributes, v.WhereEnc, keyToRm, add)
 	ktopub := network.Suite.Point().Mul(network.Suite.Point().Base(), keyToRm)
-	pub1 := lib.PublishedAddRmProof{Arp: prfAggr, VectBefore: targetAggregatingAttributes, VectAfter: v.AggregatingAttributes, Krm: ktopub, ToAdd: add}
+	pub1 := lib.PublishedAddRmProof{Arp: prfAggr, VectBefore: targetAggregatingAttributesEnc, VectAfter: v.AggregatingAttributesEnc, Krm: ktopub, ToAdd: add}
 	pub2 := lib.PublishedAddRmProof{Arp: prfGrp, VectBefore: v.GroupByEnc, VectAfter: v.GroupByEnc, Krm: ktopub, ToAdd: add}
 	pub3 := lib.PublishedAddRmProof{Arp: prfWhere, VectBefore: v.WhereEnc, VectAfter: v.WhereEnc, Krm: ktopub, ToAdd: add}
 

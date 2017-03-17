@@ -70,7 +70,7 @@ func AllPossibleGroups(numType []int64, group []int64, pos int) {
 //  	numType:    	number of different groups inside a group attribute
 //  	numAggr:    	number of aggregating attributes
 //TODO where + whereClear
-func GenerateData(numDPs, numEntries, numGroupsClear, numGroupsEnc, numAggr int64, numType []int64, randomGroups bool) map[string][]lib.DpClearResponse {
+func GenerateData(numDPs, numEntries, numEntriesToKeep, numGroupsClear, numGroupsEnc, numAggr int64, numType []int64, randomGroups bool) map[string][]lib.DpClearResponse {
 	if int64(len(numType)) != (numGroupsClear + numGroupsEnc) {
 		log.Fatal("Please ensure that you specify the number of group types for each grouping attribute")
 		return nil

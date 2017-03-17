@@ -116,7 +116,7 @@ func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
 
 		// RandomGroups (true/false) is to respectively generate random or non random entries
 		//TODO change generate data
-		testData := data.GenerateData(int64(sim.NbrDPs), sim.NbrResponses, sim.NbrGroupsClear, sim.NbrGroupsEnc, sim.NbrAggrAttributes, sim.NbrGroupAttributes, sim.RandomGroups)
+		testData := data.GenerateData(int64(sim.NbrDPs), sim.NbrResponsesTot, sim.NbrResponsesFiltered, sim.NbrGroupsClear, sim.NbrGroupsEnc, sim.NbrAggrAttributes, sim.NbrGroupAttributes, sim.RandomGroups)
 
 		/// START SERVICE PROTOCOL
 		if lib.TIME {

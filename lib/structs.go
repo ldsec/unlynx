@@ -279,13 +279,13 @@ func EncryptDpClearResponse(ccr DpClearResponse, encryptionKey abstract.Point, c
 		cr.WhereEnc[i] = *EncryptInt(encryptionKey, v)
 	}
 	//cr.WhereEnc = *EncryptIntVector(encryptionKey, ccr.WhereEnc)
-	cr.AggregatingAttributesClear = ccr.AggregatingAttributes
-	cr.AggregatingAttributes = make(map[string]CipherText, len(ccr.AggregatingAttributes))
-	for i,v := range ccr.AggregatingAttributes{
-		cr.AggregatingAttributes[i] = *EncryptInt(encryptionKey, v)
+	cr.AggregatingAttributesClear = ccr.AggregatingAttributesClear
+	cr.AggregatingAttributesEnc = make(map[string]CipherText, len(ccr.AggregatingAttributesEnc))
+	for i,v := range ccr.AggregatingAttributesEnc{
+		cr.AggregatingAttributesEnc[i] = *EncryptInt(encryptionKey, v)
 	}
 	if count {
-		cr.AggregatingAttributes["count"] = *EncryptInt(encryptionKey, int64(1))
+		cr.AggregatingAttributesEnc["count"] = *EncryptInt(encryptionKey, int64(1))
 	}
 
 	return cr

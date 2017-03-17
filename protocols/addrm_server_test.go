@@ -11,6 +11,7 @@ import (
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"
+	"strconv"
 )
 
 func TestAddRmServer(t *testing.T) {
@@ -36,19 +37,28 @@ func TestAddRmServer(t *testing.T) {
 	secKeyAfter := network.Suite.Scalar().Sub(secKey, secKeyAddRm)
 
 	expectedResult := []int64{10, 10}
-	cipherVect := *lib.EncryptIntVector(pubKey, expectedResult)
-	cipherVect2 := *lib.NewCipherVector(len(cipherVect)).Add(cipherVect, cipherVect)
+	//cipherVect := *lib.EncryptIntVector(pubKey, expectedResult)
+	//cipherVect2 := *lib.NewCipherVector(len(cipherVect)).Add(cipherVect, cipherVect)
 
+	//dummySurveyCreationQuery := lib.SurveyCreationQuery{Sum:[]string{"0","1"}, GroupBy:[]string{"0","1"}, Where:[]lib.WhereQueryAttribute{{"0", lib.CipherText{}},{"1", lib.CipherText{}}}}
+	notEncrypted := make(map[string]int64)
+	for i, v := range expectedResult{
+		notEncrypted[strconv.Itoa(i)] = v
+	}
+	encrypted := make(map[string]int64)
+	for i, v := range expectedResult{
+		encrypted[strconv.Itoa(i)] = *lib.EncryptInt(pubKey, v)
+	}
 	// aggregation
-	detResponses := make([]lib.DpResponse, 3)
-	detResponses[0] = lib.DpResponse{GroupByClear: expectedResult, GroupByEnc: cipherVect2, WhereClear: expectedResult, WhereEnc:cipherVect2, AggregatingAttributes: cipherVect}
-	detResponses[1] = lib.DpResponse{GroupByClear: expectedResult, GroupByEnc: cipherVect, WhereClear: expectedResult, WhereEnc:cipherVect2, AggregatingAttributes: cipherVect}
-	detResponses[2] = lib.DpResponse{GroupByEnc: cipherVect2, AggregatingAttributes: cipherVect}
+	dpResponses := make([]lib.DpResponse, 3)
+	dpResponses[0] = lib.DpResponse{GroupByClear: notEncrypted, GroupByEnc: encrypted, WhereClear: notEncrypted, WhereEnc:encrypted, AggregatingAttributesClear: notEncrypted, AggregatingAttributesEnc:encrypted }
+	dpResponses[1] = lib.DpResponse{GroupByClear: notEncrypted, GroupByEnc: encrypted, WhereClear: notEncrypted, WhereEnc:encrypted, AggregatingAttributesClear: notEncrypted, AggregatingAttributesEnc:encrypted}
+	dpResponses[2] = lib.DpResponse{GroupByClear: notEncrypted, GroupByEnc: encrypted, WhereClear: notEncrypted, WhereEnc:encrypted, AggregatingAttributesClear: notEncrypted, AggregatingAttributesEnc:encrypted}
 
 	log.LLvl1("CipherTexts to transform ")
-	log.LLvl1(detResponses)
+	log.LLvl1(dpResponses)
 
-	protocol.TargetOfTransformation = detResponses
+	protocol.TargetOfTransformation = dpResponses
 	protocol.Proofs = true
 	feedback := protocol.FeedbackChannel
 	protocol.Add = false
@@ -62,7 +72,7 @@ func TestAddRmServer(t *testing.T) {
 	case results := <-feedback:
 		log.LLvl1("Results: ")
 		log.LLvl1(results)
-		decryptedResult := lib.DecryptIntVector(secKeyAfter, &results[0].AggregatingAttributes)
+		decryptedResult := lib.DecryptIntVector(secKeyAfter, &results[0].AggregatingAttributesEnc)
 		assert.Equal(t, decryptedResult, expectedResult)
 	case <-time.After(timeout):
 		t.Fatal("Didn't finish in time")
