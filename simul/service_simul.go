@@ -22,19 +22,20 @@ func init() {
 type SimulationMedCo struct {
 	onet.SimulationBFTree
 
-	NbrDPs             int     //number of clients (or in other words data holders)
-	NbrResponsesTot    int64   //number of survey entries (ClientClearResponse) per host
-	NbrResponsesFiltered 	int64
-	NbrGroupsClear     int64   //number of non-sensitive (clear) grouping attributes
-	NbrGroupsEnc       int64   //number of sensitive (encrypted) grouping attributes
-	NbrWhereClear	   int64
-	NbrWhereEncrypted  int64
-	NbrGroupAttributes []int64 //number of different groups inside each grouping attribute
-	NbrAggrAttributes  int64   //number of aggregating attributes
-	Count 		   bool
-	RandomGroups       bool    //generate data randomly or num entries == num groups (deterministically)
-	DataRepetitions    int     //repeat the number of entries x times (e.g. 1 no repetition; 1000 repetitions)
-	Proofs             bool    //with proofs of correctness everywhere
+	NbrDPs             	int     //number of clients (or in other words data holders)
+	NbrResponsesTot    	int64   //number of survey entries (ClientClearResponse) per host
+	NbrResponsesFiltered 	int64	//number of entries to be filtered (the ones we keep)
+	NbrGroupsClear     	int64   //number of non-sensitive (clear) grouping attributes
+	NbrGroupsEnc       	int64   //number of sensitive (encrypted) grouping attributes
+	NbrWhereClear	   	int64	//number of non-sensitive (clear) where attributes
+	NbrWhereEncrypted  	int64	//number of sensitive (encrypted) where attributes
+	NbrGroupAttributes 	[]int64 //number of different groups inside each grouping attribute
+	NbrAggrClear 		int64   //number of non-sensitive (clear) aggregating attributes
+	NbrAggrEncrypted    	int64   //number of sensitive (encrypted) aggregating attributes
+	Count 		   	bool	//toggle count queries
+	RandomGroups       	bool    //generate data randomly or num entries == num groups (deterministically)
+	DataRepetitions    	int     //repeat the number of entries x times (e.g. 1 no repetition; 1000 repetitions)
+	Proofs             	bool    //with proofs of correctness everywhere
 }
 
 // NewSimulationMedCo constructs a full MedCo service simulation.
@@ -88,8 +89,8 @@ func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
 		}
 
 		// Generate Survey Data
-		sum := [sim.NbrAggrAttributes]string{}
-		for i := 0 ; i < sim.NbrAggrAttributes; i++{
+		sum := [sim.NbrAggrClear + sim.NbrAggrEncrypted]string{}
+		for i := 0 ; i < (sim.NbrAggrClear + sim.NbrAggrEncrypted); i++{
 			sum[i] = "sum"+strconv.Itoa(i)
 		}
 		count := sim.Count
@@ -116,7 +117,8 @@ func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
 
 		// RandomGroups (true/false) is to respectively generate random or non random entries
 		//TODO change generate data
-		testData := data.GenerateData(int64(sim.NbrDPs), sim.NbrResponsesTot, sim.NbrResponsesFiltered, sim.NbrGroupsClear, sim.NbrGroupsEnc, sim.NbrAggrAttributes, sim.NbrGroupAttributes, sim.RandomGroups)
+		testData := data.GenerateData(int64(sim.NbrDPs), sim.NbrResponsesTot, sim.NbrResponsesFiltered, sim.NbrGroupsClear, sim.NbrGroupsEnc,
+			sim.NbrWhereClear, sim.NbrWhereEncrypted, sim.NbrAggrClear, sim.NbrAggrEncrypted, sim.NbrGroupAttributes, sim.RandomGroups)
 
 		/// START SERVICE PROTOCOL
 		if lib.TIME {

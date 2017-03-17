@@ -59,18 +59,34 @@ func AllPossibleGroups(numType []int64, group []int64, pos int) {
 	}
 }
 
+// ConvertDataToMap a converts an array of integers to a map of id -> integer
+func ConvertDataToMap(data []int64, first string) map[string]int64{
+	result := make(map[string]int64)
+	for i,el:= range(data){
+		result[first+string(i)] = el
+	}
+	return  result
+}
+
 // GenerateData generates test data for MedCo (survey entries) and stores it in a txt file (e.g. medco_test_data.txt)
 //
 //  	filename:    name of the file (.txt) where we will store the test data
 //
-//	numDPs: 	number of clients/hosts (or in other words data holders)
-//  	numEntries: 	number of survey entries (ClientClearResponse) per host
-//  	numGroupsClear: number of grouping attributes in clear
-//      numGroupsEnc:   number of grouping attributes encrypted
-//  	numType:    	number of different groups inside a group attribute
-//  	numAggr:    	number of aggregating attributes
+//	numDPs: 		number of clients/hosts (or in other words data holders)
+//  	numEntries: 		number of survey entries (ClientClearResponse) per host
+//	numEntriesFiltered: 	number of survey entries to keep (after the where filtering)
+//  	numGroupsClear: 	number of grouping attributes in clear
+//      numGroupsEnc:   	number of grouping attributes encrypted
+//  	numWhereClear: 		number of where attributes in clear
+//      numWhereEnc:   		number of where attributes encrypted
+//  	numAggrClear:   	number of aggregating attributes in clear
+//  	numAggrEnc:    		number of aggregating attributes encrypted
+//  	numType:    		number of different groups inside a group attribute
+//	randomGroups: 		true -> groups are generated randomly, false -> we cover all possible groups
 //TODO where + whereClear
-func GenerateData(numDPs, numEntries, numEntriesToKeep, numGroupsClear, numGroupsEnc, numAggr int64, numType []int64, randomGroups bool) map[string][]lib.DpClearResponse {
+func GenerateData(numDPs, numEntries, numEntriesFiltered, numGroupsClear, numGroupsEnc,
+	numWhereClear, numWhereEnc, numAggrClear, numAggrEnc int64, numType []int64, randomGroups bool) map[string][]lib.DpClearResponse {
+
 	if int64(len(numType)) != (numGroupsClear + numGroupsEnc) {
 		log.Fatal("Please ensure that you specify the number of group types for each grouping attribute")
 		return nil
@@ -98,13 +114,15 @@ func GenerateData(numDPs, numEntries, numEntriesToKeep, numGroupsClear, numGroup
 		dpData := make([]lib.DpClearResponse, numEntries)
 
 		for j := int64(0); j < numEntries; j++ {
-			aggr := make([]int64, numAggr)
+			aggr := make([]int64, numAggrEnc+numAggrClear)
 			// Toggle random data or not (just 0's or 1's)
 
 			//FillInt64Slice(aggr,int64(1))
 			randomFillInt64Slice(aggr, 2)
 
 			grp := make([]int64, numGroupsClear+numGroupsEnc)
+
+			where := make([]int64, numWhereClear+numWhereEnc)
 
 			if randomGroups {
 				for k := range grp {
@@ -114,7 +132,7 @@ func GenerateData(numDPs, numEntries, numEntriesToKeep, numGroupsClear, numGroup
 				grp = Groups[j]
 			}
 
-			dpData[j] = lib.DpClearResponse{GroupByClear: grp[:numGroupsClear], GroupByEnc: grp[numGroupsClear : numGroupsClear+numGroupsEnc], AggregatingAttributes: aggr}
+			dpData[j] = lib.DpClearResponse{GroupByClear: grp[:numGroupsClear], GroupByEnc: grp[numGroupsClear : numGroupsClear+numGroupsEnc], AggregatingAttributesClear: aggr}
 
 		}
 		testData[fmt.Sprintf("%v", i)] = dpData

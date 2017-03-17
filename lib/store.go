@@ -71,8 +71,10 @@ func (s *Store) InsertDpResponse(cr DpResponse, proofs bool, scq SurveyCreationQ
 
 	noEnc := (cr.WhereEnc == nil || cr.GroupByEnc == nil)
 	clearGrp, newResp.GroupByEnc = proccessParameters(scq.GroupBy, cr.GroupByClear, cr.GroupByEnc, noEnc)
-	clearWhr, newResp.WhereEnc = proccessParameters(scq.Where, cr.WhereClear, cr.WhereEnc,,noEnc)
+	clearWhr, newResp.WhereEnc = proccessParameters(scq.Where, cr.WhereClear, cr.WhereEnc,noEnc)
 	clearAggr, newResp.AggregatingAttributes = proccessParameters(scq.Sum, cr.AggregatingAttributesClear, cr.AggregatingAttributesClear, noEnc)
+
+	log.LLvl1(clearAggr)
 
 	/*for _,v := range grpAttrOrder{
 		log.LLvl1(v)

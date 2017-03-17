@@ -34,6 +34,19 @@ func TestAllPossibleGroups(t *testing.T) {
 	assert.Equal(t, num_elem, len(data.Groups), "Some elements are missing")
 }
 
+func TestConvertDataToMap(t *testing.T) {
+	test := []int64{0,1,2,3,4}
+
+	result := make(map[string]int64)
+	result["g0"] = 0
+	result["g1"] = 1
+	result["g2"] = 2
+	result["g3"] = 3
+	result["g4"] = 4
+
+	assert.Equal(t, result, data.ConvertDataToMap(test,"g"), "Wrong map conversion")
+}
+
 func TestGenerateData(t *testing.T) {
 	test_data = data.GenerateData(numDPs, numEntries, numGroupsClear, numGroupsEnc, num_aggr, num_type[:], false)
 }
