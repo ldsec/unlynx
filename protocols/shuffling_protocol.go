@@ -1,7 +1,7 @@
-// Package protocols contains the shuffling protocol which permits to rerandomize and shuffle a list of client responses.
-// The El-Gamal encrypted client response should be encrypted by the collective public key of the cothority.
-// In that case, each cothority server (node) can  homomorphically rerandomize and shuffle the client responses.
-// This is done by creating a circuit between the servers. The client response is sent through this circuit and
+// Package protocols contains the shuffling protocol which permits to rerandomize and shuffle a list of DP responses.
+// The El-Gamal encrypted DP response should be encrypted by the collective public key of the cothority.
+// In that case, each cothority server (node) can  homomorphically rerandomize and shuffle the DP responses.
+// This is done by creating a circuit between the servers. The DP response is sent through this circuit and
 // each server applies its transformation on it and forwards it to the next node in the circuit
 // until it comes back to the server who started the protocol.
 package protocols
@@ -127,8 +127,8 @@ func (p *ShufflingProtocol) Start() error {
 		return errors.New("No map given as shuffling target")
 	}
 
-	nbrClientResponses := len(*p.TargetOfShuffle)
-	log.Lvl1("["+p.Name()+"]", " started a Shuffling Protocol (", nbrClientResponses, " responses)")
+	nbrProcessResponses := len(*p.TargetOfShuffle)
+	log.Lvl1("["+p.Name()+"]", " started a Shuffling Protocol (", nbrProcessResponses, " responses)")
 
 	shuffleTarget := *p.TargetOfShuffle
 	collectiveKey := p.Roster().Aggregate

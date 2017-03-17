@@ -10,12 +10,8 @@ import (
 )
 
 func TestShuffleSequence(t *testing.T) {
-	// number of clients
+	// number of responses
 	k := 10
-	// number of responses (aggregating attributes)
-	//N := 8
-	// number of grouping attributes
-	//M := 2
 
 	collectivePubKey, priv, _ := lib.GenKeys(k)
 	collectivePrivKey := network.Suite.Scalar()

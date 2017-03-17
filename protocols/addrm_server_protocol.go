@@ -27,10 +27,10 @@ type AddRmServerProtocol struct {
 	*onet.TreeNodeInstance
 
 	// Protocol feedback channel
-	FeedbackChannel chan []lib.ClientResponse
+	FeedbackChannel chan []lib.DpResponse
 
 	// Protocol state data
-	TargetOfTransformation []lib.ClientResponse
+	TargetOfTransformation []lib.DpResponse
 	KeyToRm                abstract.Scalar
 	Proofs                 bool
 	Add                    bool
@@ -40,28 +40,14 @@ type AddRmServerProtocol struct {
 func NewAddRmProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 	pvp := &AddRmServerProtocol{
 		TreeNodeInstance: n,
-		FeedbackChannel:  make(chan []lib.ClientResponse),
+		FeedbackChannel:  make(chan []lib.DpResponse),
 	}
 
 	return pvp, nil
 }
 
-var finalResultAddrm = make(chan []lib.ClientResponse)
+var finalResultAddrm = make(chan []lib.DpResponse)
 
-func changeEncryptionKeyVector(cv lib.CipherVector, serverAddRmKey abstract.Scalar, toAdd bool) lib.CipherVector {
-	result := make(lib.CipherVector, len(cv))
-	for j, w := range cv {
-		tmp := network.Suite.Point().Mul(w.K, serverAddRmKey)
-		result[j].K = w.K
-		if toAdd {
-			result[j].C = network.Suite.Point().Add(w.C, tmp)
-
-		} else {
-			result[j].C = network.Suite.Point().Sub(w.C, tmp)
-		}
-	}
-	return result
-}
 
 // Start is called at the root to start the execution of the Add/Rm protocol.
 func (p *AddRmServerProtocol) Start() error {
@@ -69,33 +55,23 @@ func (p *AddRmServerProtocol) Start() error {
 	log.Lvl1(p.Name(), "starts a server adding/removing Protocol")
 	roundComput := lib.StartTimer(p.Name() + "_AddRmServer(PROTOCOL)")
 
-	result := make([]lib.ClientResponse, len(p.TargetOfTransformation))
+	result := make([]lib.DpResponse, len(p.TargetOfTransformation))
 
 	wg := lib.StartParallelize(len(p.TargetOfTransformation))
 	var mutexToT sync.Mutex
 	for i, v := range p.TargetOfTransformation {
 		if lib.PARALLELIZE {
-			go func(i int, v lib.ClientResponse) {
+			go func(i int, v lib.DpResponse) {
 				defer wg.Done()
 
 				mutexToT.Lock()
 				keyToRm := p.KeyToRm
 				add := p.Add
 				mutexToT.Unlock()
-
-				grpAttributes := v.GroupingAttributesClear
-				aggrAttributes := changeEncryptionKeyVector(v.AggregatingAttributes, keyToRm, add)
-				probaGrpAttributes := changeEncryptionKeyVector(v.ProbaGroupingAttributesEnc, keyToRm, add)
-
-				mutexToT.Lock()
-				result[i].GroupingAttributesClear = grpAttributes
-				result[i].AggregatingAttributes = aggrAttributes
-				result[i].ProbaGroupingAttributesEnc = probaGrpAttributes
-				mutexToT.Unlock()
+				result[i] = changeEncryption(v, keyToRm, add, mutexToT)
 			}(i, v)
 		} else {
-			result[i].AggregatingAttributes = changeEncryptionKeyVector(v.AggregatingAttributes, p.KeyToRm, p.Add)
-			result[i].ProbaGroupingAttributesEnc = changeEncryptionKeyVector(v.ProbaGroupingAttributesEnc, p.KeyToRm, p.Add)
+			result[i] = changeEncryption(v, p.KeyToRm, p.Add, mutexToT)
 		}
 
 	}
@@ -110,33 +86,13 @@ func (p *AddRmServerProtocol) Start() error {
 		var mutexCR sync.Mutex
 		for i, v := range result {
 			if lib.PARALLELIZE {
-				go func(i int, v lib.ClientResponse) {
+				go func(i int, v lib.DpResponse) {
 					defer wg.Done()
-
-					mutexCR.Lock()
-					targetAggregatingAttributes := p.TargetOfTransformation[i].AggregatingAttributes
-					probaAggregatingAttributes := p.TargetOfTransformation[i].ProbaGroupingAttributesEnc
-					keyToRm := p.KeyToRm
-					mutexCR.Unlock()
-
-					prfAggr := lib.VectorAddRmProofCreation(targetAggregatingAttributes, v.AggregatingAttributes, p.KeyToRm, p.Add)
-					prfGrp := lib.VectorAddRmProofCreation(probaAggregatingAttributes, v.ProbaGroupingAttributesEnc, p.KeyToRm, p.Add)
-					ktopub := network.Suite.Point().Mul(network.Suite.Point().Base(), keyToRm)
-					pub1 := lib.PublishedAddRmProof{Arp: prfAggr, VectBefore: targetAggregatingAttributes, VectAfter: v.AggregatingAttributes, Krm: ktopub, ToAdd: p.Add}
-					pub2 := lib.PublishedAddRmProof{Arp: prfGrp, VectBefore: probaAggregatingAttributes, VectAfter: v.ProbaGroupingAttributesEnc, Krm: ktopub, ToAdd: p.Add}
-
-					mutexCR.Lock()
-					pubs = append(pubs, pub1, pub2)
-					mutexCR.Unlock()
+					proofsCreation(pubs, mutexCR, p.TargetOfTransformation[i], v, p.KeyToRm, p.Add)
 				}(i, v)
 
 			} else {
-				prfAggr := lib.VectorAddRmProofCreation(p.TargetOfTransformation[i].AggregatingAttributes, v.AggregatingAttributes, p.KeyToRm, p.Add)
-				prfGrp := lib.VectorAddRmProofCreation(p.TargetOfTransformation[i].ProbaGroupingAttributesEnc, v.ProbaGroupingAttributesEnc, p.KeyToRm, p.Add)
-				ktopub := network.Suite.Point().Mul(network.Suite.Point().Base(), p.KeyToRm)
-				pub1 := lib.PublishedAddRmProof{Arp: prfAggr, VectBefore: p.TargetOfTransformation[i].AggregatingAttributes, VectAfter: v.AggregatingAttributes, Krm: ktopub, ToAdd: p.Add}
-				pub2 := lib.PublishedAddRmProof{Arp: prfGrp, VectBefore: p.TargetOfTransformation[i].ProbaGroupingAttributesEnc, VectAfter: v.ProbaGroupingAttributesEnc, Krm: ktopub, ToAdd: p.Add}
-				pubs = append(pubs, pub1, pub2)
+				proofsCreation(pubs, mutexCR, p.TargetOfTransformation[i], v, p.KeyToRm, p.Add)
 			}
 
 		}
@@ -171,3 +127,52 @@ func (p *AddRmServerProtocol) Dispatch() error {
 	p.FeedbackChannel <- aux
 	return nil
 }
+
+func changeEncryptionKeyVector(cv lib.CipherVector, serverAddRmKey abstract.Scalar, toAdd bool) lib.CipherVector {
+	result := make(lib.CipherVector, len(cv))
+	for j, w := range cv {
+		tmp := network.Suite.Point().Mul(w.K, serverAddRmKey)
+		result[j].K = w.K
+		if toAdd {
+			result[j].C = network.Suite.Point().Add(w.C, tmp)
+
+		} else {
+			result[j].C = network.Suite.Point().Sub(w.C, tmp)
+		}
+	}
+	return result
+}
+
+func changeEncryption(response lib.DpResponse, keyToRm abstract.Scalar, add bool, mutexToT sync.Mutex ) lib.DpResponse{
+	result := lib.DpResponse{}
+
+	mutexToT.Lock()
+	result.GroupByClear = response.GroupByClear
+	result.AggregatingAttributes = changeEncryptionKeyVector(response.AggregatingAttributes, keyToRm, add)
+	result.GroupByEnc = changeEncryptionKeyVector(response.GroupByEnc, keyToRm, add)
+	result.WhereClear = response.WhereClear
+	result.WhereEnc = changeEncryptionKeyVector(response.WhereEnc, keyToRm, add)
+	mutexToT.Unlock()
+	return result
+}
+
+func proofsCreation (pubs []lib.PublishedAddRmProof, mutexCR sync.Mutex, target, v lib.DpResponse, keyToRm abstract.Scalar, add bool) {
+	mutexCR.Lock()
+	targetAggregatingAttributes := target.AggregatingAttributes
+	targetGroupingAttributes := target.GroupByEnc
+	targetWhereAttributes := target.WhereEnc
+	mutexCR.Unlock()
+
+	prfAggr := lib.VectorAddRmProofCreation(targetAggregatingAttributes, v.AggregatingAttributes, keyToRm, add)
+	prfGrp := lib.VectorAddRmProofCreation(targetGroupingAttributes, v.GroupByEnc, keyToRm, add)
+	prfWhere := lib.VectorAddRmProofCreation(targetWhereAttributes, v.WhereEnc, keyToRm, add)
+	ktopub := network.Suite.Point().Mul(network.Suite.Point().Base(), keyToRm)
+	pub1 := lib.PublishedAddRmProof{Arp: prfAggr, VectBefore: targetAggregatingAttributes, VectAfter: v.AggregatingAttributes, Krm: ktopub, ToAdd: add}
+	pub2 := lib.PublishedAddRmProof{Arp: prfGrp, VectBefore: v.GroupByEnc, VectAfter: v.GroupByEnc, Krm: ktopub, ToAdd: add}
+	pub3 := lib.PublishedAddRmProof{Arp: prfWhere, VectBefore: v.WhereEnc, VectAfter: v.WhereEnc, Krm: ktopub, ToAdd: add}
+
+	mutexCR.Lock()
+	pubs = append(pubs, pub1, pub2, pub3)
+	mutexCR.Unlock()
+}
+

@@ -112,15 +112,15 @@ func TestProofsVerification(t *testing.T) {
 	aggregationProofs := []lib.PublishedAggregationProof{PublishedAggregationProof1, PublishedAggregationProof2}
 
 	// shuffling ***************************************************************************************************
-	clientResponsesToShuffle := make([]lib.ProcessResponse, 3)
-	clientResponsesToShuffle[0] = lib.ProcessResponse{GroupByEnc: cipherVect2, WhereEnc: cipherVect2, AggregatingAttributes: cipherVect2}
-	clientResponsesToShuffle[1] = lib.ProcessResponse{GroupByEnc: cipherVect1, WhereEnc: cipherVect1, AggregatingAttributes: cipherVect1}
-	clientResponsesToShuffle[2] = lib.ProcessResponse{GroupByEnc: cipherVect2, WhereEnc: cipherVect2, AggregatingAttributes: cipherVect1}
-	detResponsesCreationShuffled, pi, beta := lib.ShuffleSequence(clientResponsesToShuffle, nil, protocol.Roster().Aggregate, nil)
+	processResponsesToShuffle := make([]lib.ProcessResponse, 3)
+	processResponsesToShuffle[0] = lib.ProcessResponse{GroupByEnc: cipherVect2, WhereEnc: cipherVect2, AggregatingAttributes: cipherVect2}
+	processResponsesToShuffle[1] = lib.ProcessResponse{GroupByEnc: cipherVect1, WhereEnc: cipherVect1, AggregatingAttributes: cipherVect1}
+	processResponsesToShuffle[2] = lib.ProcessResponse{GroupByEnc: cipherVect2, WhereEnc: cipherVect2, AggregatingAttributes: cipherVect1}
+	detResponsesCreationShuffled, pi, beta := lib.ShuffleSequence(processResponsesToShuffle, nil, protocol.Roster().Aggregate, nil)
 
-	PublishedShufflingProof1 := lib.ShufflingProofCreation(clientResponsesToShuffle, detResponsesCreationShuffled, nil, protocol.Roster().Aggregate, beta, pi)
+	PublishedShufflingProof1 := lib.ShufflingProofCreation(processResponsesToShuffle, detResponsesCreationShuffled, nil, protocol.Roster().Aggregate, beta, pi)
 
-	PublishedShufflingProof2 := lib.ShufflingProofCreation(clientResponsesToShuffle, clientResponsesToShuffle, nil, pubKey, beta, pi)
+	PublishedShufflingProof2 := lib.ShufflingProofCreation(processResponsesToShuffle, processResponsesToShuffle, nil, pubKey, beta, pi)
 
 	shufflingProofs := []lib.PublishedShufflingProof{PublishedShufflingProof1, PublishedShufflingProof2}
 

@@ -23,11 +23,11 @@ func compressCipherVector(ciphervector CipherVector, e []abstract.Scalar) Cipher
 	return ciphertext
 }
 
-// CompressClientResponse applies shuffling compression to a client response
-func CompressClientResponse(clientResponse ProcessResponse, e []abstract.Scalar) CipherText {
-	m := len(clientResponse.GroupByEnc)
-	n := len(clientResponse.WhereEnc)
-	o := len(clientResponse.AggregatingAttributes)
+// CompressProcessResponse applies shuffling compression to a process response
+func CompressProcessResponse(processResponse ProcessResponse, e []abstract.Scalar) CipherText {
+	m := len(processResponse.GroupByEnc)
+	n := len(processResponse.WhereEnc)
+	o := len(processResponse.AggregatingAttributes)
 
 	// check size of e
 	if len(e) != m+n+o {
@@ -40,22 +40,22 @@ func CompressClientResponse(clientResponse ProcessResponse, e []abstract.Scalar)
 	if PARALLELIZE {
 		wg := StartParallelize(3)
 		go func() {
-			sum1 = compressCipherVector(clientResponse.GroupByEnc, e[0:m])
+			sum1 = compressCipherVector(processResponse.GroupByEnc, e[0:m])
 			defer wg.Done()
 		}()
 		go func() {
-			sum2 = compressCipherVector(clientResponse.WhereEnc, e[m:m+n])
+			sum2 = compressCipherVector(processResponse.WhereEnc, e[m:m+n])
 			defer wg.Done()
 		}()
 		go func() {
-			sum3 = compressCipherVector(clientResponse.AggregatingAttributes, e[m+n:m+n+o])
+			sum3 = compressCipherVector(processResponse.AggregatingAttributes, e[m+n:m+n+o])
 			defer wg.Done()
 		}()
 		EndParallelize(wg)
 	} else {
-		sum1 = compressCipherVector(clientResponse.GroupByEnc, e[0:m])
-		sum2 = compressCipherVector(clientResponse.WhereEnc, e[m:m+n])
-		sum3 = compressCipherVector(clientResponse.AggregatingAttributes, e[m+n:m+n+o])
+		sum1 = compressCipherVector(processResponse.GroupByEnc, e[0:m])
+		sum2 = compressCipherVector(processResponse.WhereEnc, e[m:m+n])
+		sum3 = compressCipherVector(processResponse.AggregatingAttributes, e[m+n:m+n+o])
 	}
 
 	sum.Add(sum1, sum2)
@@ -64,22 +64,22 @@ func CompressClientResponse(clientResponse ProcessResponse, e []abstract.Scalar)
 	return sum
 }
 
-// CompressListClientResponse applies shuffling compression to a list of client responses
-func CompressListClientResponse(clientResponses []ProcessResponse, e []abstract.Scalar) ([]abstract.Point, []abstract.Point) {
-	xC := make([]abstract.Point, len(clientResponses))
-	xK := make([]abstract.Point, len(clientResponses))
+// CompressListProcessResponse applies shuffling compression to a list of process responses
+func CompressListProcessResponse(processResponses []ProcessResponse, e []abstract.Scalar) ([]abstract.Point, []abstract.Point) {
+	xC := make([]abstract.Point, len(processResponses))
+	xK := make([]abstract.Point, len(processResponses))
 
-	wg := StartParallelize(len(clientResponses))
-	for i, v := range clientResponses {
+	wg := StartParallelize(len(processResponses))
+	for i, v := range processResponses {
 		if PARALLELIZE {
 			go func(i int, v ProcessResponse) {
-				tmp := CompressClientResponse(v, e)
+				tmp := CompressProcessResponse(v, e)
 				xK[i] = tmp.K
 				xC[i] = tmp.C
 				defer wg.Done()
 			}(i, v)
 		} else {
-			tmp := CompressClientResponse(v, e)
+			tmp := CompressProcessResponse(v, e)
 			xK[i] = tmp.K
 			xC[i] = tmp.C
 		}
@@ -118,7 +118,7 @@ func CompressBeta(beta [][]abstract.Scalar, e []abstract.Scalar) []abstract.Scal
 	return betaCompressed
 }
 
-// ShuffleSequence applies shuffling to a list of client responses
+// ShuffleSequence applies shuffling to a list of process responses
 func ShuffleSequence(inputList []ProcessResponse, g, h abstract.Point, precomputed []CipherVectorScalar) ([]ProcessResponse, []int, [][]abstract.Scalar) {
 	//,  []byte) {
 	NQ1 := len(inputList[0].GroupByEnc)
@@ -155,10 +155,10 @@ func ShuffleSequence(inputList []ProcessResponse, g, h abstract.Point, precomput
 		if PARALLELIZE {
 			go func(outputList []ProcessResponse, i int) {
 				defer wg.Done()
-				clientResponseShuffling(pi, i, inputList, outputList, NQ1, NQ2, NQ3, NQ, beta, precomputedPoints, g, h)
+				processResponseShuffling(pi, i, inputList, outputList, NQ1, NQ2, NQ3, NQ, beta, precomputedPoints, g, h)
 			}(outputList, i)
 		} else {
-			clientResponseShuffling(pi, i, inputList, outputList, NQ1, NQ2, NQ3, NQ, beta, precomputedPoints, g, h)
+			processResponseShuffling(pi, i, inputList, outputList, NQ1, NQ2, NQ3, NQ, beta, precomputedPoints, g, h)
 		}
 	}
 	EndParallelize(wg)
@@ -166,8 +166,8 @@ func ShuffleSequence(inputList []ProcessResponse, g, h abstract.Point, precomput
 	return outputList, pi, beta
 }
 
-// ClientResponseShuffling applies shuffling and rerandomization to a list of client responses
-func clientResponseShuffling(pi []int, i int, inputList, outputList []ProcessResponse, NQ1, NQ2, NQ3, NQ int, beta [][]abstract.Scalar, precomputedPoints []CipherVector, g, h abstract.Point) {
+// ProcessResponseShuffling applies shuffling and rerandomization to a list of process responses
+func processResponseShuffling(pi []int, i int, inputList, outputList []ProcessResponse, NQ1, NQ2, NQ3, NQ int, beta [][]abstract.Scalar, precomputedPoints []CipherVector, g, h abstract.Point) {
 	index := pi[i]
 	outputList[i].GroupByEnc = *NewCipherVector(NQ1)
 	outputList[i].WhereEnc = *NewCipherVector(NQ2)
@@ -206,12 +206,12 @@ func clientResponseShuffling(pi []int, i int, inputList, outputList []ProcessRes
 	EndParallelize(wg)
 }
 
-// CompressClientResponseMultiple applies shuffling compression to 2 list of client responses corresponding to input and output of shuffling
-func CompressClientResponseMultiple(inputList, outputList []ProcessResponse, i int, e []abstract.Scalar, Xhat, XhatBar, Yhat, YhatBar []abstract.Point) {
-	tmp := CompressClientResponse(inputList[i], e)
+// CompressProcessResponseMultiple applies shuffling compression to 2 list of process responses corresponding to input and output of shuffling
+func CompressProcessResponseMultiple(inputList, outputList []ProcessResponse, i int, e []abstract.Scalar, Xhat, XhatBar, Yhat, YhatBar []abstract.Point) {
+	tmp := CompressProcessResponse(inputList[i], e)
 	Xhat[i] = tmp.K
 	Yhat[i] = tmp.C
-	tmpBar := CompressClientResponse(outputList[i], e)
+	tmpBar := CompressProcessResponse(outputList[i], e)
 	XhatBar[i] = tmpBar.K
 	YhatBar[i] = tmpBar.C
 }

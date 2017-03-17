@@ -36,11 +36,11 @@ type CipherVectorScalarBytes struct {
 }
 
 type DpResponse struct {
-	WhereClear            []int64
-	WhereEnc              CipherVector
-	GroupByClear          []int64
-	GroupByEnc            CipherVector
-	AggregatingAttributes CipherVector
+	WhereClear            map[string]int64
+	WhereEnc              map[string]CipherText
+	GroupByClear          map[string]int64
+	GroupByEnc            map[string]CipherText
+	AggregatingAttributes map[string]CipherText
 }
 
 type ProcessResponse struct {
@@ -50,7 +50,7 @@ type ProcessResponse struct {
 }
 
 // ClientResponse represents a client response.
-type ClientResponse struct {
+/*type ClientResponse struct {
 	GroupingAttributesClear    GroupingKey
 	ProbaGroupingAttributesEnc CipherVector
 	AggregatingAttributes      CipherVector
@@ -61,22 +61,23 @@ type ClientResponseBytes struct {
 	GroupingAttributesClear    []byte
 	ProbaGroupingAttributesEnc [][][]byte
 	AggregatingAttributes      [][][]byte
-}
+}*/
 
-// ClientClearResponse represents a client response when data is stored in clear at each server/hospital
+// DpClearResponse represents a DP response when data is stored in clear at each server/hospital
 type DpClearResponse struct {
-	WhereClear            []int64
-	WhereEnc              []int64
-	GroupByClear          []int64
-	GroupByEnc            []int64
-	AggregatingAttributes []int64
+	WhereClear            map[string]int64
+	WhereEnc              map[string]int64
+	GroupByClear          map[string]int64
+	GroupByEnc            map[string]int64
+	AggregatingAttributes map[string]int64
 }
 
-// ClientResponseDetCreation represents a client response which is in the process of creating a det. hash
-type ClientResponseDetCreation struct {
+/*
+// DpResponseDetCreation represents a client response which is in the process of creating a det. hash
+type DpResponseDetCreation struct {
 	CR          ClientResponse
 	DetCreaVect CipherVector
-}
+}*/
 
 type WhereQueryAttribute struct {
 	Name  string
@@ -88,9 +89,9 @@ type WhereQueryAttributeTagged struct {
 	Value GroupingKey
 }
 
-// ClientResponseDet represents a client response associated to a det. hash
+// ProcessResponseDet represents a DP response associated to a det. hash
 type ProcessResponseDet struct {
-	CR            ProcessResponse
+	PR            ProcessResponse
 	DetTagGroupBy GroupingKey
 	DetTagWhere   []GroupingKey
 }
@@ -108,38 +109,17 @@ type FilteredResponse struct {
 // SurveyID unique ID for each survey.
 type SurveyID string
 
-/*type SurveyCreationQuery struct {
-	SurveyGenID       *lib.SurveyID
-	SurveyID          *lib.SurveyID
-	Roster            onet.Roster
-	//SurveyDescription lib.SurveyDescription
-	Sum 		  []string
-	Count 		  bool
-	Where		  []lib.WhereQueryAttribute
-	Pred 		  []string
-	GroupBy		  []string
-	//QuerySubject      []lib.ClientResponse
-	ClientPubKey      abstract.Point
-	DataToProcess     []lib.ClientResponse
-	NbrDPs            map[string]int64
-	QueryMode  	  int64
-	Proofs            bool
-	AppFlag           bool
-}*/
-
 type SurveyCreationQuery struct {
 	SurveyGenID *SurveyID
 	SurveyID    *SurveyID
 	Roster      onet.Roster
-	//SurveyDescription lib.SurveyDescription
 	Sum     []string
 	Count   bool
 	Where   []WhereQueryAttribute
 	Pred    string
 	GroupBy []string
-	//QuerySubject      []lib.ClientResponse
 	ClientPubKey  abstract.Point
-	DataToProcess []ClientResponse
+	DataToProcess []DpResponse
 	NbrDPs        map[string]int64
 	QueryMode     int64
 	Proofs        bool
@@ -150,42 +130,28 @@ type SurveyCreationQuery struct {
 type Survey struct {
 	*Store
 	Query SurveyCreationQuery
-	//GenID              SurveyID
-	//ID                 SurveyID
-	//Roster             onet.Roster
 	SurveySecretKey abstract.Scalar
-	//ClientPublic       abstract.Point
-	//SurveyDescription  SurveyDescription
-	//Proofs             bool
 	ShufflePrecompute []CipherVectorScalar
-	//SurveyQuerySubject []ClientResponse
-	//DataToProcess      []ClientResponse
-	//NbrDPs             map[string]int64
-	//ExecutionMode      int64
 	SurveyResponses []FilteredResponse
 	Sender          network.ServerIdentityID
 	Final           bool
 }
 
+/*
 // SurveyDescription is currently only used to define a client response format.
 type SurveyDescription struct {
 	GroupingAttributesClearCount int32
 	GroupingAttributesEncCount   int32
 	AggregatingAttributesCount   uint32
-}
+}*/
 
 // Functions
 //______________________________________________________________________________________________________________________
 
-// NewClientResponse creates a new client response with chosen grouping and aggregating number of attributes
-func NewClientResponse(grpEncSize, attrSize int) FilteredResponse {
+// NewFilteredResponse creates a new client response with chosen grouping and aggregating number of attributes
+func NewFilteredResponse(grpEncSize, attrSize int) FilteredResponse {
 	return FilteredResponse{*NewCipherVector(grpEncSize), *NewCipherVector(attrSize)}
 }
-
-// NewClientClearResponse creates a new client response with chosen grouping and aggregating number of attributes
-/*func NewClientClearResponse(grpSizeClear, grpSizeEnc, attrSize int) DpClearResponse {
-	return DpClearResponse{make([]int64, grpSizeClear), make([]int64, grpSizeEnc), make([]int64, attrSize)}
-}*/
 
 // GroupingKey
 //______________________________________________________________________________________________________________________
@@ -222,21 +188,21 @@ func UnKey(gk GroupingKey) []int64 {
 //______________________________________________________________________________________________________________________
 
 // Add two client responses and stores result in receiver.
+/*
 func (cv *ClientResponse) Add(cv1, cv2 ClientResponse) *ClientResponse {
 	cv.GroupingAttributesClear = cv1.GroupingAttributesClear
 	cv.ProbaGroupingAttributesEnc = cv1.ProbaGroupingAttributesEnc
 	cv.AggregatingAttributes.Add(cv1.AggregatingAttributes, cv2.AggregatingAttributes)
 	return cv
-}
+}*/
 
 func (cv *FilteredResponse) Add(cv1, cv2 FilteredResponse) *FilteredResponse {
 	cv.GroupByEnc = cv1.GroupByEnc
-	//cv.ProbaGroupingAttributesEnc = cv1.ProbaGroupingAttributesEnc
 	cv.AggregatingAttributes.Add(cv1.AggregatingAttributes, cv2.AggregatingAttributes)
 	return cv
 }
 
-// CipherVectorTag computes all the e for a client responses based on a seed h
+// CipherVectorTag computes all the e for a process response based on a seed h
 func (cv *ProcessResponse) CipherVectorTag(h abstract.Point) []abstract.Scalar {
 	aggrAttrLen := len((*cv).AggregatingAttributes)
 	grpAttrLen := len((*cv).GroupByEnc)
@@ -259,7 +225,7 @@ func (cv *ProcessResponse) CipherVectorTag(h abstract.Point) []abstract.Scalar {
 		}
 		wg.Wait()
 	} else {
-		for i := 0; i < aggrAttrLen+grpAttrLen; i++ {
+		for i := 0; i < aggrAttrLen+grpAttrLen+whereAttrLen; i++ {
 			//+detAttrLen
 			es[i] = ComputeE(i, (*cv), seed, aggrAttrLen, grpAttrLen)
 		}
@@ -292,17 +258,31 @@ func ComputeE(index int, cv ProcessResponse, seed []byte, aggrAttrLen, grpAttrLe
 	return network.Suite.Scalar().Pick(randomCipher)
 }
 
-// ClientClearResponse
+// DpClearResponse
 //______________________________________________________________________________________________________________________
 
-// EncryptClientClearResponse encrypts a client response
-func EncryptClientClearResponse(ccr DpClearResponse, encryptionKey abstract.Point) DpResponse {
+// EncryptDpClearResponse encrypts a DP response
+func EncryptDpClearResponse(ccr DpClearResponse, encryptionKey abstract.Point, count bool) DpResponse {
 	cr := DpResponse{}
 	cr.GroupByClear = ccr.GroupByClear
-	cr.GroupByEnc = *EncryptIntVector(encryptionKey, ccr.GroupByEnc)
+	cr.GroupByEnc = make(map[string]CipherText, len(ccr.GroupByEnc))
+	for i,v := range ccr.GroupByEnc{
+		cr.GroupByEnc[i] = *EncryptInt(encryptionKey, v)
+	}
+	//cr.GroupByEnc = *EncryptIntVector(encryptionKey, ccr.GroupByEnc)
 	cr.WhereClear = ccr.WhereClear
-	cr.WhereEnc = *EncryptIntVector(encryptionKey, ccr.WhereEnc)
-	cr.AggregatingAttributes = *EncryptIntVector(encryptionKey, ccr.AggregatingAttributes)
+	cr.WhereEnc = make(map[string]CipherText, len(ccr.WhereEnc))
+	for i,v := range ccr.WhereEnc{
+		cr.WhereEnc[i] = *EncryptInt(encryptionKey, v)
+	}
+	//cr.WhereEnc = *EncryptIntVector(encryptionKey, ccr.WhereEnc)
+	cr.AggregatingAttributes = make(map[string]CipherText, len(ccr.AggregatingAttributes))
+	for i,v := range ccr.AggregatingAttributes{
+		cr.AggregatingAttributes[i] = *EncryptInt(encryptionKey, v)
+	}
+	if count {
+		cr.AggregatingAttributes["count"] = *EncryptInt(encryptionKey, int64(1))
+	}
 
 	return cr
 }
@@ -349,7 +329,7 @@ func CreatePrecomputedRandomize(g, h abstract.Point, rand cipher.Stream, lineSiz
 // Conversion
 //______________________________________________________________________________________________________________________
 
-// ToBytes converts a ClientResponse to a byte array
+/*// ToBytes converts a ClientResponse to a byte array
 func (cv *ClientResponse) ToBytes() ([]byte, int, int, int) {
 	b := make([]byte, 0)
 	pgaeb := make([]byte, 0)
@@ -385,9 +365,9 @@ func (cv *ClientResponse) FromBytes(data []byte, gacbLength, aabLength, pgaebLen
 	(*cv).GroupingAttributesClear = GroupingKey(string(gacb))
 	(*cv).AggregatingAttributes.FromBytes(aab, aabLength)
 	(*cv).ProbaGroupingAttributesEnc.FromBytes(pgaeb, pgaebLength)
-}
+}*/
 
-// ToBytes converts a ClientResponse to a byte array
+// ToBytes converts a Filtered to a byte array
 func (cv *FilteredResponse) ToBytes() ([]byte, int, int) {
 	b := make([]byte, 0)
 	pgaeb := make([]byte, 0)
@@ -404,7 +384,7 @@ func (cv *FilteredResponse) ToBytes() ([]byte, int, int) {
 	return b, pgaebLength, aabLength
 }
 
-// FromBytes converts a byte array to a ClientResponse. Note that you need to create the (empty) object beforehand.
+// FromBytes converts a byte array to a FilteredResponse. Note that you need to create the (empty) object beforehand.
 func (cv *FilteredResponse) FromBytes(data []byte, aabLength, pgaebLength int) {
 	(*cv).AggregatingAttributes = make(CipherVector, aabLength)
 	(*cv).GroupByEnc = make(CipherVector, pgaebLength)
@@ -419,7 +399,7 @@ func (cv *FilteredResponse) FromBytes(data []byte, aabLength, pgaebLength int) {
 	(*cv).GroupByEnc.FromBytes(pgaeb, pgaebLength)
 }
 
-// ToBytes converts a ClientResponseDet to a byte array
+// ToBytes converts a FilteredResponseDet to a byte array
 func (crd *FilteredResponseDet) ToBytes() ([]byte, int, int, int) {
 	b, gacbLength, aabLength := (*crd).Fr.ToBytes()
 
@@ -431,7 +411,7 @@ func (crd *FilteredResponseDet) ToBytes() ([]byte, int, int, int) {
 	return b, gacbLength, aabLength, dtbgbLength
 }
 
-// FromBytes converts a byte array to a ClientResponseDet. Note that you need to create the (empty) object beforehand.
+// FromBytes converts a byte array to a FilteredResponseDet. Note that you need to create the (empty) object beforehand.
 func (crd *FilteredResponseDet) FromBytes(data []byte, gacbLength, aabLength, dtbgbLength int) {
 	(*crd).Fr.AggregatingAttributes = make(CipherVector, aabLength)
 	(*crd).Fr.GroupByEnc = make(CipherVector, gacbLength)
@@ -448,14 +428,12 @@ func (crd *FilteredResponseDet) FromBytes(data []byte, gacbLength, aabLength, dt
 	(*crd).Fr.GroupByEnc.FromBytes(gacb, gacbLength)
 }
 
-// ToBytes converts a ClientResponse to a byte array
+// ToBytes converts a ProcessResponse to a byte array
 func (cv *ProcessResponse) ToBytes() ([]byte, int, int, int) {
 	b := make([]byte, 0)
 	pgaeb := make([]byte, 0)
 	pgaebLength := 0
 
-	//gacb := []byte((*cv).GroupingAttributesClear)
-	//gacbLength := len(gacb)
 
 	gacb, gacbLength := (*cv).GroupByEnc.ToBytes()
 	aab, aabLength := (*cv).AggregatingAttributes.ToBytes()
@@ -470,7 +448,7 @@ func (cv *ProcessResponse) ToBytes() ([]byte, int, int, int) {
 	return b, gacbLength, aabLength, pgaebLength
 }
 
-// FromBytes converts a byte array to a ClientResponse. Note that you need to create the (empty) object beforehand.
+// FromBytes converts a byte array to a ProcessResponse. Note that you need to create the (empty) object beforehand.
 func (cv *ProcessResponse) FromBytes(data []byte, gacbLength, aabLength, pgaebLength int) {
 	(*cv).AggregatingAttributes = make(CipherVector, aabLength)
 	(*cv).WhereEnc = make(CipherVector, pgaebLength)
@@ -489,9 +467,9 @@ func (cv *ProcessResponse) FromBytes(data []byte, gacbLength, aabLength, pgaebLe
 	(*cv).WhereEnc.FromBytes(pgaeb, pgaebLength)
 }
 
-// ToBytes converts a ClientResponseDet to a byte array
+// ToBytes converts a ProcessResponseDet to a byte array
 func (crd *ProcessResponseDet) ToBytes() ([]byte, int, int, int, int, int) {
-	b, gacbLength, aabLength, pgaebLength := (*crd).CR.ToBytes()
+	b, gacbLength, aabLength, pgaebLength := (*crd).PR.ToBytes()
 
 	dtbgb := []byte((*crd).DetTagGroupBy)
 	dtbgbLength := len(dtbgb)
@@ -503,11 +481,11 @@ func (crd *ProcessResponseDet) ToBytes() ([]byte, int, int, int, int, int) {
 	return b, gacbLength, aabLength, pgaebLength, dtbgbLength, dtbwLength
 }
 
-// FromBytes converts a byte array to a ClientResponseDet. Note that you need to create the (empty) object beforehand.
+// FromBytes converts a byte array to a ProcessResponseDet. Note that you need to create the (empty) object beforehand.
 func (crd *ProcessResponseDet) FromBytes(data []byte, gacbLength, aabLength, pgaebLength, dtbgbLength, dtbwLength int) {
-	(*crd).CR.AggregatingAttributes = make(CipherVector, aabLength)
-	(*crd).CR.WhereEnc = make(CipherVector, pgaebLength)
-	(*crd).CR.GroupByEnc = make(CipherVector, gacbLength)
+	(*crd).PR.AggregatingAttributes = make(CipherVector, aabLength)
+	(*crd).PR.WhereEnc = make(CipherVector, pgaebLength)
+	(*crd).PR.GroupByEnc = make(CipherVector, gacbLength)
 
 	aabByteLength := (aabLength * 64) //CAREFUL: hardcoded 64 (size of el-gamal element C,K)
 	pgaebByteLength := (pgaebLength * 64)
@@ -521,8 +499,8 @@ func (crd *ProcessResponseDet) FromBytes(data []byte, gacbLength, aabLength, pga
 
 	(*crd).DetTagGroupBy = GroupingKey(string(dtbgb))
 	(*crd).DetTagGroupBy = GroupingKey(string(dtbw))
-	(*crd).CR.AggregatingAttributes.FromBytes(aab, aabLength)
-	(*crd).CR.WhereEnc.FromBytes(pgaeb, pgaebLength)
-	(*crd).CR.GroupByEnc.FromBytes(gacb, gacbLength)
+	(*crd).PR.AggregatingAttributes.FromBytes(aab, aabLength)
+	(*crd).PR.WhereEnc.FromBytes(pgaeb, pgaebLength)
+	(*crd).PR.GroupByEnc.FromBytes(gacb, gacbLength)
 
 }

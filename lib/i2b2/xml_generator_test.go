@@ -26,15 +26,15 @@ func TestCreateXMLforTestonI2B2(t *testing.T) {
 	pubKey.UnmarshalBinary(pubKeyB)
 
 	//create query responses
-	cr1 := lib.ClientResponse{ProbaGroupingAttributesEnc: *lib.EncryptIntVector(pubKey, []int64{0, 1}), AggregatingAttributes: *lib.EncryptIntVector(pubKey, []int64{1})}
-	cr2 := lib.ClientResponse{ProbaGroupingAttributesEnc: *lib.EncryptIntVector(pubKey, []int64{0, 1}), AggregatingAttributes: *lib.EncryptIntVector(pubKey, []int64{1})}
-	cr3 := lib.ClientResponse{ProbaGroupingAttributesEnc: *lib.EncryptIntVector(pubKey, []int64{1, 0}), AggregatingAttributes: *lib.EncryptIntVector(pubKey, []int64{1})}
-	cr4 := lib.ClientResponse{ProbaGroupingAttributesEnc: *lib.EncryptIntVector(pubKey, []int64{1, 1}), AggregatingAttributes: *lib.EncryptIntVector(pubKey, []int64{1})}
-	cr5 := lib.ClientResponse{ProbaGroupingAttributesEnc: *lib.EncryptIntVector(pubKey, []int64{1, 1}), AggregatingAttributes: *lib.EncryptIntVector(pubKey, []int64{1})}
-	cr6 := lib.ClientResponse{ProbaGroupingAttributesEnc: *lib.EncryptIntVector(pubKey, []int64{1, 1}), AggregatingAttributes: *lib.EncryptIntVector(pubKey, []int64{1})}
-	cr7 := lib.ClientResponse{ProbaGroupingAttributesEnc: *lib.EncryptIntVector(pubKey, []int64{0, 0}), AggregatingAttributes: *lib.EncryptIntVector(pubKey, []int64{1})}
-	cr8 := lib.ClientResponse{ProbaGroupingAttributesEnc: *lib.EncryptIntVector(pubKey, []int64{0, 0}), AggregatingAttributes: *lib.EncryptIntVector(pubKey, []int64{0})}
-	data := []lib.ClientResponse{cr1, cr2, cr3, cr4, cr5, cr6, cr7, cr8}
+	cr1 := lib.DpResponse{GroupByEnc: *lib.EncryptIntVector(pubKey, []int64{0, 1}), AggregatingAttributes: *lib.EncryptIntVector(pubKey, []int64{1})}
+	cr2 := lib.DpResponse{GroupByEnc: *lib.EncryptIntVector(pubKey, []int64{0, 1}), AggregatingAttributes: *lib.EncryptIntVector(pubKey, []int64{1})}
+	cr3 := lib.DpResponse{GroupByEnc: *lib.EncryptIntVector(pubKey, []int64{1, 0}), AggregatingAttributes: *lib.EncryptIntVector(pubKey, []int64{1})}
+	cr4 := lib.DpResponse{GroupByEnc: *lib.EncryptIntVector(pubKey, []int64{1, 1}), AggregatingAttributes: *lib.EncryptIntVector(pubKey, []int64{1})}
+	cr5 := lib.DpResponse{GroupByEnc: *lib.EncryptIntVector(pubKey, []int64{1, 1}), AggregatingAttributes: *lib.EncryptIntVector(pubKey, []int64{1})}
+	cr6 := lib.DpResponse{GroupByEnc: *lib.EncryptIntVector(pubKey, []int64{1, 1}), AggregatingAttributes: *lib.EncryptIntVector(pubKey, []int64{1})}
+	cr7 := lib.DpResponse{GroupByEnc: *lib.EncryptIntVector(pubKey, []int64{0, 0}), AggregatingAttributes: *lib.EncryptIntVector(pubKey, []int64{1})}
+	cr8 := lib.DpResponse{GroupByEnc: *lib.EncryptIntVector(pubKey, []int64{0, 0}), AggregatingAttributes: *lib.EncryptIntVector(pubKey, []int64{0})}
+	data := []lib.DpResponse{cr1, cr2, cr3, cr4, cr5, cr6, cr7, cr8}
 	//create keys
 	priKey := network.Suite.Scalar().Pick(random.Stream)
 	priKeyB, _ := priKey.MarshalBinary()
@@ -44,11 +44,11 @@ func TestCreateXMLforTestonI2B2(t *testing.T) {
 	pubKeyString := hex.EncodeToString(pubKeyB)
 
 	//write data in xml file
-	tabStrData := make([][]string, len(cr1.ProbaGroupingAttributesEnc))
+	tabStrData := make([][]string, len(cr1.GroupByEnc))
 	for i := range tabStrData {
 		col := make([]string, len(data))
 		for j := range col {
-			col[j] = hex.EncodeToString(data[j].ProbaGroupingAttributesEnc[i].ToBytes())
+			col[j] = hex.EncodeToString(data[j].GroupByEnc[i].ToBytes())
 		}
 		tabStrData[i] = col
 	}

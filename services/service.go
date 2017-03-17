@@ -42,7 +42,6 @@ var msgTypes = MsgTypes{}
 
 func init() {
 	onet.RegisterNewService(ServiceName, NewService)
-	network.RegisterMessage(&lib.ClientResponse{})
 	msgTypes.msgSurveyCreationQuery = network.RegisterMessage(&lib.SurveyCreationQuery{})
 	msgTypes.msgSurveyResponseSharing = network.RegisterMessage(&SurveyResponseSharing{})
 	msgTypes.msgSurveyFinalResponseSharing = network.RegisterMessage(&SurveyFinalResponseSharing{})
@@ -188,9 +187,9 @@ func (s *Service) Process(msg *network.Envelope) {
 }
 
 // PushData is used to store incoming data by servers
-func (s *Service) PushData(resp *SurveyResponseQuery) {
+func (s *Service) PushData(resp *SurveyResponseQuery, proofs bool) {
 	for _, v := range resp.Responses {
-		(s.survey[resp.SurveyID]).InsertDpResponse(v, s.survey[resp.SurveyID].Query.Roster.Aggregate)
+		(s.survey[resp.SurveyID]).InsertDpResponse(v, proofs, s.survey[resp.SurveyID].Query)
 	}
 	log.Lvl1(s.ServerIdentity(), " uploaded response data for survey ", resp.SurveyID)
 }
@@ -255,7 +254,7 @@ func (s *Service) HandleSurveyCreationQuery(recq *lib.SurveyCreationQuery) (netw
 	surveySecret := network.Suite.Scalar().Pick(random.Stream)
 
 	// prepares the precomputation in case of shuffling
-	lineSize := int(len(recq.Sum)) + int(len(recq.Where)) + int(len(recq.GroupBy)) + 1 // + 1 is for the possible count attribute
+	lineSize := int(len(recq.Sum)) + int(len(recq.Where)) + int(len(recq.GroupBy)) + 2 // + 1 is for the possible count attribute
 	precomputeShuffle := precomputationWritingForShuffling(s.appFlag, s.ServerIdentity().String(), *recq.SurveyID, surveySecret, recq.Roster.Aggregate, lineSize)
 
 	// survey instantiation
@@ -279,8 +278,8 @@ func (s *Service) HandleSurveyCreationQuery(recq *lib.SurveyCreationQuery) (netw
 		if recq.DataToProcess == nil {
 			// Unlynx
 			testData := data.ReadDataFromFile(testDataFile)
-			resp := EncryptDataToSurvey(s.ServerIdentity().String(), *recq.SurveyID, testData[strconv.Itoa(0)], recq.Roster.Aggregate, 1)
-			s.PushData(resp)
+			resp := EncryptDataToSurvey(s.ServerIdentity().String(), *recq.SurveyID, testData[strconv.Itoa(0)], recq.Roster.Aggregate, 1, recq.Count)
+			s.PushData(resp, recq.Proofs)
 		} else {
 			//P2D2i2b2
 			//msg, err := s.HandleI2b2Query(recq, handlingServer)
@@ -329,7 +328,7 @@ func (s *Service) HandleSurveyFinalResponseSharing(resp *SurveyFinalResponseShar
 func (s *Service) HandleSurveyResponseQuery(resp *SurveyResponseQuery) (network.Message, onet.ClientError) {
 	<-s.surveyChannel
 	if *s.survey[resp.SurveyID].Query.SurveyID == resp.SurveyID {
-		s.PushData(resp)
+		s.PushData(resp, s.survey[resp.SurveyID].Query.Proofs)
 
 		//unblock the channel to allow another DP to send its data
 		s.surveyChannel <- 1
@@ -569,7 +568,7 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 			shuffle.Proofs = s.survey[target].Query.Proofs
 			shuffle.Precomputed = s.survey[target].ShufflePrecompute
 			if tn.IsRoot() {
-				dpResponses := s.survey[target].PullDpResponses(s.survey[target].Query.Roster.Aggregate)
+				dpResponses := s.survey[target].PullDpResponses()
 				shuffle.TargetOfShuffle = &dpResponses
 			}
 		}
@@ -585,7 +584,7 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 		hashCreation.Proofs = s.survey[target].Query.Proofs
 		hashCreation.NbrQueryAttributes = len(s.survey[target].Query.Where)
 		if tn.IsRoot() {
-			shuffledClientResponses := s.survey[target].PullShuffledClientResponses()
+			shuffledClientResponses := s.survey[target].PullShuffledProcessResponses()
 			queryWhereToTag := []lib.ProcessResponse{}
 			for _, v := range s.survey[target].Query.Where {
 				tmp := lib.CipherVector{v.Value}
@@ -629,9 +628,9 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 			} else {
 				//Unlynx
 				if lib.DIFFPRI == true {
-					coaggr = s.survey[target].PullCothorityAggregatedClientResponses(true, s.noise)
+					coaggr = s.survey[target].PullCothorityAggregatedFilteredResponses(true, s.noise)
 				} else {
-					coaggr = s.survey[target].PullCothorityAggregatedClientResponses(false, lib.CipherText{})
+					coaggr = s.survey[target].PullCothorityAggregatedFilteredResponses(false, lib.CipherText{})
 				}
 			}
 			keySwitch.TargetOfSwitch = &coaggr
@@ -778,7 +777,7 @@ func (s *Service) StartService(targetSurvey lib.SurveyID, root bool) error {
 
 // ShufflingPhase performs the shuffling of the ClientResponses
 func (s *Service) ShufflingPhase(targetSurvey lib.SurveyID) error {
-	if len(s.survey[targetSurvey].DpResponses) == 0 {
+	if len(s.survey[targetSurvey].DpResponses) == 0 && len(s.survey[targetSurvey].DpResponsesAggr) == 0{
 		log.Lvl1(s.ServerIdentity(), " no data to shuffle")
 		return nil
 	}
@@ -789,14 +788,14 @@ func (s *Service) ShufflingPhase(targetSurvey lib.SurveyID) error {
 	}
 	shufflingResult := <-pi.(*protocols.ShufflingProtocol).FeedbackChannel
 
-	s.survey[targetSurvey].PushShuffledClientResponses(shufflingResult)
+	s.survey[targetSurvey].PushShuffledProcessResponses(shufflingResult)
 
 	return err
 }
 
 // TaggingPhase performs the private grouping on the currently collected data.
 func (s *Service) TaggingPhase(targetSurvey lib.SurveyID) error {
-	if len(s.survey[targetSurvey].ShuffledClientResponses) == 0 {
+	if len(s.survey[targetSurvey].ShuffledProcessResponses) == 0 {
 		log.LLvl1(s.ServerIdentity(), "  for survey ", s.survey[targetSurvey].Query.SurveyID, " has no data to det tag")
 		return nil
 	}
@@ -832,7 +831,7 @@ func (s *Service) TaggingPhase(targetSurvey lib.SurveyID) error {
 	}
 	deterministicTaggingResult = deterministicTaggingResult[len(s.survey[targetSurvey].Query.Where):]
 	filteredResponses := FilterResponses(s.survey[targetSurvey].Query.Pred, queryWhereTag, deterministicTaggingResult)
-	s.survey[targetSurvey].PushDeterministicClientResponses(filteredResponses, s.ServerIdentity().String(), s.survey[targetSurvey].Query.Proofs)
+	s.survey[targetSurvey].PushDeterministicFilteredResponses(filteredResponses, s.ServerIdentity().String(), s.survey[targetSurvey].Query.Proofs)
 	return err
 }
 
@@ -846,7 +845,7 @@ func (s *Service) AggregationPhase(targetSurvey lib.SurveyID) error {
 			return err
 		}
 		cothorityAggregatedData := <-pi.(*protocols.CollectiveAggregationProtocol).FeedbackChannel
-		s.survey[targetSurvey].PushCothorityAggregatedClientResponses(cothorityAggregatedData.GroupedData)
+		s.survey[targetSurvey].PushCothorityAggregatedFilteredResponses(cothorityAggregatedData.GroupedData)
 	} else {
 		//P2D2i2b2
 		groupedData := s.survey[targetSurvey].PullLocallyAggregatedResponses()
@@ -868,7 +867,7 @@ func (s *Service) AggregationPhase(targetSurvey lib.SurveyID) error {
 		}
 		clientResponseToKeep := make(map[lib.GroupingKey]lib.FilteredResponse, 0)
 		clientResponseToKeep[dummyHash] = clientRespFinal
-		s.survey[targetSurvey].PushCothorityAggregatedClientResponses(clientResponseToKeep)
+		s.survey[targetSurvey].PushCothorityAggregatedFilteredResponses(clientResponseToKeep)
 	}
 
 	return nil
@@ -907,7 +906,7 @@ func (s *Service) KeySwitchingPhase(targetSurvey lib.SurveyID) error {
 //______________________________________________________________________________________________________________________
 
 func precomputeForShuffling(serverName string, surveyID lib.SurveyID, surveySecret abstract.Scalar, collectiveKey abstract.Point, lineSize int) []lib.CipherVectorScalar {
-	log.Lvl1(serverName, " precomputes for shuffling of survey ", surveyID)
+
 	precomputeShuffle := lib.CreatePrecomputedRandomize(network.Suite.Point().Base(), collectiveKey, network.Suite.Cipher(surveySecret.Bytes()), lineSize*2, 10)
 
 	encoded, err := data.EncodeCipherVectorScalar(precomputeShuffle)
@@ -921,6 +920,7 @@ func precomputeForShuffling(serverName string, surveyID lib.SurveyID, surveySecr
 }
 
 func precomputationWritingForShuffling(appFlag bool, serverName string, surveyID lib.SurveyID, surveySecret abstract.Scalar, collectiveKey abstract.Point, lineSize int) []lib.CipherVectorScalar {
+	log.Lvl1(serverName, " precomputes for shuffling of survey ", surveyID)
 	precomputeShuffle := []lib.CipherVectorScalar{}
 	if appFlag {
 		if _, err := os.Stat(gobFile); os.IsNotExist(err) {
@@ -1027,7 +1027,7 @@ func FilterResponses(pred string, whereQueryValues []lib.WhereQueryAttributeTagg
 		}
 		keep, err := expression.Evaluate(parameters)
 		if keep.(bool) {
-			result = append(result, lib.FilteredResponseDet{DetTagGroupBy: v.DetTagGroupBy, Fr: lib.FilteredResponse{GroupByEnc: v.CR.GroupByEnc, AggregatingAttributes: v.CR.AggregatingAttributes}})
+			result = append(result, lib.FilteredResponseDet{DetTagGroupBy: v.DetTagGroupBy, Fr: lib.FilteredResponse{GroupByEnc: v.PR.GroupByEnc, AggregatingAttributes: v.PR.AggregatingAttributes}})
 		}
 	}
 	return result

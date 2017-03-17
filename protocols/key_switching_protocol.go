@@ -210,12 +210,12 @@ func (p *KeySwitchingProtocol) Dispatch() error {
 		origAttrEphemKeys := v.OriginalEphemeralKeys.AttrOriginalKeys
 		if lib.PARALLELIZE {
 			go func(i int, v DataAndOriginalEphemeralKeys, origGrpEphemKeys, origAttrEphemKeys []abstract.Point) {
-				clientResponseKeySwitching(&keySwitchingTarget.DataKey[i].Response, v.Response, origGrpEphemKeys,
+				FilteredResponseKeySwitching(&keySwitchingTarget.DataKey[i].Response, v.Response, origGrpEphemKeys,
 					origAttrEphemKeys, keySwitchingTarget.NewKey, p.Private(), p.Proofs)
 				defer wg.Done()
 			}(i, v, origGrpEphemKeys, origAttrEphemKeys)
 		} else {
-			clientResponseKeySwitching(&keySwitchingTarget.DataKey[i].Response, v.Response, origGrpEphemKeys,
+			FilteredResponseKeySwitching(&keySwitchingTarget.DataKey[i].Response, v.Response, origGrpEphemKeys,
 				origAttrEphemKeys, keySwitchingTarget.NewKey, p.Private(), p.Proofs)
 		}
 	}
@@ -255,8 +255,8 @@ func sending(p *KeySwitchingProtocol, kscm *KeySwitchedCipherMessage) {
 	p.sendToNext(&KeySwitchedCipherBytesMessage{data})
 }
 
-//ClientResponseKeySwitching applies key switching on a client response
-func clientResponseKeySwitching(cv *lib.FilteredResponse, v lib.FilteredResponse, origGrpEphemKeys, origAttrEphemKeys []abstract.Point, newKey abstract.Point, secretContrib abstract.Scalar, proofs bool) {
+//FilteredResponseKeySwitching applies key switching on a filtered response
+func FilteredResponseKeySwitching(cv *lib.FilteredResponse, v lib.FilteredResponse, origGrpEphemKeys, origAttrEphemKeys []abstract.Point, newKey abstract.Point, secretContrib abstract.Scalar, proofs bool) {
 
 	tmp, r1 := lib.NewCipherVector(len(v.AggregatingAttributes)).KeySwitching(v.AggregatingAttributes, origAttrEphemKeys, newKey, secretContrib)
 	cv.AggregatingAttributes = *tmp

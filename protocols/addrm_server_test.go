@@ -40,10 +40,10 @@ func TestAddRmServer(t *testing.T) {
 	cipherVect2 := *lib.NewCipherVector(len(cipherVect)).Add(cipherVect, cipherVect)
 
 	// aggregation
-	detResponses := make([]lib.ClientResponse, 3)
-	detResponses[0] = lib.ClientResponse{ProbaGroupingAttributesEnc: cipherVect2, AggregatingAttributes: cipherVect}
-	detResponses[1] = lib.ClientResponse{ProbaGroupingAttributesEnc: cipherVect, AggregatingAttributes: cipherVect}
-	detResponses[2] = lib.ClientResponse{ProbaGroupingAttributesEnc: cipherVect2, AggregatingAttributes: cipherVect}
+	detResponses := make([]lib.DpResponse, 3)
+	detResponses[0] = lib.DpResponse{GroupByClear: expectedResult, GroupByEnc: cipherVect2, WhereClear: expectedResult, WhereEnc:cipherVect2, AggregatingAttributes: cipherVect}
+	detResponses[1] = lib.DpResponse{GroupByClear: expectedResult, GroupByEnc: cipherVect, WhereClear: expectedResult, WhereEnc:cipherVect2, AggregatingAttributes: cipherVect}
+	detResponses[2] = lib.DpResponse{GroupByEnc: cipherVect2, AggregatingAttributes: cipherVect}
 
 	log.LLvl1("CipherTexts to transform ")
 	log.LLvl1(detResponses)

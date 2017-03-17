@@ -204,3 +204,19 @@ func TestCipherVectorConverter(t *testing.T) {
 
 	assert.Equal(t, target, p)
 }
+
+// TestIntArrayToCipherVector tests the int array to CipherVector converter and IntToPoint + PointToCiphertext
+func TestIntArrayToCipherVector(t *testing.T) {
+	integers := []int64{1,2,3,4,5,6}
+
+	cipherVect := lib.IntArrayToCipherVector(integers)
+	for i,v := range cipherVect{
+		B := suite.Point().Base()
+		i := suite.Scalar().SetInt64(integers[i])
+		M := suite.Point().Mul(B, i)
+		N := suite.Point().Null()
+		assert.Equal(t, v.C, M)
+		assert.Equal(t, v.K, N)
+	}
+
+}

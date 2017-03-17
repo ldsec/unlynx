@@ -57,13 +57,13 @@ type PublishedDeterministicTaggingProof struct {
 	SB         abstract.Point
 }
 
-// PublishedAggregationProof contains all infos about proofs for aggregation of two client responses
+// PublishedAggregationProof contains all infos about proofs for aggregation of two filtered responses
 type PublishedAggregationProof struct {
-	ClientResponses    []FilteredResponseDet
+	FilteredResponses    []FilteredResponseDet
 	AggregationResults map[GroupingKey]FilteredResponse
 }
 
-// PublishedCollectiveAggregationProof contains all infos about proofs for coll aggregation of client responses
+// PublishedCollectiveAggregationProof contains all infos about proofs for coll aggregation of filtered responses
 type PublishedCollectiveAggregationProof struct {
 	Aggregation1       map[GroupingKey]FilteredResponse
 	Aggregation2       []FilteredResponseDet
@@ -85,6 +85,12 @@ type PublishedDetTagAdditionProof struct {
 	C2    abstract.Point
 	R     abstract.Point
 	Proof []byte
+}
+
+type PublishedSimpleAdditionProof struct {
+	C1 CipherVector
+	C2 CipherVector
+	C1PlusC2 CipherVector
 }
 
 // ************************************************** KEY SWITCHING ****************************************************
@@ -405,13 +411,13 @@ func PublishedDeterministicTaggingCheckProof(php PublishedDeterministicTaggingPr
 
 // AggregationProofCreation creates a proof for responses aggregation and grouping
 func AggregationProofCreation(responses []FilteredResponseDet, aggregatedResults map[GroupingKey]FilteredResponse) PublishedAggregationProof {
-	return PublishedAggregationProof{ClientResponses: responses, AggregationResults: aggregatedResults}
+	return PublishedAggregationProof{FilteredResponses: responses, AggregationResults: aggregatedResults}
 }
 
 // AggregationProofVerification checks a proof for responses aggregation and grouping
 func AggregationProofVerification(pap PublishedAggregationProof) bool {
 	comparisonMap := make(map[GroupingKey]FilteredResponse)
-	for _, v := range pap.ClientResponses {
+	for _, v := range pap.FilteredResponses {
 		AddInMap(comparisonMap, v.DetTagGroupBy, v.Fr)
 	}
 	return reflect.DeepEqual(comparisonMap, pap.AggregationResults)
@@ -463,7 +469,7 @@ func CollectiveAggregationProofVerification(pcap PublishedCollectiveAggregationP
 
 // ************************************************ SHUFFLING **********************************************************
 
-// ShuffleProofCreation creates a proof for one shuffle on a list of client response
+// ShuffleProofCreation creates a proof for one shuffle on a list of process response
 func shuffleProofCreation(inputList, outputList []ProcessResponse, beta [][]abstract.Scalar, pi []int, h abstract.Point) []byte {
 	e := inputList[0].CipherVectorTag(h)
 	k := len(inputList)
@@ -479,10 +485,10 @@ func shuffleProofCreation(inputList, outputList []ProcessResponse, beta [][]abst
 		if PARALLELIZE {
 			go func(inputList, outputList []ProcessResponse, i int) {
 				defer (*wg1).Done()
-				CompressClientResponseMultiple(inputList, outputList, i, e, Xhat, XhatBar, Yhat, YhatBar)
+				CompressProcessResponseMultiple(inputList, outputList, i, e, Xhat, XhatBar, Yhat, YhatBar)
 			}(inputList, outputList, i)
 		} else {
-			CompressClientResponseMultiple(inputList, outputList, i, e, Xhat, XhatBar, Yhat, YhatBar)
+			CompressProcessResponseMultiple(inputList, outputList, i, e, Xhat, XhatBar, Yhat, YhatBar)
 		}
 	}
 	EndParallelize(wg1)
@@ -537,18 +543,18 @@ func ShufflingProofVerification(psp PublishedShufflingProof, seed abstract.Point
 	if PARALLELIZE {
 		wg := StartParallelize(2)
 		go func() {
-			x, y = CompressListClientResponse(psp.OriginalList, e)
+			x, y = CompressListProcessResponse(psp.OriginalList, e)
 			defer (*wg).Done()
 		}()
 		go func() {
-			xbar, ybar = CompressListClientResponse(psp.ShuffledList, e)
+			xbar, ybar = CompressListProcessResponse(psp.ShuffledList, e)
 			defer (*wg).Done()
 		}()
 
 		EndParallelize(wg)
 	} else {
-		x, y = CompressListClientResponse(psp.OriginalList, e)
-		xbar, ybar = CompressListClientResponse(psp.ShuffledList, e)
+		x, y = CompressListProcessResponse(psp.OriginalList, e)
+		xbar, ybar = CompressListProcessResponse(psp.ShuffledList, e)
 	}
 
 	return checkShuffleProof(psp.G, psp.H, x, y, xbar, ybar, psp.HashProof)

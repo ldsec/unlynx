@@ -1,9 +1,9 @@
 // Package protocols contains the distributed deterministic tagging protocol which permits to add a deterministic
-// tag to a client response.
-// The El-Gamal encrypted client response should be encrypted by the collective public key of the cothority.
+// tag to a DP response.
+// The El-Gamal encrypted DP response should be encrypted by the collective public key of the cothority.
 // In that case, each cothority server (node) can remove his El-Gamal secret contribution and homomorphically
 // multiply the ciphertext to participate in the tag creation.
-// This is done by creating a circuit between the servers. The client response is sent through this circuit and
+// This is done by creating a circuit between the servers. The DP response is sent through this circuit and
 // each server applies its transformation on it and forwards it to the next node in the circuit
 // until it comes back to the server who started the protocol.
 package protocols
@@ -38,7 +38,7 @@ type GroupingAttributes struct {
 	Vector lib.CipherVector
 }
 
-// DeterministicTaggingMessage represents a deterministic tagging message containing the processed cipher vectors client
+// DeterministicTaggingMessage represents a deterministic tagging message containing the processed cipher vectors DP
 // responses.
 type DeterministicTaggingMessage struct {
 	Data []GroupingAttributes
@@ -132,13 +132,13 @@ func (p *DeterministicTaggingProtocol) Start() error {
 		return errors.New("No survey secret key given")
 	}
 
-	nbrClientResponses := len(*p.TargetOfSwitch)
+	nbrProcessResponses := len(*p.TargetOfSwitch)
 
-	log.LLvl1("["+p.Name()+"]", " starts a Deterministic Tagging Protocol on ", nbrClientResponses, " response(s)")
+	log.LLvl1("["+p.Name()+"]", " starts a Deterministic Tagging Protocol on ", nbrProcessResponses, " response(s)")
 
-	// create client response with deterministic tag, at first step the tag creation part is a copy of the proba
+	// create process response with deterministic tag, at first step the tag creation part is a copy of the proba
 	// grouping attributes
-	detTarget := make([]GroupingAttributes, nbrClientResponses)
+	detTarget := make([]GroupingAttributes, nbrProcessResponses)
 	for i, v := range *p.TargetOfSwitch {
 		detTarget[i].Vector = append(v.GroupByEnc, v.WhereEnc...)
 	}
@@ -284,7 +284,7 @@ func deterministicTagFormat(i int, v GroupingAttributes, targetofSwitch *[]lib.P
 		}
 
 	}
-	return lib.ProcessResponseDet{CR: (*targetofSwitch)[i], DetTagGroupBy: deterministicGroupAttributes.Key(), DetTagWhere: deterministicWhereAttributes}
+	return lib.ProcessResponseDet{PR: (*targetofSwitch)[i], DetTagGroupBy: deterministicGroupAttributes.Key(), DetTagWhere: deterministicWhereAttributes}
 }
 
 // Conversion

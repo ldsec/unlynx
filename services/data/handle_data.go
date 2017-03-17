@@ -63,13 +63,14 @@ func AllPossibleGroups(numType []int64, group []int64, pos int) {
 //
 //  	filename:    name of the file (.txt) where we will store the test data
 //
-//	numClients: 	number of clients/hosts (or in other words data holders)
+//	numDPs: 	number of clients/hosts (or in other words data holders)
 //  	numEntries: 	number of survey entries (ClientClearResponse) per host
 //  	numGroupsClear: number of grouping attributes in clear
 //      numGroupsEnc:   number of grouping attributes encrypted
 //  	numType:    	number of different groups inside a group attribute
 //  	numAggr:    	number of aggregating attributes
-func GenerateData(numClients, numEntries, numGroupsClear, numGroupsEnc, numAggr int64, numType []int64, randomGroups bool) map[string][]lib.DpClearResponse {
+//TODO where + whereClear
+func GenerateData(numDPs, numEntries, numGroupsClear, numGroupsEnc, numAggr int64, numType []int64, randomGroups bool) map[string][]lib.DpClearResponse {
 	if int64(len(numType)) != (numGroupsClear + numGroupsEnc) {
 		log.Fatal("Please ensure that you specify the number of group types for each grouping attribute")
 		return nil
@@ -93,8 +94,8 @@ func GenerateData(numClients, numEntries, numGroupsClear, numGroupsEnc, numAggr 
 		}
 	}
 
-	for i := int64(0); i < numClients; i++ {
-		clientData := make([]lib.DpClearResponse, numEntries)
+	for i := int64(0); i < numDPs; i++ {
+		dpData := make([]lib.DpClearResponse, numEntries)
 
 		for j := int64(0); j < numEntries; j++ {
 			aggr := make([]int64, numAggr)
@@ -113,10 +114,10 @@ func GenerateData(numClients, numEntries, numGroupsClear, numGroupsEnc, numAggr 
 				grp = Groups[j]
 			}
 
-			clientData[j] = lib.DpClearResponse{GroupByClear: grp[:numGroupsClear], GroupByEnc: grp[numGroupsClear : numGroupsClear+numGroupsEnc], AggregatingAttributes: aggr}
+			dpData[j] = lib.DpClearResponse{GroupByClear: grp[:numGroupsClear], GroupByEnc: grp[numGroupsClear : numGroupsClear+numGroupsEnc], AggregatingAttributes: aggr}
 
 		}
-		testData[fmt.Sprintf("%v", i)] = clientData
+		testData[fmt.Sprintf("%v", i)] = dpData
 	}
 	return testData
 }
@@ -227,7 +228,7 @@ func ComputeExpectedResult(testData map[string][]lib.DpClearResponse, dataRepeti
 	return expectedResult
 }
 
-// CompareClearResponses compares two ClientClearResponse arrays and returns true if they are the same or false otherwise
+// CompareClearResponses compares two DP ClearResponse arrays and returns true if they are the same or false otherwise
 func CompareClearResponses(x []lib.DpClearResponse, y []lib.DpClearResponse) bool {
 	var test bool
 	for _, i := range x {

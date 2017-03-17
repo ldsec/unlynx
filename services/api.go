@@ -36,7 +36,7 @@ func NewMedcoClient(entryPoint *network.ServerIdentity, clientID string) *API {
 //______________________________________________________________________________________________________________________
 
 // SendSurveyCreationQuery creates a survey based on a set of entities (servers) and a survey description.
-func (c *API) SendSurveyCreationQuery(entities *onet.Roster, surveyGenID, surveyID lib.SurveyID, sum []string, count bool, where []lib.WhereQueryAttribute, pred string, groupBy []string, clientPubKey abstract.Point, dataToProcess []lib.ClientResponse, nbrDPs map[string]int64, queryMode int64, proofs, appFlag bool) (*lib.SurveyID, lib.FilteredResponse, error) {
+func (c *API) SendSurveyCreationQuery(entities *onet.Roster, surveyGenID, surveyID lib.SurveyID, sum []string, count bool, where []lib.WhereQueryAttribute, pred string, groupBy []string, clientPubKey abstract.Point, dataToProcess []lib.DpResponse, nbrDPs map[string]int64, queryMode int64, proofs, appFlag bool) (*lib.SurveyID, lib.FilteredResponse, error) {
 	log.Lvl1(c, "is creating a survey with general id: ", surveyGenID)
 
 	var newSurveyID lib.SurveyID
@@ -65,11 +65,11 @@ func (c *API) SendSurveyCreationQuery(entities *onet.Roster, surveyGenID, survey
 }
 
 // SendSurveyResponseQuery handles the encryption and sending of DP responses
-func (c *API) SendSurveyResponseQuery(surveyID lib.SurveyID, clearClientResponses []lib.DpClearResponse, groupKey abstract.Point, dataRepetitions int) error {
+func (c *API) SendSurveyResponseQuery(surveyID lib.SurveyID, clearClientResponses []lib.DpClearResponse, groupKey abstract.Point, dataRepetitions int, count bool) error {
 	log.LLvl1(c, " sends a result for survey ", surveyID)
 	var err error
 
-	s := EncryptDataToSurvey(c.String(), surveyID, clearClientResponses, groupKey, dataRepetitions)
+	s := EncryptDataToSurvey(c.String(), surveyID, clearClientResponses, groupKey, dataRepetitions, count)
 
 	resp := ServiceResponse{}
 	err = c.SendProtobuf(c.entryPoint, s, &resp)
@@ -108,7 +108,7 @@ func (c *API) SendSurveyResultsQuery(surveyID lib.SurveyID) (*[][]int64, *[][]in
 //______________________________________________________________________________________________________________________
 
 // EncryptDataToSurvey is used to encrypt client responses with the collective key
-func EncryptDataToSurvey(name string, surveyID lib.SurveyID, dpClearResponses []lib.DpClearResponse, groupKey abstract.Point, dataRepetitions int) *SurveyResponseQuery {
+func EncryptDataToSurvey(name string, surveyID lib.SurveyID, dpClearResponses []lib.DpClearResponse, groupKey abstract.Point, dataRepetitions int, count bool) *SurveyResponseQuery {
 	nbrResponses := len(dpClearResponses)
 
 	log.Lvl1(name, " responds with ", nbrResponses, " response(s)")
@@ -126,7 +126,7 @@ func EncryptDataToSurvey(name string, surveyID lib.SurveyID, dpClearResponses []
 				// should be set to 1 if no repet
 				i = i * dataRepetitions
 				if i < len(dpResponses) {
-					dpResponses[i] = lib.EncryptClientClearResponse(v, groupKey)
+					dpResponses[i] = lib.EncryptDpClearResponse(v, groupKey, count)
 
 					for j := 0; j < dataRepetitions && j+i < len(dpResponses); j++ {
 						dpResponses[i+j].GroupByClear = dpResponses[i].GroupByClear
@@ -135,12 +135,11 @@ func EncryptDataToSurvey(name string, surveyID lib.SurveyID, dpClearResponses []
 						dpResponses[i+j].WhereEnc = dpResponses[i].WhereEnc
 						dpResponses[i+j].AggregatingAttributes = dpResponses[i].AggregatingAttributes
 					}
-					log.LLvl1("CHASSE ", dpResponses[i].WhereEnc)
 				}
 				defer wg.Done()
 			}(i, v)
 		} else {
-			dpResponses[i] = lib.EncryptClientClearResponse(v, groupKey)
+			dpResponses[i] = lib.EncryptDpClearResponse(v, groupKey, count)
 		}
 
 	}

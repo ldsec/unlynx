@@ -52,34 +52,33 @@ func TestShuffling(t *testing.T) {
 	for i, p := range expRes {
 		testCipherVect[i] = *lib.EncryptInt(aggregateKey, p)
 	}
-	clientResponse1 := lib.ProcessResponse{GroupByEnc: testCipherVect, WhereEnc: testCipherVect, AggregatingAttributes: testCipherVect}
+	processResponse1 := lib.ProcessResponse{GroupByEnc: testCipherVect, WhereEnc: testCipherVect, AggregatingAttributes: testCipherVect}
 
 	testCipherVect1 := make(lib.CipherVector, 1)
 	expRes1 := []int64{1}
 	for i, p := range expRes1 {
 		testCipherVect1[i] = *lib.EncryptInt(aggregateKey, p)
 	}
-	clientResponse2 := lib.ProcessResponse{GroupByEnc: testCipherVect1, WhereEnc: testCipherVect1, AggregatingAttributes: testCipherVect1}
+	processResponse2 := lib.ProcessResponse{GroupByEnc: testCipherVect1, WhereEnc: testCipherVect1, AggregatingAttributes: testCipherVect1}
 
 	testCipherVect2 := make(lib.CipherVector, 1)
 	expRes2 := []int64{2}
 	for i, p := range expRes2 {
 		testCipherVect2[i] = *lib.EncryptInt(aggregateKey, p)
 	}
-	clientResponse3 := lib.ProcessResponse{GroupByEnc: testCipherVect2, WhereEnc: testCipherVect2, AggregatingAttributes: testCipherVect2}
+	processResponse3 := lib.ProcessResponse{GroupByEnc: testCipherVect2, WhereEnc: testCipherVect2, AggregatingAttributes: testCipherVect2}
 
 	mapi := make([]lib.ProcessResponse, 4)
-	mapi[0] = clientResponse1
-	mapi[1] = clientResponse2
-	mapi[2] = clientResponse3
-	mapi[3] = clientResponse1
+	mapi[0] = processResponse1
+	mapi[1] = processResponse2
+	mapi[2] = processResponse3
+	mapi[3] = processResponse1
 
 	log.LLvl1("Data before shuffling ", mapi)
 
 	protocol.TargetOfShuffle = &mapi
 	protocol.CollectiveKey = groupPub
 	protocol.Proofs = true
-	//protocol.Precomputed = precomputes[0]
 
 	feedback := protocol.FeedbackChannel
 	go protocol.Start()

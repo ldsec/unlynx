@@ -109,7 +109,7 @@ func CreateXMLData(surveyID string, pubKey string, priKey string, nbrDataProvide
 }
 
 // ReadXMLData reads xml file containing data for an Unlynx query and generates the Unlynx query
-func ReadXMLData(fileName string, collectiveKey abstract.Point) (surveyID lib.SurveyID, pubKey abstract.Point, secKey abstract.Scalar, querySubject, responses []lib.ClientResponse, executionMode, nbrDataProviders int64) {
+func ReadXMLData(fileName string, collectiveKey abstract.Point) (surveyID lib.SurveyID, pubKey abstract.Point, secKey abstract.Scalar, querySubject, responses []lib.DpResponse, executionMode, nbrDataProviders int64) {
 	xmlFile, err := os.Open(fileName)
 	if err != nil {
 		log.Fatal(err)
@@ -131,8 +131,8 @@ func ReadXMLData(fileName string, collectiveKey abstract.Point) (surveyID lib.Su
 	nbrDataProviders, _ = strconv.ParseInt(m.Data[0].NbrDataProvider, 10, 32)
 
 	operations := make([]string, 0)
-	responsesStr := make([]lib.ClientResponse, len(m.Data[0].Columns[0].Values))
-	responsesStrFin := make([]lib.ClientResponse, 0)
+	responsesStr := make([]lib.DpResponse, len(m.Data[0].Columns[0].Values))
+	responsesStrFin := make([]lib.DpResponse, 0)
 
 	for j, v := range m.Data[0].Columns {
 		// query predicate
@@ -146,10 +146,10 @@ func ReadXMLData(fileName string, collectiveKey abstract.Point) (surveyID lib.Su
 			ct := lib.CipherText{}
 			ct.FromBytes(valRead)
 			if j == 0 {
-				responsesStr[q] = lib.NewClientResponse(0, 1)
+				responsesStr[q] = lib.DpResponse{}
 				responsesStr[q].AggregatingAttributes = lib.CipherVector{*lib.EncryptInt(collectiveKey, int64(1))}
 			}
-			responsesStr[q].ProbaGroupingAttributesEnc = append(responsesStr[q].ProbaGroupingAttributesEnc, ct)
+			responsesStr[q].GroupByEnc = append(responsesStr[q].GroupByEnc, ct)
 
 			if j == len(m.Data[0].Columns)-1 {
 				responsesStrFin = append(responsesStrFin, responsesStr[q])
@@ -238,19 +238,19 @@ func querySubjectSelectClear(operations []string, subject [][]int64) [][]int64 {
 }
 
 // querySubjectEncryption permits to encrypt the query subject and create dummies
-func querySubjectEncryption(collKey abstract.Point, subject [][]int64) (qs, dummies []lib.ClientResponse) {
-	encryptedSubject := make([]lib.ClientResponse, 0)
-	dummies = make([]lib.ClientResponse, 0)
+func querySubjectEncryption(collKey abstract.Point, subject [][]int64) (qs, dummies []lib.DpResponse) {
+	encryptedSubject := make([]lib.DpResponse, 0)
+	dummies = make([]lib.DpResponse, 0)
 	for _, v := range subject {
-		tmp := lib.ClientResponse{}
-		tmp.ProbaGroupingAttributesEnc = *lib.EncryptIntVector(collKey, v)
+		tmp := lib.DpResponse{}
+		tmp.GroupByEnc = *lib.EncryptIntVector(collKey, v)
 		tmp.AggregatingAttributes = *lib.EncryptIntVector(collKey, []int64{0})
 		encryptedSubject = append(encryptedSubject, tmp)
 		rand.Seed(int64(len(subject)))
 		rnd := rand.Int63n(2) * rand.Int63n(6)
 		for i := int64(0); i < rnd; i++ {
-			tmp := lib.ClientResponse{}
-			tmp.ProbaGroupingAttributesEnc = *lib.EncryptIntVector(collKey, v)
+			tmp := lib.DpResponse{}
+			tmp.GroupByEnc = *lib.EncryptIntVector(collKey, v)
 			tmp.AggregatingAttributes = *lib.EncryptIntVector(collKey, []int64{0})
 			dummies = append(dummies, tmp)
 		}
