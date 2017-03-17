@@ -133,7 +133,8 @@ func EncryptDataToSurvey(name string, surveyID lib.SurveyID, dpClearResponses []
 						dpResponses[i+j].GroupByEnc = dpResponses[i].GroupByEnc
 						dpResponses[i+j].WhereClear = dpResponses[i].WhereClear
 						dpResponses[i+j].WhereEnc = dpResponses[i].WhereEnc
-						dpResponses[i+j].AggregatingAttributes = dpResponses[i].AggregatingAttributes
+						dpResponses[i+j].AggregatingAttributesClear = dpResponses[i].AggregatingAttributesClear
+						dpResponses[i+j].AggregatingAttributesEnc = dpResponses[i].AggregatingAttributesEnc
 					}
 				}
 				defer wg.Done()
