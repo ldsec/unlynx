@@ -101,21 +101,21 @@ func proccessParameters (data []string, clear map[string]int64, encrypted map[st
 	}*/
 
 // InsertDPResponse handles the local storage of a new DP response in aggregation or grouping cases.
-func (s *Store) InsertDpResponse(cr DpResponse, proofs bool, scq SurveyCreationQuery) {
+func (s *Store) InsertDpResponse(cr DpResponse, proofs bool, groupBy, sum []string, where []WhereQueryAttribute) {
 	newResp := ProcessResponse{}
 	clearGrp := []int64{}
 	clearWhr := []int64{}
 	//clearAggr := []int64{}
 
 	noEnc := (cr.WhereEnc == nil && cr.GroupByEnc == nil)
-	clearGrp, newResp.GroupByEnc = proccessParameters(scq.GroupBy, cr.GroupByClear, cr.GroupByEnc, noEnc)
+	clearGrp, newResp.GroupByEnc = proccessParameters(groupBy, cr.GroupByClear, cr.GroupByEnc, noEnc)
 
-	whereStrings := make([]string,len(scq.Where))
-	for i,v := range scq.Where{
+	whereStrings := make([]string,len(where))
+	for i,v := range where{
 		whereStrings[i] = v.Name
 	}
 	clearWhr, newResp.WhereEnc = proccessParameters(whereStrings, cr.WhereClear, cr.WhereEnc, noEnc)
-	_, newResp.AggregatingAttributes = proccessParameters(scq.Sum, cr.AggregatingAttributesClear, cr.AggregatingAttributesEnc, false)
+	_, newResp.AggregatingAttributes = proccessParameters(sum, cr.AggregatingAttributesClear, cr.AggregatingAttributesEnc, false)
 
 	if !noEnc {
 		s.DpResponses = append(s.DpResponses, newResp)

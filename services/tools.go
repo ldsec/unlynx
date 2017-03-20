@@ -46,6 +46,7 @@ func PrecomputeForShuffling(serverName, gobFile string, surveySecret abstract.Sc
 }
 
 func PrecomputationWritingForShuffling(appFlag bool, gobFile, serverName string, surveySecret abstract.Scalar, collectiveKey abstract.Point, lineSize int) []lib.CipherVectorScalar {
+	log.Lvl1(serverName, " precomputes for shuffling")
 	precomputeShuffle := []lib.CipherVectorScalar{}
 	if appFlag {
 		if _, err := os.Stat(gobFile); os.IsNotExist(err) {

@@ -9,7 +9,6 @@ import (
 
 	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/crypto.v0/cipher"
-	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/network"
 )
 
@@ -60,20 +59,6 @@ type ProcessResponse struct {
 	AggregatingAttributes CipherVector
 }
 
-// ClientResponse represents a client response.
-/*type ClientResponse struct {
-	GroupingAttributesClear    GroupingKey
-	ProbaGroupingAttributesEnc CipherVector
-	AggregatingAttributes      CipherVector
-}
-
-// ClientResponseBytes represents a client response in bytes.
-type ClientResponseBytes struct {
-	GroupingAttributesClear    []byte
-	ProbaGroupingAttributesEnc [][][]byte
-	AggregatingAttributes      [][][]byte
-}*/
-
 // DpClearResponse represents a DP response when data is stored in clear at each server/hospital
 type DpClearResponse struct {
 	WhereClear            map[string]int64
@@ -83,13 +68,6 @@ type DpClearResponse struct {
 	AggregatingAttributesClear map[string]int64
 	AggregatingAttributesEnc map[string]int64
 }
-
-/*
-// DpResponseDetCreation represents a client response which is in the process of creating a det. hash
-type DpResponseDetCreation struct {
-	CR          ClientResponse
-	DetCreaVect CipherVector
-}*/
 
 type WhereQueryAttribute struct {
 	Name  string
@@ -117,45 +95,6 @@ type FilteredResponse struct {
 	GroupByEnc            CipherVector
 	AggregatingAttributes CipherVector
 }
-
-// SurveyID unique ID for each survey.
-type SurveyID string
-
-type SurveyCreationQuery struct {
-	SurveyGenID 	*SurveyID
-	SurveyID    	*SurveyID
-	Roster      	onet.Roster
-	Sum     	[]string
-	Count   	bool
-	Where   	[]WhereQueryAttribute
-	Pred    	string
-	GroupBy 	[]string
-	ClientPubKey  	abstract.Point
-	DataToProcess 	[]DpResponse
-	NbrDPs        	map[string]int64
-	QueryMode     	int64
-	Proofs        	bool
-	AppFlag       	bool
-}
-
-// Survey represents a survey with the corresponding params
-type Survey struct {
-	*Store
-	Query SurveyCreationQuery
-	SurveySecretKey abstract.Scalar
-	ShufflePrecompute []CipherVectorScalar
-	SurveyResponses []FilteredResponse
-	Sender          network.ServerIdentityID
-	Final           bool
-}
-
-/*
-// SurveyDescription is currently only used to define a client response format.
-type SurveyDescription struct {
-	GroupingAttributesClearCount int32
-	GroupingAttributesEncCount   int32
-	AggregatingAttributesCount   uint32
-}*/
 
 // Functions
 //______________________________________________________________________________________________________________________
