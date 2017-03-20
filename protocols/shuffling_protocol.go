@@ -131,6 +131,18 @@ func (p *ShufflingProtocol) Start() error {
 	log.Lvl1("["+p.Name()+"]", " started a Shuffling Protocol (", nbrProcessResponses, " responses)")
 
 	shuffleTarget := *p.TargetOfShuffle
+
+	if len(shuffleTarget) == 1 { //cannot shuffle 1 -> add a dummy response with 0s
+		pr := lib.ProcessResponse{}
+		pr.GroupByEnc = shuffleTarget[0].GroupByEnc
+		pr.WhereEnc = shuffleTarget[0].WhereEnc
+		pr.AggregatingAttributes = make(lib.CipherVector, len(shuffleTarget[0].AggregatingAttributes))
+		for i := range shuffleTarget[0].AggregatingAttributes{
+			pr.AggregatingAttributes[i] = lib.IntToCiphertext(int64(0))
+		}
+		shuffleTarget = append(shuffleTarget, pr)
+	}
+
 	collectiveKey := p.Roster().Aggregate
 	if p.CollectiveKey != nil {
 		//test

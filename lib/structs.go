@@ -11,6 +11,7 @@ import (
 	"gopkg.in/dedis/crypto.v0/cipher"
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/network"
+	"github.com/dedis/cothority/log"
 )
 
 // Objects
@@ -42,8 +43,17 @@ type DpResponse struct {
 	GroupByEnc            map[string]CipherText
 	AggregatingAttributesClear map[string]int64
 	AggregatingAttributesEnc map[string]CipherText
-
 }
+
+type DpResponseToSend struct {
+	WhereClear            map[string]int64
+	WhereEnc              map[string][]byte
+	GroupByClear          map[string]int64
+	GroupByEnc            map[string][]byte
+	AggregatingAttributesClear map[string]int64
+	AggregatingAttributesEnc map[string][]byte
+}
+
 
 type ProcessResponse struct {
 	WhereEnc              CipherVector
@@ -265,27 +275,27 @@ func ComputeE(index int, cv ProcessResponse, seed []byte, aggrAttrLen, grpAttrLe
 //______________________________________________________________________________________________________________________
 
 // EncryptDpClearResponse encrypts a DP response
-func EncryptDpClearResponse(ccr DpClearResponse, encryptionKey abstract.Point, count bool) DpResponse {
-	cr := DpResponse{}
+func EncryptDpClearResponse(ccr DpClearResponse, encryptionKey abstract.Point, count bool) DpResponseToSend {
+	cr := DpResponseToSend{}
 	cr.GroupByClear = ccr.GroupByClear
-	cr.GroupByEnc = make(map[string]CipherText, len(ccr.GroupByEnc))
+	cr.GroupByEnc = make(map[string][]byte, len(ccr.GroupByEnc))
 	for i,v := range ccr.GroupByEnc{
-		cr.GroupByEnc[i] = *EncryptInt(encryptionKey, v)
+		cr.GroupByEnc[i] = ((*EncryptInt(encryptionKey, v)).ToBytes())
 	}
 	//cr.GroupByEnc = *EncryptIntVector(encryptionKey, ccr.GroupByEnc)
 	cr.WhereClear = ccr.WhereClear
-	cr.WhereEnc = make(map[string]CipherText, len(ccr.WhereEnc))
+	cr.WhereEnc = make(map[string][]byte, len(ccr.WhereEnc))
 	for i,v := range ccr.WhereEnc{
-		cr.WhereEnc[i] = *EncryptInt(encryptionKey, v)
+		cr.WhereEnc[i] = ((*EncryptInt(encryptionKey, v)).ToBytes())
 	}
 	//cr.WhereEnc = *EncryptIntVector(encryptionKey, ccr.WhereEnc)
 	cr.AggregatingAttributesClear = ccr.AggregatingAttributesClear
-	cr.AggregatingAttributesEnc = make(map[string]CipherText, len(ccr.AggregatingAttributesEnc))
+	cr.AggregatingAttributesEnc = make(map[string][]byte, len(ccr.AggregatingAttributesEnc))
 	for i,v := range ccr.AggregatingAttributesEnc{
-		cr.AggregatingAttributesEnc[i] = *EncryptInt(encryptionKey, v)
+		cr.AggregatingAttributesEnc[i] = ((*EncryptInt(encryptionKey, v)).ToBytes())
 	}
 	if count {
-		cr.AggregatingAttributesEnc["count"] = *EncryptInt(encryptionKey, int64(1))
+		cr.AggregatingAttributesEnc["count"] = (*EncryptInt(encryptionKey, int64(1))).ToBytes()
 	}
 
 	return cr
@@ -507,4 +517,44 @@ func (crd *ProcessResponseDet) FromBytes(data []byte, gacbLength, aabLength, pga
 	(*crd).PR.WhereEnc.FromBytes(pgaeb, pgaebLength)
 	(*crd).PR.GroupByEnc.FromBytes(gacb, gacbLength)
 
+}
+
+func (dr *DpResponse) FromDpResponseToSend(dprts DpResponseToSend){
+	dr.GroupByClear = dprts.GroupByClear
+	if len(dprts.GroupByEnc) != 0{
+		dr.GroupByEnc = MapBytesToMapCipherText(dprts.GroupByEnc)
+	}
+
+	dr.WhereClear = dprts.WhereClear
+	if len(dprts.WhereEnc) != 0 {
+		dr.WhereEnc = make(map[string]CipherText)
+		for i, v := range dprts.WhereEnc {
+			ct := CipherText{}
+			ct.FromBytes(v)
+			dr.WhereEnc[i] = ct
+		}
+	}
+	dr.AggregatingAttributesClear = dprts.AggregatingAttributesClear
+	if len(dprts.AggregatingAttributesEnc) != 0 {
+		dr.AggregatingAttributesEnc = make(map[string]CipherText)
+		for i, v := range dprts.AggregatingAttributesEnc {
+			ct := CipherText{}
+			ct.FromBytes(v)
+			dr.AggregatingAttributesEnc[i] = ct
+		}
+	}
+}
+
+func MapBytesToMapCipherText (mapBytes map[string]byte) map[string]CipherText{
+	result := make(map[string]CipherText)
+	if len(mapBytes) != 0 {
+		for i,v := range mapBytes{
+			ct := CipherText{}
+			ct.FromBytes(v)
+			result[i] = ct
+		}
+		return result
+	}
+
+	return nil
 }

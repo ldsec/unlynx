@@ -83,17 +83,16 @@ func (c *API) SendSurveyResponseQuery(surveyID lib.SurveyID, clearClientResponse
 }
 
 // SendSurveyResultsQuery to get the result from associated server and decrypt the response using its private key.
-func (c *API) SendSurveyResultsQuery(surveyID lib.SurveyID) (*[][]int64, *[][]int64, *[][]int64, error) {
+func (c *API) SendSurveyResultsQuery(surveyID lib.SurveyID) (*[][]int64, *[][]int64, error) {
 	log.LLvl1(c, " asks for the results of the survey ", surveyID)
 	resp := SurveyResultResponse{}
 	err := c.SendProtobuf(c.entryPoint, &SurveyResultsQuery{false, surveyID, c.public}, &resp)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
 	log.LLvl1(c, " got the survey result from ", c.entryPoint)
 
-	grpClear := make([][]int64, len(resp.Results))
 	grp := make([][]int64, len(resp.Results))
 	aggr := make([][]int64, len(resp.Results))
 	for i, res := range resp.Results {
@@ -101,7 +100,7 @@ func (c *API) SendSurveyResultsQuery(surveyID lib.SurveyID) (*[][]int64, *[][]in
 		grp[i] = lib.DecryptIntVector(c.private, &res.GroupByEnc)
 		aggr[i] = lib.DecryptIntVector(c.private, &res.AggregatingAttributes)
 	}
-	return &grpClear, &grp, &aggr, nil
+	return &grp, &aggr, nil
 }
 
 // Helper Functions
@@ -113,8 +112,8 @@ func EncryptDataToSurvey(name string, surveyID lib.SurveyID, dpClearResponses []
 
 	log.Lvl1(name, " responds with ", nbrResponses, " response(s)")
 
-	var dpResponses []lib.DpResponse
-	dpResponses = make([]lib.DpResponse, nbrResponses*dataRepetitions)
+	var dpResponses []lib.DpResponseToSend
+	dpResponses = make([]lib.DpResponseToSend, nbrResponses*dataRepetitions)
 
 	wg := lib.StartParallelize(len(dpClearResponses))
 	round := lib.StartTimer(name + "_ClientEncryption")
