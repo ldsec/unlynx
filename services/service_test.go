@@ -105,6 +105,7 @@ func TestServiceClearAttr(t *testing.T) {
 		//responses:= []lib.DpClearResponse{{WhereClear: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr},{WhereClear: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr},{WhereClear: sliceWhere, GroupByClear: sliceGrp1, AggregatingAttributesEnc: aggr}}
 		responses:= []lib.DpClearResponse{{WhereClear: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr},{WhereClear: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr}}
 
+		log.LLvl1(responses)
 		dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
 
 	}

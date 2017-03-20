@@ -789,7 +789,7 @@ func (s *Service) ShufflingPhase(targetSurvey lib.SurveyID) error {
 		return err
 	}
 	shufflingResult := <-pi.(*protocols.ShufflingProtocol).FeedbackChannel
-
+	log.LLvl1("SHUUUFFF_END",shufflingResult)
 	s.survey[targetSurvey].PushShuffledProcessResponses(shufflingResult)
 
 	return err
@@ -833,6 +833,7 @@ func (s *Service) TaggingPhase(targetSurvey lib.SurveyID) error {
 	}
 	deterministicTaggingResult = deterministicTaggingResult[len(s.survey[targetSurvey].Query.Where):]
 	filteredResponses := FilterResponses(s.survey[targetSurvey].Query.Pred, queryWhereTag, deterministicTaggingResult)
+	log.LLvl1("FFFILLLT",filteredResponses)
 	s.survey[targetSurvey].PushDeterministicFilteredResponses(filteredResponses, s.ServerIdentity().String(), s.survey[targetSurvey].Query.Proofs)
 	return err
 }
@@ -1028,6 +1029,7 @@ func FilterResponses(pred string, whereQueryValues []lib.WhereQueryAttributeTagg
 
 		}
 		keep, err := expression.Evaluate(parameters)
+		log.LLvl1(keep)
 		if keep.(bool) {
 			result = append(result, lib.FilteredResponseDet{DetTagGroupBy: v.DetTagGroupBy, Fr: lib.FilteredResponse{GroupByEnc: v.PR.GroupByEnc, AggregatingAttributes: v.PR.AggregatingAttributes}})
 		}
