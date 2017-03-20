@@ -41,9 +41,9 @@ type PublishedSwitchKeyProof struct {
 
 // PublishedAddRmProof contains all infos about proofs for adding/removing operations on a ciphervector
 type PublishedAddRmProof struct {
-	Arp        []AddRmProof
-	VectBefore CipherVector
-	VectAfter  CipherVector
+	Arp        map[string]AddRmProof
+	VectBefore map[string]CipherText
+	VectAfter  map[string]CipherText
 	Krm        abstract.Point
 	ToAdd      bool
 }
@@ -242,16 +242,18 @@ func AddRmProofCreation(cBef, cAft CipherText, k abstract.Scalar, toAdd bool) Ad
 }
 
 // VectorAddRmProofCreation creates proof for add/rm server protocol on 1 ciphervector
-func VectorAddRmProofCreation(vBef, vAft CipherVector, k abstract.Scalar, toAdd bool) []AddRmProof {
-	result := make([]AddRmProof, len(vBef))
+func VectorAddRmProofCreation(vBef, vAft map[string]CipherText, k abstract.Scalar, toAdd bool) map[string]AddRmProof {
+	result := make(map[string]AddRmProof, len(vBef))
 	var wg sync.WaitGroup
 	if PARALLELIZE {
-		for i := 0; i < len(vBef); i = i + VPARALLELIZE {
+		//for i := 0; i < len(vBef); i = i + VPARALLELIZE {
+		for i := range vBef {
 			wg.Add(1)
-			go func(i int) {
-				for j := 0; j < VPARALLELIZE && (j+i < len(vBef)); j++ {
-					result[i+j] = AddRmProofCreation(vBef[i+j], vAft[i+j], k, toAdd)
-				}
+			go func(i string) {
+				//for j := 0; j < VPARALLELIZE && (j+i < len(vBef)); j++ {
+					//result[i+j] = AddRmProofCreation(vBef[i+j], vAft[i+j], k, toAdd)
+				result[i] = AddRmProofCreation(vBef[i], vAft[i], k, toAdd)
+				//}
 				defer wg.Done()
 			}(i)
 
@@ -290,11 +292,12 @@ func AddRmCheckProof(cp AddRmProof, K abstract.Point, cBef, cAft CipherText, toA
 
 // PublishedAddRmCheckProof checks published add/rm protocol proofs
 func PublishedAddRmCheckProof(parp PublishedAddRmProof) bool {
-
+	counter := 0
 	for i, v := range parp.Arp {
 		if !AddRmCheckProof(v, parp.Krm, parp.VectBefore[i], parp.VectAfter[i], parp.ToAdd) {
 			return false
 		}
+		counter++
 	}
 	return true
 }

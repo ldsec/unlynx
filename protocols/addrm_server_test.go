@@ -36,17 +36,21 @@ func TestAddRmServer(t *testing.T) {
 	//substraction
 	secKeyAfter := network.Suite.Scalar().Sub(secKey, secKeyAddRm)
 
-	expectedResult := []int64{10, 10}
+	tab := []int64{10, 10}
+
+	expectedResults := make(map[string]int64)
+	expectedResults["0"] = 10
+	expectedResults["1"] = 10
 	//cipherVect := *lib.EncryptIntVector(pubKey, expectedResult)
 	//cipherVect2 := *lib.NewCipherVector(len(cipherVect)).Add(cipherVect, cipherVect)
 
 	//dummySurveyCreationQuery := lib.SurveyCreationQuery{Sum:[]string{"0","1"}, GroupBy:[]string{"0","1"}, Where:[]lib.WhereQueryAttribute{{"0", lib.CipherText{}},{"1", lib.CipherText{}}}}
 	notEncrypted := make(map[string]int64)
-	for i, v := range expectedResult{
+	for i, v := range tab{
 		notEncrypted[strconv.Itoa(i)] = v
 	}
-	encrypted := make(map[string]int64)
-	for i, v := range expectedResult{
+	encrypted := make(map[string]lib.CipherText)
+	for i, v := range tab{
 		encrypted[strconv.Itoa(i)] = *lib.EncryptInt(pubKey, v)
 	}
 	// aggregation
@@ -72,9 +76,14 @@ func TestAddRmServer(t *testing.T) {
 	case results := <-feedback:
 		log.LLvl1("Results: ")
 		log.LLvl1(results)
-		decryptedResult := lib.DecryptIntVector(secKeyAfter, &results[0].AggregatingAttributesEnc)
-		assert.Equal(t, decryptedResult, expectedResult)
+		decryptedResult := make(map[string]int64)
+		for i, v := range results[0].AggregatingAttributesEnc{
+			decryptedResult[i] = lib.DecryptInt(secKeyAfter, v)
+		}
+		//decryptedResult := lib.DecryptIntVector(secKeyAfter, &results[0].AggregatingAttributesEnc)
+		assert.Equal(t, decryptedResult, expectedResults)
 	case <-time.After(timeout):
 		t.Fatal("Didn't finish in time")
+
 	}
 }
