@@ -11,7 +11,6 @@ import (
 	"gopkg.in/dedis/crypto.v0/cipher"
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/network"
-	"github.com/dedis/cothority/log"
 )
 
 // Objects
@@ -545,7 +544,7 @@ func (dr *DpResponse) FromDpResponseToSend(dprts DpResponseToSend){
 	}
 }
 
-func MapBytesToMapCipherText (mapBytes map[string]byte) map[string]CipherText{
+func MapBytesToMapCipherText (mapBytes map[string][]byte) map[string]CipherText{
 	result := make(map[string]CipherText)
 	if len(mapBytes) != 0 {
 		for i,v := range mapBytes{
