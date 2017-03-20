@@ -51,7 +51,6 @@ func proccessParameters (data []string, clear map[string]int64, encrypted map[st
 		// all where and group by attributes are in clear
 		if noEnc {
 			containerClear = append(containerClear,clear[v])
-			log.LLvl1(containerClear)
 		} else if !noEnc{
 			if  value, ok := encrypted[v]; ok {
 				containerEnc = append(containerEnc, value)
@@ -103,42 +102,30 @@ func proccessParameters (data []string, clear map[string]int64, encrypted map[st
 
 // InsertDPResponse handles the local storage of a new DP response in aggregation or grouping cases.
 func (s *Store) InsertDpResponse(cr DpResponse, proofs bool, scq SurveyCreationQuery) {
-	log.LLvl1("RESPONSE ", cr)
 	newResp := ProcessResponse{}
 	clearGrp := []int64{}
 	clearWhr := []int64{}
 	//clearAggr := []int64{}
 
 	noEnc := (cr.WhereEnc == nil && cr.GroupByEnc == nil)
-	log.LLvl1("NOENC ", noEnc)
-	log.LLvl1("AQUIIII",scq.GroupBy)
 	clearGrp, newResp.GroupByEnc = proccessParameters(scq.GroupBy, cr.GroupByClear, cr.GroupByEnc, noEnc)
-	log.LLvl1("LAL ", clearGrp)
+
 	whereStrings := make([]string,len(scq.Where))
 	for i,v := range scq.Where{
 		whereStrings[i] = v.Name
 	}
 	clearWhr, newResp.WhereEnc = proccessParameters(whereStrings, cr.WhereClear, cr.WhereEnc, noEnc)
-	log.LLvl1("AGGR ", cr.AggregatingAttributesClear)
-	log.LLvl1("AGGR ", cr.AggregatingAttributesEnc)
 	_, newResp.AggregatingAttributes = proccessParameters(scq.Sum, cr.AggregatingAttributesClear, cr.AggregatingAttributesEnc, false)
-	log.LLvl1(newResp.AggregatingAttributes)
+
 	if !noEnc {
 		s.DpResponses = append(s.DpResponses, newResp)
 
 	} else {
-		log.LLvl1("ICI L'AMI CHAPPUIS")
 		value, ok := s.DpResponsesAggr[GroupingKeyTuple{Key(clearGrp), Key(clearWhr)}]
 		if ok {
 			tmp := *NewCipherVector(len(value.AggregatingAttributes)).Add(value.AggregatingAttributes, newResp.AggregatingAttributes)
 			mapValue := s.DpResponsesAggr[GroupingKeyTuple{Key(clearGrp), Key(clearWhr)}]
 			mapValue.AggregatingAttributes = tmp
-			/*if mapValue.GroupByEnc == nil { //first response in this "group"
-				mapValue.GroupByEnc = IntArrayToCipherVector(clearGrp)
-			}
-			if mapValue.WhereEnc == nil {
-				mapValue.GroupByEnc = IntArrayToCipherVector(clearWhr)
-			}*/
 			s.DpResponsesAggr[GroupingKeyTuple{Key(clearGrp), Key(clearWhr)}] = mapValue
 
 			if proofs {
@@ -164,12 +151,6 @@ func (s *Store) PullDpResponses() []ProcessResponse {
 	//result := []ProcessResponse{}
 	result := s.DpResponses
 	for _, v := range s.DpResponsesAggr {
-		log.LLvl1("PULLDPRESPONSE")
-		log.LLvl1(v)
-		//newResp := ProcessResponse{}
-		//newResp.GroupByEnc = append(IntArrayToCipherVector(v.GroupByEnc))
-		//newResp.WhereEnc = append(IntArrayToCipherVector(v.WhereClear), v.WhereEnc...)
-		//newResp.AggregatingAttributes = v.AggregatingAttributes
 		result = append(result, v)
 	}
 	s.DpResponses = s.DpResponses[:0] //clear table
