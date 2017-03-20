@@ -222,6 +222,8 @@ func (s *Service) SendISMOthers(el *onet.Roster, msg interface{}) error {
 // in the i2b2 case it will directly run the request response creation
 func (s *Service) HandleSurveyCreationQuery(recq *lib.SurveyCreationQuery) (network.Message, onet.ClientError) {
 
+	log.LLvlf1("QUERYY %#v",recq.GroupBy)
+
 	s.appFlag = recq.AppFlag
 	s.nbrLocalSurveys++
 	s.nbrDPs = recq.NbrDPs[s.ServerIdentity().String()]
@@ -244,6 +246,7 @@ func (s *Service) HandleSurveyCreationQuery(recq *lib.SurveyCreationQuery) (netw
 			//handlingServer = true
 		}
 		// broadcasts the query
+		log.LLvlf1("QUERYY to others%#v",recq.GroupBy)
 		err := s.SendISMOthers(&recq.Roster, recq)
 		if err != nil {
 			log.Error("broadcasting error ", err)
@@ -706,7 +709,6 @@ func (s *Service) StartService(targetSurvey lib.SurveyID, root bool) error {
 	tmp := s.survey[targetSurvey]
 	s.TargetSurvey = &tmp
 	s.Proofs = s.survey[targetSurvey].Query.Proofs
-
 	// Normal Unlynx
 	if s.TargetSurvey.Query.DataToProcess == nil {
 		// Shuffling Phase
@@ -716,7 +718,6 @@ func (s *Service) StartService(targetSurvey lib.SurveyID, root bool) error {
 		if err != nil {
 			log.Fatal("Error in the Shuffling Phase")
 		}
-
 		lib.EndTimer(start)
 
 		// Tagging Phase
@@ -783,13 +784,11 @@ func (s *Service) ShufflingPhase(targetSurvey lib.SurveyID) error {
 		log.Lvl1(s.ServerIdentity(), " no data to shuffle")
 		return nil
 	}
-
 	pi, err := s.StartProtocol(protocols.ShufflingProtocolName, targetSurvey)
 	if err != nil {
 		return err
 	}
 	shufflingResult := <-pi.(*protocols.ShufflingProtocol).FeedbackChannel
-	log.LLvl1("SHUUUFFF_END",shufflingResult)
 	s.survey[targetSurvey].PushShuffledProcessResponses(shufflingResult)
 
 	return err
@@ -833,7 +832,6 @@ func (s *Service) TaggingPhase(targetSurvey lib.SurveyID) error {
 	}
 	deterministicTaggingResult = deterministicTaggingResult[len(s.survey[targetSurvey].Query.Where):]
 	filteredResponses := FilterResponses(s.survey[targetSurvey].Query.Pred, queryWhereTag, deterministicTaggingResult)
-	log.LLvl1("FFFILLLT",filteredResponses)
 	s.survey[targetSurvey].PushDeterministicFilteredResponses(filteredResponses, s.ServerIdentity().String(), s.survey[targetSurvey].Query.Proofs)
 	return err
 }
@@ -1029,7 +1027,6 @@ func FilterResponses(pred string, whereQueryValues []lib.WhereQueryAttributeTagg
 
 		}
 		keep, err := expression.Evaluate(parameters)
-		log.LLvl1(keep)
 		if keep.(bool) {
 			result = append(result, lib.FilteredResponseDet{DetTagGroupBy: v.DetTagGroupBy, Fr: lib.FilteredResponse{GroupByEnc: v.PR.GroupByEnc, AggregatingAttributes: v.PR.AggregatingAttributes}})
 		}

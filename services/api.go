@@ -44,7 +44,9 @@ func (c *API) SendSurveyCreationQuery(entities *onet.Roster, surveyGenID, survey
 	// if Unlynx normal use
 	if dataToProcess == nil {
 		resp := ServiceResponse{}
-		err := c.SendProtobuf(c.entryPoint, &lib.SurveyCreationQuery{SurveyGenID: &surveyGenID, SurveyID: &surveyID, Roster: *entities, Sum: sum, Count: count, Where: where, Pred: pred, GroupBy: groupBy, ClientPubKey: clientPubKey, DataToProcess: dataToProcess, NbrDPs: nbrDPs, QueryMode: queryMode, Proofs: proofs, AppFlag: appFlag}, &resp)
+		req := &lib.SurveyCreationQuery{SurveyGenID: &surveyGenID, SurveyID: &surveyID, Roster: *entities, Sum: sum, Count: count, Where: where, Pred: pred, GroupBy: groupBy, ClientPubKey: clientPubKey, DataToProcess: dataToProcess, NbrDPs: nbrDPs, QueryMode: queryMode, Proofs: proofs, AppFlag: appFlag}
+		log.LLvlf1("QUERYYBEFORE %#v",req.GroupBy)
+		err := c.SendProtobuf(c.entryPoint, req, &resp)
 		if err != nil {
 			return nil, lib.FilteredResponse{}, err
 		}

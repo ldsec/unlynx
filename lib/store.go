@@ -54,8 +54,6 @@ func proccessParameters (data []string, clear map[string]int64, encrypted map[st
 			log.LLvl1(containerClear)
 		} else if !noEnc{
 			if  value, ok := encrypted[v]; ok {
-				log.LLvl1("ICI ", v)
-				log.LLvl1("ICI ", value)
 				containerEnc = append(containerEnc, value)
 			} else {
 				containerEnc = append(containerEnc, IntToCiphertext(clear[v]))
@@ -113,6 +111,7 @@ func (s *Store) InsertDpResponse(cr DpResponse, proofs bool, scq SurveyCreationQ
 
 	noEnc := (cr.WhereEnc == nil && cr.GroupByEnc == nil)
 	log.LLvl1("NOENC ", noEnc)
+	log.LLvl1("AQUIIII",scq.GroupBy)
 	clearGrp, newResp.GroupByEnc = proccessParameters(scq.GroupBy, cr.GroupByClear, cr.GroupByEnc, noEnc)
 	log.LLvl1("LAL ", clearGrp)
 	whereStrings := make([]string,len(scq.Where))
@@ -150,6 +149,7 @@ func (s *Store) InsertDpResponse(cr DpResponse, proofs bool, scq SurveyCreationQ
 		} else {
 			s.DpResponsesAggr[GroupingKeyTuple{Key(clearGrp), Key(clearWhr)}] = ProcessResponse{GroupByEnc:IntArrayToCipherVector(clearGrp), WhereEnc:IntArrayToCipherVector(clearWhr), AggregatingAttributes:newResp.AggregatingAttributes}
 		}
+
 	}
 
 }
