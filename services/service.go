@@ -277,9 +277,9 @@ func (s *Service) HandleSurveyCreationQuery(recq *lib.SurveyCreationQuery) (netw
 	if s.appFlag {
 		if recq.DataToProcess == nil {
 			// Unlynx
-			testData := data.ReadDataFromFile(testDataFile)
-			resp := EncryptDataToSurvey(s.ServerIdentity().String(), *recq.SurveyID, testData[strconv.Itoa(0)], recq.Roster.Aggregate, 1, recq.Count)
-			s.PushData(resp, recq.Proofs)
+			//testData := data.ReadDataFromFile(testDataFile)
+			//resp := EncryptDataToSurvey(s.ServerIdentity().String(), *recq.SurveyID, testData[strconv.Itoa(0)], recq.Roster.Aggregate, 1, recq.Count)
+			//s.PushData(resp, recq.Proofs)
 		} else {
 			//P2D2i2b2
 			//msg, err := s.HandleI2b2Query(recq, handlingServer)

@@ -122,3 +122,16 @@ func TestStoring(t *testing.T) {
 	assert.Empty(t, len(storage.DeliverableResults), 0)
 
 }
+
+func TestConvertDataToMap(t *testing.T) {
+	test := []int64{0,1,2,3,4}
+
+	result := make(map[string]int64)
+	result["g0"] = 0
+	result["g1"] = 1
+	result["g2"] = 2
+	result["g3"] = 3
+	result["g4"] = 4
+
+	assert.Equal(t, result, lib.ConvertDataToMap(test,"g",0), "Wrong map conversion")
+}

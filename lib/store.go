@@ -43,15 +43,16 @@ func NewStore() *Store {
 }
 
 // proccessParameters converts the sum, where and group by data to a collection of CipherTexts (CipherVector)
-func proccessParameters (data []string, clear map[string]int64, encrypted map[string]CipherText, noEnc bool) ([]int64, []CipherVector) {
+func proccessParameters (data []string, clear map[string]int64, encrypted map[string]CipherText, noEnc bool) ([]int64, CipherVector) {
 	containerClear := []int64{}
-	containerEnc := []CipherVector{}
+	containerEnc := CipherVector{}
 
 	for _,v := range data {
 		// all where and group by attributes are in clear
-		if noEnc && len(clear)>0 {
+		if noEnc {
 			containerClear = append(containerClear,clear[v])
-		} else if  noEnc == false{
+			log.LLvl1(containerClear)
+		} else if !noEnc{
 			if  value, ok := encrypted[v]; ok {
 				containerEnc = append(containerEnc, value)
 			} else {
@@ -62,21 +63,7 @@ func proccessParameters (data []string, clear map[string]int64, encrypted map[st
 	return containerClear,containerEnc
 }
 
-// InsertDPResponse handles the local storage of a new DP response in aggregation or grouping cases.
-func (s *Store) InsertDpResponse(cr DpResponse, proofs bool, scq SurveyCreationQuery) {
-	newResp := ProcessResponse{}
-	clearGrp := []int64{}
-	clearWhr := []int64{}
-	clearAggr := []int64{}
-
-	noEnc := (cr.WhereEnc == nil || cr.GroupByEnc == nil)
-	clearGrp, newResp.GroupByEnc = proccessParameters(scq.GroupBy, cr.GroupByClear, cr.GroupByEnc, noEnc)
-	clearWhr, newResp.WhereEnc = proccessParameters(scq.Where, cr.WhereClear, cr.WhereEnc,noEnc)
-	clearAggr, newResp.AggregatingAttributes = proccessParameters(scq.Sum, cr.AggregatingAttributesClear, cr.AggregatingAttributesClear, noEnc)
-
-	log.LLvl1(clearAggr)
-
-	/*for _,v := range grpAttrOrder{
+/*for _,v := range grpAttrOrder{
 		log.LLvl1(v)
 		log.LLvl1(cr.GroupByClear)
 		grp, ok := cr.GroupByClear[v]
@@ -114,7 +101,24 @@ func (s *Store) InsertDpResponse(cr DpResponse, proofs bool, scq SurveyCreationQ
 		newResp.AggregatingAttributes = append(newResp.AggregatingAttributes, grp)
 	}*/
 
-	if cr.WhereEnc != nil || cr.GroupByEnc != nil {
+// InsertDPResponse handles the local storage of a new DP response in aggregation or grouping cases.
+func (s *Store) InsertDpResponse(cr DpResponse, proofs bool, scq SurveyCreationQuery) {
+	newResp := ProcessResponse{}
+	clearGrp := []int64{}
+	clearWhr := []int64{}
+	//clearAggr := []int64{}
+
+	noEnc := (cr.WhereEnc == nil || cr.GroupByEnc == nil)
+	clearGrp, newResp.GroupByEnc = proccessParameters(scq.GroupBy, cr.GroupByClear, cr.GroupByEnc, noEnc)
+	log.LLvl1("LAL ", clearGrp)
+	whereStrings := make([]string,len(scq.Where))
+	for i,v := range scq.Where{
+		whereStrings[i] = v.Name
+	}
+	clearWhr, newResp.WhereEnc = proccessParameters(whereStrings, cr.WhereClear, cr.WhereEnc, noEnc)
+	_, newResp.AggregatingAttributes = proccessParameters(scq.Sum, cr.AggregatingAttributesClear, cr.AggregatingAttributesEnc, false)
+	log.LLvl1(newResp.AggregatingAttributes)
+	if !noEnc {
 		s.DpResponses = append(s.DpResponses, newResp)
 
 	} else {
@@ -123,12 +127,12 @@ func (s *Store) InsertDpResponse(cr DpResponse, proofs bool, scq SurveyCreationQ
 			tmp := *NewCipherVector(len(value.AggregatingAttributes)).Add(value.AggregatingAttributes, newResp.AggregatingAttributes)
 			mapValue := s.DpResponsesAggr[GroupingKeyTuple{Key(clearGrp), Key(clearWhr)}]
 			mapValue.AggregatingAttributes = tmp
-			if mapValue.GroupByEnc == nil {
+			/*if mapValue.GroupByEnc == nil { //first response in this "group"
 				mapValue.GroupByEnc = IntArrayToCipherVector(clearGrp)
 			}
 			if mapValue.WhereEnc == nil {
 				mapValue.GroupByEnc = IntArrayToCipherVector(clearWhr)
-			}
+			}*/
 			s.DpResponsesAggr[GroupingKeyTuple{Key(clearGrp), Key(clearWhr)}] = mapValue
 
 			if proofs {
@@ -150,20 +154,17 @@ func (s *Store) HasNextDpResponse() bool {
 
 // PullDpResponses permits to get the received DP responses
 func (s *Store) PullDpResponses() []ProcessResponse {
-	result := []ProcessResponse{}
-	if len(s.DpResponses) > 0 {
-		result = s.DpResponses
-	} else {
-		for _, v := range s.DpResponsesAggr {
-			log.LLvl1("PULLDPRESPONSE")
-			//newResp := ProcessResponse{}
-			//newResp.GroupByEnc = append(IntArrayToCipherVector(v.GroupByEnc))
-			//newResp.WhereEnc = append(IntArrayToCipherVector(v.WhereClear), v.WhereEnc...)
-			//newResp.AggregatingAttributes = v.AggregatingAttributes
-			result = append(result, v)
-		}
+	//result := []ProcessResponse{}
+	result := s.DpResponses
+	for _, v := range s.DpResponsesAggr {
+		log.LLvl1("PULLDPRESPONSE")
+		log.LLvl1(v)
+		//newResp := ProcessResponse{}
+		//newResp.GroupByEnc = append(IntArrayToCipherVector(v.GroupByEnc))
+		//newResp.WhereEnc = append(IntArrayToCipherVector(v.WhereClear), v.WhereEnc...)
+		//newResp.AggregatingAttributes = v.AggregatingAttributes
+		result = append(result, v)
 	}
-
 	s.DpResponses = s.DpResponses[:0] //clear table
 	return result
 }
@@ -227,7 +228,7 @@ func AddInMap(s map[GroupingKey]FilteredResponse, key GroupingKey, added Filtere
 	}
 }
 
-// int64ArrayToString transforms an array into a string
+// int64ArrayToString transforms a map into a string
 func int64MapToString(s map[string]int64) string {
 	if len(s) == 0 {
 		return ""
@@ -240,7 +241,7 @@ func int64MapToString(s map[string]int64) string {
 	return result[:len(result)-1]
 }
 
-// StringToInt64Array transforms an array to a string
+// StringToInt64Array transforms a string to an array
 func StringToInt64Array(s string) []int64 {
 	if len(s) == 0 {
 		return make([]int64, 0)
@@ -258,17 +259,44 @@ func StringToInt64Array(s string) []int64 {
 	return result
 }
 
+// ConvertDataToMap a converts an array of integers to a map of id -> integer
+func ConvertDataToMap(data []int64, first string, start int) map[string]int64{
+	result := make(map[string]int64)
+	for _,el:= range(data){
+		result[first+strconv.Itoa(start)] = el
+		start++
+	}
+	return  result
+}
+
+// ConvertMapToData converts the map into a slice of int64 (to ease out printing)
+func ConvertMapToData(data map[string]int64, first string, start int) []int64{
+	result := make([]int64,len(data))
+	for i := 0; i < len(data); i++{
+		result[i] = data[first+strconv.Itoa(start)]
+		start++
+	}
+	return result
+}
+
 // AddInClear permits to add non-encrypted DP responses
 func AddInClear(s []DpClearResponse) []DpClearResponse {
-	/*dataMap := make(map[string]{[]int64})
+	dataMap := make(map[string][]int64)
 
 	wg := StartParallelize(0)
 	for _, elem := range s {
 		key := int64MapToString(elem.GroupByClear) + " " + int64MapToString(elem.GroupByEnc) + " " + int64MapToString(elem.WhereClear) + " " + int64MapToString(elem.WhereEnc)
 
+		// if the where matches (all 1s) -> filter responses
+		if !((len(elem.WhereClear) > 0 || len(elem.WhereEnc) > 0) && (key[len(key)-1:] == "1")) {
+			continue
+		}
+
+		cpy := make([]int64,0)
+		cpy = append(cpy,ConvertMapToData(elem.AggregatingAttributesClear,"s",0)...)
+		cpy = append(cpy,ConvertMapToData(elem.AggregatingAttributesEnc,"s",len(elem.AggregatingAttributesClear))...)
+
 		if _, ok := dataMap[key]; ok == false {
-			cpy := make([]int64, len(elem.AggregatingAttributesEnc))
-			copy(cpy, elem.AggregatingAttributes)
 			dataMap[key] = cpy
 		} else {
 			if PARALLELIZE {
@@ -276,14 +304,14 @@ func AddInClear(s []DpClearResponse) []DpClearResponse {
 					wg.Add(1)
 					go func(i int) {
 						for j := 0; j < VPARALLELIZE && (j+i < len(dataMap[key])); j++ {
-							dataMap[key][j+i] += elem.AggregatingAttributes[j+i]
+							dataMap[key][j+i] += cpy[j+i]
 						}
 						defer wg.Done()
 					}(i)
 				}
 			} else {
 				for i := range dataMap[key] {
-					dataMap[key][i] += elem.AggregatingAttributes[i]
+					dataMap[key][i] += cpy[i]
 				}
 
 			}
@@ -297,21 +325,30 @@ func AddInClear(s []DpClearResponse) []DpClearResponse {
 	numGroupsClear := 0
 	numGroupsEnc := 0
 	numWhereClear := 0
+	numWhereEnc := 0
+	numAggrClear := 0
 	if len(s) > 0 {
 		numGroupsClear = len(s[0].GroupByClear)
 		numGroupsEnc = len(s[0].GroupByEnc)
 		numWhereClear = len(s[0].WhereClear)
+		numWhereEnc = len(s[0].WhereEnc)
+		numAggrClear = len(s[0].AggregatingAttributesClear)
 	}
 
 	for k, v := range dataMap {
-		// *2 (to account for the spaces between the numbers)
-		result[i] = DpClearResponse{GroupByClear: StringToInt64Array(k[:numGroupsClear*2]), GroupByEnc: StringToInt64Array(k[numGroupsClear*2:numGroupsClear*2+numGroupsEnc*2]), WhereClear:StringToInt64Array(k[numGroupsClear*2+numGroupsEnc*2:numGroupsClear*2+numGroupsEnc*2+numWhereClear*2]), WhereEnc:StringToInt64Array(k[numGroupsClear*2+numGroupsEnc*2+numWhereClear*2:]), AggregatingAttributes: v}
+		aux := StringToInt64Array(k)
+		result[i] = DpClearResponse{
+			GroupByClear: 			ConvertDataToMap(aux[:numGroupsClear],"g",0),
+			GroupByEnc: 			ConvertDataToMap(aux[numGroupsClear:numGroupsClear+numGroupsEnc],"g",numGroupsClear),
+			WhereClear:			ConvertDataToMap(aux[numGroupsClear+numGroupsEnc:numGroupsClear+numGroupsEnc+numWhereClear],"w",0),
+			WhereEnc:			ConvertDataToMap(aux[numGroupsClear+numGroupsEnc+numWhereClear:numGroupsClear+numGroupsEnc+numWhereClear+numWhereEnc],"w",numWhereClear),
+			AggregatingAttributesClear: 	ConvertDataToMap(v[:numAggrClear],"s",0),
+			AggregatingAttributesEnc: 	ConvertDataToMap(v[numAggrClear:],"s",numAggrClear),
+		}
 		i++
 	}
 
-	return result*/
-	return nil
-
+	return result
 }
 
 // PushCothorityAggregatedFilteredResponses handles the collective aggregation locally.
@@ -373,3 +410,5 @@ func (s *Store) DisplayResults() {
 		log.LLvl1("[ ", v.GroupByEnc, " ] : ", v.AggregatingAttributes, ")")
 	}
 }
+
+

@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
-	"os"
-	"reflect"
-	"strings"
 	"time"
 
 	"github.com/JoaoAndreSa/MedCo/lib"
 	"gopkg.in/dedis/onet.v1/log"
+
+	"os"
+	"strings"
+	"reflect"
 )
 
 // Groups identifies all different groups to be added to the test data file
@@ -57,15 +58,6 @@ func AllPossibleGroups(numType []int64, group []int64, pos int) {
 			group = append(group[:len(group)-1], group[len(group):]...)
 		}
 	}
-}
-
-// ConvertDataToMap a converts an array of integers to a map of id -> integer
-func ConvertDataToMap(data []int64, first string) map[string]int64{
-	result := make(map[string]int64)
-	for i,el:= range(data){
-		result[first+string(i)] = el
-	}
-	return  result
 }
 
 // GenerateData generates test data for MedCo (survey entries) and stores it in a txt file (e.g. medco_test_data.txt)
@@ -124,6 +116,13 @@ func GenerateData(numDPs, numEntries, numEntriesFiltered, numGroupsClear, numGro
 
 			where := make([]int64, numWhereClear+numWhereEnc)
 
+			if j < numEntriesFiltered{
+				fillInt64Slice(where,1)
+			} else{
+				fillInt64Slice(where,0)
+			}
+
+
 			if randomGroups {
 				for k := range grp {
 					grp[k] = int64(random(0, int(numType[k])))
@@ -132,7 +131,14 @@ func GenerateData(numDPs, numEntries, numEntriesFiltered, numGroupsClear, numGro
 				grp = Groups[j]
 			}
 
-			dpData[j] = lib.DpClearResponse{GroupByClear: grp[:numGroupsClear], GroupByEnc: grp[numGroupsClear : numGroupsClear+numGroupsEnc], AggregatingAttributesClear: aggr}
+			dpData[j] = lib.DpClearResponse{
+				GroupByClear: 			lib.ConvertDataToMap(grp[:numGroupsClear],"g",0),
+				GroupByEnc: 			lib.ConvertDataToMap(grp[numGroupsClear : numGroupsClear+numGroupsEnc],"g",int(numGroupsClear)),
+				WhereClear: 			lib.ConvertDataToMap(where[:numWhereClear],"w",0),
+				WhereEnc: 			lib.ConvertDataToMap(where[numWhereClear : numWhereClear+numWhereEnc],"w",int(numWhereClear)),
+				AggregatingAttributesClear: 	lib.ConvertDataToMap(aggr[:numAggrClear],"s",0),
+				AggregatingAttributesEnc: 	lib.ConvertDataToMap(aggr[numAggrClear : numAggrClear+numAggrEnc],"s",int(numAggrClear)),
+			}
 
 		}
 		testData[fmt.Sprintf("%v", i)] = dpData
@@ -167,9 +173,12 @@ func WriteDataToFile(filename string, testData map[string][]lib.DpClearResponse)
 		writer.Flush()
 
 		for _, entry := range v {
-			flushInt64Data(writer, entry.GroupByClear)
-			flushInt64Data(writer, entry.GroupByEnc)
-			flushInt64Data(writer, entry.AggregatingAttributes)
+			flushInt64Data(writer, lib.ConvertMapToData(entry.GroupByClear,"g",0))
+			flushInt64Data(writer, lib.ConvertMapToData(entry.GroupByEnc,"g",len(entry.GroupByClear)))
+			flushInt64Data(writer, lib.ConvertMapToData(entry.WhereClear,"w",0))
+			flushInt64Data(writer, lib.ConvertMapToData(entry.WhereEnc,"w",len(entry.WhereClear)))
+			flushInt64Data(writer, lib.ConvertMapToData(entry.AggregatingAttributesClear,"s",0))
+			flushInt64Data(writer, lib.ConvertMapToData(entry.AggregatingAttributesEnc,"s",len(entry.AggregatingAttributesClear)))
 		}
 	}
 }
@@ -208,11 +217,30 @@ func ReadDataFromFile(filename string) map[string][]lib.DpClearResponse {
 			scanner.Scan()
 			grpEnc := lib.StringToInt64Array(scanner.Text()[:int(math.Max(float64(0), float64(len(scanner.Text())-1)))])
 
-			// Aggregating Attributes
+			// Where Attributes Clear
 			scanner.Scan()
-			aggr := lib.StringToInt64Array(scanner.Text()[:int(math.Max(float64(0), float64(len(scanner.Text())-1)))])
+			whereClear:= lib.StringToInt64Array(scanner.Text()[:int(math.Max(float64(0), float64(len(scanner.Text())-1)))])
 
-			container = append(container, lib.DpClearResponse{GroupByClear: grpClear, GroupByEnc: grpEnc, AggregatingAttributes: aggr})
+			// Where Attributes Encrypted
+			scanner.Scan()
+			whereEnc := lib.StringToInt64Array(scanner.Text()[:int(math.Max(float64(0), float64(len(scanner.Text())-1)))])
+
+			// Aggregating Attributes Clear
+			scanner.Scan()
+			aggrClear := lib.StringToInt64Array(scanner.Text()[:int(math.Max(float64(0), float64(len(scanner.Text())-1)))])
+
+			// Aggregating Attributes Encrypted
+			scanner.Scan()
+			aggrEnc := lib.StringToInt64Array(scanner.Text()[:int(math.Max(float64(0), float64(len(scanner.Text())-1)))])
+
+			container = append(container, lib.DpClearResponse{
+				GroupByClear: 			lib.ConvertDataToMap(grpClear,"g",0),
+				GroupByEnc: 			lib.ConvertDataToMap(grpEnc,"g",len(grpClear)),
+				WhereClear: 			lib.ConvertDataToMap(whereClear,"w",0),
+				WhereEnc: 			lib.ConvertDataToMap(whereEnc,"w",len(whereClear)),
+				AggregatingAttributesClear:	lib.ConvertDataToMap(aggrClear,"s",0),
+				AggregatingAttributesEnc: 	lib.ConvertDataToMap(aggrEnc,"s",len(aggrClear)),
+			})
 		}
 	}
 	testData[id] = container
@@ -233,8 +261,11 @@ func ComputeExpectedResult(testData map[string][]lib.DpClearResponse, dataRepeti
 		for _, elem := range v {
 
 			if dataRepetitions > 1 {
-				for i := range elem.AggregatingAttributes {
-					elem.AggregatingAttributes[i] = elem.AggregatingAttributes[i] * int64(dataRepetitions)
+				for k := range elem.AggregatingAttributesClear {
+					elem.AggregatingAttributesClear[k] = elem.AggregatingAttributesClear[k] * int64(dataRepetitions)
+				}
+				for k := range elem.AggregatingAttributesEnc {
+					elem.AggregatingAttributesEnc[k] = elem.AggregatingAttributesEnc[k] * int64(dataRepetitions)
 				}
 			}
 
@@ -242,7 +273,6 @@ func ComputeExpectedResult(testData map[string][]lib.DpClearResponse, dataRepeti
 		}
 	}
 	expectedResult := lib.AddInClear(allData)
-	log.LLvl1(expectedResult)
 	return expectedResult
 }
 
@@ -254,7 +284,11 @@ func CompareClearResponses(x []lib.DpClearResponse, y []lib.DpClearResponse) boo
 		for _, j := range y {
 			if (reflect.DeepEqual(i.GroupByClear, j.GroupByClear) || (len(i.GroupByClear) == 0 && len(j.GroupByClear) == 0)) &&
 				(reflect.DeepEqual(i.GroupByEnc, j.GroupByEnc) || (len(i.GroupByEnc) == 0 && len(j.GroupByEnc) == 0)) &&
-				(reflect.DeepEqual(i.AggregatingAttributes, j.AggregatingAttributes) || (len(i.AggregatingAttributes) == 0 && len(j.AggregatingAttributes) == 0)) {
+				(reflect.DeepEqual(i.WhereClear, j.WhereClear) || (len(i.WhereClear) == 0 && len(j.WhereClear) == 0)) &&
+				(reflect.DeepEqual(i.WhereEnc, j.WhereEnc) || (len(i.WhereEnc) == 0 && len(j.WhereEnc) == 0)) &&
+				(reflect.DeepEqual(i.AggregatingAttributesClear, j.AggregatingAttributesClear) || (len(i.AggregatingAttributesClear) == 0 && len(j.AggregatingAttributesClear) == 0)) &&
+				(reflect.DeepEqual(i.AggregatingAttributesEnc, j.AggregatingAttributesEnc) || (len(i.AggregatingAttributesEnc) == 0 && len(j.AggregatingAttributesEnc) == 0)) {
+
 				test = true
 				break
 			}

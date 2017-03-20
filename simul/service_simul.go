@@ -91,7 +91,7 @@ func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
 		// Generate Survey Data
 		sum := [sim.NbrAggrClear + sim.NbrAggrEncrypted]string{}
 		for i := 0 ; i < (sim.NbrAggrClear + sim.NbrAggrEncrypted); i++{
-			sum[i] = "sum"+strconv.Itoa(i)
+			sum[i] = "s"+strconv.Itoa(i)
 		}
 		count := sim.Count
 
