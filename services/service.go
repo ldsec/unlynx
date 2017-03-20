@@ -783,7 +783,6 @@ func (s *Service) ShufflingPhase(targetSurvey lib.SurveyID) error {
 		log.Lvl1(s.ServerIdentity(), " no data to shuffle")
 		return nil
 	}
-
 	pi, err := s.StartProtocol(protocols.ShufflingProtocolName, targetSurvey)
 	if err != nil {
 		return err
@@ -1027,6 +1026,7 @@ func FilterResponses(pred string, whereQueryValues []lib.WhereQueryAttributeTagg
 			}
 
 		}
+
 		keep, err := expression.Evaluate(parameters)
 		if keep.(bool) {
 			result = append(result, lib.FilteredResponseDet{DetTagGroupBy: v.DetTagGroupBy, Fr: lib.FilteredResponse{GroupByEnc: v.PR.GroupByEnc, AggregatingAttributes: v.PR.AggregatingAttributes}})
