@@ -29,7 +29,7 @@ func TestMain(m *testing.M) {
 // TEST BATCH 1 -> encrypted or/and non-encrypted grouping attributes
 
 //______________________________________________________________________________________________________________________
-/// Only clear where and group by attributes
+/// Only clear where and group by attributes + tests shuffling if 1 element -> add a dummy one
 func TestServiceClearAttr(t *testing.T) {
 	log.LLvl1("***************************************************************************************************")
 	os.Remove("pre_compute_multiplications.gob")
@@ -90,28 +90,28 @@ func TestServiceClearAttr(t *testing.T) {
 			sliceGrp["g"+strconv.Itoa(j+1)] = int64(j)
 
 		}
+		sliceGrp1 := make(map[string]int64, numberGrpAttr)
+		for j := range grp {
+			sliceGrp1["g"+strconv.Itoa(j+1)] = int64(j+1)
 
-		responses:= []lib.DpClearResponse{{WhereClear: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr, AggregatingAttributesClear: aggr},{WhereClear: sliceWhere, GroupByClear: sliceWhere, AggregatingAttributesEnc: aggr, AggregatingAttributesClear: aggr}}
-		dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
-
-		//compute expected results
-		if i != 2 { // i = 2 is the only response for which the where is not satisfied
-			_, ok := expectedResults[grp]
-			if ok {
-				for ind, v := range expectedResults[grp] {
-					expectedResults[grp][ind] = v + aggr[strconv.Itoa(ind)] + aggr[strconv.Itoa(ind)]
-				}
-			} else {
-				expectedResults[grp] = make([]int64, len(aggr))
-				for ind := range expectedResults[grp] {
-					expectedResults[grp][ind] = aggr[strconv.Itoa(ind)] + aggr[strconv.Itoa(ind)]
-				}
-			}
 		}
+
+		aggr = make(map[string]int64, numberAttr)
+		for j := 0 ; j < numberAttr; j++ {
+			aggr["sum"+strconv.Itoa(j+1)] = int64(j)
+
+		}
+
+		//responses:= []lib.DpClearResponse{{WhereClear: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr},{WhereClear: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr},{WhereClear: sliceWhere, GroupByClear: sliceGrp1, AggregatingAttributesEnc: aggr}}
+		responses:= []lib.DpClearResponse{{WhereClear: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr},{WhereClear: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr}}
+
+		dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
 
 	}
 
-	grpClear, grp, aggr, err := client.SendSurveyResultsQuery(*surveyID)
+	expectedResults[[3]int64{0,1,2}] = []int64{0,18}
+	//expectedResults[[3]int64{1,2,3}] = []int64{0,9}
+	grp, aggr, err := client.SendSurveyResultsQuery(*surveyID)
 
 	if err != nil {
 		t.Fatal("Service could not output the results.")
@@ -120,9 +120,8 @@ func TestServiceClearAttr(t *testing.T) {
 	log.Lvl1("Service output:")
 	var tabVerify [][]int64
 	tabVerify = *grp
-
 	for i := range tabVerify {
-		log.Lvl1(i, ")", (*grpClear)[i], (*grp)[i], "->", (*aggr)[i])
+		log.Lvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
 
 		//convert from slice to tab in order to test the values
 		grpTab := [numberGrpAttr]int64{}
@@ -135,7 +134,7 @@ func TestServiceClearAttr(t *testing.T) {
 		}
 	}
 }
-/*
+
 //______________________________________________________________________________________________________________________
 /// Only encrypted where and clear group by attributes
 func TestServiceClearGrpEncWhereAttr(t *testing.T) {
@@ -151,8 +150,7 @@ func TestServiceClearGrpEncWhereAttr(t *testing.T) {
 	// Send a request to the service
 	client := services.NewMedcoClient(el.List[0], strconv.Itoa(0))
 
-
-	sum := []string{"sum1"}
+	sum := []string{"sum1", "sum2"}
 	count := false
 	whereQueryValues := []lib.WhereQueryAttribute{{"w1", *lib.EncryptInt(el.Aggregate, 1)}, {"w2", *lib.EncryptInt(el.Aggregate, 1)}, {"w3", *lib.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
 	pred := "(v0 == v1 || v2 == v3) && v4 == v5"
@@ -177,55 +175,42 @@ func TestServiceClearGrpEncWhereAttr(t *testing.T) {
 	for i := 0; i < len(dataHolder); i++ {
 		dataHolder[i] = services.NewMedcoClient(el.List[i%5], strconv.Itoa(i+1))
 		grp := [numberGrpAttr]int64{}
-		aggr := make([]int64, numberAttr)
+		aggr := make(map[string]int64, numberAttr)
 
 		grp[0] = int64(i % 4)
-		aggr[i%numberAttr] = 3
+		aggr["sum"+strconv.Itoa(i+1)] = 3
 
 		//convert tab in slice (was a tab only for the test)
 		val := int64(1)
 		if i == 2 {
 			val = int64(2)
 		}
-		sliceWhere := make([]int64, numberGrpAttr)
+		sliceWhere := make(map[string]int64, numberGrpAttr)
 		for j := range grp {
-			if j == 0 {
-				sliceWhere = []int64{val}
-			} else {
-				sliceWhere = append(sliceWhere, val)
-			}
+			sliceWhere["w"+strconv.Itoa(j+1)] = int64(val)
 		}
 
-		sliceGrp := make([]int64, numberGrpAttr)
-		for j, v := range grp {
-			if j == 0 {
-				sliceGrp = []int64{v}
-			} else {
-				sliceGrp = append(sliceGrp, v)
-			}
+		sliceGrp := make(map[string]int64, numberGrpAttr)
+		for j := range grp {
+			sliceGrp["g"+strconv.Itoa(j+1)] = int64(j)
+		}
+		sliceGrp1 := make(map[string]int64, numberGrpAttr)
+		for j := range grp {
+			sliceGrp1["g"+strconv.Itoa(j+1)] = int64(j+1)
 		}
 
-		responses:= []lib.DpClearResponse{{WhereEnc: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr, AggregatingAttributesClear: aggr},{WhereEnc: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr, AggregatingAttributesClear: aggr}}
+		aggr = make(map[string]int64, numberAttr)
+		for j := 0 ; j < numberAttr; j++ {
+			aggr["sum"+strconv.Itoa(j+1)] = int64(j)
+		}
+
+		responses:= []lib.DpClearResponse{{WhereEnc: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereEnc: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr},{WhereEnc: sliceWhere, GroupByClear: sliceGrp1, AggregatingAttributesEnc: aggr}}
 		dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
-
-		//compute expected results
-		if i != 2 { // i = 2 is the only response for which the where is not satisfied
-			_, ok := expectedResults[grp]
-			if ok {
-				for ind, v := range expectedResults[grp] {
-					expectedResults[grp][ind] = v + aggr[ind] + aggr[ind]
-				}
-			} else {
-				expectedResults[grp] = make([]int64, len(aggr))
-				for ind := range expectedResults[grp] {
-					expectedResults[grp][ind] = aggr[ind] + aggr[ind]
-				}
-			}
-		}
-
 	}
 
-	grpClear, grp, aggr, err := client.SendSurveyResultsQuery(*surveyID)
+	expectedResults[[3]int64{0,1,2}] = []int64{0,18}
+	expectedResults[[3]int64{1,2,3}] = []int64{0,9}
+	grp, aggr, err := client.SendSurveyResultsQuery(*surveyID)
 
 	if err != nil {
 		t.Fatal("Service could not output the results.")
@@ -234,9 +219,8 @@ func TestServiceClearGrpEncWhereAttr(t *testing.T) {
 	log.Lvl1("Service output:")
 	var tabVerify [][]int64
 	tabVerify = *grp
-
 	for i := range tabVerify {
-		log.Lvl1(i, ")", (*grpClear)[i], (*grp)[i], "->", (*aggr)[i])
+		log.Lvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
 
 		//convert from slice to tab in order to test the values
 		grpTab := [numberGrpAttr]int64{}
@@ -249,6 +233,7 @@ func TestServiceClearGrpEncWhereAttr(t *testing.T) {
 		}
 	}
 }
+
 
 //______________________________________________________________________________________________________________________
 /// Only clear where and encrypted group by attributes
@@ -266,7 +251,7 @@ func TestServiceEncGrpClearWhereAttr(t *testing.T) {
 	client := services.NewMedcoClient(el.List[0], strconv.Itoa(0))
 
 
-	sum := []string{"sum1"}
+	sum := []string{"sum1", "sum2"}
 	count := false
 	whereQueryValues := []lib.WhereQueryAttribute{{"w1", *lib.EncryptInt(el.Aggregate, 1)}, {"w2", *lib.EncryptInt(el.Aggregate, 1)}, {"w3", *lib.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
 	pred := "(v0 == v1 || v2 == v3) && v4 == v5"
@@ -291,55 +276,43 @@ func TestServiceEncGrpClearWhereAttr(t *testing.T) {
 	for i := 0; i < len(dataHolder); i++ {
 		dataHolder[i] = services.NewMedcoClient(el.List[i%5], strconv.Itoa(i+1))
 		grp := [numberGrpAttr]int64{}
-		aggr := make([]int64, numberAttr)
+		aggr := make(map[string]int64, numberAttr)
 
 		grp[0] = int64(i % 4)
-		aggr[i%numberAttr] = 3
+		aggr["sum"+strconv.Itoa(i+1)] = 3
 
 		//convert tab in slice (was a tab only for the test)
 		val := int64(1)
 		if i == 2 {
 			val = int64(2)
 		}
-		sliceWhere := make([]int64, numberGrpAttr)
+		sliceWhere := make(map[string]int64, numberGrpAttr)
 		for j := range grp {
-			if j == 0 {
-				sliceWhere = []int64{val}
-			} else {
-				sliceWhere = append(sliceWhere, val)
-			}
+			sliceWhere["w"+strconv.Itoa(j+1)] = int64(val)
 		}
 
-		sliceGrp := make([]int64, numberGrpAttr)
-		for j, v := range grp {
-			if j == 0 {
-				sliceGrp = []int64{v}
-			} else {
-				sliceGrp = append(sliceGrp, v)
-			}
+		sliceGrp := make(map[string]int64, numberGrpAttr)
+		for j := range grp {
+			sliceGrp["g"+strconv.Itoa(j+1)] = int64(j)
 		}
 
-		responses:= []lib.DpClearResponse{{WhereClear: sliceWhere, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr, AggregatingAttributesClear: aggr},{WhereClear: sliceWhere, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr, AggregatingAttributesClear: aggr}}
+		sliceGrp1 := make(map[string]int64, numberGrpAttr)
+		for j := range grp {
+			sliceGrp1["g"+strconv.Itoa(j+1)] = int64(j+1)
+		}
+
+		aggr = make(map[string]int64, numberAttr)
+		for j := 0 ; j < numberAttr; j++ {
+			aggr["sum"+strconv.Itoa(j+1)] = int64(j)
+		}
+
+		responses:= []lib.DpClearResponse{{WhereClear: sliceWhere, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr},{WhereClear: sliceWhere, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
 		dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
-
-		//compute expected results
-		if i != 2 { // i = 2 is the only response for which the where is not satisfied
-			_, ok := expectedResults[grp]
-			if ok {
-				for ind, v := range expectedResults[grp] {
-					expectedResults[grp][ind] = v + aggr[ind] + aggr[ind]
-				}
-			} else {
-				expectedResults[grp] = make([]int64, len(aggr))
-				for ind := range expectedResults[grp] {
-					expectedResults[grp][ind] = aggr[ind] + aggr[ind]
-				}
-			}
-		}
-
 	}
 
-	grpClear, grp, aggr, err := client.SendSurveyResultsQuery(*surveyID)
+	expectedResults[[3]int64{0,1,2}] = []int64{0,9}
+	expectedResults[[3]int64{1,2,3}] = []int64{0,9}
+	grp, aggr, err := client.SendSurveyResultsQuery(*surveyID)
 
 	if err != nil {
 		t.Fatal("Service could not output the results.")
@@ -348,9 +321,8 @@ func TestServiceEncGrpClearWhereAttr(t *testing.T) {
 	log.Lvl1("Service output:")
 	var tabVerify [][]int64
 	tabVerify = *grp
-
 	for i := range tabVerify {
-		log.Lvl1(i, ")", (*grpClear)[i], (*grp)[i], "->", (*aggr)[i])
+		log.Lvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
 
 		//convert from slice to tab in order to test the values
 		grpTab := [numberGrpAttr]int64{}
@@ -380,7 +352,7 @@ func TestServiceEncGrpAndWhereAttr(t *testing.T) {
 	client := services.NewMedcoClient(el.List[0], strconv.Itoa(0))
 
 
-	sum := []string{"sum1"}
+	sum := []string{"sum1", "sum2"}
 	count := false
 	whereQueryValues := []lib.WhereQueryAttribute{{"w1", *lib.EncryptInt(el.Aggregate, 1)}, {"w2", *lib.EncryptInt(el.Aggregate, 1)}, {"w3", *lib.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
 	pred := "(v0 == v1 || v2 == v3) && v4 == v5"
@@ -405,55 +377,46 @@ func TestServiceEncGrpAndWhereAttr(t *testing.T) {
 	for i := 0; i < len(dataHolder); i++ {
 		dataHolder[i] = services.NewMedcoClient(el.List[i%5], strconv.Itoa(i+1))
 		grp := [numberGrpAttr]int64{}
-		aggr := make([]int64, numberAttr)
+		aggr := make(map[string]int64, numberAttr)
 
 		grp[0] = int64(i % 4)
-		aggr[i%numberAttr] = 3
+		aggr["sum"+strconv.Itoa(i+1)] = 3
 
 		//convert tab in slice (was a tab only for the test)
 		val := int64(1)
 		if i == 2 {
 			val = int64(2)
 		}
-		sliceWhere := make([]int64, numberGrpAttr)
+		sliceWhere := make(map[string]int64, numberGrpAttr)
 		for j := range grp {
-			if j == 0 {
-				sliceWhere = []int64{val}
-			} else {
-				sliceWhere = append(sliceWhere, val)
-			}
+			sliceWhere["w"+strconv.Itoa(j+1)] = int64(val)
+
 		}
 
-		sliceGrp := make([]int64, numberGrpAttr)
-		for j, v := range grp {
-			if j == 0 {
-				sliceGrp = []int64{v}
-			} else {
-				sliceGrp = append(sliceGrp, v)
-			}
+		sliceGrp := make(map[string]int64, numberGrpAttr)
+		for j := range grp {
+			sliceGrp["g"+strconv.Itoa(j+1)] = int64(j)
+
+		}
+		sliceGrp1 := make(map[string]int64, numberGrpAttr)
+		for j := range grp {
+			sliceGrp1["g"+strconv.Itoa(j+1)] = int64(j+1)
+
 		}
 
-		responses:= []lib.DpClearResponse{{WhereEnc: sliceWhere, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr, AggregatingAttributesClear: aggr},{WhereEnc: sliceWhere, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr, AggregatingAttributesClear: aggr}}
+		aggr = make(map[string]int64, numberAttr)
+		for j := 0 ; j < numberAttr; j++ {
+			aggr["sum"+strconv.Itoa(j+1)] = int64(j)
+
+		}
+
+		responses:= []lib.DpClearResponse{{WhereEnc: sliceWhere, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr},{WhereEnc: sliceWhere, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
 		dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
-
-		//compute expected results
-		if i != 2 { // i = 2 is the only response for which the where is not satisfied
-			_, ok := expectedResults[grp]
-			if ok {
-				for ind, v := range expectedResults[grp] {
-					expectedResults[grp][ind] = v + aggr[ind] + aggr[ind]
-				}
-			} else {
-				expectedResults[grp] = make([]int64, len(aggr))
-				for ind := range expectedResults[grp] {
-					expectedResults[grp][ind] = aggr[ind] + aggr[ind]
-				}
-			}
-		}
-
 	}
 
-	grpClear, grp, aggr, err := client.SendSurveyResultsQuery(*surveyID)
+	expectedResults[[3]int64{0,1,2}] = []int64{0,9}
+	expectedResults[[3]int64{1,2,3}] = []int64{0,9}
+	grp, aggr, err := client.SendSurveyResultsQuery(*surveyID)
 
 	if err != nil {
 		t.Fatal("Service could not output the results.")
@@ -462,9 +425,108 @@ func TestServiceEncGrpAndWhereAttr(t *testing.T) {
 	log.Lvl1("Service output:")
 	var tabVerify [][]int64
 	tabVerify = *grp
-
 	for i := range tabVerify {
-		log.Lvl1(i, ")", (*grpClear)[i], (*grp)[i], "->", (*aggr)[i])
+		log.Lvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
+
+		//convert from slice to tab in order to test the values
+		grpTab := [numberGrpAttr]int64{}
+		for ind, v := range (tabVerify)[i] {
+			grpTab[ind] = v
+		}
+		data, ok := expectedResults[grpTab]
+		if !ok || !reflect.DeepEqual(data, (*aggr)[i]) {
+			t.Error("Not expected results, got ", (*aggr)[i], " when expected ", data)
+		}
+	}
+}
+
+//______________________________________________________________________________________________________________________
+/// Only encrypted attributes
+func TestServiceEverything(t *testing.T) {
+	log.LLvl1("***************************************************************************************************")
+	os.Remove("pre_compute_multiplications.gob")
+	log.SetDebugVisible(2)
+	local := onet.NewLocalTest()
+	// generate 5 hosts, they don't connect, they process messages, and they
+	// don't register the tree or entitylist
+	_, el, _ := local.GenTree(5, true)
+	defer local.CloseAll()
+
+	// Send a request to the service
+	client := services.NewMedcoClient(el.List[0], strconv.Itoa(0))
+
+
+	sum := []string{"sum1", "sum2"}
+	count := false
+	whereQueryValues := []lib.WhereQueryAttribute{{"w1", *lib.EncryptInt(el.Aggregate, 1)}, {"w2", *lib.EncryptInt(el.Aggregate, 1)}, {"w3", *lib.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
+	pred := "(v0 == v1 || v2 == v3) && v4 == v5"
+	groupBy := []string{"g1", "g2", "g3"}
+
+	nbrDPs := make(map[string]int64)
+	//how many data providers for each server
+	for _, server := range el.List {
+		nbrDPs[server.String()] = 2 // 2 DPs for each server
+	}
+
+	surveyID, _, err := client.SendSurveyCreationQuery(el, lib.SurveyID("testSurvey"), lib.SurveyID(""), sum, count, whereQueryValues, pred, groupBy, nil, nil, nbrDPs, 0, proofsService, false)
+
+	if err != nil {
+		t.Fatal("Service did not start.", err)
+	}
+
+	//save values in a map to verify them at the end
+	expectedResults := make(map[[numberGrpAttr]int64][]int64)
+	log.Lvl1("Sending response data... ")
+	dataHolder := make([]*services.API, 10)
+	for i := 0; i < len(dataHolder); i++ {
+		dataHolder[i] = services.NewMedcoClient(el.List[i%5], strconv.Itoa(i+1))
+		grp := [numberGrpAttr]int64{}
+		aggr := make(map[string]int64, numberAttr)
+
+		grp[0] = int64(i % 4)
+		aggr["sum"+strconv.Itoa(i+1)] = 3
+
+		//convert tab in slice (was a tab only for the test)
+		val := int64(1)
+		if i == 2 {
+			val = int64(2)
+		}
+		sliceWhere := make(map[string]int64, numberGrpAttr)
+		for j := range grp {
+			sliceWhere["w"+strconv.Itoa(j+1)] = int64(val)
+		}
+
+		sliceGrp := make(map[string]int64, numberGrpAttr)
+		for j := range grp {
+			sliceGrp["g"+strconv.Itoa(j+1)] = int64(j)
+		}
+		sliceGrp1 := make(map[string]int64, numberGrpAttr)
+		for j := range grp {
+			sliceGrp1["g"+strconv.Itoa(j+1)] = int64(j+1)
+		}
+
+		aggr = make(map[string]int64, numberAttr)
+		for j := 0 ; j < numberAttr; j++ {
+			aggr["sum"+strconv.Itoa(j+1)] = int64(j)
+		}
+
+		responses:= []lib.DpClearResponse{{WhereClear:sliceWhere, WhereEnc: sliceWhere, GroupByClear:sliceGrp, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr},{WhereClear:sliceWhere, WhereEnc: sliceWhere,GroupByClear:sliceGrp, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
+		dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
+	}
+
+	expectedResults[[3]int64{0,1,2}] = []int64{0,9}
+	expectedResults[[3]int64{1,2,3}] = []int64{0,9}
+	grp, aggr, err := client.SendSurveyResultsQuery(*surveyID)
+
+	if err != nil {
+		t.Fatal("Service could not output the results.")
+	}
+
+	log.Lvl1("Service output:")
+	var tabVerify [][]int64
+	tabVerify = *grp
+	for i := range tabVerify {
+		log.Lvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
 
 		//convert from slice to tab in order to test the values
 		grpTab := [numberGrpAttr]int64{}
@@ -493,7 +555,7 @@ func TestServiceEncGrpAndWhereAttrWithCount(t *testing.T) {
 	client := services.NewMedcoClient(el.List[0], strconv.Itoa(0))
 
 
-	sum := []string{"sum1"}
+	sum := []string{"sum1", "sum2", "count"}
 	count := true
 	whereQueryValues := []lib.WhereQueryAttribute{{"w1", *lib.EncryptInt(el.Aggregate, 1)}, {"w2", *lib.EncryptInt(el.Aggregate, 1)}, {"w3", *lib.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
 	pred := "(v0 == v1 || v2 == v3) && v4 == v5"
@@ -518,55 +580,42 @@ func TestServiceEncGrpAndWhereAttrWithCount(t *testing.T) {
 	for i := 0; i < len(dataHolder); i++ {
 		dataHolder[i] = services.NewMedcoClient(el.List[i%5], strconv.Itoa(i+1))
 		grp := [numberGrpAttr]int64{}
-		aggr := make([]int64, numberAttr)
+		aggr := make(map[string]int64, numberAttr)
 
 		grp[0] = int64(i % 4)
-		aggr[i%numberAttr] = 3
+		aggr["sum"+strconv.Itoa(i+1)] = 3
 
 		//convert tab in slice (was a tab only for the test)
 		val := int64(1)
 		if i == 2 {
 			val = int64(2)
 		}
-		sliceWhere := make([]int64, numberGrpAttr)
+		sliceWhere := make(map[string]int64, numberGrpAttr)
 		for j := range grp {
-			if j == 0 {
-				sliceWhere = []int64{val}
-			} else {
-				sliceWhere = append(sliceWhere, val)
-			}
+			sliceWhere["w"+strconv.Itoa(j+1)] = int64(val)
 		}
 
-		sliceGrp := make([]int64, numberGrpAttr)
-		for j, v := range grp {
-			if j == 0 {
-				sliceGrp = []int64{v}
-			} else {
-				sliceGrp = append(sliceGrp, v)
-			}
+		sliceGrp := make(map[string]int64, numberGrpAttr)
+		for j := range grp {
+			sliceGrp["g"+strconv.Itoa(j+1)] = int64(j)
+		}
+		sliceGrp1 := make(map[string]int64, numberGrpAttr)
+		for j := range grp {
+			sliceGrp1["g"+strconv.Itoa(j+1)] = int64(j+1)
 		}
 
-		responses:= []lib.DpClearResponse{{WhereEnc: sliceWhere, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr, AggregatingAttributesClear: aggr},{WhereEnc: sliceWhere, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr, AggregatingAttributesClear: aggr}}
+		aggr = make(map[string]int64, numberAttr)
+		for j := 0 ; j < numberAttr; j++ {
+			aggr["sum"+strconv.Itoa(j+1)] = int64(j)
+		}
+
+		responses:= []lib.DpClearResponse{{WhereClear:sliceWhere, WhereEnc: sliceWhere, GroupByClear:sliceGrp, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr},{WhereClear:sliceWhere, WhereEnc: sliceWhere,GroupByClear:sliceGrp, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
 		dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
-
-		//compute expected results
-		if i != 2 { // i = 2 is the only response for which the where is not satisfied
-			_, ok := expectedResults[grp]
-			if ok {
-				for ind, v := range expectedResults[grp] {
-					expectedResults[grp][ind] = v + aggr[ind] + aggr[ind]
-				}
-			} else {
-				expectedResults[grp] = make([]int64, len(aggr))
-				for ind := range expectedResults[grp] {
-					expectedResults[grp][ind] = aggr[ind] + aggr[ind]
-				}
-			}
-		}
-
 	}
 
-	grpClear, grp, aggr, err := client.SendSurveyResultsQuery(*surveyID)
+	expectedResults[[3]int64{0,1,2}] = []int64{0,9,9}
+	expectedResults[[3]int64{1,2,3}] = []int64{0,9,9}
+	grp, aggr, err := client.SendSurveyResultsQuery(*surveyID)
 
 	if err != nil {
 		t.Fatal("Service could not output the results.")
@@ -575,9 +624,8 @@ func TestServiceEncGrpAndWhereAttrWithCount(t *testing.T) {
 	log.Lvl1("Service output:")
 	var tabVerify [][]int64
 	tabVerify = *grp
-
 	for i := range tabVerify {
-		log.Lvl1(i, ")", (*grpClear)[i], (*grp)[i], "->", (*aggr)[i])
+		log.Lvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
 
 		//convert from slice to tab in order to test the values
 		grpTab := [numberGrpAttr]int64{}
@@ -585,11 +633,12 @@ func TestServiceEncGrpAndWhereAttrWithCount(t *testing.T) {
 			grpTab[ind] = v
 		}
 		data, ok := expectedResults[grpTab]
-		if !ok || !reflect.DeepEqual(data, (*aggr)[i][:len((*aggr)[i])-1]) {
+		if !ok || !reflect.DeepEqual(data, (*aggr)[i]) {
 			t.Error("Not expected results, got ", (*aggr)[i], " when expected ", data)
 		}
 	}
 }
+
 
 // TEST BATCH 2 -> different number of DPs
 //______________________________________________________________________________________________________________________
@@ -610,7 +659,7 @@ func TestAllServersNoDPs(t *testing.T) {
 
 
 
-	sum := []string{"sum1"}
+	sum := []string{"sum1", "sum2"}
 	count := false
 	whereQueryValues := []lib.WhereQueryAttribute{{"w1", *lib.EncryptInt(el.Aggregate, 1)}, {"w2", *lib.EncryptInt(el.Aggregate, 1)}, {"w3", *lib.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
 	pred := "(v0 == v1 || v2 == v3) && v4 == v5"
@@ -639,52 +688,42 @@ func TestAllServersNoDPs(t *testing.T) {
 	for i := 0; i < len(dataHolder); i++ {
 		dataHolder[i] = services.NewMedcoClient(el.List[i%2], strconv.Itoa(i+1))
 		grp := [numberGrpAttr]int64{}
-		aggr := make([]int64, 10)
+		aggr := make(map[string]int64, numberAttr)
+
 		grp[0] = int64(i % 4)
-		aggr[i] = 3
+		aggr["sum"+strconv.Itoa(i+1)] = 3
 
 		//convert tab in slice (was a tab only for the test)
 		val := int64(1)
 		if i == 2 {
 			val = int64(2)
 		}
-		sliceWhere := make([]int64, numberGrpAttr)
+		sliceWhere := make(map[string]int64, numberGrpAttr)
 		for j := range grp {
-			if j == 0 {
-				sliceWhere = []int64{val}
-			} else {
-				sliceWhere = append(sliceWhere, val)
-			}
+			sliceWhere["w"+strconv.Itoa(j+1)] = int64(val)
 		}
 
-		sliceGrp := make([]int64, numberGrpAttr)
-		for j, v := range grp {
-			if j == 0 {
-				sliceGrp = []int64{v}
-			} else {
-				sliceGrp = append(sliceGrp, v)
-			}
+		sliceGrp := make(map[string]int64, numberGrpAttr)
+		for j := range grp {
+			sliceGrp["g"+strconv.Itoa(j+1)] = int64(j)
+		}
+		sliceGrp1 := make(map[string]int64, numberGrpAttr)
+		for j := range grp {
+			sliceGrp1["g"+strconv.Itoa(j+1)] = int64(j+1)
 		}
 
+		aggr = make(map[string]int64, numberAttr)
+		for j := 0 ; j < numberAttr; j++ {
+			aggr["sum"+strconv.Itoa(j+1)] = int64(j)
+		}
 
-		responses:= []lib.DpClearResponse{{WhereEnc: sliceWhere, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr, AggregatingAttributesClear: aggr},{WhereEnc: sliceWhere, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr, AggregatingAttributesClear: aggr}}
+		responses:= []lib.DpClearResponse{{WhereClear:sliceWhere, WhereEnc: sliceWhere, GroupByClear:sliceGrp, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr},{WhereClear:sliceWhere, WhereEnc: sliceWhere,GroupByClear:sliceGrp, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
 		dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
-
-		if i != 2 { // i = 2 is the only response for which the where is not satisfied
-			_, ok := expectedResults[grp]
-			if ok {
-				for ind, v := range expectedResults[grp] {
-					expectedResults[grp][ind] = v + aggr[ind] + aggr[ind]
-				}
-			} else {
-				expectedResults[grp] = make([]int64, len(aggr))
-				for ind := range expectedResults[grp] {
-					expectedResults[grp][ind] = aggr[ind] + aggr[ind]
-				}
-			}
-		}
 	}
-	grpClear, grp, aggr, err := client.SendSurveyResultsQuery(*surveyID)
+
+	expectedResults[[3]int64{0,1,2}] = []int64{0,9}
+	expectedResults[[3]int64{1,2,3}] = []int64{0,9}
+	grp, aggr, err := client.SendSurveyResultsQuery(*surveyID)
 
 	if err != nil {
 		t.Fatal("Service could not output the results.")
@@ -693,9 +732,8 @@ func TestAllServersNoDPs(t *testing.T) {
 	log.Lvl1("Service output:")
 	var tabVerify [][]int64
 	tabVerify = *grp
-
 	for i := range tabVerify {
-		log.Lvl1(i, ")", (*grpClear)[i], (*grp)[i], "->", (*aggr)[i])
+		log.Lvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
 
 		//convert from slice to tab in order to test the values
 		grpTab := [numberGrpAttr]int64{}
@@ -723,7 +761,6 @@ func TestAllServersRandomDPs(t *testing.T) {
 	// Send a request to the service
 	client := services.NewMedcoClient(el.List[0], strconv.Itoa(0))
 
-
 	nbrDPs := make(map[string]int64)
 	//how many data providers for each server
 	nbrDPs[el.List[0].String()] = 0
@@ -732,7 +769,7 @@ func TestAllServersRandomDPs(t *testing.T) {
 	nbrDPs[el.List[3].String()] = 3
 	nbrDPs[el.List[4].String()] = 4
 
-	sum := []string{"sum1"}
+	sum := []string{"sum1", "sum2"}
 	count := false
 	whereQueryValues := []lib.WhereQueryAttribute{{"w1", *lib.EncryptInt(el.Aggregate, 1)}, {"w2", *lib.EncryptInt(el.Aggregate, 1)}, {"w3", *lib.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
 	pred := "(v0 == v1 || v2 == v3) && v4 == v5"
@@ -760,51 +797,41 @@ func TestAllServersRandomDPs(t *testing.T) {
 		}
 
 		grp := [numberGrpAttr]int64{}
-		aggr := make([]int64, 10)
+		aggr := make(map[string]int64, numberAttr)
+
 		grp[0] = int64(i % 4)
-		aggr[i] = 3
+		aggr["sum"+strconv.Itoa(i+1)] = 3
 
 		//convert tab in slice (was a tab only for the test)
 		val := int64(1)
 		if i == 2 {
 			val = int64(2)
 		}
-		sliceWhere := make([]int64, numberGrpAttr)
+		sliceWhere := make(map[string]int64, numberGrpAttr)
 		for j := range grp {
-			if j == 0 {
-				sliceWhere = []int64{val}
-			} else {
-				sliceWhere = append(sliceWhere, val)
-			}
+			sliceWhere["w"+strconv.Itoa(j+1)] = int64(val)
 		}
 
-		sliceGrp := make([]int64, numberGrpAttr)
-		for j, v := range grp {
-			if j == 0 {
-				sliceGrp = []int64{v}
-			} else {
-				sliceGrp = append(sliceGrp, v)
-			}
+		sliceGrp := make(map[string]int64, numberGrpAttr)
+		for j := range grp {
+			sliceGrp["g"+strconv.Itoa(j+1)] = int64(j)
+		}
+		sliceGrp1 := make(map[string]int64, numberGrpAttr)
+		for j := range grp {
+			sliceGrp1["g"+strconv.Itoa(j+1)] = int64(j+1)
 		}
 
-		responses:= []lib.DpClearResponse{{WhereEnc: sliceWhere, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr, AggregatingAttributesClear: aggr},{WhereEnc: sliceWhere, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr, AggregatingAttributesClear: aggr}}
+		aggr = make(map[string]int64, numberAttr)
+		for j := 0 ; j < numberAttr; j++ {
+			aggr["sum"+strconv.Itoa(j+1)] = int64(j)
+		}
+
+		responses:= []lib.DpClearResponse{{WhereClear:sliceWhere, WhereEnc: sliceWhere, GroupByClear:sliceGrp, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr},{WhereClear:sliceWhere, WhereEnc: sliceWhere,GroupByClear:sliceGrp, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
 		dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
-
-		if i != 2 { // i = 2 is the only response for which the where is not satisfied
-			_, ok := expectedResults[grp]
-			if ok {
-				for ind, v := range expectedResults[grp] {
-					expectedResults[grp][ind] = v + aggr[ind] + aggr[ind]
-				}
-			} else {
-				expectedResults[grp] = make([]int64, len(aggr))
-				for ind := range expectedResults[grp] {
-					expectedResults[grp][ind] = aggr[ind] + aggr[ind]
-				}
-			}
-		}
 	}
-	grpClear, grp, aggr, err := client.SendSurveyResultsQuery(*surveyID)
+	expectedResults[[3]int64{0,1,2}] = []int64{0,9}
+	expectedResults[[3]int64{1,2,3}] = []int64{0,9}
+	grp, aggr, err := client.SendSurveyResultsQuery(*surveyID)
 
 	if err != nil {
 		t.Fatal("Service could not output the results.")
@@ -813,9 +840,8 @@ func TestAllServersRandomDPs(t *testing.T) {
 	log.Lvl1("Service output:")
 	var tabVerify [][]int64
 	tabVerify = *grp
-
 	for i := range tabVerify {
-		log.Lvl1(i, ")", (*grpClear)[i], (*grp)[i], "->", (*aggr)[i])
+		log.Lvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
 
 		//convert from slice to tab in order to test the values
 		grpTab := [numberGrpAttr]int64{}
@@ -828,7 +854,7 @@ func TestAllServersRandomDPs(t *testing.T) {
 		}
 	}
 
-}*/
+}
 
 func TestFilteringFunc(t *testing.T) {
 	pred := "(v0 == v1 && v2 == v3) && v4 == v5"

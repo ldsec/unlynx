@@ -54,6 +54,8 @@ func proccessParameters (data []string, clear map[string]int64, encrypted map[st
 			log.LLvl1(containerClear)
 		} else if !noEnc{
 			if  value, ok := encrypted[v]; ok {
+				log.LLvl1("ICI ", v)
+				log.LLvl1("ICI ", value)
 				containerEnc = append(containerEnc, value)
 			} else {
 				containerEnc = append(containerEnc, IntToCiphertext(clear[v]))
@@ -103,12 +105,14 @@ func proccessParameters (data []string, clear map[string]int64, encrypted map[st
 
 // InsertDPResponse handles the local storage of a new DP response in aggregation or grouping cases.
 func (s *Store) InsertDpResponse(cr DpResponse, proofs bool, scq SurveyCreationQuery) {
+	log.LLvl1("RESPONSE ", cr)
 	newResp := ProcessResponse{}
 	clearGrp := []int64{}
 	clearWhr := []int64{}
 	//clearAggr := []int64{}
 
-	noEnc := (cr.WhereEnc == nil || cr.GroupByEnc == nil)
+	noEnc := (cr.WhereEnc == nil && cr.GroupByEnc == nil)
+	log.LLvl1("NOENC ", noEnc)
 	clearGrp, newResp.GroupByEnc = proccessParameters(scq.GroupBy, cr.GroupByClear, cr.GroupByEnc, noEnc)
 	log.LLvl1("LAL ", clearGrp)
 	whereStrings := make([]string,len(scq.Where))
@@ -116,12 +120,15 @@ func (s *Store) InsertDpResponse(cr DpResponse, proofs bool, scq SurveyCreationQ
 		whereStrings[i] = v.Name
 	}
 	clearWhr, newResp.WhereEnc = proccessParameters(whereStrings, cr.WhereClear, cr.WhereEnc, noEnc)
+	log.LLvl1("AGGR ", cr.AggregatingAttributesClear)
+	log.LLvl1("AGGR ", cr.AggregatingAttributesEnc)
 	_, newResp.AggregatingAttributes = proccessParameters(scq.Sum, cr.AggregatingAttributesClear, cr.AggregatingAttributesEnc, false)
 	log.LLvl1(newResp.AggregatingAttributes)
 	if !noEnc {
 		s.DpResponses = append(s.DpResponses, newResp)
 
 	} else {
+		log.LLvl1("ICI L'AMI CHAPPUIS")
 		value, ok := s.DpResponsesAggr[GroupingKeyTuple{Key(clearGrp), Key(clearWhr)}]
 		if ok {
 			tmp := *NewCipherVector(len(value.AggregatingAttributes)).Add(value.AggregatingAttributes, newResp.AggregatingAttributes)

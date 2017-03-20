@@ -58,7 +58,7 @@ type DDTfinished struct{}
 // SurveyResponseQuery is used to ask a client for its response to a survey.
 type SurveyResponseQuery struct {
 	SurveyID  lib.SurveyID
-	Responses []lib.DpResponse
+	Responses []lib.DpResponseToSend
 }
 
 // SurveyResultsQuery is used by querier to ask for the response of the survey.
@@ -189,7 +189,9 @@ func (s *Service) Process(msg *network.Envelope) {
 // PushData is used to store incoming data by servers
 func (s *Service) PushData(resp *SurveyResponseQuery, proofs bool) {
 	for _, v := range resp.Responses {
-		(s.survey[resp.SurveyID]).InsertDpResponse(v, proofs, s.survey[resp.SurveyID].Query)
+		dr := lib.DpResponse{}
+		dr.FromDpResponseToSend(v)
+		(s.survey[resp.SurveyID]).InsertDpResponse(dr, proofs, s.survey[resp.SurveyID].Query)
 	}
 	log.Lvl1(s.ServerIdentity(), " uploaded response data for survey ", resp.SurveyID)
 }
