@@ -107,7 +107,8 @@ func GenerateData(numDPs, numEntries, numEntriesFiltered, numGroupsClear, numGro
 
 		for j := int64(0); j < numEntries; j++ {
 			aggr := make([]int64, numAggrEnc+numAggrClear)
-			// Toggle random data or not (just 0's or 1's)
+
+			// Toggle random data or not (2 -> just 0's or 1's)
 
 			//FillInt64Slice(aggr,int64(1))
 			randomFillInt64Slice(aggr, 2)
@@ -116,6 +117,7 @@ func GenerateData(numDPs, numEntries, numEntriesFiltered, numGroupsClear, numGro
 
 			where := make([]int64, numWhereClear+numWhereEnc)
 
+			//number of entries to keep (all where attributes are set to 1)
 			if j < numEntriesFiltered{
 				fillInt64Slice(where,1)
 			} else{
@@ -260,6 +262,7 @@ func ComputeExpectedResult(testData map[string][]lib.DpClearResponse, dataRepeti
 	for _, v := range testData {
 		for _, elem := range v {
 
+			//if we repeated data
 			if dataRepetitions > 1 {
 				for k := range elem.AggregatingAttributesClear {
 					elem.AggregatingAttributesClear[k] = elem.AggregatingAttributesClear[k] * int64(dataRepetitions)

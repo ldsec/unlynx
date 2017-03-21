@@ -216,8 +216,8 @@ func AddInMap(s map[GroupingKey]FilteredResponse, key GroupingKey, added Filtere
 	}
 }
 
-// int64ArrayToString transforms a map into a string
-func int64MapToString(s map[string]int64) string {
+// int6ArrayToString transforms an integer array into a string
+func int64ArrayToString(s []int64) string {
 	if len(s) == 0 {
 		return ""
 	}
@@ -226,10 +226,10 @@ func int64MapToString(s map[string]int64) string {
 	for _, elem := range s {
 		result += fmt.Sprintf("%v ", elem)
 	}
-	return result[:len(result)-1]
+	return result
 }
 
-// StringToInt64Array transforms a string to an array
+// StringToInt64Array transforms a string ("1 0 1 0") to an integer array
 func StringToInt64Array(s string) []int64 {
 	if len(s) == 0 {
 		return make([]int64, 0)
@@ -257,7 +257,7 @@ func ConvertDataToMap(data []int64, first string, start int) map[string]int64{
 	return  result
 }
 
-// ConvertMapToData converts the map into a slice of int64 (to ease out printing)
+// ConvertMapToData converts the map into a slice of int64 (to ease out printing and aggregation)
 func ConvertMapToData(data map[string]int64, first string, start int) []int64{
 	result := make([]int64,len(data))
 	for i := 0; i < len(data); i++{
@@ -273,11 +273,21 @@ func AddInClear(s []DpClearResponse) []DpClearResponse {
 
 	wg := StartParallelize(0)
 	for _, elem := range s {
-		key := int64MapToString(elem.GroupByClear) + " " + int64MapToString(elem.GroupByEnc) + " " + int64MapToString(elem.WhereClear) + " " + int64MapToString(elem.WhereEnc)
+		groupByClear := int64ArrayToString(ConvertMapToData(elem.GroupByClear,"g",0))
+		groupByEnc :=	int64ArrayToString(ConvertMapToData(elem.GroupByEnc,"g",len(elem.GroupByClear)))
+		whereClear :=	int64ArrayToString(ConvertMapToData(elem.WhereClear,"w",0))
+		whereEnc :=	int64ArrayToString(ConvertMapToData(elem.WhereEnc,"w",len(elem.WhereClear)))
+
+		//generate a unique tag and use it to aggregate the data
+		key := groupByClear + groupByEnc + whereClear + whereEnc
+		key = key[:len(key)-1]
 
 		// if the where matches (all 1s) -> filter responses
-		if !((len(elem.WhereClear) > 0 || len(elem.WhereEnc) > 0) && (key[len(key)-1:] == "1")) {
-			continue
+		if len(elem.WhereClear) > 0 || len(elem.WhereEnc) > 0 {
+			if key[len(key)-1:] == "0"{
+				//discard these entries
+				continue
+			}
 		}
 
 		cpy := make([]int64,0)
@@ -309,13 +319,8 @@ func AddInClear(s []DpClearResponse) []DpClearResponse {
 
 	result := make([]DpClearResponse, len(dataMap))
 
-	i := 0
-	numGroupsClear := 0
-	numGroupsEnc := 0
-	numWhereClear := 0
-	numWhereEnc := 0
-	numAggrClear := 0
-	if len(s) > 0 {
+	var numGroupsClear, numGroupsEnc, numWhereClear, numWhereEnc, numAggrClear int
+	if s!=nil && len(s) > 0 {
 		numGroupsClear = len(s[0].GroupByClear)
 		numGroupsEnc = len(s[0].GroupByEnc)
 		numWhereClear = len(s[0].WhereClear)
@@ -323,6 +328,8 @@ func AddInClear(s []DpClearResponse) []DpClearResponse {
 		numAggrClear = len(s[0].AggregatingAttributesClear)
 	}
 
+	//it is a pain but we have to convert everything back to a set of maps
+	i := 0
 	for k, v := range dataMap {
 		aux := StringToInt64Array(k)
 		result[i] = DpClearResponse{

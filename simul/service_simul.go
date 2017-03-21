@@ -119,6 +119,7 @@ func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
 		//TODO change generate data
 		testData := data.GenerateData(int64(sim.NbrDPs), sim.NbrResponsesTot, sim.NbrResponsesFiltered, sim.NbrGroupsClear, sim.NbrGroupsEnc,
 			sim.NbrWhereClear, sim.NbrWhereEncrypted, sim.NbrAggrClear, sim.NbrAggrEncrypted, sim.NbrGroupAttributes, sim.RandomGroups)
+		log.LLvl1(testData)
 
 		/// START SERVICE PROTOCOL
 		if lib.TIME {

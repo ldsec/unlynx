@@ -11,16 +11,16 @@ import (
 
 const filename = "medco_test_data.txt"
 const numDPs = 2
-const numEntries = 5
-const numEntriesFiltered = 4
-const numGroupsClear = 1
-const numGroupsEnc = 1
-const numWhereClear = 1
-const numWhereEnc = 1
-const numAggrClear = 2
-const numAggrEnc = 0
+const numEntries = 10
+const numEntriesFiltered = 5
+const numGroupsClear = 0
+const numGroupsEnc = 2
+const numWhereClear = 0
+const numWhereEnc = 2
+const numAggrClear = 0
+const numAggrEnc = 2
 
-var num_type = [...]int64{2, 2}
+var num_type = [...]int64{2, 5}
 
 var test_data map[string][]lib.DpClearResponse
 
