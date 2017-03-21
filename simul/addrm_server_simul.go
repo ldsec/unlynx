@@ -8,6 +8,7 @@ import (
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"
+	"strconv"
 )
 
 func init() {
@@ -19,11 +20,12 @@ func init() {
 type AddRmSimulation struct {
 	onet.SimulationBFTree
 
-	NbrResponses       int
-	NbrGroupAttributes int
-	NbrAggrAttributes  int
-	Proofs             bool
-	Add                bool
+	NbrResponses       	int
+	NbrGroupAttributes 	int	//to make sense all the different attributes are encrypted
+	NbrWhereAttributes  	int
+	NbrAggrAttributes  	int
+	Proofs             	bool
+	Add                	bool
 }
 
 // NewAddRmSimulation constructs an adding/removing protocol simulation.
@@ -70,19 +72,26 @@ func (sim *AddRmSimulation) Run(config *onet.SimulationConfig) error {
 		newSecKey := network.Suite.Scalar().Pick(random.Stream)
 		pubKey := network.Suite.Point().Mul(network.Suite.Point().Base(), secKey)
 
-		tab := make([]int64, sim.NbrAggrAttributes)
-		for i := 0; i < len(tab); i++ {
-			tab[i] = int64(1)
-		}
-		tabGr := make([]int64, sim.NbrGroupAttributes)
-		for i := 0; i < len(tabGr); i++ {
-			tabGr[i] = int64(1)
+		//generate set of grouping attributes (for this protocol they should all be encrypted)
+		group := make(map[string]lib.CipherText)
+		for i:=0; i<len(sim.NbrAggrAttributes); i++{
+			group[""+strconv.Itoa(i)]=*lib.EncryptInt(pubKey,1)
 		}
 
-		// aggregation
-		testCipherVect1 := *lib.EncryptIntVector(pubKey, tab)
-		groupCipherVect := *lib.EncryptIntVector(pubKey, tabGr)
-		cr := lib.DpResponse{GroupByEnc: groupCipherVect, AggregatingAttributesEnc: testCipherVect1}
+		//generate set of aggregating attributes (for this protocol they should all be encrypted)
+		aggr := make(map[string]lib.CipherText)
+		for i:=0; i<len(sim.NbrAggrAttributes); i++{
+			aggr[""+strconv.Itoa(i)]=*lib.EncryptInt(pubKey,1)
+		}
+
+		//generate set of where attributes (for this protocol they should all be encrypted)
+		where := make(map[string]lib.CipherText)
+		for i:=0; i<len(sim.NbrAggrAttributes); i++{
+			where[""+strconv.Itoa(i)]=*lib.EncryptInt(pubKey,1)
+		}
+
+
+		cr := lib.DpResponse{GroupByEnc: group, AggregatingAttributesEnc: aggr, WhereEnc: where}
 		detResponses := make([]lib.DpResponse, 0)
 		for i := 0; i < sim.NbrResponses; i++ {
 			detResponses = append(detResponses, cr)
