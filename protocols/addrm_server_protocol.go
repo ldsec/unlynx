@@ -9,7 +9,6 @@ import (
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"
-	"sync"
 )
 
 
@@ -59,21 +58,14 @@ func (p *AddRmServerProtocol) Start() error {
 	result := make([]lib.DpResponse, len(p.TargetOfTransformation))
 
 	wg := lib.StartParallelize(len(p.TargetOfTransformation))
-	var mutexToT sync.Mutex
 	for i, v := range p.TargetOfTransformation {
 		if lib.PARALLELIZE {
 			go func(i int, v lib.DpResponse) {
 				defer wg.Done()
-
-				mutexToT.Lock()
-				keyToRm := p.KeyToRm
-				add := p.Add
-				mutexToT.Unlock()
-				result[i] = changeEncryption(v, keyToRm, add, mutexToT)
-
+				result[i] = changeEncryption(v, p.KeyToRm, p.Add)
 			}(i, v)
 		} else {
-			result[i] = changeEncryption(v, p.KeyToRm, p.Add, mutexToT)
+			result[i] = changeEncryption(v, p.KeyToRm, p.Add)
 		}
 
 	}
@@ -85,16 +77,15 @@ func (p *AddRmServerProtocol) Start() error {
 	pubs := make([]lib.PublishedAddRmProof, 0)
 	if p.Proofs {
 		wg := lib.StartParallelize(len(result))
-		var mutexCR sync.Mutex
 		for i, v := range result {
 			if lib.PARALLELIZE {
 				go func(i int, v lib.DpResponse) {
 					defer wg.Done()
-					proofsCreation(pubs, mutexCR, p.TargetOfTransformation[i], v, p.KeyToRm, p.Add)
+					proofsCreation(pubs, p.TargetOfTransformation[i], v, p.KeyToRm, p.Add)
 				}(i, v)
 
 			} else {
-				proofsCreation(pubs, mutexCR, p.TargetOfTransformation[i], v, p.KeyToRm, p.Add)
+				proofsCreation(pubs, p.TargetOfTransformation[i], v, p.KeyToRm, p.Add)
 			}
 
 		}
@@ -147,26 +138,22 @@ func changeEncryptionKeyMapCipherTexts(cv map[string]lib.CipherText, serverAddRm
 	return result
 }
 
-func changeEncryption(response lib.DpResponse, keyToRm abstract.Scalar, add bool, mutexToT sync.Mutex ) lib.DpResponse{
+func changeEncryption(response lib.DpResponse, keyToRm abstract.Scalar, add bool) lib.DpResponse{
 	result := lib.DpResponse{}
 
-	mutexToT.Lock()
 	result.GroupByClear = response.GroupByClear
 	result.GroupByEnc = changeEncryptionKeyMapCipherTexts(response.GroupByEnc, keyToRm, add)
 	result.WhereClear = response.WhereClear
 	result.WhereEnc = changeEncryptionKeyMapCipherTexts(response.WhereEnc, keyToRm, add)
 	result.AggregatingAttributesEnc = changeEncryptionKeyMapCipherTexts(response.AggregatingAttributesEnc, keyToRm, add)
 	result.AggregatingAttributesClear = response.AggregatingAttributesClear
-	mutexToT.Unlock()
 	return result
 }
 
-func proofsCreation (pubs []lib.PublishedAddRmProof, mutexCR sync.Mutex, target, v lib.DpResponse, keyToRm abstract.Scalar, add bool) {
-	mutexCR.Lock()
+func proofsCreation (pubs []lib.PublishedAddRmProof, target, v lib.DpResponse, keyToRm abstract.Scalar, add bool) {
 	targetAggregatingAttributesEnc := target.AggregatingAttributesEnc
 	targetGroupingAttributes := target.GroupByEnc
 	targetWhereAttributes := target.WhereEnc
-	mutexCR.Unlock()
 
 	prfAggr := lib.VectorAddRmProofCreation(targetAggregatingAttributesEnc, v.AggregatingAttributesEnc, keyToRm, add)
 	prfGrp := lib.VectorAddRmProofCreation(targetGroupingAttributes, v.GroupByEnc, keyToRm, add)
@@ -176,8 +163,6 @@ func proofsCreation (pubs []lib.PublishedAddRmProof, mutexCR sync.Mutex, target,
 	pub2 := lib.PublishedAddRmProof{Arp: prfGrp, VectBefore: v.GroupByEnc, VectAfter: v.GroupByEnc, Krm: ktopub, ToAdd: add}
 	pub3 := lib.PublishedAddRmProof{Arp: prfWhere, VectBefore: v.WhereEnc, VectAfter: v.WhereEnc, Krm: ktopub, ToAdd: add}
 
-	mutexCR.Lock()
 	pubs = append(pubs, pub1, pub2, pub3)
-	mutexCR.Unlock()
 }
 

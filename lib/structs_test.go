@@ -5,6 +5,7 @@ import (
 
 	"github.com/JoaoAndreSa/MedCo/lib"
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/dedis/crypto.v0/abstract"
 )
 
 // TestAddClientResponse tests the addition of two client response objects
@@ -29,7 +30,7 @@ func TestAddClientResponse(t *testing.T) {
 	assert.Equal(t, grouping, lib.DecryptIntVector(secKey, &newCr.GroupByEnc))
 }
 
-// TestCipherVectorTagging tests the ciphervector tag method
+// TestCipherVectorTagging tests the CipherVector tag method
 func TestCipherVectorTagging(t *testing.T) {
 	const N = 1
 	groupKey, _, _ := lib.GenKeys(N)
@@ -42,24 +43,47 @@ func TestCipherVectorTagging(t *testing.T) {
 	_ = es
 }
 
-// EncryptDpClearResponse test the encryption of a DpClearResponse object
+// A function that converts and decrypts a map[string][]byte -> map[string]Ciphertext ->  map[string]int64
+func decryptMapBytes(secKey abstract.Scalar, data map[string][]byte) map[string]int64{
+	result := make(map[string]int64)
+
+	for k, v := range data{
+		ct := lib.CipherText{}
+		ct.FromBytes(v)
+
+		result[k] =  lib.DecryptInt(secKey,ct)
+	}
+	return result
+}
+
+// TestEncryptDpClearResponse tests the encryption of a DpClearResponse object
 func TestEncryptDpClearResponse(t *testing.T) {
-	/*secKey, pubKey := lib.GenKey()
+	secKey, pubKey := lib.GenKey()
 
-	groupingClear := []int64{2}
-	grouping := []int64{1}
-	aggregating := []int64{0, 1, 2, 3, 4}
+	groupingClear 	:= lib.ConvertDataToMap([]int64{2},"g",0)
+	groupingEnc 	:= lib.ConvertDataToMap([]int64{1},"g",len(groupingClear))
+	whereClear 	:= lib.ConvertDataToMap([]int64{},"w",0)
+	whereEnc 	:= lib.ConvertDataToMap([]int64{1,1},"w",len(whereClear))
+	aggrClear 	:= lib.ConvertDataToMap([]int64{1},"s",0)
+	aggrEnc 	:= lib.ConvertDataToMap([]int64{1,5,4,0},"s",len(aggrClear))
 
-	ccr := lib.DpClearResponse{[]int64{1}, []int64{1}, groupingClear, grouping, aggregating}
+	ccr := lib.DpClearResponse{
+		GroupByClear: groupingClear,
+		GroupByEnc: groupingEnc,
+		WhereClear: whereClear,
+		WhereEnc: whereEnc,
+		AggregatingAttributesClear: aggrClear,
+		AggregatingAttributesEnc: aggrEnc,
+	}
 
-	cr := lib.EncryptDpClearResponse(ccr, pubKey)
+	cr := lib.EncryptDpClearResponse(ccr,pubKey,false)
 
-	//assert.Equal(t, groupingClear, lib.UnKey(cr.GroupingAttributesClear))
 	assert.Equal(t, ccr.GroupByClear, groupingClear)
-	assert.Equal(t, ccr.WhereClear, []int64{1})
-	assert.Equal(t, aggregating, lib.DecryptIntVector(secKey, &cr.AggregatingAttributes))
-	assert.Equal(t, grouping, lib.DecryptIntVector(secKey, &cr.GroupByEnc))
-	assert.Equal(t, []int64{1}, lib.DecryptIntVector(secKey, &cr.WhereEnc))*/
+	assert.Equal(t, ccr.GroupByEnc, decryptMapBytes(secKey,cr.GroupByEnc))
+	assert.Equal(t, ccr.WhereClear, whereClear)
+	assert.Equal(t, ccr.WhereEnc, decryptMapBytes(secKey,cr.WhereEnc))
+	assert.Equal(t, ccr.AggregatingAttributesClear, aggrClear)
+	assert.Equal(t, ccr.AggregatingAttributesEnc, decryptMapBytes(secKey,cr.AggregatingAttributesEnc))
 }
 
 // TestFilteredResponseConverter tests the FilteredResponse converter (to bytes). In the meantime we also test the Key and UnKey function ... That is the way to go :D

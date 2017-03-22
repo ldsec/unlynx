@@ -8,6 +8,7 @@ import (
 	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/crypto.v0/random"
 	"gopkg.in/dedis/onet.v1/network"
+	"strconv"
 )
 
 //create variables
@@ -64,12 +65,15 @@ func TestKeySwitchingProof(t *testing.T) {
 	assert.False(t, lib.PublishedSwitchKeyCheckProof(lib.PublishedSwitchKeyProof{Skp: cps, VectBefore: cipherVect, VectAfter: *switchedVect, K: pubKeyNew, Q: pubKeyNew}))
 }
 
-// TestAddRmProof tests ADD/REMOVE SERVER PROTOCOL proofd
+// TestAddRmProof tests ADD/REMOVE SERVER PROTOCOL proofs
 func TestAddRmProof(t *testing.T) {
 	//test  at ciphertext level
 	result := *lib.NewCipherText()
 	cipherOne = *lib.EncryptInt(pubKey, 10)
-	cipherVect = lib.CipherVector{cipherOne, cipherOne}
+	cipherMap := make(map[string]lib.CipherText)
+	cipherMap["0"] = cipherOne
+	cipherMap["1"] = cipherOne
+
 	tmp := network.Suite.Point().Mul(cipherOne.K, secKeyNew)
 	result.K = cipherOne.K
 
@@ -83,7 +87,7 @@ func TestAddRmProof(t *testing.T) {
 	assert.False(t, lib.AddRmCheckProof(prf, pubKeyNew, cipherOne, cipherOne, toAdd))
 	assert.False(t, lib.AddRmCheckProof(prf, pubKeyNew, cipherOne, result, !toAdd))
 
-	//substraction
+	//subtraction
 	toAdd = false
 	result = *lib.NewCipherText()
 	cipherOne = *lib.EncryptInt(pubKey, 10)
@@ -97,21 +101,24 @@ func TestAddRmProof(t *testing.T) {
 	assert.False(t, lib.AddRmCheckProof(prf, pubKeyNew, cipherOne, cipherOne, toAdd))
 	assert.False(t, lib.AddRmCheckProof(prf, pubKeyNew, cipherOne, result, !toAdd))
 
-	// test at ciphervector level
-	resultAdd := make(lib.CipherVector, len(cipherVect))
-	resultSub := make(lib.CipherVector, len(cipherVect))
-	for j, w := range cipherVect {
-		tmp := network.Suite.Point().Mul(w.K, secKeyNew)
-		resultAdd[j].K = w.K
-		resultSub[j].K = w.K
+	resultAdd := make(map[string]lib.CipherText)
+	resultSub := make(map[string]lib.CipherText)
 
-		resultAdd[j].C = network.Suite.Point().Add(w.C, tmp)
-		resultSub[j].C = network.Suite.Point().Sub(w.C, tmp)
+	for j:=0; j<len(cipherMap); j++{
+		w :=lib.CipherText{K: cipherMap[strconv.Itoa(j)].K, C: cipherMap[strconv.Itoa(j)].C}
+
+		tmp := network.Suite.Point().Mul(w.K, secKeyNew)
+
+		add := lib.CipherText{K: w.K, C: network.Suite.Point().Add(w.C, tmp)}
+		sub := lib.CipherText{K: w.K, C: network.Suite.Point().Sub(w.C, tmp)}
+
+		resultAdd[strconv.Itoa(j)] = add
+		resultSub[strconv.Itoa(j)] = sub
 	}
-	prfVectAdd := lib.VectorAddRmProofCreation(cipherVect, resultAdd, secKeyNew, true)
-	prfVectAddPub := lib.PublishedAddRmProof{Arp: prfVectAdd, VectBefore: cipherVect, VectAfter: resultAdd, Krm: pubKeyNew, ToAdd: true}
-	prfVectSub := lib.VectorAddRmProofCreation(cipherVect, resultSub, secKeyNew, false)
-	prfVectSubPub := lib.PublishedAddRmProof{Arp: prfVectSub, VectBefore: cipherVect, VectAfter: resultSub, Krm: pubKeyNew, ToAdd: false}
+	prfVectAdd := lib.VectorAddRmProofCreation(cipherMap, resultAdd, secKeyNew, true)
+	prfVectAddPub := lib.PublishedAddRmProof{Arp: prfVectAdd, VectBefore: cipherMap, VectAfter: resultAdd, Krm: pubKeyNew, ToAdd: true}
+	prfVectSub := lib.VectorAddRmProofCreation(cipherMap, resultSub, secKeyNew, false)
+	prfVectSubPub := lib.PublishedAddRmProof{Arp: prfVectSub, VectBefore: cipherMap, VectAfter: resultSub, Krm: pubKeyNew, ToAdd: false}
 	assert.True(t, lib.PublishedAddRmCheckProof(prfVectAddPub))
 	assert.True(t, lib.PublishedAddRmCheckProof(prfVectSubPub))
 
@@ -120,18 +127,18 @@ func TestAddRmProof(t *testing.T) {
 	assert.False(t, lib.PublishedAddRmCheckProof(prfVectAddPub))
 	assert.False(t, lib.PublishedAddRmCheckProof(prfVectSubPub))
 
-	prfVectAddPub = lib.PublishedAddRmProof{Arp: prfVectAdd, VectBefore: cipherVect, VectAfter: resultSub, Krm: pubKeyNew, ToAdd: true}
-	prfVectSubPub = lib.PublishedAddRmProof{Arp: prfVectSub, VectBefore: cipherVect, VectAfter: resultAdd, Krm: pubKeyNew, ToAdd: false}
+	prfVectAddPub = lib.PublishedAddRmProof{Arp: prfVectAdd, VectBefore: cipherMap, VectAfter: resultSub, Krm: pubKeyNew, ToAdd: true}
+	prfVectSubPub = lib.PublishedAddRmProof{Arp: prfVectSub, VectBefore: cipherMap, VectAfter: resultAdd, Krm: pubKeyNew, ToAdd: false}
 	assert.False(t, lib.PublishedAddRmCheckProof(prfVectAddPub))
 	assert.False(t, lib.PublishedAddRmCheckProof(prfVectSubPub))
 
-	prfVectAddPub = lib.PublishedAddRmProof{Arp: prfVectAdd, VectBefore: cipherVect, VectAfter: resultAdd, Krm: pubKey, ToAdd: true}
-	prfVectSubPub = lib.PublishedAddRmProof{Arp: prfVectSub, VectBefore: cipherVect, VectAfter: resultSub, Krm: pubKey, ToAdd: false}
+	prfVectAddPub = lib.PublishedAddRmProof{Arp: prfVectAdd, VectBefore: cipherMap, VectAfter: resultAdd, Krm: pubKey, ToAdd: true}
+	prfVectSubPub = lib.PublishedAddRmProof{Arp: prfVectSub, VectBefore: cipherMap, VectAfter: resultSub, Krm: pubKey, ToAdd: false}
 	assert.False(t, lib.PublishedAddRmCheckProof(prfVectAddPub))
 	assert.False(t, lib.PublishedAddRmCheckProof(prfVectSubPub))
 
-	prfVectAddPub = lib.PublishedAddRmProof{Arp: prfVectAdd, VectBefore: cipherVect, VectAfter: resultAdd, Krm: pubKeyNew, ToAdd: false}
-	prfVectSubPub = lib.PublishedAddRmProof{Arp: prfVectSub, VectBefore: cipherVect, VectAfter: resultSub, Krm: pubKeyNew, ToAdd: true}
+	prfVectAddPub = lib.PublishedAddRmProof{Arp: prfVectAdd, VectBefore: cipherMap, VectAfter: resultAdd, Krm: pubKeyNew, ToAdd: false}
+	prfVectSubPub = lib.PublishedAddRmProof{Arp: prfVectSub, VectBefore: cipherMap, VectAfter: resultSub, Krm: pubKeyNew, ToAdd: true}
 	assert.False(t, lib.PublishedAddRmCheckProof(prfVectAddPub))
 	assert.False(t, lib.PublishedAddRmCheckProof(prfVectSubPub))
 

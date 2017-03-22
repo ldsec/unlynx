@@ -35,6 +35,16 @@ type CipherVectorScalarBytes struct {
 	S       [][]byte
 }
 
+// DpClearResponse represents a DP response when data is stored in clear at each server/hospital
+type DpClearResponse struct {
+	WhereClear            map[string]int64
+	WhereEnc              map[string]int64
+	GroupByClear          map[string]int64
+	GroupByEnc            map[string]int64
+	AggregatingAttributesClear map[string]int64
+	AggregatingAttributesEnc map[string]int64
+}
+
 type DpResponse struct {
 	WhereClear            map[string]int64
 	WhereEnc              map[string]CipherText
@@ -73,16 +83,6 @@ type ClientResponseBytes struct {
 	ProbaGroupingAttributesEnc [][][]byte
 	AggregatingAttributes      [][][]byte
 }*/
-
-// DpClearResponse represents a DP response when data is stored in clear at each server/hospital
-type DpClearResponse struct {
-	WhereClear            map[string]int64
-	WhereEnc              map[string]int64
-	GroupByClear          map[string]int64
-	GroupByEnc            map[string]int64
-	AggregatingAttributesClear map[string]int64
-	AggregatingAttributesEnc map[string]int64
-}
 
 /*
 // DpResponseDetCreation represents a client response which is in the process of creating a det. hash

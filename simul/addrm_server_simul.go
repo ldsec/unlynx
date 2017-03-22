@@ -74,19 +74,19 @@ func (sim *AddRmSimulation) Run(config *onet.SimulationConfig) error {
 
 		//generate set of grouping attributes (for this protocol they should all be encrypted)
 		group := make(map[string]lib.CipherText)
-		for i:=0; i<len(sim.NbrAggrAttributes); i++{
+		for i:=0; i<sim.NbrGroupAttributes; i++{
 			group[""+strconv.Itoa(i)]=*lib.EncryptInt(pubKey,1)
 		}
 
 		//generate set of aggregating attributes (for this protocol they should all be encrypted)
 		aggr := make(map[string]lib.CipherText)
-		for i:=0; i<len(sim.NbrAggrAttributes); i++{
+		for i:=0; i<sim.NbrAggrAttributes; i++{
 			aggr[""+strconv.Itoa(i)]=*lib.EncryptInt(pubKey,1)
 		}
 
 		//generate set of where attributes (for this protocol they should all be encrypted)
 		where := make(map[string]lib.CipherText)
-		for i:=0; i<len(sim.NbrAggrAttributes); i++{
+		for i:=0; i<sim.NbrWhereAttributes; i++{
 			where[""+strconv.Itoa(i)]=*lib.EncryptInt(pubKey,1)
 		}
 

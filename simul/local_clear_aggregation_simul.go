@@ -2,8 +2,8 @@ package main
 
 import (
 	"github.com/BurntSushi/toml"
-	"github.com/JoaoAndreSa/MedCo/lib"
 	"github.com/JoaoAndreSa/MedCo/protocols"
+	"github.com/JoaoAndreSa/MedCo/services/data"
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/simul/monitor"
@@ -20,7 +20,8 @@ type LocalClearAggregationSimulation struct {
 
 	NbrResponses       int
 	NbrGroups          int
-	NbrGroupAttributes int
+	NbrGroupAttributes int	//to make sense all the different attributes are encrypted
+	NbrWhereAttributes int
 	NbrAggrAttributes  int
 	Proofs             bool
 }
@@ -62,32 +63,30 @@ func (sim *LocalClearAggregationSimulation) Run(config *onet.SimulationConfig) e
 
 		root := rooti.(*protocols.LocalClearAggregationProtocol)
 
-		//create data
-		tab := make([]int64, sim.NbrAggrAttributes)
-		for i := 0; i < len(tab); i++ {
-			tab[i] = int64(1)
+		types := make([]int64,sim.NbrGroupAttributes)
+		if len(types)>0{
+			types[0] = int64(sim.NbrGroups)
 		}
-		tabGr := make([]int64, sim.NbrGroupAttributes)
-		for i := 0; i < len(tabGr); i++ {
-			tabGr[i] = int64(1)
-		}
-		testData := make([]lib.DpClearResponse, 0)
-		for i := 0; i < sim.NbrGroups; i++ {
-			log.LLvl1("step: ", i, " / ", sim.NbrGroups, " in preparation")
-			for j := 0; j < sim.NbrResponses/sim.NbrGroups; j++ {
-				list := lib.DpClearResponse{GroupByClear: tabGr, GroupByEnc: nil, AggregatingAttributes: tab}
-				testData = append(testData, list)
-			}
-		}
+
+		testData := data.GenerateData(1, int64(sim.NbrResponses), int64(sim.NbrResponses), int64(sim.NbrGroupAttributes), 0,
+			int64(sim.NbrWhereAttributes), 0, int64(sim.NbrAggrAttributes), 0, types, false)
+
 		log.LLvl1("starting protocol with ", len(testData), " responses")
 
 		//protocol
-		root.ProtocolInstance().(*protocols.LocalClearAggregationProtocol).TargetOfAggregation = testData
+		root.ProtocolInstance().(*protocols.LocalClearAggregationProtocol).TargetOfAggregation = testData["0"]
 
 		round := monitor.NewTimeMeasure("LocalClearAggregation(SIMULATION)")
 		root.Start()
 		results := <-root.ProtocolInstance().(*protocols.LocalClearAggregationProtocol).FeedbackChannel
 		log.LLvl1("Number of aggregated lines (groups): ", len(results))
+
+		// Test Simulation
+		if data.CompareClearResponses(data.ComputeExpectedResult(testData, 1), results) {
+			log.LLvl1("Result is right! :)")
+		} else {
+			log.LLvl1("Result is wrong! :(")
+		}
 		round.Record()
 	}
 

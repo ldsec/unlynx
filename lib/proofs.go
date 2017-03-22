@@ -246,15 +246,17 @@ func VectorAddRmProofCreation(vBef, vAft map[string]CipherText, k abstract.Scala
 	result := make(map[string]AddRmProof, len(vBef))
 	var wg sync.WaitGroup
 	if PARALLELIZE {
-		//for i := 0; i < len(vBef); i = i + VPARALLELIZE {
+		var mutexBf sync.Mutex
 		for i := range vBef {
 			wg.Add(1)
 			go func(i string) {
-				//for j := 0; j < VPARALLELIZE && (j+i < len(vBef)); j++ {
-					//result[i+j] = AddRmProofCreation(vBef[i+j], vAft[i+j], k, toAdd)
-				result[i] = AddRmProofCreation(vBef[i], vAft[i], k, toAdd)
-				//}
 				defer wg.Done()
+
+				proof := AddRmProofCreation(vBef[i], vAft[i], k, toAdd)
+
+				mutexBf.Lock()
+				result[i] = proof
+				mutexBf.Unlock()
 			}(i)
 
 		}
