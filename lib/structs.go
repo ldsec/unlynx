@@ -45,6 +45,7 @@ type DpClearResponse struct {
 	AggregatingAttributesEnc   map[string]int64
 }
 
+// DpResponse represents an encrypted DP response (as it is sent to a server)
 type DpResponse struct {
 	WhereClear                 map[string]int64
 	WhereEnc                   map[string]CipherText
@@ -54,6 +55,7 @@ type DpResponse struct {
 	AggregatingAttributesEnc   map[string]CipherText
 }
 
+// DpResponseToSend is a DpResponse formatted such that it can be sent with protobuf
 type DpResponseToSend struct {
 	WhereClear                 map[string]int64
 	WhereEnc                   map[string][]byte
@@ -63,38 +65,20 @@ type DpResponseToSend struct {
 	AggregatingAttributesEnc   map[string][]byte
 }
 
+// ProcessResponse is a response in the format used for shuffling and det tag
 type ProcessResponse struct {
 	WhereEnc              CipherVector
 	GroupByEnc            CipherVector
 	AggregatingAttributes CipherVector
 }
 
-// ClientResponse represents a client response.
-/*type ClientResponse struct {
-	GroupingAttributesClear    GroupingKey
-	ProbaGroupingAttributesEnc CipherVector
-	AggregatingAttributes      CipherVector
-}
-
-// ClientResponseBytes represents a client response in bytes.
-type ClientResponseBytes struct {
-	GroupingAttributesClear    []byte
-	ProbaGroupingAttributesEnc [][][]byte
-	AggregatingAttributes      [][][]byte
-}*/
-
-/*
-// DpResponseDetCreation represents a client response which is in the process of creating a det. hash
-type DpResponseDetCreation struct {
-	CR          ClientResponse
-	DetCreaVect CipherVector
-}*/
-
+// WhereQueryAttribute is the name and encrypted value of a where attribute in the query
 type WhereQueryAttribute struct {
 	Name  string
 	Value CipherText
 }
 
+// WhereQueryAttributeTagged is WhereQueryAttributes deterministically tagged
 type WhereQueryAttributeTagged struct {
 	Name  string
 	Value GroupingKey
@@ -107,11 +91,13 @@ type ProcessResponseDet struct {
 	DetTagWhere   []GroupingKey
 }
 
+// FilteredResponseDet is a FilteredResponse with its deterministic tag
 type FilteredResponseDet struct {
 	DetTagGroupBy GroupingKey
 	Fr            FilteredResponse
 }
 
+// FilteredResponse is a response after the filtering step of the proto and until the end
 type FilteredResponse struct {
 	GroupByEnc            CipherVector
 	AggregatingAttributes CipherVector
@@ -120,6 +106,7 @@ type FilteredResponse struct {
 // SurveyID unique ID for each survey.
 type SurveyID string
 
+// SurveyCreationQuery is a query for Unlynx
 type SurveyCreationQuery struct {
 	SurveyGenID   *SurveyID
 	SurveyID      *SurveyID
@@ -147,14 +134,6 @@ type Survey struct {
 	Sender            network.ServerIdentityID
 	Final             bool
 }
-
-/*
-// SurveyDescription is currently only used to define a client response format.
-type SurveyDescription struct {
-	GroupingAttributesClearCount int32
-	GroupingAttributesEncCount   int32
-	AggregatingAttributesCount   uint32
-}*/
 
 // Functions
 //______________________________________________________________________________________________________________________
@@ -198,15 +177,7 @@ func UnKey(gk GroupingKey) []int64 {
 // ClientResponse
 //______________________________________________________________________________________________________________________
 
-// Add two client responses and stores result in receiver.
-/*
-func (cv *ClientResponse) Add(cv1, cv2 ClientResponse) *ClientResponse {
-	cv.GroupingAttributesClear = cv1.GroupingAttributesClear
-	cv.ProbaGroupingAttributesEnc = cv1.ProbaGroupingAttributesEnc
-	cv.AggregatingAttributes.Add(cv1.AggregatingAttributes, cv2.AggregatingAttributes)
-	return cv
-}*/
-
+// Add permits to add to FilteredResponses
 func (cv *FilteredResponse) Add(cv1, cv2 FilteredResponse) *FilteredResponse {
 	cv.GroupByEnc = cv1.GroupByEnc
 	cv.AggregatingAttributes.Add(cv1.AggregatingAttributes, cv2.AggregatingAttributes)
@@ -340,44 +311,6 @@ func CreatePrecomputedRandomize(g, h abstract.Point, rand cipher.Stream, lineSiz
 
 // Conversion
 //______________________________________________________________________________________________________________________
-
-/*// ToBytes converts a ClientResponse to a byte array
-func (cv *ClientResponse) ToBytes() ([]byte, int, int, int) {
-	b := make([]byte, 0)
-	pgaeb := make([]byte, 0)
-	pgaebLength := 0
-
-	gacb := []byte((*cv).GroupingAttributesClear)
-	gacbLength := len(gacb)
-
-	aab, aabLength := (*cv).AggregatingAttributes.ToBytes()
-	if (*cv).ProbaGroupingAttributesEnc != nil {
-		pgaeb, pgaebLength = (*cv).ProbaGroupingAttributesEnc.ToBytes()
-	}
-
-	b = append(b, gacb...)
-	b = append(b, aab...)
-	b = append(b, pgaeb...)
-
-	return b, gacbLength, aabLength, pgaebLength
-}
-
-// FromBytes converts a byte array to a ClientResponse. Note that you need to create the (empty) object beforehand.
-func (cv *ClientResponse) FromBytes(data []byte, gacbLength, aabLength, pgaebLength int) {
-	(*cv).AggregatingAttributes = make(CipherVector, aabLength)
-	(*cv).ProbaGroupingAttributesEnc = make(CipherVector, pgaebLength)
-
-	aabByteLength := (aabLength * 64) //CAREFUL: hardcoded 64 (size of el-gamal element C,K)
-	pgaebByteLength := (pgaebLength * 64)
-
-	gacb := data[:gacbLength]
-	aab := data[gacbLength : gacbLength+aabByteLength]
-	pgaeb := data[gacbLength+aabByteLength : gacbLength+aabByteLength+pgaebByteLength]
-
-	(*cv).GroupingAttributesClear = GroupingKey(string(gacb))
-	(*cv).AggregatingAttributes.FromBytes(aab, aabLength)
-	(*cv).ProbaGroupingAttributesEnc.FromBytes(pgaeb, pgaebLength)
-}*/
 
 // ToBytes converts a Filtered to a byte array
 func (cv *FilteredResponse) ToBytes() ([]byte, int, int) {
@@ -516,6 +449,7 @@ func (crd *ProcessResponseDet) FromBytes(data []byte, gacbLength, aabLength, pga
 
 }
 
+// FromDpResponseToSend converts a DpResponseToSend to a DpResponse
 func (dr *DpResponse) FromDpResponseToSend(dprts DpResponseToSend) {
 	dr.GroupByClear = dprts.GroupByClear
 	if len(dprts.GroupByEnc) != 0 {
@@ -542,6 +476,7 @@ func (dr *DpResponse) FromDpResponseToSend(dprts DpResponseToSend) {
 	}
 }
 
+// MapBytesToMapCipherText transform objects in a map from bytes to ciphertexts
 func MapBytesToMapCipherText(mapBytes map[string][]byte) map[string]CipherText {
 	result := make(map[string]CipherText)
 	if len(mapBytes) != 0 {

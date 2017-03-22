@@ -113,14 +113,17 @@ func IntToPoint(integer int64) abstract.Point {
 	return M
 }
 
+// PointToCipherText converts a point into a ciphertext
 func PointToCipherText(point abstract.Point) CipherText {
 	return CipherText{K: suite.Point().Null(), C: point}
 }
 
-func IntToCiphertext(integer int64) CipherText {
+// IntToCipherText converts an int into a ciphertext
+func IntToCipherText(integer int64) CipherText {
 	return PointToCipherText(IntToPoint(integer))
 }
 
+// IntArrayToCipherVector converts an array of int to a CipherVector
 func IntArrayToCipherVector(integers []int64) CipherVector {
 	result := make(CipherVector, len(integers))
 	for i, v := range integers {

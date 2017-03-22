@@ -28,6 +28,7 @@ type Store struct {
 	lastID uint64
 }
 
+// GroupingKeyTuple contains two grouping key
 type GroupingKeyTuple struct {
 	gkt1 GroupingKey
 	gkt2 GroupingKey
@@ -55,14 +56,14 @@ func proccessParameters(data []string, clear map[string]int64, encrypted map[str
 			if value, ok := encrypted[v]; ok {
 				containerEnc = append(containerEnc, value)
 			} else {
-				containerEnc = append(containerEnc, IntToCiphertext(clear[v]))
+				containerEnc = append(containerEnc, IntToCipherText(clear[v]))
 			}
 		}
 	}
 	return containerClear, containerEnc
 }
 
-// InsertDPResponse handles the local storage of a new DP response in aggregation or grouping cases.
+// InsertDpResponse handles the local storage of a new DP response in aggregation or grouping cases.
 func (s *Store) InsertDpResponse(cr DpResponse, proofs bool, scq SurveyCreationQuery) {
 	newResp := ProcessResponse{}
 	clearGrp := []int64{}

@@ -1003,6 +1003,7 @@ func (s *Service) responseAlreadySent(responseToCheck FinalResponsesIds) bool {
 	return result
 }
 
+// FilterResponses permits to filter responses based on where attributes and a predicate
 func FilterResponses(pred string, whereQueryValues []lib.WhereQueryAttributeTagged, responsesToFilter []lib.ProcessResponseDet) []lib.FilteredResponseDet {
 	result := []lib.FilteredResponseDet{}
 	for _, v := range responsesToFilter {

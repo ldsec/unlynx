@@ -87,6 +87,7 @@ type PublishedDetTagAdditionProof struct {
 	Proof []byte
 }
 
+// PublishedSimpleAdditionProof contains the two added ciphervectors and the resulting ciphervector
 type PublishedSimpleAdditionProof struct {
 	C1       CipherVector
 	C2       CipherVector
