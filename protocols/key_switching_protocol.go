@@ -257,7 +257,6 @@ func sending(p *KeySwitchingProtocol, kscm *KeySwitchedCipherMessage) {
 
 //FilteredResponseKeySwitching applies key switching on a filtered response
 func FilteredResponseKeySwitching(cv *lib.FilteredResponse, v lib.FilteredResponse, origGrpEphemKeys, origAttrEphemKeys []abstract.Point, newKey abstract.Point, secretContrib abstract.Scalar, proofs bool) {
-
 	tmp, r1 := lib.NewCipherVector(len(v.AggregatingAttributes)).KeySwitching(v.AggregatingAttributes, origAttrEphemKeys, newKey, secretContrib)
 	cv.AggregatingAttributes = *tmp
 	tmp1, r2 := lib.NewCipherVector(len(v.GroupByEnc)).KeySwitching(v.GroupByEnc, origGrpEphemKeys, newKey, secretContrib)

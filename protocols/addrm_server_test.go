@@ -46,18 +46,18 @@ func TestAddRmServer(t *testing.T) {
 
 	//dummySurveyCreationQuery := lib.SurveyCreationQuery{Sum:[]string{"0","1"}, GroupBy:[]string{"0","1"}, Where:[]lib.WhereQueryAttribute{{"0", lib.CipherText{}},{"1", lib.CipherText{}}}}
 	notEncrypted := make(map[string]int64)
-	for i, v := range tab{
+	for i, v := range tab {
 		notEncrypted[strconv.Itoa(i)] = v
 	}
 	encrypted := make(map[string]lib.CipherText)
-	for i, v := range tab{
+	for i, v := range tab {
 		encrypted[strconv.Itoa(i)] = *lib.EncryptInt(pubKey, v)
 	}
 	// aggregation
 	dpResponses := make([]lib.DpResponse, 3)
-	dpResponses[0] = lib.DpResponse{GroupByClear: notEncrypted, GroupByEnc: encrypted, WhereClear: notEncrypted, WhereEnc:encrypted, AggregatingAttributesClear: notEncrypted, AggregatingAttributesEnc:encrypted }
-	dpResponses[1] = lib.DpResponse{GroupByClear: notEncrypted, GroupByEnc: encrypted, WhereClear: notEncrypted, WhereEnc:encrypted, AggregatingAttributesClear: notEncrypted, AggregatingAttributesEnc:encrypted}
-	dpResponses[2] = lib.DpResponse{GroupByClear: notEncrypted, GroupByEnc: encrypted, WhereClear: notEncrypted, WhereEnc:encrypted, AggregatingAttributesClear: notEncrypted, AggregatingAttributesEnc:encrypted}
+	dpResponses[0] = lib.DpResponse{GroupByClear: notEncrypted, GroupByEnc: encrypted, WhereClear: notEncrypted, WhereEnc: encrypted, AggregatingAttributesClear: notEncrypted, AggregatingAttributesEnc: encrypted}
+	dpResponses[1] = lib.DpResponse{GroupByClear: notEncrypted, GroupByEnc: encrypted, WhereClear: notEncrypted, WhereEnc: encrypted, AggregatingAttributesClear: notEncrypted, AggregatingAttributesEnc: encrypted}
+	dpResponses[2] = lib.DpResponse{GroupByClear: notEncrypted, GroupByEnc: encrypted, WhereClear: notEncrypted, WhereEnc: encrypted, AggregatingAttributesClear: notEncrypted, AggregatingAttributesEnc: encrypted}
 
 	log.LLvl1("CipherTexts to transform ")
 	log.LLvl1(dpResponses)
@@ -77,7 +77,7 @@ func TestAddRmServer(t *testing.T) {
 		log.LLvl1("Results: ")
 		log.LLvl1(results)
 		decryptedResult := make(map[string]int64)
-		for i, v := range results[0].AggregatingAttributesEnc{
+		for i, v := range results[0].AggregatingAttributesEnc {
 			decryptedResult[i] = lib.DecryptInt(secKeyAfter, v)
 		}
 		//decryptedResult := lib.DecryptIntVector(secKeyAfter, &results[0].AggregatingAttributesEnc)

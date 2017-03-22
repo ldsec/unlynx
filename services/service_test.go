@@ -43,8 +43,7 @@ func TestServiceClearAttr(t *testing.T) {
 	// Send a request to the service
 	client := services.NewMedcoClient(el.List[0], strconv.Itoa(0))
 
-
-	sum := []string{"sum1", "sum2"}
+	sum := []string{"s1", "s2"}
 	count := false
 	whereQueryValues := []lib.WhereQueryAttribute{{"w1", *lib.EncryptInt(el.Aggregate, 1)}, {"w2", *lib.EncryptInt(el.Aggregate, 1)}, {"w3", *lib.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
 	pred := "(v0 == v1 || v2 == v3) && v4 == v5"
@@ -92,25 +91,24 @@ func TestServiceClearAttr(t *testing.T) {
 		}
 		sliceGrp1 := make(map[string]int64, numberGrpAttr)
 		for j := range grp {
-			sliceGrp1["g"+strconv.Itoa(j+1)] = int64(j+1)
+			sliceGrp1["g"+strconv.Itoa(j+1)] = int64(j + 1)
 
 		}
 
 		aggr = make(map[string]int64, numberAttr)
-		for j := 0 ; j < numberAttr; j++ {
-			aggr["sum"+strconv.Itoa(j+1)] = int64(j)
-
+		for j := 0; j < numberAttr; j++ {
+			aggr["s"+strconv.Itoa(j+1)] = int64(j)
 		}
 
 		//responses:= []lib.DpClearResponse{{WhereClear: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr},{WhereClear: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr},{WhereClear: sliceWhere, GroupByClear: sliceGrp1, AggregatingAttributesEnc: aggr}}
-		responses:= []lib.DpClearResponse{{WhereClear: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr},{WhereClear: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr}}
+		responses := []lib.DpClearResponse{{WhereClear: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereClear: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr}}
 
 		log.LLvl1(responses)
 		dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
 
 	}
 
-	expectedResults[[3]int64{0,1,2}] = []int64{0,18}
+	expectedResults[[3]int64{0, 1, 2}] = []int64{0, 18}
 	//expectedResults[[3]int64{1,2,3}] = []int64{0,9}
 	grp, aggr, err := client.SendSurveyResultsQuery(*surveyID)
 
@@ -151,7 +149,7 @@ func TestServiceClearGrpEncWhereAttr(t *testing.T) {
 	// Send a request to the service
 	client := services.NewMedcoClient(el.List[0], strconv.Itoa(0))
 
-	sum := []string{"sum1", "sum2"}
+	sum := []string{"s1", "s2"}
 	count := false
 	whereQueryValues := []lib.WhereQueryAttribute{{"w1", *lib.EncryptInt(el.Aggregate, 1)}, {"w2", *lib.EncryptInt(el.Aggregate, 1)}, {"w3", *lib.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
 	pred := "(v0 == v1 || v2 == v3) && v4 == v5"
@@ -179,7 +177,7 @@ func TestServiceClearGrpEncWhereAttr(t *testing.T) {
 		aggr := make(map[string]int64, numberAttr)
 
 		grp[0] = int64(i % 4)
-		aggr["sum"+strconv.Itoa(i+1)] = 3
+		aggr["s"+strconv.Itoa(i+1)] = 3
 
 		//convert tab in slice (was a tab only for the test)
 		val := int64(1)
@@ -197,20 +195,20 @@ func TestServiceClearGrpEncWhereAttr(t *testing.T) {
 		}
 		sliceGrp1 := make(map[string]int64, numberGrpAttr)
 		for j := range grp {
-			sliceGrp1["g"+strconv.Itoa(j+1)] = int64(j+1)
+			sliceGrp1["g"+strconv.Itoa(j+1)] = int64(j + 1)
 		}
 
 		aggr = make(map[string]int64, numberAttr)
-		for j := 0 ; j < numberAttr; j++ {
-			aggr["sum"+strconv.Itoa(j+1)] = int64(j)
+		for j := 0; j < numberAttr; j++ {
+			aggr["s"+strconv.Itoa(j+1)] = int64(j)
 		}
 
-		responses:= []lib.DpClearResponse{{WhereEnc: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereEnc: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr},{WhereEnc: sliceWhere, GroupByClear: sliceGrp1, AggregatingAttributesEnc: aggr}}
+		responses := []lib.DpClearResponse{{WhereEnc: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereEnc: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereEnc: sliceWhere, GroupByClear: sliceGrp1, AggregatingAttributesEnc: aggr}}
 		dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
 	}
 
-	expectedResults[[3]int64{0,1,2}] = []int64{0,18}
-	expectedResults[[3]int64{1,2,3}] = []int64{0,9}
+	expectedResults[[3]int64{0, 1, 2}] = []int64{0, 18}
+	expectedResults[[3]int64{1, 2, 3}] = []int64{0, 9}
 	grp, aggr, err := client.SendSurveyResultsQuery(*surveyID)
 
 	if err != nil {
@@ -235,7 +233,6 @@ func TestServiceClearGrpEncWhereAttr(t *testing.T) {
 	}
 }
 
-
 //______________________________________________________________________________________________________________________
 /// Only clear where and encrypted group by attributes
 func TestServiceEncGrpClearWhereAttr(t *testing.T) {
@@ -251,8 +248,7 @@ func TestServiceEncGrpClearWhereAttr(t *testing.T) {
 	// Send a request to the service
 	client := services.NewMedcoClient(el.List[0], strconv.Itoa(0))
 
-
-	sum := []string{"sum1", "sum2"}
+	sum := []string{"s1", "s2"}
 	count := false
 	whereQueryValues := []lib.WhereQueryAttribute{{"w1", *lib.EncryptInt(el.Aggregate, 1)}, {"w2", *lib.EncryptInt(el.Aggregate, 1)}, {"w3", *lib.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
 	pred := "(v0 == v1 || v2 == v3) && v4 == v5"
@@ -280,7 +276,7 @@ func TestServiceEncGrpClearWhereAttr(t *testing.T) {
 		aggr := make(map[string]int64, numberAttr)
 
 		grp[0] = int64(i % 4)
-		aggr["sum"+strconv.Itoa(i+1)] = 3
+		aggr["s"+strconv.Itoa(i+1)] = 3
 
 		//convert tab in slice (was a tab only for the test)
 		val := int64(1)
@@ -299,20 +295,20 @@ func TestServiceEncGrpClearWhereAttr(t *testing.T) {
 
 		sliceGrp1 := make(map[string]int64, numberGrpAttr)
 		for j := range grp {
-			sliceGrp1["g"+strconv.Itoa(j+1)] = int64(j+1)
+			sliceGrp1["g"+strconv.Itoa(j+1)] = int64(j + 1)
 		}
 
 		aggr = make(map[string]int64, numberAttr)
-		for j := 0 ; j < numberAttr; j++ {
-			aggr["sum"+strconv.Itoa(j+1)] = int64(j)
+		for j := 0; j < numberAttr; j++ {
+			aggr["s"+strconv.Itoa(j+1)] = int64(j)
 		}
 
-		responses:= []lib.DpClearResponse{{WhereClear: sliceWhere, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr},{WhereClear: sliceWhere, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
+		responses := []lib.DpClearResponse{{WhereClear: sliceWhere, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereClear: sliceWhere, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
 		dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
 	}
 
-	expectedResults[[3]int64{0,1,2}] = []int64{0,9}
-	expectedResults[[3]int64{1,2,3}] = []int64{0,9}
+	expectedResults[[3]int64{0, 1, 2}] = []int64{0, 9}
+	expectedResults[[3]int64{1, 2, 3}] = []int64{0, 9}
 	grp, aggr, err := client.SendSurveyResultsQuery(*surveyID)
 
 	if err != nil {
@@ -352,8 +348,7 @@ func TestServiceEncGrpAndWhereAttr(t *testing.T) {
 	// Send a request to the service
 	client := services.NewMedcoClient(el.List[0], strconv.Itoa(0))
 
-
-	sum := []string{"sum1", "sum2"}
+	sum := []string{"s1", "s2"}
 	count := false
 	whereQueryValues := []lib.WhereQueryAttribute{{"w1", *lib.EncryptInt(el.Aggregate, 1)}, {"w2", *lib.EncryptInt(el.Aggregate, 1)}, {"w3", *lib.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
 	pred := "(v0 == v1 || v2 == v3) && v4 == v5"
@@ -381,7 +376,7 @@ func TestServiceEncGrpAndWhereAttr(t *testing.T) {
 		aggr := make(map[string]int64, numberAttr)
 
 		grp[0] = int64(i % 4)
-		aggr["sum"+strconv.Itoa(i+1)] = 3
+		aggr["s"+strconv.Itoa(i+1)] = 3
 
 		//convert tab in slice (was a tab only for the test)
 		val := int64(1)
@@ -401,22 +396,22 @@ func TestServiceEncGrpAndWhereAttr(t *testing.T) {
 		}
 		sliceGrp1 := make(map[string]int64, numberGrpAttr)
 		for j := range grp {
-			sliceGrp1["g"+strconv.Itoa(j+1)] = int64(j+1)
+			sliceGrp1["g"+strconv.Itoa(j+1)] = int64(j + 1)
 
 		}
 
 		aggr = make(map[string]int64, numberAttr)
-		for j := 0 ; j < numberAttr; j++ {
-			aggr["sum"+strconv.Itoa(j+1)] = int64(j)
+		for j := 0; j < numberAttr; j++ {
+			aggr["s"+strconv.Itoa(j+1)] = int64(j)
 
 		}
 
-		responses:= []lib.DpClearResponse{{WhereEnc: sliceWhere, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr},{WhereEnc: sliceWhere, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
+		responses := []lib.DpClearResponse{{WhereEnc: sliceWhere, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereEnc: sliceWhere, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
 		dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
 	}
 
-	expectedResults[[3]int64{0,1,2}] = []int64{0,9}
-	expectedResults[[3]int64{1,2,3}] = []int64{0,9}
+	expectedResults[[3]int64{0, 1, 2}] = []int64{0, 9}
+	expectedResults[[3]int64{1, 2, 3}] = []int64{0, 9}
 	grp, aggr, err := client.SendSurveyResultsQuery(*surveyID)
 
 	if err != nil {
@@ -456,8 +451,7 @@ func TestServiceEverything(t *testing.T) {
 	// Send a request to the service
 	client := services.NewMedcoClient(el.List[0], strconv.Itoa(0))
 
-
-	sum := []string{"sum1", "sum2"}
+	sum := []string{"s1", "s2"}
 	count := false
 	whereQueryValues := []lib.WhereQueryAttribute{{"w1", *lib.EncryptInt(el.Aggregate, 1)}, {"w2", *lib.EncryptInt(el.Aggregate, 1)}, {"w3", *lib.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
 	pred := "(v0 == v1 || v2 == v3) && v4 == v5"
@@ -485,7 +479,7 @@ func TestServiceEverything(t *testing.T) {
 		aggr := make(map[string]int64, numberAttr)
 
 		grp[0] = int64(i % 4)
-		aggr["sum"+strconv.Itoa(i+1)] = 3
+		aggr["s"+strconv.Itoa(i+1)] = 3
 
 		//convert tab in slice (was a tab only for the test)
 		val := int64(1)
@@ -503,20 +497,20 @@ func TestServiceEverything(t *testing.T) {
 		}
 		sliceGrp1 := make(map[string]int64, numberGrpAttr)
 		for j := range grp {
-			sliceGrp1["g"+strconv.Itoa(j+1)] = int64(j+1)
+			sliceGrp1["g"+strconv.Itoa(j+1)] = int64(j + 1)
 		}
 
 		aggr = make(map[string]int64, numberAttr)
-		for j := 0 ; j < numberAttr; j++ {
-			aggr["sum"+strconv.Itoa(j+1)] = int64(j)
+		for j := 0; j < numberAttr; j++ {
+			aggr["s"+strconv.Itoa(j+1)] = int64(j)
 		}
 
-		responses:= []lib.DpClearResponse{{WhereClear:sliceWhere, WhereEnc: sliceWhere, GroupByClear:sliceGrp, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr},{WhereClear:sliceWhere, WhereEnc: sliceWhere,GroupByClear:sliceGrp, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
+		responses := []lib.DpClearResponse{{WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
 		dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
 	}
 
-	expectedResults[[3]int64{0,1,2}] = []int64{0,9}
-	expectedResults[[3]int64{1,2,3}] = []int64{0,9}
+	expectedResults[[3]int64{0, 1, 2}] = []int64{0, 9}
+	expectedResults[[3]int64{1, 2, 3}] = []int64{0, 9}
 	grp, aggr, err := client.SendSurveyResultsQuery(*surveyID)
 
 	if err != nil {
@@ -555,8 +549,7 @@ func TestServiceEncGrpAndWhereAttrWithCount(t *testing.T) {
 	// Send a request to the service
 	client := services.NewMedcoClient(el.List[0], strconv.Itoa(0))
 
-
-	sum := []string{"sum1", "sum2", "count"}
+	sum := []string{"s1", "s2", "count"}
 	count := true
 	whereQueryValues := []lib.WhereQueryAttribute{{"w1", *lib.EncryptInt(el.Aggregate, 1)}, {"w2", *lib.EncryptInt(el.Aggregate, 1)}, {"w3", *lib.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
 	pred := "(v0 == v1 || v2 == v3) && v4 == v5"
@@ -584,7 +577,7 @@ func TestServiceEncGrpAndWhereAttrWithCount(t *testing.T) {
 		aggr := make(map[string]int64, numberAttr)
 
 		grp[0] = int64(i % 4)
-		aggr["sum"+strconv.Itoa(i+1)] = 3
+		aggr["s"+strconv.Itoa(i+1)] = 3
 
 		//convert tab in slice (was a tab only for the test)
 		val := int64(1)
@@ -602,20 +595,20 @@ func TestServiceEncGrpAndWhereAttrWithCount(t *testing.T) {
 		}
 		sliceGrp1 := make(map[string]int64, numberGrpAttr)
 		for j := range grp {
-			sliceGrp1["g"+strconv.Itoa(j+1)] = int64(j+1)
+			sliceGrp1["g"+strconv.Itoa(j+1)] = int64(j + 1)
 		}
 
 		aggr = make(map[string]int64, numberAttr)
-		for j := 0 ; j < numberAttr; j++ {
-			aggr["sum"+strconv.Itoa(j+1)] = int64(j)
+		for j := 0; j < numberAttr; j++ {
+			aggr["s"+strconv.Itoa(j+1)] = int64(j)
 		}
 
-		responses:= []lib.DpClearResponse{{WhereClear:sliceWhere, WhereEnc: sliceWhere, GroupByClear:sliceGrp, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr},{WhereClear:sliceWhere, WhereEnc: sliceWhere,GroupByClear:sliceGrp, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
+		responses := []lib.DpClearResponse{{WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
 		dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
 	}
 
-	expectedResults[[3]int64{0,1,2}] = []int64{0,9,9}
-	expectedResults[[3]int64{1,2,3}] = []int64{0,9,9}
+	expectedResults[[3]int64{0, 1, 2}] = []int64{0, 9, 9}
+	expectedResults[[3]int64{1, 2, 3}] = []int64{0, 9, 9}
 	grp, aggr, err := client.SendSurveyResultsQuery(*surveyID)
 
 	if err != nil {
@@ -640,7 +633,6 @@ func TestServiceEncGrpAndWhereAttrWithCount(t *testing.T) {
 	}
 }
 
-
 // TEST BATCH 2 -> different number of DPs
 //______________________________________________________________________________________________________________________
 
@@ -658,9 +650,7 @@ func TestAllServersNoDPs(t *testing.T) {
 	// Send a request to the service
 	client := services.NewMedcoClient(el.List[0], strconv.Itoa(0))
 
-
-
-	sum := []string{"sum1", "sum2"}
+	sum := []string{"s1", "s2"}
 	count := false
 	whereQueryValues := []lib.WhereQueryAttribute{{"w1", *lib.EncryptInt(el.Aggregate, 1)}, {"w2", *lib.EncryptInt(el.Aggregate, 1)}, {"w3", *lib.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
 	pred := "(v0 == v1 || v2 == v3) && v4 == v5"
@@ -692,7 +682,7 @@ func TestAllServersNoDPs(t *testing.T) {
 		aggr := make(map[string]int64, numberAttr)
 
 		grp[0] = int64(i % 4)
-		aggr["sum"+strconv.Itoa(i+1)] = 3
+		aggr["s"+strconv.Itoa(i+1)] = 3
 
 		//convert tab in slice (was a tab only for the test)
 		val := int64(1)
@@ -710,20 +700,20 @@ func TestAllServersNoDPs(t *testing.T) {
 		}
 		sliceGrp1 := make(map[string]int64, numberGrpAttr)
 		for j := range grp {
-			sliceGrp1["g"+strconv.Itoa(j+1)] = int64(j+1)
+			sliceGrp1["g"+strconv.Itoa(j+1)] = int64(j + 1)
 		}
 
 		aggr = make(map[string]int64, numberAttr)
-		for j := 0 ; j < numberAttr; j++ {
-			aggr["sum"+strconv.Itoa(j+1)] = int64(j)
+		for j := 0; j < numberAttr; j++ {
+			aggr["s"+strconv.Itoa(j+1)] = int64(j)
 		}
 
-		responses:= []lib.DpClearResponse{{WhereClear:sliceWhere, WhereEnc: sliceWhere, GroupByClear:sliceGrp, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr},{WhereClear:sliceWhere, WhereEnc: sliceWhere,GroupByClear:sliceGrp, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
+		responses := []lib.DpClearResponse{{WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
 		dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
 	}
 
-	expectedResults[[3]int64{0,1,2}] = []int64{0,9}
-	expectedResults[[3]int64{1,2,3}] = []int64{0,9}
+	expectedResults[[3]int64{0, 1, 2}] = []int64{0, 9}
+	expectedResults[[3]int64{1, 2, 3}] = []int64{0, 9}
 	grp, aggr, err := client.SendSurveyResultsQuery(*surveyID)
 
 	if err != nil {
@@ -770,7 +760,7 @@ func TestAllServersRandomDPs(t *testing.T) {
 	nbrDPs[el.List[3].String()] = 3
 	nbrDPs[el.List[4].String()] = 4
 
-	sum := []string{"sum1", "sum2"}
+	sum := []string{"s1", "s2"}
 	count := false
 	whereQueryValues := []lib.WhereQueryAttribute{{"w1", *lib.EncryptInt(el.Aggregate, 1)}, {"w2", *lib.EncryptInt(el.Aggregate, 1)}, {"w3", *lib.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
 	pred := "(v0 == v1 || v2 == v3) && v4 == v5"
@@ -801,7 +791,7 @@ func TestAllServersRandomDPs(t *testing.T) {
 		aggr := make(map[string]int64, numberAttr)
 
 		grp[0] = int64(i % 4)
-		aggr["sum"+strconv.Itoa(i+1)] = 3
+		aggr["s"+strconv.Itoa(i+1)] = 3
 
 		//convert tab in slice (was a tab only for the test)
 		val := int64(1)
@@ -819,19 +809,19 @@ func TestAllServersRandomDPs(t *testing.T) {
 		}
 		sliceGrp1 := make(map[string]int64, numberGrpAttr)
 		for j := range grp {
-			sliceGrp1["g"+strconv.Itoa(j+1)] = int64(j+1)
+			sliceGrp1["g"+strconv.Itoa(j+1)] = int64(j + 1)
 		}
 
 		aggr = make(map[string]int64, numberAttr)
-		for j := 0 ; j < numberAttr; j++ {
-			aggr["sum"+strconv.Itoa(j+1)] = int64(j)
+		for j := 0; j < numberAttr; j++ {
+			aggr["s"+strconv.Itoa(j+1)] = int64(j)
 		}
 
-		responses:= []lib.DpClearResponse{{WhereClear:sliceWhere, WhereEnc: sliceWhere, GroupByClear:sliceGrp, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr},{WhereClear:sliceWhere, WhereEnc: sliceWhere,GroupByClear:sliceGrp, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
+		responses := []lib.DpClearResponse{{WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
 		dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
 	}
-	expectedResults[[3]int64{0,1,2}] = []int64{0,9}
-	expectedResults[[3]int64{1,2,3}] = []int64{0,9}
+	expectedResults[[3]int64{0, 1, 2}] = []int64{0, 9}
+	expectedResults[[3]int64{1, 2, 3}] = []int64{0, 9}
 	grp, aggr, err := client.SendSurveyResultsQuery(*surveyID)
 
 	if err != nil {

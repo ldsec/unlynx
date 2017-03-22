@@ -1,5 +1,6 @@
 package libi2b2_test
 
+/*
 import (
 	"testing"
 )
@@ -12,3 +13,4 @@ func TestMedcoData(t *testing.T) {
 	//lib_i2b2.CreateDatabaseConcept(2000, "8574c51103267a815281c88faa4c7ac2825d9c2372bd82c24023d375417354fd", true, "")
 	//lib_i2b2.CreateDatabasePatient(network.Suite.Point().Base())
 }
+*/

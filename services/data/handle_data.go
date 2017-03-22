@@ -11,8 +11,8 @@ import (
 	"gopkg.in/dedis/onet.v1/log"
 
 	"os"
-	"strings"
 	"reflect"
+	"strings"
 )
 
 // Groups identifies all different groups to be added to the test data file
@@ -118,12 +118,11 @@ func GenerateData(numDPs, numEntries, numEntriesFiltered, numGroupsClear, numGro
 			where := make([]int64, numWhereClear+numWhereEnc)
 
 			//number of entries to keep (all where attributes are set to 1)
-			if j < numEntriesFiltered{
-				fillInt64Slice(where,1)
-			} else{
-				fillInt64Slice(where,0)
+			if j < numEntriesFiltered {
+				fillInt64Slice(where, 1)
+			} else {
+				fillInt64Slice(where, 0)
 			}
-
 
 			if randomGroups {
 				for k := range grp {
@@ -134,12 +133,12 @@ func GenerateData(numDPs, numEntries, numEntriesFiltered, numGroupsClear, numGro
 			}
 
 			dpData[j] = lib.DpClearResponse{
-				GroupByClear: 			lib.ConvertDataToMap(grp[:numGroupsClear],"g",0),
-				GroupByEnc: 			lib.ConvertDataToMap(grp[numGroupsClear : numGroupsClear+numGroupsEnc],"g",int(numGroupsClear)),
-				WhereClear: 			lib.ConvertDataToMap(where[:numWhereClear],"w",0),
-				WhereEnc: 			lib.ConvertDataToMap(where[numWhereClear : numWhereClear+numWhereEnc],"w",int(numWhereClear)),
-				AggregatingAttributesClear: 	lib.ConvertDataToMap(aggr[:numAggrClear],"s",0),
-				AggregatingAttributesEnc: 	lib.ConvertDataToMap(aggr[numAggrClear : numAggrClear+numAggrEnc],"s",int(numAggrClear)),
+				GroupByClear:               lib.ConvertDataToMap(grp[:numGroupsClear], "g", 0),
+				GroupByEnc:                 lib.ConvertDataToMap(grp[numGroupsClear:numGroupsClear+numGroupsEnc], "g", int(numGroupsClear)),
+				WhereClear:                 lib.ConvertDataToMap(where[:numWhereClear], "w", 0),
+				WhereEnc:                   lib.ConvertDataToMap(where[numWhereClear:numWhereClear+numWhereEnc], "w", int(numWhereClear)),
+				AggregatingAttributesClear: lib.ConvertDataToMap(aggr[:numAggrClear], "s", 0),
+				AggregatingAttributesEnc:   lib.ConvertDataToMap(aggr[numAggrClear:numAggrClear+numAggrEnc], "s", int(numAggrClear)),
 			}
 
 		}
@@ -175,12 +174,12 @@ func WriteDataToFile(filename string, testData map[string][]lib.DpClearResponse)
 		writer.Flush()
 
 		for _, entry := range v {
-			flushInt64Data(writer, lib.ConvertMapToData(entry.GroupByClear,"g",0))
-			flushInt64Data(writer, lib.ConvertMapToData(entry.GroupByEnc,"g",len(entry.GroupByClear)))
-			flushInt64Data(writer, lib.ConvertMapToData(entry.WhereClear,"w",0))
-			flushInt64Data(writer, lib.ConvertMapToData(entry.WhereEnc,"w",len(entry.WhereClear)))
-			flushInt64Data(writer, lib.ConvertMapToData(entry.AggregatingAttributesClear,"s",0))
-			flushInt64Data(writer, lib.ConvertMapToData(entry.AggregatingAttributesEnc,"s",len(entry.AggregatingAttributesClear)))
+			flushInt64Data(writer, lib.ConvertMapToData(entry.GroupByClear, "g", 0))
+			flushInt64Data(writer, lib.ConvertMapToData(entry.GroupByEnc, "g", len(entry.GroupByClear)))
+			flushInt64Data(writer, lib.ConvertMapToData(entry.WhereClear, "w", 0))
+			flushInt64Data(writer, lib.ConvertMapToData(entry.WhereEnc, "w", len(entry.WhereClear)))
+			flushInt64Data(writer, lib.ConvertMapToData(entry.AggregatingAttributesClear, "s", 0))
+			flushInt64Data(writer, lib.ConvertMapToData(entry.AggregatingAttributesEnc, "s", len(entry.AggregatingAttributesClear)))
 		}
 	}
 }
@@ -221,7 +220,7 @@ func ReadDataFromFile(filename string) map[string][]lib.DpClearResponse {
 
 			// Where Attributes Clear
 			scanner.Scan()
-			whereClear:= lib.StringToInt64Array(scanner.Text()[:int(math.Max(float64(0), float64(len(scanner.Text())-1)))])
+			whereClear := lib.StringToInt64Array(scanner.Text()[:int(math.Max(float64(0), float64(len(scanner.Text())-1)))])
 
 			// Where Attributes Encrypted
 			scanner.Scan()
@@ -236,12 +235,12 @@ func ReadDataFromFile(filename string) map[string][]lib.DpClearResponse {
 			aggrEnc := lib.StringToInt64Array(scanner.Text()[:int(math.Max(float64(0), float64(len(scanner.Text())-1)))])
 
 			container = append(container, lib.DpClearResponse{
-				GroupByClear: 			lib.ConvertDataToMap(grpClear,"g",0),
-				GroupByEnc: 			lib.ConvertDataToMap(grpEnc,"g",len(grpClear)),
-				WhereClear: 			lib.ConvertDataToMap(whereClear,"w",0),
-				WhereEnc: 			lib.ConvertDataToMap(whereEnc,"w",len(whereClear)),
-				AggregatingAttributesClear:	lib.ConvertDataToMap(aggrClear,"s",0),
-				AggregatingAttributesEnc: 	lib.ConvertDataToMap(aggrEnc,"s",len(aggrClear)),
+				GroupByClear:               lib.ConvertDataToMap(grpClear, "g", 0),
+				GroupByEnc:                 lib.ConvertDataToMap(grpEnc, "g", len(grpClear)),
+				WhereClear:                 lib.ConvertDataToMap(whereClear, "w", 0),
+				WhereEnc:                   lib.ConvertDataToMap(whereEnc, "w", len(whereClear)),
+				AggregatingAttributesClear: lib.ConvertDataToMap(aggrClear, "s", 0),
+				AggregatingAttributesEnc:   lib.ConvertDataToMap(aggrEnc, "s", len(aggrClear)),
 			})
 		}
 	}
@@ -255,8 +254,41 @@ func ReadDataFromFile(filename string) map[string][]lib.DpClearResponse {
 	return testData
 }
 
+// joinMaps concatenates two similar maps of type map[string]int64
+func joinMaps(a, b map[string]int64) map[string]int64 {
+	concat := make(map[string]int64)
+
+	for k, v := range a {
+		concat[k] = v
+	}
+
+	for k, v := range b {
+		concat[k] = v
+	}
+
+	return concat
+}
+
+// ClearExpectedResult clears the map so that there are no where attributes
+func ClearExpectedResult(expectedResult []lib.DpClearResponse) []lib.DpClearResponse {
+	clearExpectedResult := make([]lib.DpClearResponse, len(expectedResult))
+
+	for i, elem := range expectedResult {
+		elem.WhereClear = map[string]int64{}
+		elem.WhereEnc = map[string]int64{}
+		elem.GroupByClear = joinMaps(elem.GroupByClear, elem.GroupByEnc)
+		elem.GroupByEnc = map[string]int64{}
+		elem.AggregatingAttributesClear = joinMaps(elem.AggregatingAttributesClear, elem.AggregatingAttributesEnc)
+		elem.AggregatingAttributesEnc = map[string]int64{}
+
+		clearExpectedResult[i] = elem
+	}
+
+	return clearExpectedResult
+}
+
 // ComputeExpectedResult computes the expected results from the test_data (we can then compare with the result obtained by service MedCo)
-func ComputeExpectedResult(testData map[string][]lib.DpClearResponse, dataRepetitions int) []lib.DpClearResponse {
+func ComputeExpectedResult(testData map[string][]lib.DpClearResponse, dataRepetitions int, clear bool) []lib.DpClearResponse {
 	allData := make([]lib.DpClearResponse, 0)
 
 	for _, v := range testData {
@@ -276,6 +308,12 @@ func ComputeExpectedResult(testData map[string][]lib.DpClearResponse, dataRepeti
 		}
 	}
 	expectedResult := lib.AddInClear(allData)
+
+	// Toggle the clearing function (necessary for the service simulation)
+	if clear {
+		expectedResult = ClearExpectedResult(expectedResult)
+	}
+
 	return expectedResult
 }
 

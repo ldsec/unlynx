@@ -1,5 +1,6 @@
 package libi2b2
 
+/*
 import (
 	"encoding/hex"
 	"encoding/xml"
@@ -259,3 +260,4 @@ func querySubjectEncryption(collKey abstract.Point, subject [][]int64) (qs, dumm
 	qs = encryptedSubject
 	return qs, dummies
 }
+*/

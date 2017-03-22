@@ -45,7 +45,6 @@ func (c *API) SendSurveyCreationQuery(entities *onet.Roster, surveyGenID, survey
 	if dataToProcess == nil {
 		resp := ServiceResponse{}
 		req := &lib.SurveyCreationQuery{SurveyGenID: &surveyGenID, SurveyID: &surveyID, Roster: *entities, Sum: sum, Count: count, Where: where, Pred: pred, GroupBy: groupBy, ClientPubKey: clientPubKey, DataToProcess: dataToProcess, NbrDPs: nbrDPs, QueryMode: queryMode, Proofs: proofs, AppFlag: appFlag}
-		log.LLvlf1("QUERYYBEFORE %#v",req.GroupBy)
 		err := c.SendProtobuf(c.entryPoint, req, &resp)
 		if err != nil {
 			return nil, lib.FilteredResponse{}, err
@@ -98,7 +97,6 @@ func (c *API) SendSurveyResultsQuery(surveyID lib.SurveyID) (*[][]int64, *[][]in
 	grp := make([][]int64, len(resp.Results))
 	aggr := make([][]int64, len(resp.Results))
 	for i, res := range resp.Results {
-		//grpClear[i] = lib.UnKey(res.GroupingAttributesClear)
 		grp[i] = lib.DecryptIntVector(c.private, &res.GroupByEnc)
 		aggr[i] = lib.DecryptIntVector(c.private, &res.AggregatingAttributes)
 	}

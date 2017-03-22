@@ -221,9 +221,6 @@ func (s *Service) SendISMOthers(el *onet.Roster, msg interface{}) error {
 // HandleSurveyCreationQuery handles the reception of a survey creation query by instantiating the corresponding survey.
 // in the i2b2 case it will directly run the request response creation
 func (s *Service) HandleSurveyCreationQuery(recq *lib.SurveyCreationQuery) (network.Message, onet.ClientError) {
-
-	log.LLvlf1("QUERYY %#v",recq.GroupBy)
-
 	s.appFlag = recq.AppFlag
 	s.nbrLocalSurveys++
 	s.nbrDPs = recq.NbrDPs[s.ServerIdentity().String()]
@@ -246,7 +243,6 @@ func (s *Service) HandleSurveyCreationQuery(recq *lib.SurveyCreationQuery) (netw
 			//handlingServer = true
 		}
 		// broadcasts the query
-		log.LLvlf1("QUERYY to others%#v",recq.GroupBy)
 		err := s.SendISMOthers(&recq.Roster, recq)
 		if err != nil {
 			log.Error("broadcasting error ", err)
@@ -780,7 +776,7 @@ func (s *Service) StartService(targetSurvey lib.SurveyID, root bool) error {
 
 // ShufflingPhase performs the shuffling of the ClientResponses
 func (s *Service) ShufflingPhase(targetSurvey lib.SurveyID) error {
-	if len(s.survey[targetSurvey].DpResponses) == 0 && len(s.survey[targetSurvey].DpResponsesAggr) == 0{
+	if len(s.survey[targetSurvey].DpResponses) == 0 && len(s.survey[targetSurvey].DpResponsesAggr) == 0 {
 		log.Lvl1(s.ServerIdentity(), " no data to shuffle")
 		return nil
 	}

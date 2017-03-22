@@ -20,12 +20,12 @@ func init() {
 type AddRmSimulation struct {
 	onet.SimulationBFTree
 
-	NbrResponses       	int
-	NbrGroupAttributes 	int	//to make sense all the different attributes are encrypted
-	NbrWhereAttributes  	int
-	NbrAggrAttributes  	int
-	Proofs             	bool
-	Add                	bool
+	NbrResponses       int
+	NbrGroupAttributes int //to make sense all the different attributes are encrypted
+	NbrWhereAttributes int
+	NbrAggrAttributes  int
+	Proofs             bool
+	Add                bool
 }
 
 // NewAddRmSimulation constructs an adding/removing protocol simulation.
@@ -74,22 +74,21 @@ func (sim *AddRmSimulation) Run(config *onet.SimulationConfig) error {
 
 		//generate set of grouping attributes (for this protocol they should all be encrypted)
 		group := make(map[string]lib.CipherText)
-		for i:=0; i<sim.NbrGroupAttributes; i++{
-			group[""+strconv.Itoa(i)]=*lib.EncryptInt(pubKey,1)
+		for i := 0; i < sim.NbrGroupAttributes; i++ {
+			group[""+strconv.Itoa(i)] = *lib.EncryptInt(pubKey, 1)
 		}
 
 		//generate set of aggregating attributes (for this protocol they should all be encrypted)
 		aggr := make(map[string]lib.CipherText)
-		for i:=0; i<sim.NbrAggrAttributes; i++{
-			aggr[""+strconv.Itoa(i)]=*lib.EncryptInt(pubKey,1)
+		for i := 0; i < sim.NbrAggrAttributes; i++ {
+			aggr[""+strconv.Itoa(i)] = *lib.EncryptInt(pubKey, 1)
 		}
 
 		//generate set of where attributes (for this protocol they should all be encrypted)
 		where := make(map[string]lib.CipherText)
-		for i:=0; i<sim.NbrWhereAttributes; i++{
-			where[""+strconv.Itoa(i)]=*lib.EncryptInt(pubKey,1)
+		for i := 0; i < sim.NbrWhereAttributes; i++ {
+			where[""+strconv.Itoa(i)] = *lib.EncryptInt(pubKey, 1)
 		}
-
 
 		cr := lib.DpResponse{GroupByEnc: group, AggregatingAttributesEnc: aggr, WhereEnc: where}
 		detResponses := make([]lib.DpResponse, 0)

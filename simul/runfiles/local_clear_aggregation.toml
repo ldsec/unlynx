@@ -5,5 +5,5 @@ Rounds = 1
 RunWait = 6000000
 Bandwidth = 1000
 
-Hosts, NbrResponses, NbrGroups, NbrGroupAttributes, NbrAggrAttributes, Proofs
-7, 10, 10, 2, 10, true
+Hosts, NbrResponses, NbrGroups, NbrGroupAttributes, NbrWhereAttributes, NbrAggrAttributes, Proofs
+7, 10, 10, 2, 2, 10 true

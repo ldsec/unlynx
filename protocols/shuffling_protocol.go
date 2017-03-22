@@ -137,7 +137,7 @@ func (p *ShufflingProtocol) Start() error {
 		pr.GroupByEnc = shuffleTarget[0].GroupByEnc
 		pr.WhereEnc = shuffleTarget[0].WhereEnc
 		pr.AggregatingAttributes = make(lib.CipherVector, len(shuffleTarget[0].AggregatingAttributes))
-		for i := range shuffleTarget[0].AggregatingAttributes{
+		for i := range shuffleTarget[0].AggregatingAttributes {
 			pr.AggregatingAttributes[i] = lib.IntToCiphertext(int64(0))
 		}
 		shuffleTarget = append(shuffleTarget, pr)

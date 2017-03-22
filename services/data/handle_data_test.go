@@ -56,6 +56,7 @@ func TestCompareClearResponses(t *testing.T) {
 }
 
 func TestComputeExpectedResult(t *testing.T) {
-	log.LLvl1(data.ComputeExpectedResult(data.ReadDataFromFile(filename), 1))
-	assert.Equal(t, data.CompareClearResponses(data.ComputeExpectedResult(test_data, 1), data.ComputeExpectedResult(data.ReadDataFromFile(filename), 1)), true, "Result should be the same")
+	log.LLvl1(data.ComputeExpectedResult(data.ReadDataFromFile(filename), 1, false))
+	assert.Equal(t, data.CompareClearResponses(data.ComputeExpectedResult(test_data, 1, false), data.ComputeExpectedResult(data.ReadDataFromFile(filename), 1, false)), true, "Result should be the same")
+	assert.Equal(t, data.CompareClearResponses(data.ComputeExpectedResult(test_data, 1, true), data.ComputeExpectedResult(data.ReadDataFromFile(filename), 1, true)), true, "Result should be the same")
 }

@@ -59,7 +59,7 @@ type PublishedDeterministicTaggingProof struct {
 
 // PublishedAggregationProof contains all infos about proofs for aggregation of two filtered responses
 type PublishedAggregationProof struct {
-	FilteredResponses    []FilteredResponseDet
+	FilteredResponses  []FilteredResponseDet
 	AggregationResults map[GroupingKey]FilteredResponse
 }
 
@@ -88,8 +88,8 @@ type PublishedDetTagAdditionProof struct {
 }
 
 type PublishedSimpleAdditionProof struct {
-	C1 CipherVector
-	C2 CipherVector
+	C1       CipherVector
+	C2       CipherVector
 	C1PlusC2 CipherVector
 }
 

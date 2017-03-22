@@ -5,12 +5,12 @@ import (
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
 
+	"github.com/JoaoAndreSa/MedCo/lib"
+	"github.com/JoaoAndreSa/MedCo/services"
+	"github.com/JoaoAndreSa/MedCo/services/data"
+	"gopkg.in/dedis/onet.v1/simul/monitor"
 	"strconv"
 	"sync"
-	"gopkg.in/dedis/onet.v1/simul/monitor"
-	"github.com/JoaoAndreSa/MedCo/services"
-	"github.com/JoaoAndreSa/MedCo/lib"
-	"github.com/JoaoAndreSa/MedCo/services/data"
 )
 
 //Defines the simulation for the service-medCo to be run with cothority/simul.
@@ -22,20 +22,20 @@ func init() {
 type SimulationMedCo struct {
 	onet.SimulationBFTree
 
-	NbrDPs             	int     //number of clients (or in other words data holders)
-	NbrResponsesTot    	int64   //number of survey entries (ClientClearResponse) per host
-	NbrResponsesFiltered 	int64	//number of entries to be filtered (the ones we keep)
-	NbrGroupsClear     	int64   //number of non-sensitive (clear) grouping attributes
-	NbrGroupsEnc       	int64   //number of sensitive (encrypted) grouping attributes
-	NbrWhereClear	   	int64	//number of non-sensitive (clear) where attributes
-	NbrWhereEncrypted  	int64	//number of sensitive (encrypted) where attributes
-	NbrGroupAttributes 	[]int64 //number of different groups inside each grouping attribute
-	NbrAggrClear 		int64   //number of non-sensitive (clear) aggregating attributes
-	NbrAggrEncrypted    	int64   //number of sensitive (encrypted) aggregating attributes
-	Count 		   	bool	//toggle count queries
-	RandomGroups       	bool    //generate data randomly or num entries == num groups (deterministically)
-	DataRepetitions    	int     //repeat the number of entries x times (e.g. 1 no repetition; 1000 repetitions)
-	Proofs             	bool    //with proofs of correctness everywhere
+	NbrDPs               int     //number of clients (or in other words data holders)
+	NbrResponsesTot      int64   //number of survey entries (ClientClearResponse) per host
+	NbrResponsesFiltered int64   //number of entries to be filtered (the ones we keep)
+	NbrGroupsClear       int64   //number of non-sensitive (clear) grouping attributes
+	NbrGroupsEnc         int64   //number of sensitive (encrypted) grouping attributes
+	NbrWhereClear        int64   //number of non-sensitive (clear) where attributes
+	NbrWhereEncrypted    int64   //number of sensitive (encrypted) where attributes
+	NbrGroupAttributes   []int64 //number of different groups inside each grouping attribute
+	NbrAggrClear         int64   //number of non-sensitive (clear) aggregating attributes
+	NbrAggrEncrypted     int64   //number of sensitive (encrypted) aggregating attributes
+	Count                bool    //toggle count queries
+	RandomGroups         bool    //generate data randomly or num entries == num groups (deterministically)
+	DataRepetitions      int     //repeat the number of entries x times (e.g. 1 no repetition; 1000 repetitions)
+	Proofs               bool    //with proofs of correctness everywhere
 }
 
 // NewSimulationMedCo constructs a full MedCo service simulation.
@@ -82,44 +82,52 @@ func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
 		log.Lvl1("Starting round", round, el)
 		client := services.NewMedcoClient(el.List[0], strconv.Itoa(0))
 
+		// Define how many data providers for each server
 		nbrDPs := make(map[string]int64)
-		//how many data providers for each server
 		for _, server := range el.List {
-			nbrDPs[server.String()] = 1 // 1 DPs for each server
+			nbrDPs[server.String()] = 1 // 1 DP(s) for each server
 		}
 
 		// Generate Survey Data
-		sum := [sim.NbrAggrClear + sim.NbrAggrEncrypted]string{}
-		for i := 0 ; i < (sim.NbrAggrClear + sim.NbrAggrEncrypted); i++{
-			sum[i] = "s"+strconv.Itoa(i)
+
+		// Aggregating attributes
+		NbrAggr := sim.NbrAggrClear + sim.NbrAggrEncrypted
+		sum := make([]string, NbrAggr)
+		for i := 0; i < int(NbrAggr); i++ {
+			sum[i] = "s" + strconv.Itoa(i)
 		}
 		count := sim.Count
 
-		whereQueryValues := [sim.NbrWhereClear+sim.NbrWhereEncrypted]lib.WhereQueryAttribute{}
-		pred := string{}
+		// Where attributes + predicate
+		NbrWhere := sim.NbrWhereClear + sim.NbrWhereEncrypted
+		whereQueryValues := make([]lib.WhereQueryAttribute, NbrWhere)
+
+		var predicate string
 		counter := 0
-		for i := 0 ; i < sim.NbrWhereClear+sim.NbrWhereEncrypted; i++{
-			whereQueryValues[i] = lib.WhereQueryAttribute{"w"+strconv.Itoa(i), *lib.EncryptInt(el.Aggregate, 1)}
-			pred = pred + " v" + strconv.Itoa(counter) + " == v" + strconv.Itoa(counter+1) + " &&"
+		for i := 0; i < int(NbrWhere); i++ {
+			whereQueryValues[i] = lib.WhereQueryAttribute{Name: "w" + strconv.Itoa(i), Value: *lib.EncryptInt(el.Aggregate, 1)}
+			predicate = predicate + " v" + strconv.Itoa(counter) + " == v" + strconv.Itoa(counter+1) + " &&"
 			counter = counter + 2
 		}
+		// remove the last &&
+		predicate = predicate[:len(predicate)-2]
 
-		groupBy := [sim.NbrGroupsClear+sim.NbrGroupsEnc]string{}
-		for i := 0 ; i < sim.NbrGroupsClear+sim.NbrGroupsEnc; i++{
-			groupBy[i] = "g"+strconv.Itoa(i)
+		// Group by attributes
+		NbrGroups := sim.NbrGroupsClear + sim.NbrGroupsEnc
+		groupBy := make([]string, NbrGroups)
+		for i := 0; i < int(NbrGroups); i++ {
+			groupBy[i] = "g" + strconv.Itoa(i)
 		}
 
-		surveyID, _, err := client.SendSurveyCreationQuery(el, lib.SurveyID("testSurvey"), lib.SurveyID(""), sum, count, whereQueryValues, pred, groupBy, nil, nil, nbrDPs, 0, sim.Proofs, false)
+		surveyID, _, err := client.SendSurveyCreationQuery(el, lib.SurveyID("testSurvey"), lib.SurveyID(""), sum, count, whereQueryValues, predicate, groupBy, nil, nil, nbrDPs, 0, sim.Proofs, false)
 
 		if err != nil {
 			log.Fatal("Service did not start.")
 		}
 
 		// RandomGroups (true/false) is to respectively generate random or non random entries
-		//TODO change generate data
 		testData := data.GenerateData(int64(sim.NbrDPs), sim.NbrResponsesTot, sim.NbrResponsesFiltered, sim.NbrGroupsClear, sim.NbrGroupsEnc,
 			sim.NbrWhereClear, sim.NbrWhereEncrypted, sim.NbrAggrClear, sim.NbrAggrEncrypted, sim.NbrGroupAttributes, sim.RandomGroups)
-		log.LLvl1(testData)
 
 		/// START SERVICE PROTOCOL
 		if lib.TIME {
@@ -165,7 +173,7 @@ func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
 
 		start := lib.StartTimer("Simulation")
 
-		grpClear, grp, aggr, err := client.SendSurveyResultsQuery(*surveyID)
+		grp, aggr, err := client.SendSurveyResultsQuery(*surveyID)
 		if err != nil {
 			log.Fatal("Service could not output the results. ", err)
 		}
@@ -177,12 +185,12 @@ func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
 		allData := make([]lib.DpClearResponse, 0)
 		log.Lvl1("Service output:")
 		for i := range *grp {
-			log.Lvl1(i, ")", (*grpClear)[i], ",", (*grp)[i], "->", (*aggr)[i])
-			//allData = append(allData, lib.DpClearResponse{GroupingAttributesClear: (*grpClear)[i], GroupingAttributesEnc: (*grp)[i], AggregatingAttributes: (*aggr)[i]})
+			log.Lvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
+			allData = append(allData, lib.DpClearResponse{GroupByClear: lib.ConvertDataToMap((*grp)[i], "g", 0), AggregatingAttributesClear: lib.ConvertDataToMap((*aggr)[i], "s", 0)})
 		}
 
 		// Test Service Simulation
-		if data.CompareClearResponses(data.ComputeExpectedResult(testData, sim.DataRepetitions), allData) {
+		if data.CompareClearResponses(data.ComputeExpectedResult(testData, sim.DataRepetitions, true), allData) {
 			log.LLvl1("Result is right! :)")
 		} else {
 			log.LLvl1("Result is wrong! :(")

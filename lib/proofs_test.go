@@ -104,8 +104,8 @@ func TestAddRmProof(t *testing.T) {
 	resultAdd := make(map[string]lib.CipherText)
 	resultSub := make(map[string]lib.CipherText)
 
-	for j:=0; j<len(cipherMap); j++{
-		w :=lib.CipherText{K: cipherMap[strconv.Itoa(j)].K, C: cipherMap[strconv.Itoa(j)].C}
+	for j := 0; j < len(cipherMap); j++ {
+		w := lib.CipherText{K: cipherMap[strconv.Itoa(j)].K, C: cipherMap[strconv.Itoa(j)].C}
 
 		tmp := network.Suite.Point().Mul(w.K, secKeyNew)
 

@@ -134,7 +134,7 @@ func (p *DeterministicTaggingProtocol) Start() error {
 
 	nbrProcessResponses := len(*p.TargetOfSwitch)
 
-	log.LLvl1("["+p.Name()+"]", " starts a Deterministic Tagging Protocol on ", nbrProcessResponses, " response(s)")
+	log.LLvl1("["+p.Name()+"]", " starts a Deterministic Tagging Protocol on ", nbrProcessResponses, " element(s)")
 
 	// create process response with deterministic tag, at first step the tag creation part is a copy of the proba
 	// grouping attributes

@@ -1,5 +1,6 @@
 package libi2b2_test
 
+/*
 import (
 	"encoding/hex"
 	"os"
@@ -58,3 +59,4 @@ func TestCreateXMLforTestonI2B2(t *testing.T) {
 	libi2b2.ReadXMLData("data.xml", el.Aggregate)
 
 }
+*/

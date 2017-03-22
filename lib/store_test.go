@@ -5,8 +5,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/dedis/crypto.v0/random"
 	"gopkg.in/dedis/onet.v1/network"
-	"testing"
 	"strconv"
+	"testing"
 )
 
 // TestStoring tests survey store and its methods.
@@ -39,19 +39,19 @@ func TestStoring(t *testing.T) {
 	}
 
 	// Generate data for group by and where attributes
-	tab = []int64{0,1}
+	tab = []int64{0, 1}
 	testEncMap := make(map[string]lib.CipherText)
-	for i,v := range tab{
+	for i, v := range tab {
 		testEncMap[strconv.Itoa(i)] = *lib.EncryptInt(pubKey, v)
 	}
 
-	tab = []int64{0,1}
+	tab = []int64{0, 1}
 	testClearMap := make(map[string]int64)
-	for i,v := range tab {
+	for i, v := range tab {
 		testClearMap[strconv.Itoa(i)] = v
 	}
 
-	dummySurveyCreationQuery := lib.SurveyCreationQuery{Sum:[]string{"0","1","2","3"}, GroupBy:[]string{"0","1"}, Where:[]lib.WhereQueryAttribute{{"0", lib.CipherText{}},{"1", lib.CipherText{}}}}
+	dummySurveyCreationQuery := lib.SurveyCreationQuery{Sum: []string{"0", "1", "2", "3"}, GroupBy: []string{"0", "1"}, Where: []lib.WhereQueryAttribute{{"0", lib.CipherText{}}, {"1", lib.CipherText{}}}}
 
 	// Constructor Test
 	storage := lib.NewStore()
@@ -83,7 +83,7 @@ func TestStoring(t *testing.T) {
 
 	storage.InsertDpResponse(lib.DpResponse{GroupByClear: testClearMap, GroupByEnc: testEncMap, WhereClear: testClearMap, WhereEnc: testEncMap, AggregatingAttributesEnc: testAggrMap2}, true, dummySurveyCreationQuery)
 	storage.InsertDpResponse(lib.DpResponse{GroupByEnc: testEncMap, AggregatingAttributesEnc: testAggrMap2}, false, dummySurveyCreationQuery)
-	storage.InsertDpResponse(lib.DpResponse{WhereEnc: testEncMap, AggregatingAttributesEnc: testAggrMap1}, true,dummySurveyCreationQuery)
+	storage.InsertDpResponse(lib.DpResponse{WhereEnc: testEncMap, AggregatingAttributesEnc: testAggrMap1}, true, dummySurveyCreationQuery)
 
 	assert.True(t, len(storage.DpResponses) == 3)
 
@@ -133,7 +133,7 @@ func TestStoring(t *testing.T) {
 }
 
 func TestConvertDataToMap(t *testing.T) {
-	test := []int64{0,1,2,3,4}
+	test := []int64{0, 1, 2, 3, 4}
 
 	result := make(map[string]int64)
 	result["g0"] = 0
@@ -142,5 +142,5 @@ func TestConvertDataToMap(t *testing.T) {
 	result["g3"] = 3
 	result["g4"] = 4
 
-	assert.Equal(t, result, lib.ConvertDataToMap(test,"g",0), "Wrong map conversion")
+	assert.Equal(t, result, lib.ConvertDataToMap(test, "g", 0), "Wrong map conversion")
 }

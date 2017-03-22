@@ -207,10 +207,10 @@ func TestCipherVectorConverter(t *testing.T) {
 
 // TestIntArrayToCipherVector tests the int array to CipherVector converter and IntToPoint + PointToCiphertext
 func TestIntArrayToCipherVector(t *testing.T) {
-	integers := []int64{1,2,3,4,5,6}
+	integers := []int64{1, 2, 3, 4, 5, 6}
 
 	cipherVect := lib.IntArrayToCipherVector(integers)
-	for i,v := range cipherVect{
+	for i, v := range cipherVect {
 		B := suite.Point().Base()
 		i := suite.Scalar().SetInt64(integers[i])
 		M := suite.Point().Mul(B, i)

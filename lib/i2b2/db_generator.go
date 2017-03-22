@@ -1,5 +1,6 @@
 package libi2b2
 
+/*
 import (
 	"database/sql"
 	"encoding/hex"
@@ -320,3 +321,4 @@ func closeRequest(r *sql.Rows) {
 		r.Close()
 	}
 }
+*/

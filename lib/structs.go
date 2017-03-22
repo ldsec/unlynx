@@ -37,32 +37,31 @@ type CipherVectorScalarBytes struct {
 
 // DpClearResponse represents a DP response when data is stored in clear at each server/hospital
 type DpClearResponse struct {
-	WhereClear            map[string]int64
-	WhereEnc              map[string]int64
-	GroupByClear          map[string]int64
-	GroupByEnc            map[string]int64
+	WhereClear                 map[string]int64
+	WhereEnc                   map[string]int64
+	GroupByClear               map[string]int64
+	GroupByEnc                 map[string]int64
 	AggregatingAttributesClear map[string]int64
-	AggregatingAttributesEnc map[string]int64
+	AggregatingAttributesEnc   map[string]int64
 }
 
 type DpResponse struct {
-	WhereClear            map[string]int64
-	WhereEnc              map[string]CipherText
-	GroupByClear          map[string]int64
-	GroupByEnc            map[string]CipherText
+	WhereClear                 map[string]int64
+	WhereEnc                   map[string]CipherText
+	GroupByClear               map[string]int64
+	GroupByEnc                 map[string]CipherText
 	AggregatingAttributesClear map[string]int64
-	AggregatingAttributesEnc map[string]CipherText
+	AggregatingAttributesEnc   map[string]CipherText
 }
 
 type DpResponseToSend struct {
-	WhereClear            map[string]int64
-	WhereEnc              map[string][]byte
-	GroupByClear          map[string]int64
-	GroupByEnc            map[string][]byte
+	WhereClear                 map[string]int64
+	WhereEnc                   map[string][]byte
+	GroupByClear               map[string]int64
+	GroupByEnc                 map[string][]byte
 	AggregatingAttributesClear map[string]int64
-	AggregatingAttributesEnc map[string][]byte
+	AggregatingAttributesEnc   map[string][]byte
 }
-
 
 type ProcessResponse struct {
 	WhereEnc              CipherVector
@@ -122,31 +121,31 @@ type FilteredResponse struct {
 type SurveyID string
 
 type SurveyCreationQuery struct {
-	SurveyGenID 	*SurveyID
-	SurveyID    	*SurveyID
-	Roster      	onet.Roster
-	Sum     	[]string
-	Count   	bool
-	Where   	[]WhereQueryAttribute
-	Pred    	string
-	GroupBy 	[]string
-	ClientPubKey  	abstract.Point
-	DataToProcess 	[]DpResponse
-	NbrDPs        	map[string]int64
-	QueryMode     	int64
-	Proofs        	bool
-	AppFlag       	bool
+	SurveyGenID   *SurveyID
+	SurveyID      *SurveyID
+	Roster        onet.Roster
+	Sum           []string
+	Count         bool
+	Where         []WhereQueryAttribute
+	Pred          string
+	GroupBy       []string
+	ClientPubKey  abstract.Point
+	DataToProcess []DpResponse
+	NbrDPs        map[string]int64
+	QueryMode     int64
+	Proofs        bool
+	AppFlag       bool
 }
 
 // Survey represents a survey with the corresponding params
 type Survey struct {
 	*Store
-	Query SurveyCreationQuery
-	SurveySecretKey abstract.Scalar
+	Query             SurveyCreationQuery
+	SurveySecretKey   abstract.Scalar
 	ShufflePrecompute []CipherVectorScalar
-	SurveyResponses []FilteredResponse
-	Sender          network.ServerIdentityID
-	Final           bool
+	SurveyResponses   []FilteredResponse
+	Sender            network.ServerIdentityID
+	Final             bool
 }
 
 /*
@@ -278,19 +277,19 @@ func EncryptDpClearResponse(ccr DpClearResponse, encryptionKey abstract.Point, c
 	cr := DpResponseToSend{}
 	cr.GroupByClear = ccr.GroupByClear
 	cr.GroupByEnc = make(map[string][]byte, len(ccr.GroupByEnc))
-	for i,v := range ccr.GroupByEnc{
+	for i, v := range ccr.GroupByEnc {
 		cr.GroupByEnc[i] = ((*EncryptInt(encryptionKey, v)).ToBytes())
 	}
 	//cr.GroupByEnc = *EncryptIntVector(encryptionKey, ccr.GroupByEnc)
 	cr.WhereClear = ccr.WhereClear
 	cr.WhereEnc = make(map[string][]byte, len(ccr.WhereEnc))
-	for i,v := range ccr.WhereEnc{
+	for i, v := range ccr.WhereEnc {
 		cr.WhereEnc[i] = ((*EncryptInt(encryptionKey, v)).ToBytes())
 	}
 	//cr.WhereEnc = *EncryptIntVector(encryptionKey, ccr.WhereEnc)
 	cr.AggregatingAttributesClear = ccr.AggregatingAttributesClear
 	cr.AggregatingAttributesEnc = make(map[string][]byte, len(ccr.AggregatingAttributesEnc))
-	for i,v := range ccr.AggregatingAttributesEnc{
+	for i, v := range ccr.AggregatingAttributesEnc {
 		cr.AggregatingAttributesEnc[i] = ((*EncryptInt(encryptionKey, v)).ToBytes())
 	}
 	if count {
@@ -447,7 +446,6 @@ func (cv *ProcessResponse) ToBytes() ([]byte, int, int, int) {
 	pgaeb := make([]byte, 0)
 	pgaebLength := 0
 
-
 	gacb, gacbLength := (*cv).GroupByEnc.ToBytes()
 	aab, aabLength := (*cv).AggregatingAttributes.ToBytes()
 	if (*cv).WhereEnc != nil {
@@ -518,9 +516,9 @@ func (crd *ProcessResponseDet) FromBytes(data []byte, gacbLength, aabLength, pga
 
 }
 
-func (dr *DpResponse) FromDpResponseToSend(dprts DpResponseToSend){
+func (dr *DpResponse) FromDpResponseToSend(dprts DpResponseToSend) {
 	dr.GroupByClear = dprts.GroupByClear
-	if len(dprts.GroupByEnc) != 0{
+	if len(dprts.GroupByEnc) != 0 {
 		dr.GroupByEnc = MapBytesToMapCipherText(dprts.GroupByEnc)
 	}
 
@@ -544,10 +542,10 @@ func (dr *DpResponse) FromDpResponseToSend(dprts DpResponseToSend){
 	}
 }
 
-func MapBytesToMapCipherText (mapBytes map[string][]byte) map[string]CipherText{
+func MapBytesToMapCipherText(mapBytes map[string][]byte) map[string]CipherText {
 	result := make(map[string]CipherText)
 	if len(mapBytes) != 0 {
-		for i,v := range mapBytes{
+		for i, v := range mapBytes {
 			ct := CipherText{}
 			ct.FromBytes(v)
 			result[i] = ct

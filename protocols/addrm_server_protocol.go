@@ -11,7 +11,6 @@ import (
 	"gopkg.in/dedis/onet.v1/network"
 )
 
-
 // AddRmServerProtocolName is the registered name for the local aggregation protocol.
 const AddRmServerProtocolName = "AddRmServer"
 
@@ -47,7 +46,6 @@ func NewAddRmProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 }
 
 var finalResultAddrm = make(chan []lib.DpResponse)
-
 
 // Start is called at the root to start the execution of the Add/Rm protocol.
 func (p *AddRmServerProtocol) Start() error {
@@ -138,7 +136,7 @@ func changeEncryptionKeyMapCipherTexts(cv map[string]lib.CipherText, serverAddRm
 	return result
 }
 
-func changeEncryption(response lib.DpResponse, keyToRm abstract.Scalar, add bool) lib.DpResponse{
+func changeEncryption(response lib.DpResponse, keyToRm abstract.Scalar, add bool) lib.DpResponse {
 	result := lib.DpResponse{}
 
 	result.GroupByClear = response.GroupByClear
@@ -150,7 +148,7 @@ func changeEncryption(response lib.DpResponse, keyToRm abstract.Scalar, add bool
 	return result
 }
 
-func proofsCreation (pubs []lib.PublishedAddRmProof, target, v lib.DpResponse, keyToRm abstract.Scalar, add bool) {
+func proofsCreation(pubs []lib.PublishedAddRmProof, target, v lib.DpResponse, keyToRm abstract.Scalar, add bool) {
 	targetAggregatingAttributesEnc := target.AggregatingAttributesEnc
 	targetGroupingAttributes := target.GroupByEnc
 	targetWhereAttributes := target.WhereEnc
@@ -165,4 +163,3 @@ func proofsCreation (pubs []lib.PublishedAddRmProof, target, v lib.DpResponse, k
 
 	pubs = append(pubs, pub1, pub2, pub3)
 }
-

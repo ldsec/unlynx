@@ -20,7 +20,7 @@ type LocalClearAggregationSimulation struct {
 
 	NbrResponses       int
 	NbrGroups          int
-	NbrGroupAttributes int	//to make sense all the different attributes are encrypted
+	NbrGroupAttributes int //to make sense all the different attributes are encrypted
 	NbrWhereAttributes int
 	NbrAggrAttributes  int
 	Proofs             bool
@@ -63,8 +63,8 @@ func (sim *LocalClearAggregationSimulation) Run(config *onet.SimulationConfig) e
 
 		root := rooti.(*protocols.LocalClearAggregationProtocol)
 
-		types := make([]int64,sim.NbrGroupAttributes)
-		if len(types)>0{
+		types := make([]int64, sim.NbrGroupAttributes)
+		if len(types) > 0 {
 			types[0] = int64(sim.NbrGroups)
 		}
 
@@ -82,7 +82,7 @@ func (sim *LocalClearAggregationSimulation) Run(config *onet.SimulationConfig) e
 		log.LLvl1("Number of aggregated lines (groups): ", len(results))
 
 		// Test Simulation
-		if data.CompareClearResponses(data.ComputeExpectedResult(testData, 1), results) {
+		if data.CompareClearResponses(data.ComputeExpectedResult(testData, 1, false), results) {
 			log.LLvl1("Result is right! :)")
 		} else {
 			log.LLvl1("Result is wrong! :(")
