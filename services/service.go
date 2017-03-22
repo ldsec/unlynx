@@ -827,7 +827,7 @@ func (s *Service) TaggingPhase(targetSurvey lib.SurveyID) error {
 		queryWhereTag = append(queryWhereTag, newElem)
 	}
 	deterministicTaggingResult = deterministicTaggingResult[len(s.survey[targetSurvey].Query.Where):]
-	filteredResponses := FilterResponses(s.survey[targetSurvey].Query.Pred, queryWhereTag, deterministicTaggingResult)
+	filteredResponses := FilterResponses(s.survey[targetSurvey].Query.Predicate, queryWhereTag, deterministicTaggingResult)
 	s.survey[targetSurvey].PushDeterministicFilteredResponses(filteredResponses, s.ServerIdentity().String(), s.survey[targetSurvey].Query.Proofs)
 	return err
 }
@@ -1004,10 +1004,10 @@ func (s *Service) responseAlreadySent(responseToCheck FinalResponsesIds) bool {
 }
 
 // FilterResponses permits to filter responses based on where attributes and a predicate
-func FilterResponses(pred string, whereQueryValues []lib.WhereQueryAttributeTagged, responsesToFilter []lib.ProcessResponseDet) []lib.FilteredResponseDet {
+func FilterResponses(predicate string, whereQueryValues []lib.WhereQueryAttributeTagged, responsesToFilter []lib.ProcessResponseDet) []lib.FilteredResponseDet {
 	result := []lib.FilteredResponseDet{}
 	for _, v := range responsesToFilter {
-		expression, err := govaluate.NewEvaluableExpression(pred)
+		expression, err := govaluate.NewEvaluableExpression(predicate)
 		if err != nil {
 			return result
 		}

@@ -17,8 +17,8 @@ func TestAddClientResponse(t *testing.T) {
 
 	secKey, pubKey := lib.GenKey()
 
-	cr1 := lib.FilteredResponse{*lib.EncryptIntVector(pubKey, grouping), *lib.EncryptIntVector(pubKey, aggregating)}
-	cr2 := lib.FilteredResponse{*lib.EncryptIntVector(pubKey, grouping), *lib.EncryptIntVector(pubKey, aggregating)}
+	cr1 := lib.FilteredResponse{GroupByEnc: *lib.EncryptIntVector(pubKey, grouping), AggregatingAttributes: *lib.EncryptIntVector(pubKey, aggregating)}
+	cr2 := lib.FilteredResponse{GroupByEnc: *lib.EncryptIntVector(pubKey, grouping), AggregatingAttributes: *lib.EncryptIntVector(pubKey, aggregating)}
 
 	newCr := lib.FilteredResponse{}
 	newCr.GroupByEnc = *lib.EncryptIntVector(pubKey, grouping)

@@ -97,7 +97,7 @@ type PublishedSimpleAdditionProof struct {
 // ************************************************** KEY SWITCHING ****************************************************
 
 // createPredicateKeySwitch creates predicate for key switching proof
-func createPredicateKeySwitch() (pred proof.Predicate) {
+func createPredicateKeySwitch() (predicate proof.Predicate) {
 	// For ZKP
 	log1 := proof.Rep("c1", "ri", "B")
 	log2 := proof.Rep("K", "k", "B")
@@ -108,14 +108,14 @@ func createPredicateKeySwitch() (pred proof.Predicate) {
 	// and-predicate: prove that a = kiB1, b = siB2 and c = a + b
 	and := proof.And(log1, log2)
 	and = proof.And(and, rep)
-	pred = proof.And(and)
+	predicate = proof.And(and)
 
 	return
 }
 
 // SwitchKeyProofCreation creates proof for key switching on 1 ciphertext
 func SwitchKeyProofCreation(cBef, cAft CipherText, newRandomness, k abstract.Scalar, originEphemKey, q abstract.Point) SwitchKeyProof {
-	pred := createPredicateKeySwitch()
+	predicate := createPredicateKeySwitch()
 
 	B := network.Suite.Point().Base()
 	c1 := network.Suite.Point().Sub(cAft.K, cBef.K)
@@ -127,7 +127,7 @@ func SwitchKeyProofCreation(cBef, cAft CipherText, newRandomness, k abstract.Sca
 	sval := map[string]abstract.Scalar{"k": k, "ri": newRandomness}
 	pval := map[string]abstract.Point{"B": B, "K": K, "Q": q, "b2": b2, "c2": c2, "c1": c1}
 
-	prover := pred.Prover(network.Suite, sval, pval, nil) // computes: commitment, challenge, response
+	prover := predicate.Prover(network.Suite, sval, pval, nil) // computes: commitment, challenge, response
 
 	rand := network.Suite.Cipher(abstract.RandomKey)
 
@@ -167,13 +167,13 @@ func VectorSwitchKeyProofCreation(vBef, vAft CipherVector, newRandomnesses []abs
 
 // SwitchKeyCheckProof checks one proof of key switching
 func SwitchKeyCheckProof(cp SwitchKeyProof, K, Q abstract.Point, cBef, cAft CipherText) bool {
-	pred := createPredicateKeySwitch()
+	predicate := createPredicateKeySwitch()
 	B := network.Suite.Point().Base()
 	c1 := network.Suite.Point().Sub(cAft.K, cBef.K)
 	c2 := network.Suite.Point().Sub(cAft.C, cBef.C)
 
 	pval := map[string]abstract.Point{"B": B, "K": K, "Q": Q, "b2": cp.b2, "c2": c2, "c1": c1}
-	verifier := pred.Verifier(network.Suite, pval)
+	verifier := predicate.Verifier(network.Suite, pval)
 	if err := proof.HashVerify(network.Suite, "TEST", verifier, cp.Proof); err != nil {
 		log.Error("---------Verifier:", err.Error())
 		return false
@@ -195,7 +195,7 @@ func PublishedSwitchKeyCheckProof(psp PublishedSwitchKeyProof) bool {
 // ************************************************** ADD/RM PROTOCOL **************************************************
 
 // createPredicateAddRm creates predicate for add/rm server protocol
-func createPredicateAddRm() (pred proof.Predicate) {
+func createPredicateAddRm() (predicate proof.Predicate) {
 	// For ZKP
 	log1 := proof.Rep("Krm", "k", "B")
 
@@ -204,14 +204,14 @@ func createPredicateAddRm() (pred proof.Predicate) {
 
 	// and-predicate: prove that a = kiB1, b = siB2 and c = a + b
 	and := proof.And(log1, rep)
-	pred = proof.And(and)
+	predicate = proof.And(and)
 
 	return
 }
 
 // AddRmProofCreation creates proof for add/rm server protocol on 1 ciphertext
 func AddRmProofCreation(cBef, cAft CipherText, k abstract.Scalar, toAdd bool) AddRmProof {
-	pred := createPredicateAddRm()
+	predicate := createPredicateAddRm()
 
 	B := network.Suite.Point().Base()
 	c2 := network.Suite.Point()
@@ -228,7 +228,7 @@ func AddRmProofCreation(cBef, cAft CipherText, k abstract.Scalar, toAdd bool) Ad
 	sval := map[string]abstract.Scalar{"k": k}
 	pval := map[string]abstract.Point{"B": B, "Krm": K, "c2": c2, "rB": rB}
 
-	prover := pred.Prover(network.Suite, sval, pval, nil) // computes: commitment, challenge, response
+	prover := predicate.Prover(network.Suite, sval, pval, nil) // computes: commitment, challenge, response
 
 	rand := network.Suite.Cipher(abstract.RandomKey)
 
@@ -272,7 +272,7 @@ func VectorAddRmProofCreation(vBef, vAft map[string]CipherText, k abstract.Scala
 
 // AddRmCheckProof checks one rm/add proof
 func AddRmCheckProof(cp AddRmProof, K abstract.Point, cBef, cAft CipherText, toAdd bool) bool {
-	pred := createPredicateAddRm()
+	predicate := createPredicateAddRm()
 	B := network.Suite.Point().Base()
 	c2 := network.Suite.Point()
 	if toAdd {
@@ -282,7 +282,7 @@ func AddRmCheckProof(cp AddRmProof, K abstract.Point, cBef, cAft CipherText, toA
 	}
 
 	pval := map[string]abstract.Point{"B": B, "Krm": K, "c2": c2, "rB": cBef.K}
-	verifier := pred.Verifier(network.Suite, pval)
+	verifier := predicate.Verifier(network.Suite, pval)
 	if err := proof.HashVerify(network.Suite, "TEST", verifier, cp.Proof); err != nil {
 		log.Error("---------Verifier:", err.Error())
 		return false
@@ -308,7 +308,7 @@ func PublishedAddRmCheckProof(parp PublishedAddRmProof) bool {
 // ************************************************** DETERMINISTIC TAGGING ******************************************
 
 // createPredicateDeterministicTag creates predicate for deterministic tagging proof
-func createPredicateDeterministicTag() (pred proof.Predicate) {
+func createPredicateDeterministicTag() (predicate proof.Predicate) {
 	// For ZKP
 	log1 := proof.Rep("ci1", "s", "ciminus11")
 	log2 := proof.Rep("K", "k", "B")
@@ -321,14 +321,14 @@ func createPredicateDeterministicTag() (pred proof.Predicate) {
 	and := proof.And(log1, log2)
 	and = proof.And(and, rep)
 	and = proof.And(and, log3)
-	pred = proof.And(and)
+	predicate = proof.And(and)
 
 	return
 }
 
 // DeterministicTagProofCreation creates proof for deterministic tagging protocol on 1 ciphertext
 func DeterministicTagProofCreation(cBef, cAft CipherText, k, s abstract.Scalar) DeterministicTaggingProof {
-	pred := createPredicateDeterministicTag()
+	predicate := createPredicateDeterministicTag()
 
 	ci1 := cAft.K
 	ciminus11 := cBef.K
@@ -342,7 +342,7 @@ func DeterministicTagProofCreation(cBef, cAft CipherText, k, s abstract.Scalar) 
 	sval := map[string]abstract.Scalar{"k": k, "s": s}
 	pval := map[string]abstract.Point{"B": B, "K": K, "ciminus11Si": ciminus11Si, "ciminus12": ciminus12, "ciminus11": ciminus11, "ci2": ci2, "ci1": ci1}
 
-	prover := pred.Prover(network.Suite, sval, pval, nil) // computes: commitment, challenge, response
+	prover := predicate.Prover(network.Suite, sval, pval, nil) // computes: commitment, challenge, response
 
 	rand := network.Suite.Cipher(abstract.RandomKey)
 
@@ -382,7 +382,7 @@ func VectorDeterministicTagProofCreation(vBef, vAft CipherVector, s, k abstract.
 
 // DeterministicTagCheckProof checks one deterministic tagging proof
 func DeterministicTagCheckProof(cp DeterministicTaggingProof, K abstract.Point, cBef, cAft CipherText) bool {
-	pred := createPredicateDeterministicTag()
+	predicate := createPredicateDeterministicTag()
 	B := network.Suite.Point().Base()
 	ci1 := cAft.K
 	ciminus11 := cBef.K
@@ -390,7 +390,7 @@ func DeterministicTagCheckProof(cp DeterministicTaggingProof, K abstract.Point, 
 	ciminus12 := cBef.C
 
 	pval := map[string]abstract.Point{"B": B, "K": K, "ciminus11Si": cp.ciminus11Si, "ciminus12": ciminus12, "ciminus11": ciminus11, "ci2": ci2, "ci1": ci1, "SB": cp.SB}
-	verifier := pred.Verifier(network.Suite, pval)
+	verifier := predicate.Verifier(network.Suite, pval)
 	if err := proof.HashVerify(network.Suite, "TEST", verifier, cp.Proof); err != nil {
 		log.Error("---------Verifier:", err.Error())
 		return false
@@ -569,23 +569,23 @@ func ShufflingProofVerification(psp PublishedShufflingProof, seed abstract.Point
 // ************************************************** DETERMINISTIC TAGGING ******************************************
 
 // createPredicateDeterministicTagAddition creates predicate for deterministic tagging addition proof
-func createPredicateDeterministicTagAddition() (pred proof.Predicate) {
+func createPredicateDeterministicTagAddition() (predicate proof.Predicate) {
 	// For ZKP
 	log1 := proof.Rep("c2", "s", "B")
 
-	pred = proof.And(log1)
+	predicate = proof.And(log1)
 
 	return
 }
 
 // DetTagAdditionProofCreation creates proof for deterministic tagging addition on 1 abstract point
 func DetTagAdditionProofCreation(c1 abstract.Point, s abstract.Scalar, c2 abstract.Point, r abstract.Point) PublishedDetTagAdditionProof {
-	pred := createPredicateDeterministicTagAddition()
+	predicate := createPredicateDeterministicTagAddition()
 	B := network.Suite.Point().Base()
 	sval := map[string]abstract.Scalar{"s": s}
 	pval := map[string]abstract.Point{"B": B, "c1": c1, "c2": c2, "r": r}
 
-	prover := pred.Prover(network.Suite, sval, pval, nil) // computes: commitment, challenge, response
+	prover := predicate.Prover(network.Suite, sval, pval, nil) // computes: commitment, challenge, response
 
 	rand := network.Suite.Cipher(abstract.RandomKey)
 
@@ -599,10 +599,10 @@ func DetTagAdditionProofCreation(c1 abstract.Point, s abstract.Scalar, c2 abstra
 
 // DetTagAdditionProofVerification checks a deterministic tag addition proof
 func DetTagAdditionProofVerification(psap PublishedDetTagAdditionProof) bool {
-	pred := createPredicateDeterministicTagAddition()
+	predicate := createPredicateDeterministicTagAddition()
 	B := network.Suite.Point().Base()
 	pval := map[string]abstract.Point{"B": B, "c1": psap.C1, "c2": psap.C2, "r": psap.R}
-	verifier := pred.Verifier(network.Suite, pval)
+	verifier := predicate.Verifier(network.Suite, pval)
 	partProof := false
 	if err := proof.HashVerify(network.Suite, "TEST", verifier, psap.Proof); err != nil {
 		log.Error("---------Verifier:", err.Error())

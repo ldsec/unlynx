@@ -45,8 +45,8 @@ func TestServiceClearAttr(t *testing.T) {
 
 	sum := []string{"s1", "s2"}
 	count := false
-	whereQueryValues := []lib.WhereQueryAttribute{{"w1", *lib.EncryptInt(el.Aggregate, 1)}, {"w2", *lib.EncryptInt(el.Aggregate, 1)}, {"w3", *lib.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
-	pred := "(v0 == v1 || v2 == v3) && v4 == v5"
+	whereQueryValues := []lib.WhereQueryAttribute{{Name: "w1", Value: *lib.EncryptInt(el.Aggregate, 1)}, {Name: "w2", Value: *lib.EncryptInt(el.Aggregate, 1)}, {Name: "w3", Value: *lib.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
+	predicate := "(v0 == v1 || v2 == v3) && v4 == v5"
 	groupBy := []string{"g1", "g2", "g3"}
 
 	nbrDPs := make(map[string]int64)
@@ -55,7 +55,7 @@ func TestServiceClearAttr(t *testing.T) {
 		nbrDPs[server.String()] = 2 // 2 DPs for each server
 	}
 
-	surveyID, _, err := client.SendSurveyCreationQuery(el, lib.SurveyID("testSurvey"), lib.SurveyID(""), sum, count, whereQueryValues, pred, groupBy, nil, nil, nbrDPs, 0, proofsService, false)
+	surveyID, _, err := client.SendSurveyCreationQuery(el, lib.SurveyID("testSurvey"), lib.SurveyID(""), sum, count, whereQueryValues, predicate, groupBy, nil, nil, nbrDPs, 0, proofsService, false)
 
 	if err != nil {
 		t.Fatal("Service did not start.", err)
@@ -151,8 +151,8 @@ func TestServiceClearGrpEncWhereAttr(t *testing.T) {
 
 	sum := []string{"s1", "s2"}
 	count := false
-	whereQueryValues := []lib.WhereQueryAttribute{{"w1", *lib.EncryptInt(el.Aggregate, 1)}, {"w2", *lib.EncryptInt(el.Aggregate, 1)}, {"w3", *lib.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
-	pred := "(v0 == v1 || v2 == v3) && v4 == v5"
+	whereQueryValues := []lib.WhereQueryAttribute{{Name: "w1", Value: *lib.EncryptInt(el.Aggregate, 1)}, {Name: "w2", Value: *lib.EncryptInt(el.Aggregate, 1)}, {Name: "w3", Value: *lib.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
+	predicate := "(v0 == v1 || v2 == v3) && v4 == v5"
 	groupBy := []string{"g1", "g2", "g3"}
 
 	nbrDPs := make(map[string]int64)
@@ -161,7 +161,7 @@ func TestServiceClearGrpEncWhereAttr(t *testing.T) {
 		nbrDPs[server.String()] = 2 // 2 DPs for each server
 	}
 
-	surveyID, _, err := client.SendSurveyCreationQuery(el, lib.SurveyID("testSurvey"), lib.SurveyID(""), sum, count, whereQueryValues, pred, groupBy, nil, nil, nbrDPs, 0, proofsService, false)
+	surveyID, _, err := client.SendSurveyCreationQuery(el, lib.SurveyID("testSurvey"), lib.SurveyID(""), sum, count, whereQueryValues, predicate, groupBy, nil, nil, nbrDPs, 0, proofsService, false)
 
 	if err != nil {
 		t.Fatal("Service did not start.", err)
@@ -250,8 +250,8 @@ func TestServiceEncGrpClearWhereAttr(t *testing.T) {
 
 	sum := []string{"s1", "s2"}
 	count := false
-	whereQueryValues := []lib.WhereQueryAttribute{{"w1", *lib.EncryptInt(el.Aggregate, 1)}, {"w2", *lib.EncryptInt(el.Aggregate, 1)}, {"w3", *lib.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
-	pred := "(v0 == v1 || v2 == v3) && v4 == v5"
+	whereQueryValues := []lib.WhereQueryAttribute{{Name: "w1", Value: *lib.EncryptInt(el.Aggregate, 1)}, {Name: "w2", Value: *lib.EncryptInt(el.Aggregate, 1)}, {Name: "w3", Value: *lib.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
+	predicate := "(v0 == v1 || v2 == v3) && v4 == v5"
 	groupBy := []string{"g1", "g2", "g3"}
 
 	nbrDPs := make(map[string]int64)
@@ -260,7 +260,7 @@ func TestServiceEncGrpClearWhereAttr(t *testing.T) {
 		nbrDPs[server.String()] = 2 // 2 DPs for each server
 	}
 
-	surveyID, _, err := client.SendSurveyCreationQuery(el, lib.SurveyID("testSurvey"), lib.SurveyID(""), sum, count, whereQueryValues, pred, groupBy, nil, nil, nbrDPs, 0, proofsService, false)
+	surveyID, _, err := client.SendSurveyCreationQuery(el, lib.SurveyID("testSurvey"), lib.SurveyID(""), sum, count, whereQueryValues, predicate, groupBy, nil, nil, nbrDPs, 0, proofsService, false)
 
 	if err != nil {
 		t.Fatal("Service did not start.", err)
@@ -350,8 +350,8 @@ func TestServiceEncGrpAndWhereAttr(t *testing.T) {
 
 	sum := []string{"s1", "s2"}
 	count := false
-	whereQueryValues := []lib.WhereQueryAttribute{{"w1", *lib.EncryptInt(el.Aggregate, 1)}, {"w2", *lib.EncryptInt(el.Aggregate, 1)}, {"w3", *lib.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
-	pred := "(v0 == v1 || v2 == v3) && v4 == v5"
+	whereQueryValues := []lib.WhereQueryAttribute{{Name: "w1", Value: *lib.EncryptInt(el.Aggregate, 1)}, {Name: "w2", Value: *lib.EncryptInt(el.Aggregate, 1)}, {Name: "w3", Value: *lib.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
+	predicate := "(v0 == v1 || v2 == v3) && v4 == v5"
 	groupBy := []string{"g1", "g2", "g3"}
 
 	nbrDPs := make(map[string]int64)
@@ -360,7 +360,7 @@ func TestServiceEncGrpAndWhereAttr(t *testing.T) {
 		nbrDPs[server.String()] = 2 // 2 DPs for each server
 	}
 
-	surveyID, _, err := client.SendSurveyCreationQuery(el, lib.SurveyID("testSurvey"), lib.SurveyID(""), sum, count, whereQueryValues, pred, groupBy, nil, nil, nbrDPs, 0, proofsService, false)
+	surveyID, _, err := client.SendSurveyCreationQuery(el, lib.SurveyID("testSurvey"), lib.SurveyID(""), sum, count, whereQueryValues, predicate, groupBy, nil, nil, nbrDPs, 0, proofsService, false)
 
 	if err != nil {
 		t.Fatal("Service did not start.", err)
@@ -453,8 +453,8 @@ func TestServiceEverything(t *testing.T) {
 
 	sum := []string{"s1", "s2"}
 	count := false
-	whereQueryValues := []lib.WhereQueryAttribute{{"w1", *lib.EncryptInt(el.Aggregate, 1)}, {"w2", *lib.EncryptInt(el.Aggregate, 1)}, {"w3", *lib.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
-	pred := "(v0 == v1 || v2 == v3) && v4 == v5"
+	whereQueryValues := []lib.WhereQueryAttribute{{Name: "w1", Value: *lib.EncryptInt(el.Aggregate, 1)}, {Name: "w2", Value: *lib.EncryptInt(el.Aggregate, 1)}, {Name: "w3", Value: *lib.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
+	predicate := "(v0 == v1 || v2 == v3) && v4 == v5"
 	groupBy := []string{"g1", "g2", "g3"}
 
 	nbrDPs := make(map[string]int64)
@@ -463,7 +463,7 @@ func TestServiceEverything(t *testing.T) {
 		nbrDPs[server.String()] = 2 // 2 DPs for each server
 	}
 
-	surveyID, _, err := client.SendSurveyCreationQuery(el, lib.SurveyID("testSurvey"), lib.SurveyID(""), sum, count, whereQueryValues, pred, groupBy, nil, nil, nbrDPs, 0, proofsService, false)
+	surveyID, _, err := client.SendSurveyCreationQuery(el, lib.SurveyID("testSurvey"), lib.SurveyID(""), sum, count, whereQueryValues, predicate, groupBy, nil, nil, nbrDPs, 0, proofsService, false)
 
 	if err != nil {
 		t.Fatal("Service did not start.", err)
@@ -551,8 +551,8 @@ func TestServiceEncGrpAndWhereAttrWithCount(t *testing.T) {
 
 	sum := []string{"s1", "s2", "count"}
 	count := true
-	whereQueryValues := []lib.WhereQueryAttribute{{"w1", *lib.EncryptInt(el.Aggregate, 1)}, {"w2", *lib.EncryptInt(el.Aggregate, 1)}, {"w3", *lib.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
-	pred := "(v0 == v1 || v2 == v3) && v4 == v5"
+	whereQueryValues := []lib.WhereQueryAttribute{{Name: "w1", Value: *lib.EncryptInt(el.Aggregate, 1)}, {Name: "w2", Value: *lib.EncryptInt(el.Aggregate, 1)}, {Name: "w3", Value: *lib.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
+	predicate := "(v0 == v1 || v2 == v3) && v4 == v5"
 	groupBy := []string{"g1", "g2", "g3"}
 
 	nbrDPs := make(map[string]int64)
@@ -561,7 +561,7 @@ func TestServiceEncGrpAndWhereAttrWithCount(t *testing.T) {
 		nbrDPs[server.String()] = 2 // 2 DPs for each server
 	}
 
-	surveyID, _, err := client.SendSurveyCreationQuery(el, lib.SurveyID("testSurvey"), lib.SurveyID(""), sum, count, whereQueryValues, pred, groupBy, nil, nil, nbrDPs, 0, proofsService, false)
+	surveyID, _, err := client.SendSurveyCreationQuery(el, lib.SurveyID("testSurvey"), lib.SurveyID(""), sum, count, whereQueryValues, predicate, groupBy, nil, nil, nbrDPs, 0, proofsService, false)
 
 	if err != nil {
 		t.Fatal("Service did not start.", err)
@@ -652,8 +652,8 @@ func TestAllServersNoDPs(t *testing.T) {
 
 	sum := []string{"s1", "s2"}
 	count := false
-	whereQueryValues := []lib.WhereQueryAttribute{{"w1", *lib.EncryptInt(el.Aggregate, 1)}, {"w2", *lib.EncryptInt(el.Aggregate, 1)}, {"w3", *lib.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
-	pred := "(v0 == v1 || v2 == v3) && v4 == v5"
+	whereQueryValues := []lib.WhereQueryAttribute{{Name: "w1", Value: *lib.EncryptInt(el.Aggregate, 1)}, {Name: "w2", Value: *lib.EncryptInt(el.Aggregate, 1)}, {Name: "w3", Value: *lib.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
+	predicate := "(v0 == v1 || v2 == v3) && v4 == v5"
 	groupBy := []string{"g1", "g2", "g3"}
 
 	nbrDPs := make(map[string]int64)
@@ -666,7 +666,7 @@ func TestAllServersNoDPs(t *testing.T) {
 		}
 	}
 
-	surveyID, _, err := client.SendSurveyCreationQuery(el, lib.SurveyID("testSurvey"), lib.SurveyID(""), sum, count, whereQueryValues, pred, groupBy, nil, nil, nbrDPs, 0, proofsService, false)
+	surveyID, _, err := client.SendSurveyCreationQuery(el, lib.SurveyID("testSurvey"), lib.SurveyID(""), sum, count, whereQueryValues, predicate, groupBy, nil, nil, nbrDPs, 0, proofsService, false)
 
 	if err != nil {
 		t.Fatal("Service did not start.")
@@ -762,11 +762,11 @@ func TestAllServersRandomDPs(t *testing.T) {
 
 	sum := []string{"s1", "s2"}
 	count := false
-	whereQueryValues := []lib.WhereQueryAttribute{{"w1", *lib.EncryptInt(el.Aggregate, 1)}, {"w2", *lib.EncryptInt(el.Aggregate, 1)}, {"w3", *lib.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
-	pred := "(v0 == v1 || v2 == v3) && v4 == v5"
+	whereQueryValues := []lib.WhereQueryAttribute{{Name: "w1", Value: *lib.EncryptInt(el.Aggregate, 1)}, {Name: "w2", Value: *lib.EncryptInt(el.Aggregate, 1)}, {Name: "w3", Value: *lib.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
+	predicate := "(v0 == v1 || v2 == v3) && v4 == v5"
 	groupBy := []string{"g1", "g2", "g3"}
 
-	surveyID, _, err := client.SendSurveyCreationQuery(el, lib.SurveyID("testSurvey"), lib.SurveyID(""), sum, count, whereQueryValues, pred, groupBy, nil, nil, nbrDPs, 0, proofsService, false)
+	surveyID, _, err := client.SendSurveyCreationQuery(el, lib.SurveyID("testSurvey"), lib.SurveyID(""), sum, count, whereQueryValues, predicate, groupBy, nil, nil, nbrDPs, 0, proofsService, false)
 
 	if err != nil {
 		t.Fatal("Service did not start.")
@@ -848,11 +848,11 @@ func TestAllServersRandomDPs(t *testing.T) {
 }
 
 func TestFilteringFunc(t *testing.T) {
-	pred := "(v0 == v1 && v2 == v3) && v4 == v5"
-	whereQueryValues := []lib.WhereQueryAttributeTagged{{"age", lib.GroupingKey("1")}, {"salary", lib.GroupingKey("1")}, {"joao", lib.GroupingKey("1")}}
+	predicate := "(v0 == v1 && v2 == v3) && v4 == v5"
+	whereQueryValues := []lib.WhereQueryAttributeTagged{{Name: "age", Value: lib.GroupingKey("1")}, {Name: "salary", Value: lib.GroupingKey("1")}, {Name: "joao", Value: lib.GroupingKey("1")}}
 	responsesToFilter := []lib.ProcessResponseDet{{DetTagWhere: []lib.GroupingKey{lib.GroupingKey("1"), lib.GroupingKey("1"), lib.GroupingKey("1")}}, {DetTagWhere: []lib.GroupingKey{lib.GroupingKey("1"), lib.GroupingKey("1"), lib.GroupingKey("2")}}}
-	log.LLvl1(pred)
+	log.LLvl1(predicate)
 	log.LLvl1(responsesToFilter)
 	log.LLvl1(whereQueryValues)
-	log.LLvl1(services.FilterResponses(pred, whereQueryValues, responsesToFilter))
+	log.LLvl1(services.FilterResponses(predicate, whereQueryValues, responsesToFilter))
 }

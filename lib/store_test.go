@@ -51,7 +51,7 @@ func TestStoring(t *testing.T) {
 		testClearMap[strconv.Itoa(i)] = v
 	}
 
-	dummySurveyCreationQuery := lib.SurveyCreationQuery{Sum: []string{"0", "1", "2", "3"}, GroupBy: []string{"0", "1"}, Where: []lib.WhereQueryAttribute{{"0", lib.CipherText{}}, {"1", lib.CipherText{}}}}
+	dummySurveyCreationQuery := lib.SurveyCreationQuery{Sum: []string{"0", "1", "2", "3"}, GroupBy: []string{"0", "1"}, Where: []lib.WhereQueryAttribute{{Name: "0", Value: lib.CipherText{}}, {Name: "1", Value: lib.CipherText{}}}}
 
 	// Constructor Test
 	storage := lib.NewStore()

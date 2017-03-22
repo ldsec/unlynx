@@ -36,7 +36,7 @@ func NewMedcoClient(entryPoint *network.ServerIdentity, clientID string) *API {
 //______________________________________________________________________________________________________________________
 
 // SendSurveyCreationQuery creates a survey based on a set of entities (servers) and a survey description.
-func (c *API) SendSurveyCreationQuery(entities *onet.Roster, surveyGenID, surveyID lib.SurveyID, sum []string, count bool, where []lib.WhereQueryAttribute, pred string, groupBy []string, clientPubKey abstract.Point, dataToProcess []lib.DpResponse, nbrDPs map[string]int64, queryMode int64, proofs, appFlag bool) (*lib.SurveyID, lib.FilteredResponse, error) {
+func (c *API) SendSurveyCreationQuery(entities *onet.Roster, surveyGenID, surveyID lib.SurveyID, sum []string, count bool, where []lib.WhereQueryAttribute, predicate string, groupBy []string, clientPubKey abstract.Point, dataToProcess []lib.DpResponse, nbrDPs map[string]int64, queryMode int64, proofs, appFlag bool) (*lib.SurveyID, lib.FilteredResponse, error) {
 	log.Lvl1(c, "is creating a survey with general id: ", surveyGenID)
 
 	var newSurveyID lib.SurveyID
@@ -44,7 +44,7 @@ func (c *API) SendSurveyCreationQuery(entities *onet.Roster, surveyGenID, survey
 	// if Unlynx normal use
 	if dataToProcess == nil {
 		resp := ServiceResponse{}
-		req := &lib.SurveyCreationQuery{SurveyGenID: &surveyGenID, SurveyID: &surveyID, Roster: *entities, Sum: sum, Count: count, Where: where, Pred: pred, GroupBy: groupBy, ClientPubKey: clientPubKey, DataToProcess: dataToProcess, NbrDPs: nbrDPs, QueryMode: queryMode, Proofs: proofs, AppFlag: appFlag}
+		req := &lib.SurveyCreationQuery{SurveyGenID: &surveyGenID, SurveyID: &surveyID, Roster: *entities, Sum: sum, Count: count, Where: where, Predicate: predicate, GroupBy: groupBy, ClientPubKey: clientPubKey, DataToProcess: dataToProcess, NbrDPs: nbrDPs, QueryMode: queryMode, Proofs: proofs, AppFlag: appFlag}
 		err := c.SendProtobuf(c.entryPoint, req, &resp)
 		if err != nil {
 			return nil, lib.FilteredResponse{}, err
@@ -55,7 +55,7 @@ func (c *API) SendSurveyCreationQuery(entities *onet.Roster, surveyGenID, survey
 	} else {
 		// i2b2 compliant version
 		resp := SurveyResultResponse{}
-		err := c.SendProtobuf(c.entryPoint, &lib.SurveyCreationQuery{SurveyGenID: &surveyGenID, SurveyID: &surveyID, Roster: *entities, Sum: sum, Count: count, Where: where, Pred: pred, GroupBy: groupBy, ClientPubKey: clientPubKey, DataToProcess: dataToProcess, NbrDPs: nbrDPs, QueryMode: queryMode, Proofs: proofs, AppFlag: appFlag}, &resp)
+		err := c.SendProtobuf(c.entryPoint, &lib.SurveyCreationQuery{SurveyGenID: &surveyGenID, SurveyID: &surveyID, Roster: *entities, Sum: sum, Count: count, Where: where, Predicate: predicate, GroupBy: groupBy, ClientPubKey: clientPubKey, DataToProcess: dataToProcess, NbrDPs: nbrDPs, QueryMode: queryMode, Proofs: proofs, AppFlag: appFlag}, &resp)
 		if err != nil {
 			return nil, lib.FilteredResponse{}, err
 		}

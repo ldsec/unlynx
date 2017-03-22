@@ -114,7 +114,7 @@ type SurveyCreationQuery struct {
 	Sum           []string
 	Count         bool
 	Where         []WhereQueryAttribute
-	Pred          string
+	Predicate      string
 	GroupBy       []string
 	ClientPubKey  abstract.Point
 	DataToProcess []DpResponse
