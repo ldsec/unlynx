@@ -36,14 +36,13 @@ func NewMedcoClient(entryPoint *network.ServerIdentity, clientID string) *API {
 //______________________________________________________________________________________________________________________
 
 // SendSurveyCreationQuery creates a survey based on a set of entities (servers) and a survey description.
-func (c *API) SendSurveyCreationQuery(entities *onet.Roster, surveyGenID, surveyID SurveyID, clientPubKey abstract.Point, nbrDPs map[string]int64, proofs, appFlag bool, sum []string, count bool, where []lib.WhereQueryAttribute, predicate string, groupBy []string) (*SurveyID, lib.FilteredResponse, error) {
+func (c *API) SendSurveyCreationQuery(entities *onet.Roster, surveyGenID, surveyID SurveyID, clientPubKey abstract.Point, nbrDPs map[string]int64, proofs, appFlag bool, sum []string, count bool, where []lib.WhereQueryAttribute, predicate string, groupBy []string) (*SurveyID, error) {
 	log.Lvl1(c, "is creating a survey with general id: ", surveyGenID)
 
 	var newSurveyID SurveyID
-	var results lib.FilteredResponse
 
 	scq := SurveyCreationQuery{
-		SurveyGenID:  &surveyGenID,
+		//SurveyGenID:  &surveyGenID,
 		SurveyID:     &surveyID,
 		Roster:       *entities,
 		ClientPubKey: clientPubKey,
@@ -61,12 +60,12 @@ func (c *API) SendSurveyCreationQuery(entities *onet.Roster, surveyGenID, survey
 	resp := ServiceState{}
 	err := c.SendProtobuf(c.entryPoint, &scq, &resp)
 	if err != nil {
-		return nil, lib.FilteredResponse{}, err
+		return nil, err
 	}
 	log.LLvl1(c, " successfully created the survey with ID ", resp.SurveyID)
 	newSurveyID = resp.SurveyID
 
-	return &newSurveyID, results, nil
+	return &newSurveyID, nil
 }
 
 // SendSurveyResponseQuery handles the encryption and sending of DP responses

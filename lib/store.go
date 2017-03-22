@@ -127,7 +127,7 @@ func (s *Store) InsertDpResponse(cr DpResponse, proofs bool, groupBy, sum []stri
 			mapValue := s.DpResponsesAggr[GroupingKeyTuple{Key(clearGrp), Key(clearWhr)}]
 			mapValue.AggregatingAttributes = tmp
 			s.DpResponsesAggr[GroupingKeyTuple{Key(clearGrp), Key(clearWhr)}] = mapValue
-
+	log.LLvl1(s.DpResponsesAggr[GroupingKeyTuple{Key(clearGrp), Key(clearWhr)}])
 			if proofs {
 				publishedAggregationProof := PublishedSimpleAdditionProof{value.AggregatingAttributes, newResp.AggregatingAttributes, mapValue.AggregatingAttributes}
 				_=publishedAggregationProof//publication
@@ -148,10 +148,12 @@ func (s *Store) HasNextDpResponse() bool {
 
 // PullDpResponses permits to get the received DP responses
 func (s *Store) PullDpResponses() []ProcessResponse {
+	log.LLvl1("JE LIS CE QUE JE DOIS LIRE")
 	//result := []ProcessResponse{}
 	result := s.DpResponses
 	for _, v := range s.DpResponsesAggr {
 		result = append(result, v)
+		log.LLvl1("JE LIS CE QUE JE DOIS LIRE")
 	}
 	s.DpResponses = s.DpResponses[:0] //clear table
 	return result

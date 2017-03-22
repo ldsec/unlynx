@@ -1,12 +1,10 @@
 package serviceDefault
 
 import (
-	"strconv"
 
 	"github.com/JoaoAndreSa/MedCo/lib"
 	"github.com/JoaoAndreSa/MedCo/services"
 	"github.com/JoaoAndreSa/MedCo/protocols"
-	"github.com/Knetic/govaluate"
 	"github.com/btcsuite/goleveldb/leveldb/errors"
 	"github.com/satori/go.uuid"
 	"gopkg.in/dedis/crypto.v0/abstract"
@@ -30,7 +28,7 @@ const testDataFile = "medco_test_data.txt"
 type SurveyID string
 
 type SurveyCreationQuery struct {
-	SurveyGenID  *SurveyID
+	//SurveyGenID  *SurveyID
 	SurveyID     *SurveyID
 	Roster       onet.Roster
 	ClientPubKey abstract.Point
@@ -184,11 +182,11 @@ func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.
 	log.LLvl1(s.ServerIdentity().String(), " received a Survey Creation Query")
 
 	// if this server is the one receiving the query from the client
-	if *recq.SurveyGenID == "" || *recq.SurveyID == "" {
+	if /**recq.SurveyGenID == "" ||*/ *recq.SurveyID == "" {
 		newID := SurveyID(uuid.NewV4().String())
 		recq.SurveyID = &newID
 
-		log.Lvl1(s.ServerIdentity().String(), " handles this new survey ", *recq.SurveyID, " ", *recq.SurveyGenID)
+		log.Lvl1(s.ServerIdentity().String(), " handles this new survey ", *recq.SurveyID, " "/*, *recq.SurveyGenID*/)
 
 		// broadcasts the query
 		err := services.SendISMOthers(s.ServiceProcessor, &recq.Roster, recq)
@@ -498,7 +496,7 @@ func (s *Service) StartService(targetSurvey SurveyID, root bool) error {
 
 // ShufflingPhase performs the shuffling of the ClientResponses
 func (s *Service) ShufflingPhase(targetSurvey SurveyID) error {
-	if len(s.survey[targetSurvey].DpResponses) == 0 {
+	if len(s.survey[targetSurvey].DpResponses) == 0 && len(s.survey[targetSurvey].DpResponsesAggr) == 0 {
 		log.Lvl1(s.ServerIdentity(), " no data to shuffle")
 		return nil
 	}
@@ -533,7 +531,7 @@ func (s *Service) TaggingPhase(targetSurvey SurveyID) error {
 		queryWhereTag = append(queryWhereTag, newElem)
 	}
 	deterministicTaggingResult = deterministicTaggingResult[len(s.survey[targetSurvey].Query.Where):]
-	filteredResponses := FilterResponses(s.survey[targetSurvey].Query.Predicate, queryWhereTag, deterministicTaggingResult)
+	filteredResponses := services.FilterResponses(s.survey[targetSurvey].Query.Predicate, queryWhereTag, deterministicTaggingResult)
 	s.survey[targetSurvey].PushDeterministicFilteredResponses(filteredResponses, s.ServerIdentity().String(), s.survey[targetSurvey].Query.Proofs)
 	return err
 }
@@ -580,30 +578,4 @@ func (s *Service) KeySwitchingPhase(targetSurvey SurveyID) error {
 // Other Stuff.... (related with the protocols)
 //______________________________________________________________________________________________________________________
 
-func FilterResponses(pred string, whereQueryValues []lib.WhereQueryAttributeTagged, responsesToFilter []lib.ProcessResponseDet) []lib.FilteredResponseDet {
-	result := []lib.FilteredResponseDet{}
-	for _, v := range responsesToFilter {
-		expression, err := govaluate.NewEvaluableExpression(pred)
-		if err != nil {
-			return result
-		}
-		parameters := make(map[string]interface{}, len(whereQueryValues)+len(responsesToFilter[0].DetTagWhere))
-		counter := 0
-		for i := 0; i < len(whereQueryValues)+len(responsesToFilter[0].DetTagWhere); i++ {
 
-			if i%2 == 0 {
-				parameters["v"+strconv.Itoa(i)] = string(whereQueryValues[counter].Value)
-			} else {
-				parameters["v"+strconv.Itoa(i)] = string(v.DetTagWhere[counter])
-				counter++
-			}
-
-		}
-
-		keep, err := expression.Evaluate(parameters)
-		if keep.(bool) {
-			result = append(result, lib.FilteredResponseDet{DetTagGroupBy: v.DetTagGroupBy, Fr: lib.FilteredResponse{GroupByEnc: v.PR.GroupByEnc, AggregatingAttributes: v.PR.AggregatingAttributes}})
-		}
-	}
-	return result
-}

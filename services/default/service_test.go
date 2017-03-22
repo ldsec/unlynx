@@ -12,6 +12,7 @@ import (
 	"os"
 	"reflect"
 	"strconv"
+	"github.com/JoaoAndreSa/MedCo/services"
 )
 
 // numberGrpAttr is the number of group attributes.
@@ -56,7 +57,7 @@ func TestServiceClearAttr(t *testing.T) {
 		nbrDPs[server.String()] = 2 // 2 DPs for each server
 	}
 
-	surveyID, _, err := client.SendSurveyCreationQuery(el, serviceDefault.SurveyID("testSurvey"), serviceDefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, pred, groupBy)
+	surveyID, err := client.SendSurveyCreationQuery(el, serviceDefault.SurveyID("testSurvey"), serviceDefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, pred, groupBy)
 	//surveyID, _, err := client.SendSurveyCreationQuery(el, serviceDefault.SurveyID("testSurvey"), serviceDefault.SurveyID(""), sum, count, whereQueryValues, pred, groupBy, nil, nil, nbrDPs, 0, proofsService, false)
 
 	if err != nil {
@@ -164,7 +165,7 @@ func TestServiceClearGrpEncWhereAttr(t *testing.T) {
 		nbrDPs[server.String()] = 2 // 2 DPs for each server
 	}
 
-	surveyID, _, err := client.SendSurveyCreationQuery(el, serviceDefault.SurveyID("testSurvey"), serviceDefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, pred, groupBy)
+	surveyID, err := client.SendSurveyCreationQuery(el, serviceDefault.SurveyID("testSurvey"), serviceDefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, pred, groupBy)
 
 	if err != nil {
 		t.Fatal("Service did not start.", err)
@@ -265,7 +266,7 @@ func TestServiceEncGrpClearWhereAttr(t *testing.T) {
 		nbrDPs[server.String()] = 2 // 2 DPs for each server
 	}
 
-	surveyID, _, err := client.SendSurveyCreationQuery(el, serviceDefault.SurveyID("testSurvey"), serviceDefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, pred, groupBy)
+	surveyID, err := client.SendSurveyCreationQuery(el, serviceDefault.SurveyID("testSurvey"), serviceDefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, pred, groupBy)
 
 	if err != nil {
 		t.Fatal("Service did not start.", err)
@@ -366,7 +367,7 @@ func TestServiceEncGrpAndWhereAttr(t *testing.T) {
 		nbrDPs[server.String()] = 2 // 2 DPs for each server
 	}
 
-	surveyID, _, err := client.SendSurveyCreationQuery(el, serviceDefault.SurveyID("testSurvey"), serviceDefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, pred, groupBy)
+	surveyID, err := client.SendSurveyCreationQuery(el, serviceDefault.SurveyID("testSurvey"), serviceDefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, pred, groupBy)
 
 	if err != nil {
 		t.Fatal("Service did not start.", err)
@@ -470,7 +471,7 @@ func TestServiceEverything(t *testing.T) {
 		nbrDPs[server.String()] = 2 // 2 DPs for each server
 	}
 
-	surveyID, _, err := client.SendSurveyCreationQuery(el, serviceDefault.SurveyID("testSurvey"), serviceDefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, pred, groupBy)
+	surveyID, err := client.SendSurveyCreationQuery(el, serviceDefault.SurveyID("testSurvey"), serviceDefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, pred, groupBy)
 
 	if err != nil {
 		t.Fatal("Service did not start.", err)
@@ -569,7 +570,7 @@ func TestServiceEncGrpAndWhereAttrWithCount(t *testing.T) {
 		nbrDPs[server.String()] = 2 // 2 DPs for each server
 	}
 
-	surveyID, _, err := client.SendSurveyCreationQuery(el, serviceDefault.SurveyID("testSurvey"), serviceDefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, pred, groupBy)
+	surveyID, err := client.SendSurveyCreationQuery(el, serviceDefault.SurveyID("testSurvey"), serviceDefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, pred, groupBy)
 
 	if err != nil {
 		t.Fatal("Service did not start.", err)
@@ -677,7 +678,7 @@ func TestAllServersNoDPs(t *testing.T) {
 		}
 	}
 
-	surveyID, _, err := client.SendSurveyCreationQuery(el, serviceDefault.SurveyID("testSurvey"), serviceDefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, pred, groupBy)
+	surveyID, err := client.SendSurveyCreationQuery(el, serviceDefault.SurveyID("testSurvey"), serviceDefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, pred, groupBy)
 
 	if err != nil {
 		t.Fatal("Service did not start.")
@@ -777,7 +778,7 @@ func TestAllServersRandomDPs(t *testing.T) {
 	pred := "(v0 == v1 || v2 == v3) && v4 == v5"
 	groupBy := []string{"g1", "g2", "g3"}
 
-	surveyID, _, err := client.SendSurveyCreationQuery(el, serviceDefault.SurveyID("testSurvey"), serviceDefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, pred, groupBy)
+	surveyID, err := client.SendSurveyCreationQuery(el, serviceDefault.SurveyID("testSurvey"), serviceDefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, pred, groupBy)
 
 	if err != nil {
 		t.Fatal("Service did not start.")
@@ -865,6 +866,6 @@ func TestFilteringFunc(t *testing.T) {
 	log.LLvl1(pred)
 	log.LLvl1(responsesToFilter)
 	log.LLvl1(whereQueryValues)
-	log.LLvl1(serviceDefault.FilterResponses(pred, whereQueryValues, responsesToFilter))
+	log.LLvl1(services.FilterResponses(pred, whereQueryValues, responsesToFilter))
 }
 

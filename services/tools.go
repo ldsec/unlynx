@@ -10,6 +10,8 @@ import (
 	"gopkg.in/dedis/onet.v1/network"
 	"os"
 	"strings"
+	"github.com/Knetic/govaluate"
+	"strconv"
 )
 
 // SendISMOthers sends a message to all other services
@@ -69,4 +71,40 @@ func PrecomputationWritingForShuffling(appFlag bool, gobFile, serverName string,
 		precomputeShuffle = lib.CreatePrecomputedRandomize(network.Suite.Point().Base(), collectiveKey, network.Suite.Cipher(surveySecret.Bytes()), lineSize*2, 10)
 	}
 	return precomputeShuffle
+}
+
+func FilterResponses(pred string, whereQueryValues []lib.WhereQueryAttributeTagged, responsesToFilter []lib.ProcessResponseDet) []lib.FilteredResponseDet {
+	result := []lib.FilteredResponseDet{}
+	for _, v := range responsesToFilter {
+		expression, err := govaluate.NewEvaluableExpression(pred)
+		if err != nil {
+			return result
+		}
+		parameters := make(map[string]interface{}, len(whereQueryValues)+len(responsesToFilter[0].DetTagWhere))
+		counter := 0
+		for i := 0; i < len(whereQueryValues)+len(responsesToFilter[0].DetTagWhere); i++ {
+
+			if i%2 == 0 {
+				parameters["v"+strconv.Itoa(i)] = string(whereQueryValues[counter].Value)
+			} else {
+				parameters["v"+strconv.Itoa(i)] = string(v.DetTagWhere[counter])
+				counter++
+			}
+
+		}
+
+		keep, err := expression.Evaluate(parameters)
+		if keep.(bool) {
+			result = append(result, lib.FilteredResponseDet{DetTagGroupBy: v.DetTagGroupBy, Fr: lib.FilteredResponse{GroupByEnc: v.PR.GroupByEnc, AggregatingAttributes: v.PR.AggregatingAttributes}})
+		}
+	}
+	return result
+}
+
+func CountDps(m map[string]int64) int64{
+	result := int64(0)
+	for _,v := range m {
+		result += v
+	}
+	return result
 }
