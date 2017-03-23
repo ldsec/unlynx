@@ -13,6 +13,7 @@ import (
 	"github.com/JoaoAndreSa/MedCo/services"
 	"github.com/JoaoAndreSa/MedCo/protocols"
 	"github.com/btcsuite/goleveldb/leveldb/errors"
+	"reflect"
 )
 
 
@@ -53,6 +54,8 @@ type Survey struct {
 	ShufflePrecompute []lib.CipherVectorScalar
 	Sender 		  network.ServerIdentityID
 	IntermediateResponses map[network.ServerIdentityID]lib.FilteredResponse
+	FinalResponses []FinalResponsesIds
+	ResponseSent 	[]FinalResponsesIds
 }
 
 // MsgTypes defines the Message Type ID for all the service's intra-messages.
@@ -90,6 +93,7 @@ type SurveyResponseSharing struct {
 
 // SurveyFinalResponseSharing represents a message containing survey ids and responses (i2b2)
 type SurveyFinalResponseSharing struct {
+	SurveyGenID SurveyID
 	Responses []FinalResponsesIds
 }
 
@@ -111,6 +115,7 @@ type Service struct {
 	appFlag       bool
 	surveyChannel chan int // To wait for the survey to be created before loading data
 	intermediateChannel     chan int // To wait for all data to be read before starting medco service protocol
+	finalChannel		chan int
 	ddtChannel    chan int // To wait for all nodes to finish the tagging before continuing
 	endService    chan int // To wait for the service to end
 	noise         lib.CipherText
@@ -126,6 +131,7 @@ func NewService(c *onet.Context) onet.Service {
 		survey:           make(map[SurveyID]Survey, 0),
 		surveyChannel:    make(chan int, 100),
 		intermediateChannel:        make(chan int, 100),
+		finalChannel:        make(chan int, 100),
 		ddtChannel:       make(chan int, 100),
 		endService:       make(chan int, 1),
 	}
@@ -137,8 +143,13 @@ func NewService(c *onet.Context) onet.Service {
 		log.Fatal("Wrong Handler.", cerr)
 	}
 
+	if cerr := newMedCoInstance.RegisterHandler(newMedCoInstance.HandleSurveyFinalResponseSharing); cerr != nil {
+		log.Fatal("Wrong Handler.", cerr)
+	}
+
 	c.RegisterProcessor(newMedCoInstance, msgTypes.msgSurveyDpQuery)
 	c.RegisterProcessor(newMedCoInstance, msgTypes.msgSurveyResponseSharing)
+	c.RegisterProcessor(newMedCoInstance, msgTypes.msgSurveyFinalResponseSharing)
 	return newMedCoInstance
 }
 
@@ -151,8 +162,8 @@ func (s *Service) Process(msg *network.Envelope) {
 		tmp := (msg.Msg).(*SurveyResponseSharing)
 		s.HandleSurveyResponseSharing(tmp)
 	} else if msg.MsgType.Equal(msgTypes.msgSurveyFinalResponseSharing) {
-		//tmp := (msg.Msg).(SurveyFinalResponseSharing)
-		//s.HandleSurveyFinalResponseSharing(&tmp)
+		tmp := (msg.Msg).(*SurveyFinalResponseSharing)
+		s.HandleSurveyFinalResponseSharing(tmp)
 	}
 }
 
@@ -197,7 +208,7 @@ func (s *Service) HandleSurveyDpQuery(sdq *SurveyDpQuery) (network.Message, onet
 		// skip Unlynx shuffling
 		log.LLvl1(s.ServerIdentity(), " ", s.survey[*sdq.SurveyID])
 		s.survey[*sdq.SurveyID].PushShuffledProcessResponses(sdq.DpData)
-		s.StartService(*sdq.SurveyID)
+		s.StartServicePartOne(*sdq.SurveyID)
 
 		<-s.endService
 
@@ -211,9 +222,12 @@ func (s *Service) HandleSurveyDpQuery(sdq *SurveyDpQuery) (network.Message, onet
 
 		s.mutex.Lock()
 		log.LLvl1(s.survey[*sdq.SurveyGenID].IntermediateResponses)
-		tmp := s.survey[*sdq.SurveyGenID]
-		tmp.IntermediateResponses = make(map[network.ServerIdentityID]lib.FilteredResponse)
-		s.survey[*sdq.SurveyGenID] = tmp
+		if s.survey[*sdq.SurveyGenID].IntermediateResponses == nil {
+			tmp := s.survey[*sdq.SurveyGenID]
+			tmp.IntermediateResponses = make(map[network.ServerIdentityID]lib.FilteredResponse)
+			s.survey[*sdq.SurveyGenID] = tmp
+		}
+
 		s.survey[*sdq.SurveyGenID].IntermediateResponses[s.ServerIdentity().ID] =  r1[0]
 		log.LLvl1(services.CountDps(sdq.NbrDPs))
 		log.LLvl1(len(s.survey[*sdq.SurveyGenID].IntermediateResponses))
@@ -225,6 +239,59 @@ func (s *Service) HandleSurveyDpQuery(sdq *SurveyDpQuery) (network.Message, onet
 		log.LLvl1(s.ServerIdentity(), " COUCOU")
 		<- s.intermediateChannel
 		log.Lvl1(s.ServerIdentity(), " completed the first part")
+
+		if s.ServerIdentity().ID == sdq.Roster.List[0].ID {
+			log.LLvl1(s.ServerIdentity(), " executes part 2")
+
+			tmp := s.survey[*sdq.SurveyGenID]
+			tmp.Query = s.survey[*sdq.SurveyID].Query
+			tmp.Store = s.survey[*sdq.SurveyID].Store
+			s.survey[*sdq.SurveyGenID] = tmp
+
+			s.StartServicePartTwo(*sdq.SurveyGenID)
+
+			<-s.endService
+
+			finalResponsesUnFormat := s.survey[*sdq.SurveyGenID].PullDeliverableResults()
+			log.LLvl1(finalResponsesUnFormat)
+			finalResponses := make([]FinalResponsesIds, len(finalResponsesUnFormat))
+			counter := 0
+			for i := range s.survey[*sdq.SurveyGenID].IntermediateResponses{
+				finalResponses[counter].ID = i
+				finalResponses[counter].CR = finalResponsesUnFormat[counter]
+				counter = counter + 1
+			}
+
+			// broadcasts the final response
+			err = services.SendISMOthers(s.ServiceProcessor, &sdq.Roster, &SurveyFinalResponseSharing{*sdq.SurveyGenID, finalResponses})
+			if err != nil {
+				log.Error("broadcasting error ", err)
+			}
+
+			tmp = s.survey[*sdq.SurveyGenID]
+			tmp.FinalResponses = finalResponses
+			s.survey[*sdq.SurveyGenID] = tmp
+			s.finalChannel <- 1
+		}
+
+		<- s.finalChannel
+
+		finalResult := []lib.FilteredResponse{}
+		log.LLvl1(s.survey[*sdq.SurveyGenID].FinalResponses)
+		for _,v := range s.survey[*sdq.SurveyGenID].FinalResponses{
+			s.mutex.Lock()
+			if v.ID == s.ServerIdentity().ID && !s.checkIfAlreadySent(v,*sdq.SurveyGenID){
+				finalResult = []lib.FilteredResponse{v.CR}
+				log.LLvl1(finalResult)
+				tmp := s.survey[*sdq.SurveyGenID]
+				tmp.ResponseSent = append(tmp.ResponseSent, v)
+				s.survey[*sdq.SurveyGenID] = tmp
+			}
+			s.mutex.Unlock()
+		}
+		log.LLvl1(finalResult)
+		return &ServiceResult{Results:finalResult}, nil
+
 
 	}
 
@@ -264,8 +331,8 @@ func (s *Service) HandleSurveyDpQuery(sdq *SurveyDpQuery) (network.Message, onet
 	return &ServiceResult{/*msg*/}, nil
 }
 
-// StartService starts the service (with all its different steps/protocols)
-func (s *Service) StartService(targetSurvey SurveyID) error {
+// StartServicePartOne starts the service (with all its different steps/protocols)
+func (s *Service) StartServicePartOne(targetSurvey SurveyID) error {
 
 	log.LLvl1(s.ServerIdentity(), " starts a Medco Protocol for survey ", targetSurvey)
 	tmp := s.survey[targetSurvey]
@@ -296,6 +363,56 @@ func (s *Service) StartService(targetSurvey SurveyID) error {
 
 	s.endService <- 1
 	return nil
+}
+
+// StartServicePartOne starts the service (with all its different steps/protocols)
+func (s *Service) StartServicePartTwo(targetSurvey SurveyID) error {
+
+	log.LLvl1(s.ServerIdentity(), " starts a Medco Protocol for survey ", targetSurvey)
+	tmp := s.survey[targetSurvey]
+	s.targetSurvey = &tmp
+	s.proofs = s.survey[targetSurvey].Query.Proofs
+
+	// Tagging Phase
+	start := lib.StartTimer(s.ServerIdentity().String() + "_TaggingPhase")
+
+	//TODO put it in the new Protocol for survey
+	err := s.ShufflingPhase(targetSurvey)
+	if err != nil {
+		log.Fatal("Error in the Tagging Phase")
+	}
+
+	lib.EndTimer(start)
+
+	//skip collective aggregation
+	shuffledFinalResponsesUnformat:= s.survey[targetSurvey].PullShuffledProcessResponses()
+
+	shuffledFinalResponsesFormat := make([]lib.FilteredResponse, len(shuffledFinalResponsesUnformat))
+	for i,v := range shuffledFinalResponsesUnformat{
+		shuffledFinalResponsesFormat[i].GroupByEnc = v.GroupByEnc
+		shuffledFinalResponsesFormat[i].AggregatingAttributes = v.AggregatingAttributes
+	}
+
+	// here we use the table to store the responses used in key switching
+	s.survey[targetSurvey].PushQuerierKeyEncryptedResponses(shuffledFinalResponsesFormat)
+
+	err = s.KeySwitchingPhase(*s.targetSurvey.Query.SurveyID)
+	if err != nil {
+		log.Fatal("Error in the Tagging Phase")
+	}
+
+	s.endService <- 1
+	return nil
+}
+
+func (s *Service) checkIfAlreadySent(fri FinalResponsesIds, surveyID SurveyID) bool{
+	result := false
+	for _,v := range s.survey[surveyID].ResponseSent {
+		if reflect.DeepEqual(fri, v){
+			result = true
+		}
+	}
+	return result
 }
 
 // TaggingPhase performs the private grouping on the currently collected data.
@@ -340,6 +457,23 @@ func (s *Service) DROPhase(targetSurvey SurveyID) error {
 	return nil
 }
 
+// ShufflingPhase performs the shuffling of the ClientResponses
+func (s *Service) ShufflingPhase(targetSurvey SurveyID) error {
+	/*if len(s.survey[targetSurvey].DpResponses) == 0 && len(s.survey[targetSurvey].DpResponsesAggr) == 0 {
+		log.Lvl1(s.ServerIdentity(), " no data to shuffle")
+		return nil
+	}*/
+
+	pi, err := s.StartProtocol(protocols.ShufflingProtocolName, targetSurvey)
+	if err != nil {
+		return err
+	}
+	shufflingResult := <-pi.(*protocols.ShufflingProtocol).FeedbackChannel
+
+	s.survey[targetSurvey].PushShuffledProcessResponses(shufflingResult)
+	return err
+}
+
 // StartProtocol starts a specific protocol (Pipeline, Shuffling, etc.)
 func (s *Service) StartProtocol(name string, targetSurvey SurveyID) (onet.ProtocolInstance, error) {
 	tmp := s.survey[targetSurvey]
@@ -380,8 +514,12 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 		shuffle.Proofs = s.survey[target].Query.Proofs
 		shuffle.Precomputed = s.survey[target].ShufflePrecompute
 		if tn.IsRoot() {
-			dpResponses := s.survey[target].PullDpResponses()
-			shuffle.TargetOfShuffle = &dpResponses
+			targetShuffle := []lib.ProcessResponse{}
+			for _,v := range s.survey[target].IntermediateResponses{
+				newProcessResponse := lib.ProcessResponse{GroupByEnc:v.GroupByEnc, AggregatingAttributes:v.AggregatingAttributes}
+				targetShuffle = append(targetShuffle, newProcessResponse)
+			}
+			shuffle.TargetOfShuffle = &targetShuffle
 		}
 
 	case protocols.DeterministicTaggingProtocolName:
@@ -437,9 +575,10 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 			coaggr := []lib.FilteredResponse{}
 
 			if lib.DIFFPRI == true {
-				coaggr = s.survey[target].PullCothorityAggregatedFilteredResponses(true, s.noise)
+				//TODO add diff privacy in this case too
+				coaggr = s.survey[target].PullDeliverableResults(/*true, s.noise*/)
 			} else {
-				coaggr = s.survey[target].PullCothorityAggregatedFilteredResponses(false, lib.CipherText{})
+				coaggr = s.survey[target].PullDeliverableResults(/*false, lib.CipherText{}*/)
 			}
 
 			keySwitch.TargetOfSwitch = &coaggr
@@ -476,6 +615,28 @@ func (s *Service) HandleSurveyResponseSharing(resp *SurveyResponseSharing) (netw
 	return &ServiceResult{}, nil
 }
 
+// KeySwitchingPhase performs the switch to the querier's key on the currently aggregated data.
+func (s *Service) KeySwitchingPhase(targetSurvey SurveyID) error {
+	pi, err := s.StartProtocol(protocols.KeySwitchingProtocolName, targetSurvey)
+	if err != nil {
+		return err
+	}
+	keySwitchedAggregatedResponses := <-pi.(*protocols.KeySwitchingProtocol).FeedbackChannel
+	log.LLvl1(keySwitchedAggregatedResponses)
+	s.survey[targetSurvey].PushQuerierKeyEncryptedResponses(keySwitchedAggregatedResponses)
+	return err
+}
+
+// HandleSurveyFinalResponseSharing handles reception of final shuffled results in i2b2 query case
+func (s *Service) HandleSurveyFinalResponseSharing(resp *SurveyFinalResponseSharing) (network.Message, onet.ClientError) {
+	log.LLvl1(s.ServerIdentity(), " gets a final survey response for from ", s.ServerIdentity().ID)
+	tmp := s.survey[resp.SurveyGenID]
+	tmp.FinalResponses = resp.Responses
+	s.survey[resp.SurveyGenID] = tmp
+	// this is received only once and then the channel is unblocked to proceed to last step
+	s.finalChannel <- 1
+	return &ServiceResult{}, nil
+}
 
 
 /*

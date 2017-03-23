@@ -25,6 +25,7 @@ type Store struct {
 	// before they are key switched and combined in the last step (key switching).
 	GroupedDeterministicFilteredResponses map[GroupingKey]FilteredResponse
 
+
 	lastID                                uint64
 }
 
@@ -61,44 +62,6 @@ func proccessParameters (data []string, clear map[string]int64, encrypted map[st
 	}
 	return containerClear,containerEnc
 }
-
-/*for _,v := range grpAttrOrder{
-		log.LLvl1(v)
-		log.LLvl1(cr.GroupByClear)
-		grp, ok := cr.GroupByClear[v]
-		if ok {
-			if cr.WhereEnc == nil || cr.GroupByEnc == nil {
-				clearGrp = append(clearGrp, grp)
-			} else {
-				newResp.GroupByEnc = append(newResp.GroupByEnc, IntToCiphertext(grp))
-			}
-		} else if  grp1, ok := cr.GroupByEnc[v]; ok {
-			newResp.GroupByEnc = append(newResp.GroupByEnc, grp1)
-		} else {
-			log.LLvl1("WRONG attributes 1")
-		}
-	}
-	for _,v := range whereAttrOrder{
-		grp, ok := cr.WhereClear[v.Name]
-		if ok {
-			if cr.WhereEnc == nil || cr.GroupByEnc == nil {
-				clearWhr = append(clearWhr, grp)
-			} else {
-				newResp.WhereEnc = append(newResp.WhereEnc, IntToCiphertext(grp))
-			}
-		} else if  grp1, ok := cr.WhereEnc[v.Name]; ok {
-			newResp.WhereEnc = append(newResp.WhereEnc, grp1)
-		} else {
-			log.LLvl1("WRONG attributes 2")
-		}
-	}
-	for _,v := range aggrAttrOrder{
-		grp, ok :=
-
-
-		grp  := cr.AggregatingAttributes[v]
-		newResp.AggregatingAttributes = append(newResp.AggregatingAttributes, grp)
-	}*/
 
 // InsertDPResponse handles the local storage of a new DP response in aggregation or grouping cases.
 func (s *Store) InsertDpResponse(cr DpResponse, proofs bool, groupBy, sum []string, where []WhereQueryAttribute) {

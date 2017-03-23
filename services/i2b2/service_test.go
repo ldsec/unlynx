@@ -8,6 +8,8 @@ import (
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
 	"github.com/JoaoAndreSa/MedCo/services/i2b2"
+	"gopkg.in/dedis/crypto.v0/random"
+	"gopkg.in/dedis/onet.v1/network"
 )
 
 func TestServiceEncGrpAndWhereAttr(t *testing.T) {
@@ -20,6 +22,8 @@ func TestServiceEncGrpAndWhereAttr(t *testing.T) {
 	_, el, _ := local.GenTree(3, true)
 	defer local.CloseAll()
 
+	secKey := network.Suite.Scalar().Pick(random.Stream)
+	pubKey := network.Suite.Point().Mul(network.Suite.Point().Base(), secKey)
 	// Send a request to the service
 	client := serviceI2B2.NewMedcoClient(el.List[0], strconv.Itoa(0))
 	client1 := serviceI2B2.NewMedcoClient(el.List[1], strconv.Itoa(0))
@@ -71,19 +75,23 @@ func TestServiceEncGrpAndWhereAttr(t *testing.T) {
 
 	wg := lib.StartParallelize(2)
 	log.LLvl1("START PARA")
+	result1 := lib.FilteredResponse{}
+	result2 := lib.FilteredResponse{}
 	go func(i int) {
 		defer wg.Done()
 		log.LLvl1("ICI")
-		_, _, _ = client1.SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), nil, nbrDPs, false, false, sum, count, whereQueryValues, pred, groupBy, data, 0)
+		_, result1, _ = client1.SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey , nbrDPs, false, false, sum, count, whereQueryValues, pred, groupBy, data, 0)
 	}(0)
 	go func() {
 		defer wg.Done()
-		_, _, _ = client2.SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), nil, nbrDPs, false, false, sum, count, whereQueryValues, pred, groupBy, data, 0)
+		_, result2, _ = client2.SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, false, sum, count, whereQueryValues, pred, groupBy, data, 0)
 	}()
-	_, result, err := client.SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), nil, nbrDPs, false, false, sum, count, whereQueryValues, pred, groupBy, data, 0)
+	_, result, err := client.SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, false, sum, count, whereQueryValues, pred, groupBy, data, 0)
 
 	lib.EndParallelize(wg)
-
+	log.LLvl1(result)
+	log.LLvl1(result1)
+	log.LLvl1(result2)
 	_= result
 	if err != nil {
 		t.Fatal("Service did not start.", err)
