@@ -51,30 +51,32 @@ func TestStoring(t *testing.T) {
 		testClearMap[strconv.Itoa(i)] = v
 	}
 
-	dummySurveyCreationQuery := lib.SurveyCreationQuery{Sum: []string{"0", "1", "2", "3"}, GroupBy: []string{"0", "1"}, Where: []lib.WhereQueryAttribute{{Name: "0", Value: lib.CipherText{}}, {Name: "1", Value: lib.CipherText{}}}}
+	sum := []string{"0", "1", "2", "3"}
+	groupBy := []string{"0", "1"}
+	where := []lib.WhereQueryAttribute{{Name: "0", Value: lib.CipherText{}}, {Name: "1", Value: lib.CipherText{}}}
 
 	// Constructor Test
 	storage := lib.NewStore()
 
 	// (1) Test Insert and Pull DpResponses
-	storage.InsertDpResponse(lib.DpResponse{GroupByEnc: testEncMap, WhereClear: testClearMap, AggregatingAttributesEnc: testAggrMap1}, true, dummySurveyCreationQuery)
+	storage.InsertDpResponse(lib.DpResponse{GroupByEnc: testEncMap, WhereClear: testClearMap, AggregatingAttributesEnc: testAggrMap1}, true, groupBy, sum, where)
 
 	assert.True(t, (len(storage.PullDpResponses()) == 1))
 	assert.Empty(t, storage.DpResponses)
 
 	// (2) Test Insert and Pull multiple DpResponses to check aggregation
-	storage.InsertDpResponse(lib.DpResponse{GroupByClear: testClearMap, WhereClear: testClearMap, AggregatingAttributesEnc: testAggrMap2}, true, dummySurveyCreationQuery)
-	storage.InsertDpResponse(lib.DpResponse{GroupByClear: testClearMap, WhereClear: testClearMap, AggregatingAttributesEnc: testAggrMap2}, true, dummySurveyCreationQuery)
-	storage.InsertDpResponse(lib.DpResponse{GroupByClear: testClearMap, WhereClear: testClearMap, AggregatingAttributesEnc: testAggrMap2}, true, dummySurveyCreationQuery)
+	storage.InsertDpResponse(lib.DpResponse{GroupByClear: testClearMap, WhereClear: testClearMap, AggregatingAttributesEnc: testAggrMap2}, true, groupBy, sum, where)
+	storage.InsertDpResponse(lib.DpResponse{GroupByClear: testClearMap, WhereClear: testClearMap, AggregatingAttributesEnc: testAggrMap2}, true, groupBy, sum, where)
+	storage.InsertDpResponse(lib.DpResponse{GroupByClear: testClearMap, WhereClear: testClearMap, AggregatingAttributesEnc: testAggrMap2}, true, groupBy, sum, where)
 
-	sum := lib.NewCipherVector(len(testAggr2))
-	sum.Add(testAggr2, testAggr2)
-	sum.Add(*sum, testAggr2)
+	sum1 := lib.NewCipherVector(len(testAggr2))
+	sum1.Add(testAggr2, testAggr2)
+	sum1.Add(*sum1, testAggr2)
 
 	result := storage.PullDpResponses()
 
 	assert.True(t, (len(result) == 1))
-	assert.Equal(t, result[0].AggregatingAttributes, *sum)
+	assert.Equal(t, result[0].AggregatingAttributes, *sum1)
 
 	// (3) Test empty
 	storage.PullLocallyAggregatedResponses()
@@ -82,9 +84,9 @@ func TestStoring(t *testing.T) {
 	// (4) Test Insert and Pull DpResponses but with different parameters
 	storage = lib.NewStore()
 
-	storage.InsertDpResponse(lib.DpResponse{GroupByClear: testClearMap, GroupByEnc: testEncMap, WhereClear: testClearMap, WhereEnc: testEncMap, AggregatingAttributesEnc: testAggrMap2}, true, dummySurveyCreationQuery)
-	storage.InsertDpResponse(lib.DpResponse{GroupByEnc: testEncMap, AggregatingAttributesEnc: testAggrMap2}, false, dummySurveyCreationQuery)
-	storage.InsertDpResponse(lib.DpResponse{WhereEnc: testEncMap, AggregatingAttributesEnc: testAggrMap1}, true, dummySurveyCreationQuery)
+	storage.InsertDpResponse(lib.DpResponse{GroupByClear: testClearMap, GroupByEnc: testEncMap, WhereClear: testClearMap, WhereEnc: testEncMap, AggregatingAttributesEnc: testAggrMap2}, true, groupBy, sum, where)
+	storage.InsertDpResponse(lib.DpResponse{GroupByEnc: testEncMap, AggregatingAttributesEnc: testAggrMap2}, false, groupBy, sum, where)
+	storage.InsertDpResponse(lib.DpResponse{WhereEnc: testEncMap, AggregatingAttributesEnc: testAggrMap1}, true, groupBy, sum, where)
 
 	assert.True(t, len(storage.DpResponses) == 3)
 

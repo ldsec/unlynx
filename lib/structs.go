@@ -9,7 +9,6 @@ import (
 
 	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/crypto.v0/cipher"
-	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/network"
 )
 
@@ -101,38 +100,6 @@ type FilteredResponseDet struct {
 type FilteredResponse struct {
 	GroupByEnc            CipherVector
 	AggregatingAttributes CipherVector
-}
-
-// SurveyID unique ID for each survey.
-type SurveyID string
-
-// SurveyCreationQuery is a query for Unlynx
-type SurveyCreationQuery struct {
-	SurveyGenID   *SurveyID
-	SurveyID      *SurveyID
-	Roster        onet.Roster
-	Sum           []string
-	Count         bool
-	Where         []WhereQueryAttribute
-	Predicate     string
-	GroupBy       []string
-	ClientPubKey  abstract.Point
-	DataToProcess []DpResponse
-	NbrDPs        map[string]int64
-	QueryMode     int64
-	Proofs        bool
-	AppFlag       bool
-}
-
-// Survey represents a survey with the corresponding params
-type Survey struct {
-	*Store
-	Query             SurveyCreationQuery
-	SurveySecretKey   abstract.Scalar
-	ShufflePrecompute []CipherVectorScalar
-	SurveyResponses   []FilteredResponse
-	Sender            network.ServerIdentityID
-	Final             bool
 }
 
 // Functions

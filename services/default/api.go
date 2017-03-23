@@ -1,4 +1,4 @@
-package services
+package serviceDefault
 
 import (
 	"github.com/JoaoAndreSa/MedCo/lib"
@@ -36,43 +36,46 @@ func NewMedcoClient(entryPoint *network.ServerIdentity, clientID string) *API {
 //______________________________________________________________________________________________________________________
 
 // SendSurveyCreationQuery creates a survey based on a set of entities (servers) and a survey description.
-func (c *API) SendSurveyCreationQuery(entities *onet.Roster, surveyGenID, surveyID lib.SurveyID, sum []string, count bool, where []lib.WhereQueryAttribute, predicate string, groupBy []string, clientPubKey abstract.Point, dataToProcess []lib.DpResponse, nbrDPs map[string]int64, queryMode int64, proofs, appFlag bool) (*lib.SurveyID, lib.FilteredResponse, error) {
+func (c *API) SendSurveyCreationQuery(entities *onet.Roster, surveyGenID, surveyID SurveyID, clientPubKey abstract.Point, nbrDPs map[string]int64, proofs, appFlag bool, sum []string, count bool, where []lib.WhereQueryAttribute, predicate string, groupBy []string) (*SurveyID, error) {
 	log.Lvl1(c, "is creating a survey with general id: ", surveyGenID)
 
-	var newSurveyID lib.SurveyID
-	var results lib.FilteredResponse
-	// if Unlynx normal use
-	if dataToProcess == nil {
-		resp := ServiceResponse{}
-		req := &lib.SurveyCreationQuery{SurveyGenID: &surveyGenID, SurveyID: &surveyID, Roster: *entities, Sum: sum, Count: count, Where: where, Predicate: predicate, GroupBy: groupBy, ClientPubKey: clientPubKey, DataToProcess: dataToProcess, NbrDPs: nbrDPs, QueryMode: queryMode, Proofs: proofs, AppFlag: appFlag}
-		err := c.SendProtobuf(c.entryPoint, req, &resp)
-		if err != nil {
-			return nil, lib.FilteredResponse{}, err
-		}
-		log.LLvl1(c, " successfully created the survey with ID ", resp.SurveyID)
-		newSurveyID = resp.SurveyID
+	var newSurveyID SurveyID
 
-	} else {
-		// i2b2 compliant version
-		resp := SurveyResultResponse{}
-		err := c.SendProtobuf(c.entryPoint, &lib.SurveyCreationQuery{SurveyGenID: &surveyGenID, SurveyID: &surveyID, Roster: *entities, Sum: sum, Count: count, Where: where, Predicate: predicate, GroupBy: groupBy, ClientPubKey: clientPubKey, DataToProcess: dataToProcess, NbrDPs: nbrDPs, QueryMode: queryMode, Proofs: proofs, AppFlag: appFlag}, &resp)
-		if err != nil {
-			return nil, lib.FilteredResponse{}, err
-		}
+	scq := SurveyCreationQuery{
+		//SurveyGenID:  &surveyGenID,
+		SurveyID:     &surveyID,
+		Roster:       *entities,
+		ClientPubKey: clientPubKey,
+		NbrDPs:       nbrDPs,
+		Proofs:       proofs,
+		AppFlag:      appFlag,
 
-		results = resp.Results[0]
+		// query statement
+		Sum:       sum,
+		Count:     count,
+		Where:     where,
+		Predicate: predicate,
+		GroupBy:   groupBy,
 	}
-	return &newSurveyID, results, nil
+	resp := ServiceState{}
+	err := c.SendProtobuf(c.entryPoint, &scq, &resp)
+	if err != nil {
+		return nil, err
+	}
+	log.LLvl1(c, " successfully created the survey with ID ", resp.SurveyID)
+	newSurveyID = resp.SurveyID
+
+	return &newSurveyID, nil
 }
 
 // SendSurveyResponseQuery handles the encryption and sending of DP responses
-func (c *API) SendSurveyResponseQuery(surveyID lib.SurveyID, clearClientResponses []lib.DpClearResponse, groupKey abstract.Point, dataRepetitions int, count bool) error {
+func (c *API) SendSurveyResponseQuery(surveyID SurveyID, clearClientResponses []lib.DpClearResponse, groupKey abstract.Point, dataRepetitions int, count bool) error {
 	log.LLvl1(c, " sends a result for survey ", surveyID)
 	var err error
 
 	s := EncryptDataToSurvey(c.String(), surveyID, clearClientResponses, groupKey, dataRepetitions, count)
 
-	resp := ServiceResponse{}
+	resp := ServiceState{}
 	err = c.SendProtobuf(c.entryPoint, s, &resp)
 
 	if err != nil {
@@ -84,9 +87,9 @@ func (c *API) SendSurveyResponseQuery(surveyID lib.SurveyID, clearClientResponse
 }
 
 // SendSurveyResultsQuery to get the result from associated server and decrypt the response using its private key.
-func (c *API) SendSurveyResultsQuery(surveyID lib.SurveyID) (*[][]int64, *[][]int64, error) {
+func (c *API) SendSurveyResultsQuery(surveyID SurveyID) (*[][]int64, *[][]int64, error) {
 	log.LLvl1(c, " asks for the results of the survey ", surveyID)
-	resp := SurveyResultResponse{}
+	resp := ServiceResult{}
 	err := c.SendProtobuf(c.entryPoint, &SurveyResultsQuery{false, surveyID, c.public}, &resp)
 	if err != nil {
 		return nil, nil, err
@@ -94,6 +97,7 @@ func (c *API) SendSurveyResultsQuery(surveyID lib.SurveyID) (*[][]int64, *[][]in
 
 	log.LLvl1(c, " got the survey result from ", c.entryPoint)
 
+	//grpClear := make([][]int64, len(resp.Results))
 	grp := make([][]int64, len(resp.Results))
 	aggr := make([][]int64, len(resp.Results))
 	for i, res := range resp.Results {
@@ -107,7 +111,7 @@ func (c *API) SendSurveyResultsQuery(surveyID lib.SurveyID) (*[][]int64, *[][]in
 //______________________________________________________________________________________________________________________
 
 // EncryptDataToSurvey is used to encrypt client responses with the collective key
-func EncryptDataToSurvey(name string, surveyID lib.SurveyID, dpClearResponses []lib.DpClearResponse, groupKey abstract.Point, dataRepetitions int, count bool) *SurveyResponseQuery {
+func EncryptDataToSurvey(name string, surveyID SurveyID, dpClearResponses []lib.DpClearResponse, groupKey abstract.Point, dataRepetitions int, count bool) *SurveyResponseQuery {
 	nbrResponses := len(dpClearResponses)
 
 	log.Lvl1(name, " responds with ", nbrResponses, " response(s)")
