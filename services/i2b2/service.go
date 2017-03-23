@@ -82,7 +82,7 @@ type ServiceState struct {
 
 // ServiceResult will contain final results of a survey and be sent to querier.
 type ServiceResult struct {
-	Results []lib.FilteredResponse
+	Results lib.FilteredResponse
 }
 
 type SurveyResponseSharing struct {
@@ -171,16 +171,12 @@ func (s *Service) Process(msg *network.Envelope) {
 // in the i2b2 case it will directly run the request response creation
 func (s *Service) HandleSurveyDpQuery(sdq *SurveyDpQuery) (network.Message, onet.ClientError) {
 
-	s.appFlag = sdq.AppFlag
-	//s.nbrLocalSurveys++
+	//s.appFlag = sdq.AppFlag
 	s.nbrDPs = sdq.NbrDPs[s.ServerIdentity().String()]
 
 	log.LLvl1(s.ServerIdentity().String(), " received a Survey Dp Query")
 
-
 	surveySecret := network.Suite.Scalar().Pick(random.Stream)
-
-
 
 	if !sdq.IntraMessage {
 		sdq.IntraMessage = true
@@ -197,7 +193,6 @@ func (s *Service) HandleSurveyDpQuery(sdq *SurveyDpQuery) (network.Message, onet
 			Sender:            s.ServerIdentity().ID,
 			IntermediateResponses: make(map[network.ServerIdentityID]lib.FilteredResponse),
 		}
-		log.LLvl1("AVANCE ", s.survey[*sdq.SurveyID])
 
 		// broadcasts the query
 		err := services.SendISMOthers(s.ServiceProcessor, &sdq.Roster, sdq)
@@ -206,34 +201,36 @@ func (s *Service) HandleSurveyDpQuery(sdq *SurveyDpQuery) (network.Message, onet
 		}
 
 		// skip Unlynx shuffling
-		log.LLvl1(s.ServerIdentity(), " ", s.survey[*sdq.SurveyID])
 		s.survey[*sdq.SurveyID].PushShuffledProcessResponses(sdq.DpData)
+
+		// det tag + filtering
 		s.StartServicePartOne(*sdq.SurveyID)
 
 		<-s.endService
 
+		// aggregating
+		// TODO DIFFERENTIAL PRIVACY not here
 		r1 := s.survey[*sdq.SurveyID].PullCothorityAggregatedFilteredResponses(lib.DIFFPRI, s.noise)
-		// add server identity in the sharing
-		log.LLvl1(s.ServerIdentity(), " sends load of")
+
+		// share intermediate response
 		err = services.SendISMOthers(s.ServiceProcessor, &sdq.Roster, &SurveyResponseSharing{*sdq.SurveyGenID, s.ServerIdentity().ID, r1[0]})
 		if err != nil {
 			log.Error("broadcasting error ", err)
 		}
 
+		// server saves its own response
 		s.mutex.Lock()
-		log.LLvl1(s.survey[*sdq.SurveyGenID].IntermediateResponses)
 		if s.survey[*sdq.SurveyGenID].IntermediateResponses == nil {
 			tmp := s.survey[*sdq.SurveyGenID]
 			tmp.IntermediateResponses = make(map[network.ServerIdentityID]lib.FilteredResponse)
 			s.survey[*sdq.SurveyGenID] = tmp
 		}
-
 		s.survey[*sdq.SurveyGenID].IntermediateResponses[s.ServerIdentity().ID] =  r1[0]
-		log.LLvl1(services.CountDps(sdq.NbrDPs))
-		log.LLvl1(len(s.survey[*sdq.SurveyGenID].IntermediateResponses))
 		s.mutex.Unlock()
+
+
 		if int64(len(s.survey[*sdq.SurveyGenID].IntermediateResponses)) == services.CountDps(sdq.NbrDPs){
-			log.LLvl1(s.ServerIdentity(), " LA")
+
 			s.intermediateChannel <-1
 		}
 		log.LLvl1(s.ServerIdentity(), " COUCOU")
@@ -290,7 +287,7 @@ func (s *Service) HandleSurveyDpQuery(sdq *SurveyDpQuery) (network.Message, onet
 			s.mutex.Unlock()
 		}
 		log.LLvl1(finalResult)
-		return &ServiceResult{Results:finalResult}, nil
+		return &ServiceResult{Results:finalResult[0]}, nil
 
 
 	}

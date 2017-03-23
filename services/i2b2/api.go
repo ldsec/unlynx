@@ -40,7 +40,6 @@ func (c *API) SendSurveyDpQuery(entities *onet.Roster, surveyGenID, surveyID Sur
 	log.Lvl1(c, "is creating a survey with general id: ", surveyGenID)
 
 	var newSurveyID SurveyID
-	var results lib.FilteredResponse
 
 	sdq := SurveyDpQuery{
 		SurveyGenID:  &surveyGenID,
@@ -63,11 +62,12 @@ func (c *API) SendSurveyDpQuery(entities *onet.Roster, surveyGenID, surveyID Sur
 
 	resp := ServiceResult{}
 	err := c.SendProtobuf(c.entryPoint, &sdq, &resp)
+	log.LLvl1(resp.Results)
 	if err != nil {
-		return nil, lib.FilteredResponse{}, err
+		return nil, resp.Results, err
 	}
 	//results = resp.Results[0]
 
-	return &newSurveyID, results, nil
+	return &newSurveyID, resp.Results, nil
 }
 
