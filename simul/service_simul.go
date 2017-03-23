@@ -6,11 +6,11 @@ import (
 	"gopkg.in/dedis/onet.v1/log"
 
 	"github.com/JoaoAndreSa/MedCo/lib"
-	"github.com/JoaoAndreSa/MedCo/services"
 	"github.com/JoaoAndreSa/MedCo/services/data"
 	"gopkg.in/dedis/onet.v1/simul/monitor"
 	"strconv"
 	"sync"
+	"github.com/JoaoAndreSa/MedCo/services/default"
 )
 
 //Defines the simulation for the service-medCo to be run with cothority/simul.
@@ -80,7 +80,7 @@ func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
 
 	for round := 0; round < sim.Rounds; round++ {
 		log.Lvl1("Starting round", round, el)
-		client := services.NewMedcoClient(el.List[0], strconv.Itoa(0))
+		client := serviceDefault.NewMedcoClient(el.List[0], strconv.Itoa(0))
 
 		// Define how many data providers for each server
 		nbrDPs := make(map[string]int64)
@@ -119,7 +119,7 @@ func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
 			groupBy[i] = "g" + strconv.Itoa(i)
 		}
 
-		surveyID, _, err := client.SendSurveyCreationQuery(el, lib.SurveyID("testSurvey"), lib.SurveyID(""), sum, count, whereQueryValues, predicate, groupBy, nil, nil, nbrDPs, 0, sim.Proofs, false)
+		surveyID, err := client.SendSurveyCreationQuery(el, serviceDefault.SurveyID("testSurvey"), serviceDefault.SurveyID(""), nil, nbrDPs, sim.Proofs, false, sum, count, whereQueryValues, predicate, groupBy)
 
 		if err != nil {
 			log.Fatal("Service did not start.")
@@ -135,27 +135,27 @@ func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
 		}
 
 		log.Lvl1("Sending response data... ")
-		dataHolder := make([]*services.API, sim.NbrDPs)
+		dataHolder := make([]*serviceDefault.API, sim.NbrDPs)
 		wg := lib.StartParallelize(len(dataHolder))
 
 		var mutexDH sync.Mutex
 		for i, client := range dataHolder {
 			start1 := lib.StartTimer(strconv.Itoa(i) + "_IndividualSendingData")
 			if lib.PARALLELIZE {
-				go func(i int, client *services.API) {
+				go func(i int, client *serviceDefault.API) {
 					mutexDH.Lock()
 					data := testData[strconv.Itoa(i)]
 					server := el.List[i%nbrHosts]
 					mutexDH.Unlock()
 
-					client = services.NewMedcoClient(server, strconv.Itoa(i+1))
+					client = serviceDefault.NewMedcoClient(server, strconv.Itoa(i+1))
 					client.SendSurveyResponseQuery(*surveyID, data, el.Aggregate, sim.DataRepetitions, count)
 					defer wg.Done()
 				}(i, client)
 			} else {
 				start2 := lib.StartTimer(strconv.Itoa(i) + "_IndividualNewMedcoClient")
 
-				client = services.NewMedcoClient(el.List[i%nbrHosts], strconv.Itoa(i+1))
+				client = serviceDefault.NewMedcoClient(el.List[i%nbrHosts], strconv.Itoa(i+1))
 
 				lib.EndTimer(start2)
 				start3 := lib.StartTimer(strconv.Itoa(i) + "_IndividualSendSurveyResults")

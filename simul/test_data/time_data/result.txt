@@ -6,20 +6,20 @@
 |-------------------------------------------------------------------------|
 
 
-Hosts:                                             3
-NbrDPs:                                            3
+Proofs:                                            true
+NbrResponsesTot:                                   10
 NbrResponsesFiltered:                              5
-NbrAggrEncrypted:                                  10
-RandomGroups:                                      true
+NbrWhereEncrypted:                                 2
+NbrDPs:                                            3
+Count:                                             false
 DataRepetitions:                                   1
+RandomGroups:                                      true
+Hosts:                                             3
+NbrGroupsClear:                                    2
 NbrGroupsEnc:                                      0
 NbrWhereClear:                                     2
-NbrWhereEncrypted:                                 2
 NbrAggrClear:                                      2
-Count:                                             false
-NbrResponsesTot:                                   10
-NbrGroupsClear:                                    2
-Proofs:                                            true
+NbrAggrEncrypted:                                  10
 
 bf:                                                2
 depth:                                             1

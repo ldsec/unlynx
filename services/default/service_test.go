@@ -57,7 +57,6 @@ func TestServiceClearAttr(t *testing.T) {
 	}
 
 	surveyID, err := client.SendSurveyCreationQuery(el, serviceDefault.SurveyID("testSurvey"), serviceDefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
-	//surveyID, _, err := client.SendSurveyCreationQuery(el, serviceDefault.SurveyID("testSurvey"), serviceDefault.SurveyID(""), sum, count, whereQueryValues, pred, groupBy, nil, nil, nbrDPs, 0, proofsService, false)
 
 	if err != nil {
 		t.Fatal("Service did not start.", err)
