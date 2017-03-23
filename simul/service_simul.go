@@ -7,10 +7,10 @@ import (
 
 	"github.com/JoaoAndreSa/MedCo/lib"
 	"github.com/JoaoAndreSa/MedCo/services/data"
+	"github.com/JoaoAndreSa/MedCo/services/default"
 	"gopkg.in/dedis/onet.v1/simul/monitor"
 	"strconv"
 	"sync"
-	"github.com/JoaoAndreSa/MedCo/services/default"
 )
 
 //Defines the simulation for the service-medCo to be run with cothority/simul.
