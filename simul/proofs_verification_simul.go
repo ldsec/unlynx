@@ -79,7 +79,8 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 			origCipherVector[i].C = v.C
 		}
 
-		switchedVect, rs := lib.NewCipherVector(len(cipherVect)).KeySwitching(cipherVect, origEphemKeys, pubKeyNew, secKey)
+		switchedVect := lib.NewCipherVector(len(cipherVect))
+		rs := switchedVect.KeySwitching(cipherVect, origEphemKeys, pubKeyNew, secKey)
 		cps := lib.VectorSwitchKeyProofCreation(cipherVect, *switchedVect, rs, secKey, origEphemKeys, pubKeyNew)
 		pskp := lib.PublishedSwitchKeyProof{Skp: cps, VectBefore: cipherVect, VectAfter: *switchedVect, K: pubKey, Q: pubKeyNew}
 		keySwitchingProofs := make([]lib.PublishedSwitchKeyProof, sim.NbrGroups)
@@ -95,7 +96,8 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 		}
 		cipherVect = *lib.EncryptIntVector(pubKey, tab)
 
-		tagSwitchedVect := lib.NewCipherVector(len(cipherVect)).DeterministicTagging(&cipherVect, secKey, secKeyNew)
+		tagSwitchedVect := lib.NewCipherVector(len(cipherVect))
+		tagSwitchedVect.DeterministicTagging(&cipherVect, secKey, secKeyNew)
 		cps1 := lib.VectorDeterministicTagProofCreation(cipherVect, *tagSwitchedVect, secKeyNew, secKey)
 		newContrib := network.Suite.Point().Mul(network.Suite.Point().Base(), secKeyNew)
 		pdhp := lib.PublishedDeterministicTaggingProof{Dhp: cps1, VectBefore: cipherVect, VectAfter: *tagSwitchedVect, K: pubKey, SB: newContrib}
@@ -143,7 +145,10 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 
 		detResponses := make([]lib.FilteredResponseDet, 0)
 		for i := 0; i < sim.NbrGroups; i++ {
-			cipherVectGr = *lib.NewCipherVector(sim.NbrGroupAttributes).Add(cipherVectGr, cipherVectGr)
+			tmp := lib.NewCipherVector(sim.NbrGroupAttributes)
+			tmp.Add(cipherVectGr, cipherVectGr)
+
+			cipherVectGr = *tmp
 			det1 := cipherVectGr
 			det1.TaggingDet(secKey, secKey, pubKey, false)
 			deterministicGroupAttributes := make(lib.DeterministCipherVector, len(det1))

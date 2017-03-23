@@ -64,12 +64,13 @@ func (sim *LocalClearAggregationSimulation) Run(config *onet.SimulationConfig) e
 		root := rooti.(*protocols.LocalClearAggregationProtocol)
 
 		types := make([]int64, sim.NbrGroupAttributes)
+		data.FillInt64Slice(types, 1)
 		if len(types) > 0 {
 			types[0] = int64(sim.NbrGroups)
 		}
 
 		testData := data.GenerateData(1, int64(sim.NbrResponses), int64(sim.NbrResponses), int64(sim.NbrGroupAttributes), 0,
-			int64(sim.NbrWhereAttributes), 0, int64(sim.NbrAggrAttributes), 0, types, false)
+			int64(sim.NbrWhereAttributes), 0, int64(sim.NbrAggrAttributes), 0, types, true)
 
 		log.LLvl1("starting protocol with ", len(testData), " responses")
 

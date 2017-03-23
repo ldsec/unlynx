@@ -82,7 +82,9 @@ func (sim *LocalAggregationSimulation) Run(config *onet.SimulationConfig) error 
 		groupCipherVect := *lib.EncryptIntVector(pubKey, tabGr)
 		detResponses := make([]lib.FilteredResponseDet, 0)
 		for i := 0; i < sim.NbrGroups; i++ {
-			groupCipherVect = *lib.NewCipherVector(sim.NbrGroupAttributes).Add(groupCipherVect, groupCipherVect)
+			tmp := lib.NewCipherVector(sim.NbrGroupAttributes)
+			tmp.Add(groupCipherVect, groupCipherVect)
+			groupCipherVect = *tmp
 			cr := lib.FilteredResponse{GroupByEnc: testCipherVect1, AggregatingAttributes: testCipherVect1}
 			det1 := groupCipherVect
 			det1.TaggingDet(secKey, newSecKey, pubKey, sim.Proofs)

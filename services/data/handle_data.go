@@ -18,8 +18,8 @@ import (
 // Groups identifies all different groups to be added to the test data file
 var Groups [][]int64
 
-// fillInt64Slice fills a slice with the same value v
-func fillInt64Slice(s []int64, v int64) {
+// FillInt64Slice fills a slice with the same value v
+func FillInt64Slice(s []int64, v int64) {
 	for i := 0; i < len(s); i++ {
 		s[i] = v
 	}
@@ -119,9 +119,9 @@ func GenerateData(numDPs, numEntries, numEntriesFiltered, numGroupsClear, numGro
 
 			//number of entries to keep (all where attributes are set to 1)
 			if j < numEntriesFiltered {
-				fillInt64Slice(where, 1)
+				FillInt64Slice(where, 1)
 			} else {
-				fillInt64Slice(where, 0)
+				FillInt64Slice(where, 0)
 			}
 
 			if randomGroups {
