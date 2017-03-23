@@ -28,7 +28,8 @@ func TestLocalAggregation(t *testing.T) {
 	pubKey := network.Suite.Point().Mul(network.Suite.Point().Base(), secKey)
 	cipherOne := *lib.EncryptInt(pubKey, 10)
 	cipherVect := lib.CipherVector{cipherOne, cipherOne}
-	cipherVect2 := *lib.NewCipherVector(len(cipherVect)).Add(cipherVect, cipherVect)
+	cipherVect2 := *lib.NewCipherVector(len(cipherVect))
+	cipherVect2.Add(cipherVect, cipherVect)
 
 	// aggregation
 	detResponses := make([]lib.FilteredResponseDet, 3)

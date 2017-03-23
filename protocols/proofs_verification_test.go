@@ -37,7 +37,8 @@ func TestProofsVerification(t *testing.T) {
 
 	// key switching ***********************************************************************************************
 	origEphemKeys := []abstract.Point{cipherOne.K, cipherOne.K}
-	switchedVect, rs := lib.NewCipherVector(2).KeySwitching(cipherVect, origEphemKeys, pubKeyNew, secKey)
+	switchedVect := lib.NewCipherVector(2)
+	rs := switchedVect.KeySwitching(cipherVect, origEphemKeys, pubKeyNew, secKey)
 	cps := lib.VectorSwitchKeyProofCreation(cipherVect, *switchedVect, rs, secKey, origEphemKeys, pubKeyNew)
 	pskp1 := lib.PublishedSwitchKeyProof{Skp: cps, VectBefore: cipherVect, VectAfter: *switchedVect, K: pubKey, Q: pubKeyNew}
 
@@ -50,7 +51,8 @@ func TestProofsVerification(t *testing.T) {
 	cipherVect1 := lib.CipherVector{cipherOne1, cipherOne1}
 
 	// deterministic tagging ***************************************************************************************
-	tagSwitchedVect := lib.NewCipherVector(2).DeterministicTagging(&cipherVect1, secKey, secKeyNew)
+	tagSwitchedVect := lib.NewCipherVector(2)
+	tagSwitchedVect.DeterministicTagging(&cipherVect1, secKey, secKeyNew)
 
 	cps1 := lib.VectorDeterministicTagProofCreation(cipherVect1, *tagSwitchedVect, secKeyNew, secKey)
 	pdhp1 := lib.PublishedDeterministicTaggingProof{Dhp: cps1, VectBefore: cipherVect1, VectAfter: *tagSwitchedVect, K: pubKey, SB: nil}
