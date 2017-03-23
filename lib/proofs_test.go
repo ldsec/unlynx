@@ -25,12 +25,18 @@ var cipherVect = lib.CipherVector{cipherOne, cipherOne}
 // TesKeySwitchingProof tests KEY SWITCHING
 func TestKeySwitchingProof(t *testing.T) {
 	//test key switching proofs at ciphertext level
-	cipherOneSwitched, r := lib.NewCipherText().KeySwitching(cipherOne, cipherOne.K, pubKeyNew, secKey)
+	cipherOneSwitched := lib.NewCipherText()
+	r := cipherOneSwitched.KeySwitching(cipherOne, cipherOne.K, pubKeyNew, secKey)
 	cp := lib.SwitchKeyProofCreation(cipherOne, *cipherOneSwitched, r, secKey, cipherOne.K, pubKeyNew)
 	assert.True(t, lib.SwitchKeyCheckProof(cp, pubKey, pubKeyNew, cipherOne, *cipherOneSwitched))
 
-	assert.False(t, lib.SwitchKeyCheckProof(cp, pubKey, pubKeyNew, *lib.NewCipherText().Add(cipherOne, cipherOne), *cipherOneSwitched))
-	assert.False(t, lib.SwitchKeyCheckProof(cp, pubKey, pubKeyNew, cipherOne, *lib.NewCipherText().Add(cipherOne, cipherOne)))
+	aux := lib.NewCipherText()
+	aux.Add(cipherOne, cipherOne)
+	assert.False(t, lib.SwitchKeyCheckProof(cp, pubKey, pubKeyNew, *aux, *cipherOneSwitched))
+
+	aux = lib.NewCipherText()
+	aux.Add(cipherOne, cipherOne)
+	assert.False(t, lib.SwitchKeyCheckProof(cp, pubKey, pubKeyNew, cipherOne, *aux))
 	assert.False(t, lib.SwitchKeyCheckProof(cp, pubKey, pubKey, cipherOne, *cipherOneSwitched))
 	assert.False(t, lib.SwitchKeyCheckProof(cp, pubKeyNew, pubKeyNew, cipherOne, *cipherOneSwitched))
 
@@ -48,7 +54,8 @@ func TestKeySwitchingProof(t *testing.T) {
 
 	// test key switching at ciphervector level
 	origEphemKeys := []abstract.Point{cipherOne.K, cipherOne.K}
-	switchedVect, rs := lib.NewCipherVector(2).KeySwitching(cipherVect, origEphemKeys, pubKeyNew, secKey)
+	switchedVect := lib.NewCipherVector(2)
+	rs := switchedVect.KeySwitching(cipherVect, origEphemKeys, pubKeyNew, secKey)
 
 	cps := lib.VectorSwitchKeyProofCreation(cipherVect, *switchedVect, rs, secKey, []abstract.Point{cipherOne.K, cipherOne.K}, pubKeyNew)
 	assert.True(t, lib.PublishedSwitchKeyCheckProof(lib.PublishedSwitchKeyProof{Skp: cps, VectBefore: cipherVect, VectAfter: *switchedVect, K: pubKey, Q: pubKeyNew}))
@@ -146,12 +153,18 @@ func TestAddRmProof(t *testing.T) {
 
 func TestDeterministicTaggingProof(t *testing.T) {
 	// test tagging switching at ciphertext level
-	cipherOneDetTagged := lib.NewCipherText().DeterministicTagging(&cipherOne, secKey, secKeyNew)
+	cipherOneDetTagged := lib.NewCipherText()
+	cipherOneDetTagged.DeterministicTagging(&cipherOne, secKey, secKeyNew)
 	cp1 := lib.DeterministicTagProofCreation(cipherOne, *cipherOneDetTagged, secKey, secKeyNew)
 	assert.True(t, lib.DeterministicTagCheckProof(cp1, pubKey, cipherOne, *cipherOneDetTagged))
 
-	assert.False(t, lib.DeterministicTagCheckProof(cp1, pubKey, *lib.NewCipherText().Add(cipherOne, cipherOne), *cipherOneDetTagged))
-	assert.False(t, lib.DeterministicTagCheckProof(cp1, pubKey, cipherOne, *lib.NewCipherText().Add(cipherOne, cipherOne)))
+	aux := lib.NewCipherText()
+	aux.Add(cipherOne, cipherOne)
+	assert.False(t, lib.DeterministicTagCheckProof(cp1, pubKey, *aux, *cipherOneDetTagged))
+
+	aux = lib.NewCipherText()
+	aux.Add(cipherOne, cipherOne)
+	assert.False(t, lib.DeterministicTagCheckProof(cp1, pubKey, cipherOne, *aux))
 	assert.False(t, lib.DeterministicTagCheckProof(cp1, pubKeyNew, cipherOne, *cipherOneDetTagged))
 
 	cp1 = lib.DeterministicTagProofCreation(cipherOne, *cipherOneDetTagged, secKeyNew, secKeyNew)
@@ -161,7 +174,8 @@ func TestDeterministicTaggingProof(t *testing.T) {
 	assert.False(t, lib.DeterministicTagCheckProof(cp1, pubKey, cipherOne, *cipherOneDetTagged))
 
 	// test tag switching at cipherVector level
-	TagSwitchedVect := lib.NewCipherVector(2).DeterministicTagging(&cipherVect, secKey, secKeyNew)
+	TagSwitchedVect := lib.NewCipherVector(2)
+	TagSwitchedVect.DeterministicTagging(&cipherVect, secKey, secKeyNew)
 
 	cps1 := lib.VectorDeterministicTagProofCreation(cipherVect, *TagSwitchedVect, secKeyNew, secKey)
 	result, _ := lib.PublishedDeterministicTaggingCheckProof(lib.PublishedDeterministicTaggingProof{Dhp: cps1, VectBefore: cipherVect, VectAfter: *TagSwitchedVect, K: pubKey, SB: nil})

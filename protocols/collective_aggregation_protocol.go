@@ -198,7 +198,10 @@ func (p *CollectiveAggregationProtocol) ascendingAggregationPhase() *map[lib.Gro
 			for _, aggr := range childrenContribution.ChildData {
 				localAggr, ok := (*p.GroupedData)[aggr.DetTagGroupBy]
 				if ok {
-					localAggr.AggregatingAttributes = *lib.NewCipherVector(len(localAggr.AggregatingAttributes)).Add(localAggr.AggregatingAttributes, aggr.Fr.AggregatingAttributes)
+					tmp := lib.NewCipherVector(len(localAggr.AggregatingAttributes))
+					tmp.Add(localAggr.AggregatingAttributes, aggr.Fr.AggregatingAttributes)
+
+					localAggr.AggregatingAttributes = *tmp
 				} else {
 					localAggr = aggr.Fr
 				}

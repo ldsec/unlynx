@@ -217,19 +217,17 @@ func discreteLog(P abstract.Point) int64 {
 }
 
 // DeterministicTagging is a distributed deterministic Tagging switching, removes server contribution and multiplies
-func (c *CipherText) DeterministicTagging(gc *CipherText, private, secretContrib abstract.Scalar) *CipherText {
+func (c *CipherText) DeterministicTagging(gc *CipherText, private, secretContrib abstract.Scalar) {
 	c.K = suite.Point().Mul(gc.K, secretContrib)
 
 	contrib := suite.Point().Mul(gc.K, private)
 	c.C = suite.Point().Sub(gc.C, contrib)
 	c.C = suite.Point().Mul(c.C, secretContrib)
-	return c
-
 }
 
 // DeterministicTagging performs one step in the distributed deterministic Tagging process on a vector
 // and stores the result in receiver.
-func (cv *CipherVector) DeterministicTagging(cipher *CipherVector, private, secretContrib abstract.Scalar) *CipherVector {
+func (cv *CipherVector) DeterministicTagging(cipher *CipherVector, private, secretContrib abstract.Scalar) {
 	var wg sync.WaitGroup
 	if PARALLELIZE {
 		for i := 0; i < len(*cipher); i = i + VPARALLELIZE {
@@ -248,44 +246,43 @@ func (cv *CipherVector) DeterministicTagging(cipher *CipherVector, private, secr
 			(*cv)[i].DeterministicTagging(&c, private, secretContrib)
 		}
 	}
-	return cv
 }
 
 // TaggingDet performs one step in the distributed deterministic tagging process and creates corresponding proof
 func (cv *CipherVector) TaggingDet(privKey, secretContrib abstract.Scalar, pubKey abstract.Point, proofs bool) {
-	switchedVect := *NewCipherVector(len(*cv)).DeterministicTagging(cv, privKey, secretContrib)
+	switchedVect := NewCipherVector(len(*cv))
+	switchedVect.DeterministicTagging(cv, privKey, secretContrib)
 
 	if proofs {
-		p1 := VectorDeterministicTagProofCreation(*cv, switchedVect, secretContrib, privKey)
+		p1 := VectorDeterministicTagProofCreation(*cv, *switchedVect, secretContrib, privKey)
 		//proof publication
 		commitSecret := suite.Point().Mul(suite.Point().Base(), secretContrib)
-		publishedProof := PublishedDeterministicTaggingProof{Dhp: p1, VectBefore: *cv, VectAfter: switchedVect, K: pubKey, SB: commitSecret}
+		publishedProof := PublishedDeterministicTaggingProof{Dhp: p1, VectBefore: *cv, VectAfter: *switchedVect, K: pubKey, SB: commitSecret}
 		_ = publishedProof
 	}
 
-	*cv = switchedVect
+	*cv = *switchedVect
 }
 
 // ReplaceContribution computes the new CipherText with the old mask contribution replaced by new and save in receiver.
-func (c *CipherText) ReplaceContribution(cipher CipherText, old, new abstract.Point) *CipherText {
+func (c *CipherText) ReplaceContribution(cipher CipherText, old, new abstract.Point) {
 	c.C.Sub(cipher.C, old)
 	c.C.Add(c.C, new)
-	return c
 }
 
 // KeySwitching performs one step in the Key switching process and stores result in receiver.
-func (c *CipherText) KeySwitching(cipher CipherText, originalEphemeralKey, newKey abstract.Point, private abstract.Scalar) (*CipherText, abstract.Scalar) {
+func (c *CipherText) KeySwitching(cipher CipherText, originalEphemeralKey, newKey abstract.Point, private abstract.Scalar) abstract.Scalar {
 	r := suite.Scalar().Pick(random.Stream)
 	oldContrib := suite.Point().Mul(originalEphemeralKey, private)
 	newContrib := suite.Point().Mul(newKey, r)
 	ephemContrib := suite.Point().Mul(suite.Point().Base(), r)
 	c.ReplaceContribution(cipher, oldContrib, newContrib)
 	c.K.Add(cipher.K, ephemContrib)
-	return c, r
+	return r
 }
 
 // KeySwitching performs one step in the Key switching process on a vector and stores result in receiver.
-func (cv *CipherVector) KeySwitching(cipher CipherVector, originalEphemeralKeys []abstract.Point, newKey abstract.Point, private abstract.Scalar) (*CipherVector, []abstract.Scalar) {
+func (cv *CipherVector) KeySwitching(cipher CipherVector, originalEphemeralKeys []abstract.Point, newKey abstract.Point, private abstract.Scalar) []abstract.Scalar {
 	r := make([]abstract.Scalar, len(*cv))
 	var wg sync.WaitGroup
 	if PARALLELIZE {
@@ -293,7 +290,7 @@ func (cv *CipherVector) KeySwitching(cipher CipherVector, originalEphemeralKeys 
 			wg.Add(1)
 			go func(i int) {
 				for j := 0; j < VPARALLELIZE && (j+i < len(cipher)); j++ {
-					_, r[i+j] = (*cv)[i+j].KeySwitching(cipher[i+j], (originalEphemeralKeys)[i+j], newKey, private)
+					r[i+j] = (*cv)[i+j].KeySwitching(cipher[i+j], (originalEphemeralKeys)[i+j], newKey, private)
 				}
 				defer wg.Done()
 			}(i)
@@ -302,31 +299,29 @@ func (cv *CipherVector) KeySwitching(cipher CipherVector, originalEphemeralKeys 
 		wg.Wait()
 	} else {
 		for i, c := range cipher {
-			_, r[i] = (*cv)[i].KeySwitching(c, (originalEphemeralKeys)[i], newKey, private)
+			r[i] = (*cv)[i].KeySwitching(c, (originalEphemeralKeys)[i], newKey, private)
 		}
 	}
-	return cv, r
+	return r
 }
 
 // Homomorphic operations
 //______________________________________________________________________________________________________________________
 
 // Add two ciphertexts and stores result in receiver.
-func (c *CipherText) Add(c1, c2 CipherText) *CipherText {
+func (c *CipherText) Add(c1, c2 CipherText) {
 	c.C.Add(c1.C, c2.C)
 	c.K.Add(c1.K, c2.K)
-	return c
 }
 
 // MulCipherTextbyScalar multiplies two components of a ciphertext by a scalar
-func (c *CipherText) MulCipherTextbyScalar(cMul CipherText, a abstract.Scalar) *CipherText {
+func (c *CipherText) MulCipherTextbyScalar(cMul CipherText, a abstract.Scalar) {
 	c.C = suite.Point().Mul(cMul.C, a)
 	c.K = suite.Point().Mul(cMul.K, a)
-	return c
 }
 
 // Add two ciphervectors and stores result in receiver.
-func (cv *CipherVector) Add(cv1, cv2 CipherVector) *CipherVector {
+func (cv *CipherVector) Add(cv1, cv2 CipherVector) {
 	var wg sync.WaitGroup
 	if PARALLELIZE {
 		for i := 0; i < len(cv1); i = i + VPARALLELIZE {
@@ -348,12 +343,10 @@ func (cv *CipherVector) Add(cv1, cv2 CipherVector) *CipherVector {
 	if PARALLELIZE {
 		wg.Wait()
 	}
-
-	return cv
 }
 
 // Rerandomize rerandomizes an element in a ciphervector at position j, following the Neff SHuffling algorithm
-func (cv *CipherVector) Rerandomize(cv1 CipherVector, a, b abstract.Scalar, ciphert CipherText, g, h abstract.Point, j int) *CipherVector {
+func (cv *CipherVector) Rerandomize(cv1 CipherVector, a, b abstract.Scalar, ciphert CipherText, g, h abstract.Point, j int) {
 	var tmp1, tmp2 abstract.Point
 	if ciphert.C == nil {
 		//no precomputed value
@@ -366,23 +359,19 @@ func (cv *CipherVector) Rerandomize(cv1 CipherVector, a, b abstract.Scalar, ciph
 
 	(*cv)[j].K.Add(cv1[j].K, tmp1)
 	(*cv)[j].C.Add(cv1[j].C, tmp2)
-
-	return cv
 }
 
 // Sub two ciphertexts and stores result in receiver.
-func (c *CipherText) Sub(c1, c2 CipherText) *CipherText {
+func (c *CipherText) Sub(c1, c2 CipherText) {
 	c.C.Sub(c1.C, c2.C)
 	c.K.Sub(c1.K, c2.K)
-	return c
 }
 
 // Sub two cipherVectors and stores result in receiver.
-func (cv *CipherVector) Sub(cv1, cv2 CipherVector) *CipherVector {
+func (cv *CipherVector) Sub(cv1, cv2 CipherVector) {
 	for i := range cv1 {
 		(*cv)[i].Sub(cv1[i], cv2[i])
 	}
-	return cv
 }
 
 // Representation

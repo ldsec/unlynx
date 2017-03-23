@@ -67,8 +67,10 @@ func TestHomomorphicOpp(t *testing.T) {
 	targetSub := []int64{0, 1, 1, 0, 97}
 	targetMul := int64(4)
 
-	cv3 := lib.NewCipherVector(5).Add(*cv1, *cv2)
-	cv4 := lib.NewCipherVector(5).Sub(*cv1, *cv2)
+	cv3 := lib.NewCipherVector(5)
+	cv3.Add(*cv1, *cv2)
+	cv4 := lib.NewCipherVector(5)
+	cv4.Sub(*cv1, *cv2)
 	cv5 := lib.EncryptInt(pubKey, 2)
 	cv5.MulCipherTextbyScalar(*cv5, suite.Scalar().SetInt64(2))
 
@@ -91,7 +93,10 @@ func TestCryptoTagging(t *testing.T) {
 	target := []int64{0, 0, 2, 3, 2, 5}
 	cv := *lib.EncryptIntVector(groupKey, target)
 	for n := 0; n < N; n++ {
-		cv = *lib.NewCipherVector(len(cv)).DeterministicTagging(&cv, private[n], secretPrivate[n])
+		tmp := lib.NewCipherVector(len(cv))
+		tmp.DeterministicTagging(&cv, private[n], secretPrivate[n])
+
+		cv = *tmp
 
 	}
 	assert.True(t, cv[0].C.Equal(cv[1].C))

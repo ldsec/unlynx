@@ -84,9 +84,10 @@ func (s *Store) InsertDpResponse(cr DpResponse, proofs bool, scq SurveyCreationQ
 	} else {
 		value, ok := s.DpResponsesAggr[GroupingKeyTuple{Key(clearGrp), Key(clearWhr)}]
 		if ok {
-			tmp := *NewCipherVector(len(value.AggregatingAttributes)).Add(value.AggregatingAttributes, newResp.AggregatingAttributes)
+			tmp := NewCipherVector(len(value.AggregatingAttributes))
+			tmp.Add(value.AggregatingAttributes, newResp.AggregatingAttributes)
 			mapValue := s.DpResponsesAggr[GroupingKeyTuple{Key(clearGrp), Key(clearWhr)}]
-			mapValue.AggregatingAttributes = tmp
+			mapValue.AggregatingAttributes = *tmp
 			s.DpResponsesAggr[GroupingKeyTuple{Key(clearGrp), Key(clearWhr)}] = mapValue
 
 			if proofs {

@@ -17,8 +17,9 @@ func compressCipherVector(ciphervector CipherVector, e []abstract.Scalar) Cipher
 
 	ciphertext := *NewCipherText()
 	for i := 0; i < k; i++ {
-		tmp := NewCipherText().MulCipherTextbyScalar(ciphervector[i], e[i])
-		ciphertext.Add(ciphertext, *tmp)
+		aux := NewCipherText()
+		aux.MulCipherTextbyScalar(ciphervector[i], e[i])
+		ciphertext.Add(ciphertext, *aux)
 	}
 	return ciphertext
 }

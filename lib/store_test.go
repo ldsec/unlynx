@@ -67,13 +67,14 @@ func TestStoring(t *testing.T) {
 	storage.InsertDpResponse(lib.DpResponse{GroupByClear: testClearMap, WhereClear: testClearMap, AggregatingAttributesEnc: testAggrMap2}, true, dummySurveyCreationQuery)
 	storage.InsertDpResponse(lib.DpResponse{GroupByClear: testClearMap, WhereClear: testClearMap, AggregatingAttributesEnc: testAggrMap2}, true, dummySurveyCreationQuery)
 
-	sum := *lib.NewCipherVector(len(testAggr2)).Add(testAggr2, testAggr2)
-	sum = *sum.Add(sum, testAggr2)
+	sum := lib.NewCipherVector(len(testAggr2))
+	sum.Add(testAggr2, testAggr2)
+	sum.Add(*sum, testAggr2)
 
 	result := storage.PullDpResponses()
 
 	assert.True(t, (len(result) == 1))
-	assert.Equal(t, result[0].AggregatingAttributes, sum)
+	assert.Equal(t, result[0].AggregatingAttributes, *sum)
 
 	// (3) Test empty
 	storage.PullLocallyAggregatedResponses()
