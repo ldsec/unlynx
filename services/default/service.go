@@ -21,7 +21,6 @@ const ServiceName = "MedCo"
 const DROProtocolName = "DRO"
 
 const gobFile = "pre_compute_multiplications.gob"
-const testDataFile = "medco_test_data.txt"
 
 // SurveyID unique ID for each survey.
 type SurveyID string
@@ -50,14 +49,12 @@ type Survey struct {
 	ShufflePrecompute []lib.CipherVectorScalar
 
 	// channels
-	SurveyChannel	  chan int  // To wait for the survey to be created before loading data
-	DpChannel	  chan int  // To wait for all data to be read before starting medco service protocol
-	DDTChannel        chan int  // To wait for all nodes to finish the tagging before continuing
-	EndService        chan int  // To wait for the service to end
+	SurveyChannel chan int // To wait for the survey to be created before loading data
+	DpChannel     chan int // To wait for all data to be read before starting medco service protocol
+	DDTChannel    chan int // To wait for all nodes to finish the tagging before continuing
+	EndService    chan int // To wait for the service to end
 
-	Noise         	  lib.CipherText
-
-	Mutex		  sync.Mutex
+	Noise lib.CipherText
 }
 
 // MsgTypes defines the Message Type ID for all the service's intra-messages.
@@ -82,8 +79,8 @@ func init() {
 }
 
 // DDTfinished is used to ensure that all servers perform the shuffling+DDT before collectively aggregating the results
-type DDTfinished struct{
-	SurveyID  SurveyID
+type DDTfinished struct {
+	SurveyID SurveyID
 }
 
 // SurveyResponseQuery is used to ask a client for its response to a survey.
@@ -113,16 +110,8 @@ type ServiceResult struct {
 type Service struct {
 	*onet.ServiceProcessor
 
-	survey        map[SurveyID]Survey
-	/*nbrDPs        int64 // Number of data providers associated with each server
-	proofs        bool
-	appFlag       bool
-	surveyChannel chan int
-	dpChannel     chan int
-	ddtChannel    chan int
-	endService    chan int
-	noise         lib.CipherText
-	mutex         sync.Mutex*/
+	survey map[SurveyID]Survey
+	Mutex  *sync.Mutex
 }
 
 // NewService constructor which registers the needed messages.
@@ -130,6 +119,7 @@ func NewService(c *onet.Context) onet.Service {
 	newMedCoInstance := &Service{
 		ServiceProcessor: onet.NewServiceProcessor(c),
 		survey:           make(map[SurveyID]Survey, 0),
+		Mutex: 		  &sync.Mutex{},
 	}
 	if cerr := newMedCoInstance.RegisterHandler(newMedCoInstance.HandleSurveyCreationQuery); cerr != nil {
 		log.Fatal("Wrong Handler.", cerr)
@@ -213,10 +203,10 @@ func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.
 		SurveySecretKey:   surveySecret,
 		ShufflePrecompute: precomputeShuffle,
 
-		SurveyChannel:    make(chan int, 100),
-		DpChannel:        make(chan int, 100),
-		DDTChannel:       make(chan int, 100),
-		EndService:       make(chan int, 1),
+		SurveyChannel: make(chan int, 100),
+		DpChannel:     make(chan int, 100),
+		DDTChannel:    make(chan int, 100),
+		EndService:    make(chan int, 1),
 	}
 	log.Lvl1(s.ServerIdentity(), " created the survey ", recq.SurveyID)
 	log.Lvl1(s.ServerIdentity(), " has a list of ", len(s.survey), " survey(s)")
@@ -229,7 +219,9 @@ func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.
 	}
 
 	// update surveyChannel so that the server knows he can start to process data from DPs
+	s.Mutex.Lock()
 	(s.survey[recq.SurveyID].SurveyChannel) <- 1
+	s.Mutex.Unlock()
 	return &ServiceState{recq.SurveyID}, nil
 }
 
@@ -257,10 +249,9 @@ func (s *Service) HandleSurveyResultsQuery(resq *SurveyResultsQuery) (network.Me
 	tmp := s.survey[resq.SurveyID]
 	tmp.Query.ClientPubKey = resq.ClientPublic
 
-	// todo why???
-	s.survey[resq.SurveyID].Mutex.Lock()
+	s.Mutex.Lock()
 	s.survey[resq.SurveyID] = tmp
-	s.survey[resq.SurveyID].Mutex.Unlock()
+	s.Mutex.Unlock()
 
 	if resq.IntraMessage == false {
 		resq.IntraMessage = true
