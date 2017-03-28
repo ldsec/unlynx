@@ -41,8 +41,10 @@ type SurveyDpQuery struct {
 	Predicate    string
 	GroupBy      []string
 	DpData       []lib.ProcessResponse
+
 	QueryMode    int64
 	IntraMessage bool
+	Origin 	     *network.ServerIdentity
 }
 
 // Survey represents a survey with the corresponding params
@@ -55,13 +57,17 @@ type Survey struct {
 	IntermediateResponses map[network.ServerIdentityID]lib.FilteredResponse
 	FinalResponses        []FinalResponsesIds
 	ResponseSent          []FinalResponsesIds
+
+	// channels
+	SurveyChannel chan int // To wait for the survey to be created before loading data
 }
 
 // MsgTypes defines the Message Type ID for all the service's intra-messages.
 type MsgTypes struct {
-	msgSurveyDpQuery              network.MessageTypeID
-	msgSurveyResponseSharing      network.MessageTypeID
-	msgSurveyFinalResponseSharing network.MessageTypeID
+	msgSurveyDpQuery              	network.MessageTypeID
+	msgSurveyResponseSharing      	network.MessageTypeID
+	msgSurveyFinalResponseSharing 	network.MessageTypeID
+	msgSurveyQuery			network.MessageTypeID
 }
 
 var msgTypes = MsgTypes{}
@@ -71,7 +77,13 @@ func init() {
 	msgTypes.msgSurveyDpQuery = network.RegisterMessage(&SurveyDpQuery{})
 	msgTypes.msgSurveyResponseSharing = network.RegisterMessage(&SurveyResponseSharing{})
 	msgTypes.msgSurveyFinalResponseSharing = network.RegisterMessage(&SurveyFinalResponseSharing{})
+	msgTypes.msgSurveyQuery = network.RegisterMessage(&SurveyQuery{})
 	network.RegisterMessage(&ServiceResult{})
+}
+
+// SurveyQuery is used to ensure that all servers get the query before starting the DDT protocol
+type SurveyQuery struct {
+	SurveyID SurveyID
 }
 
 // ServiceState represents the service "state".
@@ -111,8 +123,7 @@ type Service struct {
 	nbrDPs              int64 // Number of data providers associated with each server
 	proofs              bool
 	appFlag             bool
-	surveyChannel       chan int // To wait for the survey to be created before loading data
-	intermediateChannel chan int // To wait for all data to be read before starting medco service protocol
+	intermediateChannel chan int
 	finalChannel        chan int
 	ddtChannel          chan int // To wait for all nodes to finish the tagging before continuing
 	endService          chan int // To wait for the service to end
@@ -125,12 +136,12 @@ func NewService(c *onet.Context) onet.Service {
 	newMedCoInstance := &Service{
 		ServiceProcessor:    onet.NewServiceProcessor(c),
 		survey:              make(map[SurveyID]Survey, 0),
-		surveyChannel:       make(chan int, 100),
 		intermediateChannel: make(chan int, 100),
 		finalChannel:        make(chan int, 100),
 		ddtChannel:          make(chan int, 100),
 		endService:          make(chan int, 1),
 	}
+
 	if cerr := newMedCoInstance.RegisterHandler(newMedCoInstance.HandleSurveyDpQuery); cerr != nil {
 		log.Fatal("Wrong Handler.", cerr)
 	}
@@ -143,6 +154,11 @@ func NewService(c *onet.Context) onet.Service {
 		log.Fatal("Wrong Handler.", cerr)
 	}
 
+	if cerr := newMedCoInstance.RegisterHandler(newMedCoInstance.HandleSurveyQuery); cerr != nil {
+		log.Fatal("Wrong Handler.", cerr)
+	}
+
+	c.RegisterProcessor(newMedCoInstance, msgTypes.msgSurveyQuery)
 	c.RegisterProcessor(newMedCoInstance, msgTypes.msgSurveyDpQuery)
 	c.RegisterProcessor(newMedCoInstance, msgTypes.msgSurveyResponseSharing)
 	c.RegisterProcessor(newMedCoInstance, msgTypes.msgSurveyFinalResponseSharing)
@@ -160,7 +176,16 @@ func (s *Service) Process(msg *network.Envelope) {
 	} else if msg.MsgType.Equal(msgTypes.msgSurveyFinalResponseSharing) {
 		tmp := (msg.Msg).(*SurveyFinalResponseSharing)
 		s.HandleSurveyFinalResponseSharing(tmp)
+	} else if msg.MsgType.Equal(msgTypes.msgSurveyQuery) {
+		tmp := (msg.Msg).(*SurveyQuery)
+		s.HandleSurveyQuery(tmp)
 	}
+}
+
+// HandleSurveyQuery handles the message
+func (s *Service) HandleSurveyQuery(recq *SurveyQuery) (network.Message, onet.ClientError) {
+	(s.survey[recq.SurveyID].SurveyChannel) <- 1
+	return nil, nil
 }
 
 // HandleSurveyCreationQuery handles the reception of a survey creation query by instantiating the corresponding survey.
@@ -174,26 +199,35 @@ func (s *Service) HandleSurveyDpQuery(sdq *SurveyDpQuery) (network.Message, onet
 
 	surveySecret := network.Suite.Scalar().Pick(random.Stream)
 
+	// if this server is the one receiving the query from the client
 	if !sdq.IntraMessage {
 		sdq.IntraMessage = true
-		// if this server is the one receiving the query from the client
+		sdq.Origin = s.ServerIdentity()
+
 		newID := SurveyID(uuid.NewV4().String())
 		sdq.SurveyID = &newID
 		log.Lvl1(s.ServerIdentity().String(), " handles this new survey ", *sdq.SurveyID, " ", *sdq.SurveyGenID)
 
 		(s.survey[*sdq.SurveyID]) = Survey{
-			Store:           lib.NewStore(),
-			Query:           *sdq,
-			SurveySecretKey: surveySecret,
-			//ShufflePrecompute: precomputeShuffle,
-			Sender:                s.ServerIdentity().ID,
-			IntermediateResponses: make(map[network.ServerIdentityID]lib.FilteredResponse),
+			Store:           	lib.NewStore(),
+			Query:           	*sdq,
+			SurveySecretKey: 	surveySecret,
+			Sender:                	s.ServerIdentity().ID,
+			IntermediateResponses: 	make(map[network.ServerIdentityID]lib.FilteredResponse),
+			SurveyChannel:       	make(chan int, 100),
 		}
 
 		// broadcasts the query
 		err := services.SendISMOthers(s.ServiceProcessor, &sdq.Roster, sdq)
 		if err != nil {
 			log.Error("broadcasting error ", err)
+		}
+
+		// waits for all other nodes to receive the survey query
+		counter := len(s.survey[*sdq.SurveyID].Query.Roster.List) - 1
+		for counter > 0 {
+			log.LLvl1(s.ServerIdentity(),counter)
+			counter = counter - (<-s.survey[*sdq.SurveyID].SurveyChannel)
 		}
 
 		// skip Unlynx shuffling
@@ -286,6 +320,8 @@ func (s *Service) HandleSurveyDpQuery(sdq *SurveyDpQuery) (network.Message, onet
 
 	}
 
+	// if it is an intra message (message between the servers)
+
 	(s.survey[*sdq.SurveyID]) = Survey{
 		Store:           lib.NewStore(),
 		Query:           *sdq,
@@ -293,8 +329,14 @@ func (s *Service) HandleSurveyDpQuery(sdq *SurveyDpQuery) (network.Message, onet
 		//ShufflePrecompute: precomputeShuffle,
 		Sender:                s.ServerIdentity().ID,
 		IntermediateResponses: make(map[network.ServerIdentityID]lib.FilteredResponse, 0),
+		SurveyChannel:       	make(chan int, 100),
 	}
-	log.LLvl1("AVANCE ", s.survey[*sdq.SurveyID])
+
+	// sends a signal to unlock waiting channel
+	err := s.SendRaw(sdq.Origin, &SurveyQuery{SurveyID: *sdq.SurveyID})
+	if err != nil {
+		log.Error("sending error ", err)
+	}
 
 	// chooses an ephemeral secret for this survey
 
