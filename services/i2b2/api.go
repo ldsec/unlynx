@@ -42,22 +42,22 @@ func (c *API) SendSurveyDpQuery(entities *onet.Roster, surveyGenID, surveyID Sur
 	var newSurveyID SurveyID
 
 	sdq := SurveyDpQuery{
-		SurveyGenID:  &surveyGenID,
-		SurveyID:     &surveyID,
-		Roster:       *entities,
-		ClientPubKey: clientPubKey,
-		NbrDPs:       nbrDPs,
-		Proofs:       proofs,
-		AppFlag:      appFlag,
+		SurveyGenID:  	surveyGenID,
+		SurveyID:     	surveyID,
+		Roster:       	*entities,
+		ClientPubKey: 	clientPubKey,
+		MapDPs:       	nbrDPs,
+		QueryMode: 	mode,
+		Proofs:       	proofs,
+		AppFlag:      	appFlag,
 
 		// query statement
-		Sum:       sum,
-		Count:     count,
-		Where:     where,
-		Predicate: predicate,
-		GroupBy:   groupBy,
-		DpData:    data,
-		QueryMode: mode,
+		Sum:       	sum,
+		Count:     	count,
+		Where:     	where,
+		Predicate: 	predicate,
+		GroupBy:   	groupBy,
+		DpData:    	data,
 	}
 
 	resp := ServiceResult{}

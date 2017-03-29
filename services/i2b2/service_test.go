@@ -10,6 +10,7 @@ import (
 	"os"
 	"strconv"
 	"testing"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestServiceEncGrpAndWhereAttr(t *testing.T) {
@@ -73,15 +74,13 @@ func TestServiceEncGrpAndWhereAttr(t *testing.T) {
 	data = append(data, lib.ProcessResponse{WhereEnc: sliceWhere, AggregatingAttributes: aggr}, lib.ProcessResponse{WhereEnc: sliceWhere, AggregatingAttributes: aggr}, lib.ProcessResponse{WhereEnc: sliceWhere1, AggregatingAttributes: aggr})
 
 	wg := lib.StartParallelize(2)
-	log.LLvl1("START PARA")
+
 	result1 := lib.FilteredResponse{}
 	result2 := lib.FilteredResponse{}
 	go func(i int) {
 		defer wg.Done()
-		log.LLvl1("ICI")
 		data1 := append(data, lib.ProcessResponse{WhereEnc: sliceWhere, AggregatingAttributes: aggr})
 		_, result1, _ = client1.SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, false, sum, count, whereQueryValues, pred, groupBy, data1, 0)
-		log.LLvl1(result1)
 	}(0)
 	go func() {
 		defer wg.Done()
@@ -90,11 +89,36 @@ func TestServiceEncGrpAndWhereAttr(t *testing.T) {
 	}()
 	_, result, err := client.SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, false, sum, count, whereQueryValues, pred, groupBy, data, 0)
 
-	lib.EndParallelize(wg)
-	log.LLvl1(lib.DecryptIntVector(secKey, &result.AggregatingAttributes))
-	log.LLvl1(lib.DecryptIntVector(secKey, &result1.AggregatingAttributes))
-	log.LLvl1(lib.DecryptIntVector(secKey, &result2.AggregatingAttributes))
 	if err != nil {
 		t.Fatal("Service did not start.", err)
 	}
+
+	lib.EndParallelize(wg)
+
+	finalResult := make([]int64,0)
+	expectedResult := []int64{3,4,6}
+
+	finalResult = append(finalResult,lib.DecryptIntVector(secKey, &result.AggregatingAttributes)...)
+	finalResult = append(finalResult,lib.DecryptIntVector(secKey, &result1.AggregatingAttributes)...)
+	finalResult = append(finalResult,lib.DecryptIntVector(secKey, &result2.AggregatingAttributes)...)
+
+	assert.Equal(t,len(finalResult),len(expectedResult),"The size of the result is different")
+
+	var check bool
+	for ev := range expectedResult{
+		check = false
+		for fr := range finalResult{
+			if ev==fr{
+				check = true
+			}
+		}
+
+		if !check{
+			break
+		}
+	}
+
+	assert.True(t,check,"Wrong result")
+
+	log.LLvl1(finalResult)
 }
