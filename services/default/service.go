@@ -207,13 +207,6 @@ func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.
 	log.Lvl1(s.ServerIdentity(), " created the survey ", recq.SurveyID)
 	log.Lvl1(s.ServerIdentity(), " has a list of ", len(s.Survey), " survey(s)")
 
-	if recq.AppFlag {
-		//TODO: develop default and i2b2 app
-		/*testData := data.ReadDataFromFile(testDataFile)
-		resp := EncryptDataToSurvey(s.ServerIdentity().String(), *recq.SurveyID, testData[strconv.Itoa(0)], recq.Roster.Aggregate, 1)
-		s.PushData(resp)*/
-	}
-
 	// update surveyChannel so that the server knows he can start to process data from DPs
 	s.Mutex.Lock()
 	(s.Survey[recq.SurveyID].SurveyChannel) <- 1
@@ -377,8 +370,8 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 			}
 
 			keySwitch.TargetOfSwitch = &coaggr
-			tmp1 := s.Survey[target].Query.ClientPubKey
-			keySwitch.TargetPublicKey = &tmp1
+			tmp := s.Survey[target].Query.ClientPubKey
+			keySwitch.TargetPublicKey = &tmp
 		}
 	default:
 		return nil, errors.New("Service attempts to start an unknown protocol: " + tn.ProtocolName() + ".")
