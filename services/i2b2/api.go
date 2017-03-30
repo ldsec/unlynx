@@ -62,11 +62,9 @@ func (c *API) SendSurveyDpQuery(entities *onet.Roster, surveyGenID, surveyID Sur
 
 	resp := ServiceResult{}
 	err := c.SendProtobuf(c.entryPoint, &sdq, &resp)
-	log.LLvl1(resp.Results)
 	if err != nil {
 		return nil, resp.Results, err
 	}
-	//results = resp.Results[0]
 
 	return &newSurveyID, resp.Results, nil
 }

@@ -30,9 +30,9 @@ func TestServiceShuffle(t *testing.T) {
 	client1 := serviceI2B2.NewMedcoClient(el.List[1], strconv.Itoa(0))
 	client2 := serviceI2B2.NewMedcoClient(el.List[2], strconv.Itoa(0))
 
-	sum := []string{"sum1"}
+	sum := []string{"s1"}
 	count := false
-	whereQueryValues := []lib.WhereQueryAttribute{{"w1", *lib.EncryptInt(el.Aggregate, 1)}, {"w2", *lib.EncryptInt(el.Aggregate, 1)}, {"w3", *lib.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
+	whereQueryValues := []lib.WhereQueryAttribute{{Name: "w1", Value: *lib.EncryptInt(el.Aggregate, 1)}, {Name: "w2", Value: *lib.EncryptInt(el.Aggregate, 1)}, {Name: "w3", Value: *lib.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
 	pred := "(v0 == v1 || v2 == v3) && v4 == v5"
 	groupBy := []string{}
 
