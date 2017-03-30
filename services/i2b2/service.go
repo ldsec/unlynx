@@ -13,6 +13,7 @@ import (
 	"github.com/JoaoAndreSa/MedCo/protocols"
 	"github.com/JoaoAndreSa/MedCo/services"
 	"github.com/btcsuite/goleveldb/leveldb/errors"
+	"github.com/fanliao/go-concurrentMap"
 )
 
 // ServiceName is the registered name for the medco service.
@@ -126,6 +127,7 @@ type Service struct {
 	*onet.ServiceProcessor
 
 	Survey map[SurveyID]Survey
+	SurveyTest *concurrent.ConcurrentMap
 	Mutex  sync.Mutex
 }
 
@@ -134,6 +136,7 @@ func NewService(c *onet.Context) onet.Service {
 	newMedCoInstance := &Service{
 		ServiceProcessor: onet.NewServiceProcessor(c),
 		Survey:           make(map[SurveyID]Survey, 0),
+		SurveyTest:       concurrent.NewConcurrentMap(),
 	}
 
 	if cerr := newMedCoInstance.RegisterHandler(newMedCoInstance.HandleSurveyDpQuery); cerr != nil {
@@ -210,6 +213,31 @@ func (s *Service) HandleSurveyDpQuery(sdq *SurveyDpQuery) (network.Message, onet
 
 			IntermediateResults: make(map[ResultID]lib.FilteredResponse),
 		}
+
+		log.LLvl1("1.")
+		var b string
+		b = (string)(sdq.SurveyID)
+		/*s.SurveyTest.Put(b, Survey{
+			Store:           lib.NewStore(),
+			Query:           *sdq,
+			SurveySecretKey: surveySecret,
+
+			SurveyChannel: make(chan int, 100),
+
+			IntermediateResults: make(map[ResultID]lib.FilteredResponse),
+		})*/
+
+		s.SurveyTest.PutAll(s.Survey[sdq.SurveyID])
+
+
+		log.LLvl1("2.")
+		a, _ := s.SurveyTest.Get(b)
+		log.LLvl1("3.")
+
+
+
+		log.LLvl1("TESTES", len(a.(Survey).IntermediateResults))
+
 
 		// broadcasts the query
 		err := services.SendISMOthers(s.ServiceProcessor, &sdq.Roster, sdq)
