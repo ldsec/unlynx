@@ -14,7 +14,7 @@ import (
 	"sync"
 )
 
-/// ServiceName is the registered name for the medco service.
+// ServiceName is the registered name for the medco service.
 const ServiceName = "MedCo"
 
 // DROProtocolName is the registered name for the medco service protocol.
@@ -25,6 +25,7 @@ const gobFile = "pre_compute_multiplications.gob"
 // SurveyID unique ID for each survey.
 type SurveyID string
 
+// SurveyCreationQuery is used to trigger the creation of a survey
 type SurveyCreationQuery struct {
 	SurveyID     SurveyID
 	Roster       onet.Roster
