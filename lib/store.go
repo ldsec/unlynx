@@ -63,7 +63,7 @@ func proccessParameters(data []string, clear map[string]int64, encrypted map[str
 	return containerClear, containerEnc
 }
 
-// InsertDPResponse handles the local storage of a new DP response in aggregation or grouping cases.
+// InsertDpResponse handles the local storage of a new DP response in aggregation or grouping cases.
 func (s *Store) InsertDpResponse(cr DpResponse, proofs bool, groupBy, sum []string, where []WhereQueryAttribute) {
 	newResp := ProcessResponse{}
 	clearGrp := []int64{}

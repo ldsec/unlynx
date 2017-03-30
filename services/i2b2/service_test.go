@@ -105,9 +105,9 @@ func TestServiceShuffle(t *testing.T) {
 	assert.Equal(t, len(finalResult), len(expectedResult), "The size of the result is different")
 
 	var check bool
-	for ev := range expectedResult {
+	for _, ev := range expectedResult {
 		check = false
-		for fr := range finalResult {
+		for _, fr := range finalResult {
 			if ev == fr {
 				check = true
 			}

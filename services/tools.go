@@ -33,6 +33,7 @@ func SendISMOthers(s *onet.ServiceProcessor, el *onet.Roster, msg interface{}) e
 	return err
 }
 
+// PrecomputeForShuffling precomputes data to be used in the shuffling protocol (to make it faster) and saves it in a .gob file
 func PrecomputeForShuffling(serverName, gobFile string, surveySecret abstract.Scalar, collectiveKey abstract.Point, lineSize int) []lib.CipherVectorScalar {
 	log.Lvl1(serverName, " precomputes for shuffling")
 	precomputeShuffle := lib.CreatePrecomputedRandomize(network.Suite.Point().Base(), collectiveKey, network.Suite.Cipher(surveySecret.Bytes()), lineSize*2, 10)
@@ -47,6 +48,7 @@ func PrecomputeForShuffling(serverName, gobFile string, surveySecret abstract.Sc
 	return precomputeShuffle
 }
 
+// PrecomputationWritingForShuffling reads the precomputation data from the .gob file if it already exists or generates a new one
 func PrecomputationWritingForShuffling(appFlag bool, gobFile, serverName string, surveySecret abstract.Scalar, collectiveKey abstract.Point, lineSize int) []lib.CipherVectorScalar {
 	log.Lvl1(serverName, " precomputes for shuffling")
 	precomputeShuffle := []lib.CipherVectorScalar{}
@@ -73,6 +75,7 @@ func PrecomputationWritingForShuffling(appFlag bool, gobFile, serverName string,
 	return precomputeShuffle
 }
 
+// FilterResponses evaluates the predicate and keeps the entries that satisfy the conditions
 func FilterResponses(pred string, whereQueryValues []lib.WhereQueryAttributeTagged, responsesToFilter []lib.ProcessResponseDet) []lib.FilteredResponseDet {
 	result := []lib.FilteredResponseDet{}
 	for _, v := range responsesToFilter {
@@ -101,7 +104,8 @@ func FilterResponses(pred string, whereQueryValues []lib.WhereQueryAttributeTagg
 	return result
 }
 
-func CountDps(m map[string]int64) int64 {
+// CountDPs counts the number of data providers targeted by a query/survey
+func CountDPs(m map[string]int64) int64 {
 	result := int64(0)
 	for _, v := range m {
 		result += v

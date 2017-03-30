@@ -15,7 +15,7 @@ import (
 	"github.com/btcsuite/goleveldb/leveldb/errors"
 )
 
-/// ServiceName is the registered name for the medco service.
+// ServiceName is the registered name for the medco service.
 const ServiceName = "MedCoI2b2"
 
 // DROProtocolName is the registered name for the medco service protocol.
@@ -24,6 +24,7 @@ const DROProtocolName = "DRO"
 // SurveyID unique ID for each survey.
 type SurveyID string
 
+// SurveyDpQuery is used to trigger the creation of a survey
 type SurveyDpQuery struct {
 	SurveyGenID  SurveyID
 	SurveyID     SurveyID
@@ -86,11 +87,13 @@ func init() {
 	network.RegisterMessage(&ServiceResult{})
 }
 
+// ResultID defines the ID to uniquely identify a result (e.g., Server1 Survey2 4, etc.)
 type ResultID struct {
 	ServerID network.ServerIdentityID
 	SurveyID SurveyID
 }
 
+// SurveyResultSharing represents a message containing the intermediate results which are shared with remaining nodes
 type SurveyResultSharing struct {
 	SurveyGenID SurveyID
 	SurveyID    SurveyID
@@ -183,7 +186,7 @@ func (s *Service) HandleSurveyQuery(recq *SurveyGenerated) (network.Message, one
 	return nil, nil
 }
 
-// HandleSurveyCreationQuery handles the reception of a survey creation query by instantiating the corresponding survey and it will directly request the results
+// HandleSurveyDpQuery handles the reception of a survey creation query by instantiating the corresponding survey and it will directly request the results
 func (s *Service) HandleSurveyDpQuery(sdq *SurveyDpQuery) (network.Message, onet.ClientError) {
 	log.LLvl1(s.ServerIdentity().String(), " received a Survey Dp Query")
 
@@ -246,7 +249,7 @@ func (s *Service) HandleSurveyDpQuery(sdq *SurveyDpQuery) (network.Message, onet
 		}
 		s.Survey[sdq.SurveyGenID].IntermediateResults[ResultID{ServerID: s.ServerIdentity().ID, SurveyID: sdq.SurveyID}] = r1[0]
 
-		if int64(len(s.Survey[sdq.SurveyGenID].IntermediateResults)) == services.CountDps(sdq.MapDPs) {
+		if int64(len(s.Survey[sdq.SurveyGenID].IntermediateResults)) == services.CountDPs(sdq.MapDPs) {
 			(s.Survey[sdq.SurveyGenID].IntermediateChannel) <- 1
 		}
 
@@ -384,6 +387,7 @@ func (s *Service) StartServicePartOne(targetSurvey SurveyID) error {
 
 	return nil
 }
+
 
 // StartServicePartOne starts the service (with all its different steps/protocols)
 func (s *Service) StartServicePartTwo(targetSurvey SurveyID, aggr bool) error {
@@ -633,7 +637,7 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 	return pi, nil
 }
 
-// HandleSurveyResponseSharing handles reception of initial results in i2b2 query case
+// HandleSurveyResultsSharing handles reception of initial results in i2b2 query case
 func (s *Service) HandleSurveyResultsSharing(resp *SurveyResultSharing) (network.Message, onet.ClientError) {
 
 	if s.Survey[resp.SurveyGenID].IntermediateResults == nil {
