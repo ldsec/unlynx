@@ -206,6 +206,10 @@ func (p *ShufflingProtocol) Dispatch() error {
 		log.LLvl1("Key used: ", collectiveKey)
 	}
 
+	if p.Precomputed != nil {
+		log.LLvl1(p.Name(), " uses pre-computation in shuffling")
+	}
+
 	shuffledData := shufflingTarget
 	var pi []int
 	var beta [][]abstract.Scalar

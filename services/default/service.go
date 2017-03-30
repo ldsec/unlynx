@@ -191,7 +191,7 @@ func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.
 
 	// prepares the precomputation for shuffling
 	lineSize := int(len(recq.Sum)) + int(len(recq.Where)) + int(len(recq.GroupBy)) + 1 // + 1 is for the possible count attribute
-	precomputeShuffle := services.PrecomputationWritingForShuffling(recq.AppFlag, s.ServerIdentity().String(), gobFile, surveySecret, recq.Roster.Aggregate, lineSize)
+	precomputeShuffle := services.PrecomputationWritingForShuffling(recq.AppFlag, gobFile, s.ServerIdentity().String(), surveySecret, recq.Roster.Aggregate, lineSize)
 
 	// survey instantiation
 	(s.Survey[recq.SurveyID]) = Survey{
@@ -346,7 +346,8 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 			clientResponses := make([]lib.ProcessResponse, 0)
 			noiseArray := lib.GenerateNoiseValues(1000, 0, 1, 0.1)
 			for _, v := range noiseArray {
-				clientResponses = append(clientResponses, lib.ProcessResponse{GroupByEnc: nil, AggregatingAttributes: *lib.EncryptIntVector(tn.Roster().Aggregate, []int64{int64(v)})})
+				//clientResponses = append(clientResponses, lib.ProcessResponse{GroupByEnc: nil, AggregatingAttributes: *lib.EncryptIntVector(tn.Roster().Aggregate, []int64{int64(v)})})
+				clientResponses = append(clientResponses, lib.ProcessResponse{GroupByEnc: nil, AggregatingAttributes: lib.IntArrayToCipherVector([]int64{int64(v)})})
 			}
 			shuffle.TargetOfShuffle = &clientResponses
 		}

@@ -14,6 +14,7 @@ import (
 	"github.com/JoaoAndreSa/MedCo/services"
 	"github.com/btcsuite/goleveldb/leveldb/errors"
 	"github.com/fanliao/go-concurrentMap"
+	"os"
 )
 
 const gobFile = "pre_compute_multiplications.gob"
@@ -215,7 +216,10 @@ func (s *Service) HandleSurveyDpQuery(sdq *SurveyDpQuery) (network.Message, onet
 
 			IntermediateResults: make(map[ResultID]lib.FilteredResponse),
 		}
-
+		if _, err := os.Stat(gobFile); os.IsNotExist(err) {
+			lineSize := int(len(sdq.Sum)) + int(len(sdq.Where)) + int(len(sdq.GroupBy)) + 1 // + 1 is for the possible count attribute
+			services.PrecomputationWritingForShuffling(sdq.AppFlag, gobFile, s.ServerIdentity().String(), surveySecret, sdq.Roster.Aggregate, lineSize)
+		}
 		log.LLvl1("1.")
 	//	var b string
 	//	b = (string)(sdq.SurveyID)
@@ -289,14 +293,13 @@ func (s *Service) HandleSurveyDpQuery(sdq *SurveyDpQuery) (network.Message, onet
 		// if the server is the root... FirstTime ensures it only executes this piece of code once (no matter the number of DPs)
 		if s.ServerIdentity().ID == sdq.Roster.List[0].ID && s.Survey[sdq.SurveyGenID].FirstTime {
 			log.LLvl1(s.ServerIdentity(), " executes part 2")
-			lineSize := int(len(sdq.Sum)) + int(len(sdq.Where)) + int(len(sdq.GroupBy)) + 1 // + 1 is for the possible count attribute
-			precomputeShuffle := services.PrecomputationWritingForShuffling(sdq.AppFlag, s.ServerIdentity().String(), gobFile, surveySecret, sdq.Roster.Aggregate, lineSize)
+
 
 			tmp := s.Survey[sdq.SurveyGenID]
 			tmp.FirstTime = false
 			tmp.Query = s.Survey[sdq.SurveyID].Query
 			tmp.Store = s.Survey[sdq.SurveyID].Store
-			tmp.ShufflePrecompute = precomputeShuffle
+			tmp.ShufflePrecompute = services.ReadPrecomputedFile(gobFile)
 			s.Survey[sdq.SurveyGenID] = tmp
 
 			s.StartServicePartTwo(sdq.SurveyGenID, (sdq.QueryMode==1))
@@ -355,6 +358,17 @@ func (s *Service) HandleSurveyDpQuery(sdq *SurveyDpQuery) (network.Message, onet
 	}
 
 	// if it is an intra message (message between the servers)
+	/*precomputeShuffle := []lib.CipherVectorScalar{}
+	if _, err := os.Stat(gobFile); !os.IsNotExist(err) {
+		log.LLvl1(s.ServerIdentity(), " access file")
+		var encoded []lib.CipherVectorScalarBytes
+		data.ReadFromGobFile(gobFile, &encoded)
+
+		precomputeShuffle, _ = data.DecodeCipherVectorScalar(encoded)
+	} else {
+		log.LLvl1(s.ServerIdentity(), " nil file")
+		precomputeShuffle = nil
+	}*/
 
 	(s.Survey[sdq.SurveyID]) = Survey{
 		Store:           lib.NewStore(),
@@ -362,6 +376,7 @@ func (s *Service) HandleSurveyDpQuery(sdq *SurveyDpQuery) (network.Message, onet
 		SurveySecretKey: surveySecret,
 
 		IntermediateResults: make(map[ResultID]lib.FilteredResponse, 0),
+		//ShufflePrecompute: precomputeShuffle,
 	}
 
 	// sends a signal to unlock waiting channel
@@ -376,15 +391,13 @@ func (s *Service) HandleSurveyDpQuery(sdq *SurveyDpQuery) (network.Message, onet
 // HandleSurveyResultsSharing handles reception of initial results in i2b2 query case
 func (s *Service) HandleSurveyResultsSharing(resp *SurveyResultSharing) (network.Message, onet.ClientError) {
 
-	lineSize := int(len(sdq.Sum)) + int(len(sdq.Where)) + int(len(sdq.GroupBy)) + 1 // + 1 is for the possible count attribute
-	precomputeShuffle := services.PrecomputationWritingForShuffling(sdq.AppFlag, s.ServerIdentity().String(), gobFile, surveySecret, sdq.Roster.Aggregate, lineSize)
-
 	if s.Survey[resp.SurveyGenID].IntermediateResults == nil {
 		tmp := s.Survey[resp.SurveyGenID]
 		tmp.IntermediateResults = make(map[ResultID]lib.FilteredResponse)
 		tmp.FirstTime = true
 		tmp.IntermediateChannel = make(chan int, 100)
 		tmp.FinalChannel = make(chan int, 100)
+		tmp.ShufflePrecompute = services.ReadPrecomputedFile(gobFile)
 		s.Survey[resp.SurveyGenID] = tmp
 	}
 	s.Survey[resp.SurveyGenID].IntermediateResults[ResultID{ServerID: resp.ServerID, SurveyID: resp.SurveyID}] = resp.Result
@@ -497,7 +510,7 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 			clientResponses := make([]lib.ProcessResponse, 0)
 			noiseArray := lib.GenerateNoiseValues(1000, 0, 1, 0.1)
 			for _, v := range noiseArray {
-				clientResponses = append(clientResponses, lib.ProcessResponse{GroupByEnc: nil, AggregatingAttributes: *lib.EncryptIntVector(tn.Roster().Aggregate, []int64{int64(v)})})
+				clientResponses = append(clientResponses, lib.ProcessResponse{GroupByEnc: nil, AggregatingAttributes: lib.IntArrayToCipherVector([]int64{int64(v)})})
 			}
 			shuffle.TargetOfShuffle = &clientResponses
 		}
@@ -608,7 +621,6 @@ func (s *Service) StartServicePartTwo(targetSurvey SurveyID, aggr bool) error {
 		}
 		s.Survey[targetSurvey].PushShuffledProcessResponses(aggrResponses)
 	}
-	//TODO put it in the new Protocol for survey
 
 
 	lib.EndTimer(start)
@@ -629,12 +641,12 @@ func (s *Service) StartServicePartTwo(targetSurvey SurveyID, aggr bool) error {
 	if lib.DIFFPRI == true {
 		start := lib.StartTimer(s.ServerIdentity().String() + "_DROPhase")
 
-		s.DROPhase(s.Survey[targetSurvey].Query.SurveyID)
+		s.DROPhase(s.Survey[targetSurvey].Query.SurveyGenID)
 
 		lib.EndTimer(start)
 	}
 
-	err := s.KeySwitchingPhase(s.Survey[targetSurvey].Query.SurveyID)
+	err := s.KeySwitchingPhase(s.Survey[targetSurvey].Query.SurveyGenID)
 
 	if err != nil {
 		log.Fatal("Error in the Tagging Phase")

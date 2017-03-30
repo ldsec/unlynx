@@ -75,6 +75,19 @@ func PrecomputationWritingForShuffling(appFlag bool, gobFile, serverName string,
 	return precomputeShuffle
 }
 
+func ReadPrecomputedFile(fileName string) []lib.CipherVectorScalar{
+	precomputeShuffle := []lib.CipherVectorScalar{}
+	if _, err := os.Stat(fileName); !os.IsNotExist(err) {
+		var encoded []lib.CipherVectorScalarBytes
+		data.ReadFromGobFile(fileName, &encoded)
+
+		precomputeShuffle, _ = data.DecodeCipherVectorScalar(encoded)
+	} else {
+		precomputeShuffle = nil
+	}
+	return precomputeShuffle
+}
+
 // FilterResponses evaluates the predicate and keeps the entries that satisfy the conditions
 func FilterResponses(pred string, whereQueryValues []lib.WhereQueryAttributeTagged, responsesToFilter []lib.ProcessResponseDet) []lib.FilteredResponseDet {
 	result := []lib.FilteredResponseDet{}

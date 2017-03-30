@@ -80,14 +80,14 @@ func TestServiceShuffle(t *testing.T) {
 	go func(i int) {
 		defer wg.Done()
 		data1 := append(data, lib.ProcessResponse{WhereEnc: sliceWhere, AggregatingAttributes: aggr})
-		_, result1, _ = client1.SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, false, sum, count, whereQueryValues, pred, groupBy, data1, 0)
+		_, result1, _ = client1.SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, true, sum, count, whereQueryValues, pred, groupBy, data1, 0)
 	}(0)
 	go func() {
 		defer wg.Done()
 		data2 := append(data, data...)
-		_, result2, _ = client2.SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, false, sum, count, whereQueryValues, pred, groupBy, data2, 0)
+		_, result2, _ = client2.SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, true, sum, count, whereQueryValues, pred, groupBy, data2, 0)
 	}()
-	_, result, err := client.SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, false, sum, count, whereQueryValues, pred, groupBy, data, 0)
+	_, result, err := client.SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, true, sum, count, whereQueryValues, pred, groupBy, data, 0)
 
 	if err != nil {
 		t.Fatal("Service did not start.", err)
@@ -191,14 +191,14 @@ func TestServiceAggr(t *testing.T) {
 	go func(i int) {
 		defer wg.Done()
 		data1 := append(data, lib.ProcessResponse{WhereEnc: sliceWhere, AggregatingAttributes: aggr})
-		_, result1, _ = client1.SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, false, sum, count, whereQueryValues, pred, groupBy, data1, 1)
+		_, result1, _ = client1.SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, true/*this permits to use precomputation for shuffling*/, sum, count, whereQueryValues, pred, groupBy, data1, 1)
 	}(0)
 	go func() {
 		defer wg.Done()
 		data2 := append(data, data...)
-		_, result2, _ = client2.SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, false, sum, count, whereQueryValues, pred, groupBy, data2, 1)
+		_, result2, _ = client2.SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, true, sum, count, whereQueryValues, pred, groupBy, data2, 1)
 	}()
-	_, result, err := client.SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, false, sum, count, whereQueryValues, pred, groupBy, data, 1)
+	_, result, err := client.SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, true, sum, count, whereQueryValues, pred, groupBy, data, 1)
 
 	if err != nil {
 		t.Fatal("Service did not start.", err)
