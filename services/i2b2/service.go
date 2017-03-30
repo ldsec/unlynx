@@ -18,9 +18,6 @@ import (
 // ServiceName is the registered name for the medco service.
 const ServiceName = "MedCoI2b2"
 
-// DROProtocolName is the registered name for the medco service protocol.
-const DROProtocolName = "DRO"
-
 // SurveyID unique ID for each survey.
 type SurveyID string
 
@@ -93,7 +90,7 @@ type ResultID struct {
 	SurveyID SurveyID
 }
 
-// SurveyResultSharing represents a message containing the intermediate results which are shared with remaining nodes
+// SurveyResultSharing represents a message containing the intermediate results which are shared with the remaining nodes
 type SurveyResultSharing struct {
 	SurveyGenID SurveyID
 	SurveyID    SurveyID
@@ -554,7 +551,7 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 			hashCreation.TargetOfSwitch = &shuffledClientResponses
 
 		}
-	case DROProtocolName:
+	case protocols.DROProtocolName:
 		pi, err := protocols.NewShufflingProtocol(tn)
 		if err != nil {
 			return nil, err

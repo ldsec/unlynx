@@ -17,9 +17,6 @@ import (
 // ServiceName is the registered name for the medco service.
 const ServiceName = "MedCo"
 
-// DROProtocolName is the registered name for the medco service protocol.
-//const DROProtocolName = "DRO"
-
 const gobFile = "pre_compute_multiplications.gob"
 
 // SurveyID unique ID for each survey.

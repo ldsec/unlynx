@@ -66,7 +66,6 @@ func (c *API) SendSurveyDpQuery(entities *onet.Roster, surveyGenID, surveyID Sur
 	if err != nil {
 		return nil, resp.Results, err
 	}
-	//results = resp.Results[0]
 
 	return &newSurveyID, resp.Results, nil
 }
