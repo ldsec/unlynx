@@ -18,7 +18,7 @@ import (
 const ServiceName = "MedCo"
 
 // DROProtocolName is the registered name for the medco service protocol.
-const DROProtocolName = "DRO"
+//const DROProtocolName = "DRO"
 
 const gobFile = "pre_compute_multiplications.gob"
 
@@ -44,16 +44,16 @@ type SurveyCreationQuery struct {
 // Survey represents a survey with the corresponding params
 type Survey struct {
 	*lib.Store
-	Query             	SurveyCreationQuery
-	SurveySecretKey  	abstract.Scalar
-	ShufflePrecompute	[]lib.CipherVectorScalar
+	Query             SurveyCreationQuery
+	SurveySecretKey   abstract.Scalar
+	ShufflePrecompute []lib.CipherVectorScalar
 
 	// channels
-	SurveyChannel 		chan int // To wait for the survey to be created before loading data
-	DpChannel     		chan int // To wait for all data to be read before starting medco service protocol
-	DDTChannel    		chan int // To wait for all nodes to finish the tagging before continuing
+	SurveyChannel chan int // To wait for the survey to be created before loading data
+	DpChannel     chan int // To wait for all data to be read before starting medco service protocol
+	DDTChannel    chan int // To wait for all nodes to finish the tagging before continuing
 
-	Noise 			lib.CipherText
+	Noise lib.CipherText
 }
 
 // MsgTypes defines the Message Type ID for all the service's intra-messages.
@@ -118,7 +118,7 @@ func NewService(c *onet.Context) onet.Service {
 	newMedCoInstance := &Service{
 		ServiceProcessor: onet.NewServiceProcessor(c),
 		Survey:           make(map[SurveyID]Survey, 0),
-		Mutex: 		  &sync.Mutex{},
+		Mutex:            &sync.Mutex{},
 	}
 	if cerr := newMedCoInstance.RegisterHandler(newMedCoInstance.HandleSurveyCreationQuery); cerr != nil {
 		log.Fatal("Wrong Handler.", cerr)
@@ -137,7 +137,7 @@ func NewService(c *onet.Context) onet.Service {
 	c.RegisterProcessor(newMedCoInstance, msgTypes.msgSurveyResultsQuery)
 	c.RegisterProcessor(newMedCoInstance, msgTypes.msgDDTfinished)
 
-	newMedCoInstance.ProtocolRegister(DROProtocolName, newMedCoInstance.NewDROProtocol)
+	//newMedCoInstance.ProtocolRegister(DROProtocolName, newMedCoInstance.NewDROProtocol)
 	return newMedCoInstance
 }
 
@@ -262,7 +262,7 @@ func (s *Service) HandleSurveyResultsQuery(resq *SurveyResultsQuery) (network.Me
 
 		log.Lvl1(s.ServerIdentity(), " completed the query processing...")
 
-		return &ServiceResult{Results: s.Survey[resq.SurveyID].PullDeliverableResults()}, nil
+		return &ServiceResult{Results: s.Survey[resq.SurveyID].PullDeliverableResults(false, lib.CipherText{})}, nil
 	}
 
 	s.StartService(resq.SurveyID, false)
@@ -331,17 +331,35 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 			return nil, err
 		}
 
-		groupedData := s.Survey[target].PullLocallyAggregatedResponses()
-		pi.(*protocols.CollectiveAggregationProtocol).GroupedData = &groupedData
-		pi.(*protocols.CollectiveAggregationProtocol).Proofs = s.Survey[target].Query.Proofs
-
 		// waits for all other nodes to finish the tagging phase
 		counter := len(tn.Roster().List) - 1
 		for counter > 0 {
 			counter = counter - (<-s.Survey[target].DDTChannel)
 		}
 
-	case DROProtocolName:
+		groupedData := s.Survey[target].PullLocallyAggregatedResponses()
+		pi.(*protocols.CollectiveAggregationProtocol).GroupedData = &groupedData
+		pi.(*protocols.CollectiveAggregationProtocol).Proofs = s.Survey[target].Query.Proofs
+
+	case protocols.DROProtocolName:
+		pi, err := protocols.NewShufflingProtocol(tn)
+		if err != nil {
+			return nil, err
+		}
+
+		shuffle := pi.(*protocols.ShufflingProtocol)
+		shuffle.Proofs = true
+		shuffle.Precomputed = nil
+
+		if tn.IsRoot() {
+			clientResponses := make([]lib.ProcessResponse, 0)
+			noiseArray := lib.GenerateNoiseValues(1000, 0, 1, 0.1)
+			for _, v := range noiseArray {
+				clientResponses = append(clientResponses, lib.ProcessResponse{GroupByEnc: nil, AggregatingAttributes: *lib.EncryptIntVector(tn.Roster().Aggregate, []int64{int64(v)})})
+			}
+			shuffle.TargetOfShuffle = &clientResponses
+		}
+		return pi, nil
 
 	case protocols.KeySwitchingProtocolName:
 		pi, err = protocols.NewKeySwitchingProtocol(tn)
@@ -367,28 +385,7 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 	default:
 		return nil, errors.New("Service attempts to start an unknown protocol: " + tn.ProtocolName() + ".")
 	}
-	return pi, nil
-}
 
-// NewDROProtocol implements the DRO protocol - shuffling the noise list
-func (s *Service) NewDROProtocol(tn *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
-	pi, err := protocols.NewShufflingProtocol(tn)
-	if err != nil {
-		return nil, err
-	}
-
-	shuffle := pi.(*protocols.ShufflingProtocol)
-	shuffle.Proofs = true
-	shuffle.Precomputed = nil
-
-	if tn.IsRoot() {
-		clientResponses := make([]lib.ProcessResponse, 0)
-		noiseArray := lib.GenerateNoiseValues(1000, 0, 1, 0.001)
-		for _, v := range noiseArray {
-			clientResponses = append(clientResponses, lib.ProcessResponse{GroupByEnc: nil, AggregatingAttributes: *lib.EncryptIntVector(s.Survey["lalal"].Query.Roster.Aggregate, []int64{int64(v)})})
-		}
-		shuffle.TargetOfShuffle = &clientResponses
-	}
 	return pi, nil
 }
 
@@ -545,19 +542,16 @@ func (s *Service) AggregationPhase(targetSurvey SurveyID) error {
 // DROPhase shuffles the list of noise values.
 func (s *Service) DROPhase(targetSurvey SurveyID) error {
 	tmp := s.Survey[targetSurvey]
-	tree := tmp.Query.Roster.GenerateNaryTreeWithRoot(2, s.ServerIdentity())
 
-	pi, err := s.CreateProtocol(DROProtocolName, tree)
+	pi, err := s.StartProtocol(protocols.DROProtocolName, targetSurvey)
 	if err != nil {
 		return err
 	}
-	go pi.Start()
 
 	shufflingResult := <-pi.(*protocols.ShufflingProtocol).FeedbackChannel
 
-	aux := (s.Survey[targetSurvey])
-	aux.Noise = shufflingResult[0].AggregatingAttributes[0]
-
+	tmp.Noise = shufflingResult[0].AggregatingAttributes[0]
+	s.Survey[targetSurvey] = tmp
 	return nil
 }
 

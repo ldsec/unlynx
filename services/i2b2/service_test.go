@@ -3,6 +3,7 @@ package serviceI2B2_test
 import (
 	"github.com/JoaoAndreSa/MedCo/lib"
 	"github.com/JoaoAndreSa/MedCo/services/i2b2"
+	"github.com/stretchr/testify/assert"
 	"gopkg.in/dedis/crypto.v0/random"
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
@@ -10,7 +11,6 @@ import (
 	"os"
 	"strconv"
 	"testing"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestServiceEncGrpAndWhereAttr(t *testing.T) {
@@ -95,30 +95,30 @@ func TestServiceEncGrpAndWhereAttr(t *testing.T) {
 
 	lib.EndParallelize(wg)
 
-	finalResult := make([]int64,0)
-	expectedResult := []int64{3,4,6}
+	finalResult := make([]int64, 0)
+	expectedResult := []int64{3, 4, 6}
 
-	finalResult = append(finalResult,lib.DecryptIntVector(secKey, &result.AggregatingAttributes)...)
-	finalResult = append(finalResult,lib.DecryptIntVector(secKey, &result1.AggregatingAttributes)...)
-	finalResult = append(finalResult,lib.DecryptIntVector(secKey, &result2.AggregatingAttributes)...)
+	finalResult = append(finalResult, lib.DecryptIntVector(secKey, &result.AggregatingAttributes)...)
+	finalResult = append(finalResult, lib.DecryptIntVector(secKey, &result1.AggregatingAttributes)...)
+	finalResult = append(finalResult, lib.DecryptIntVector(secKey, &result2.AggregatingAttributes)...)
 
-	assert.Equal(t,len(finalResult),len(expectedResult),"The size of the result is different")
+	assert.Equal(t, len(finalResult), len(expectedResult), "The size of the result is different")
 
 	var check bool
-	for ev := range expectedResult{
+	for ev := range expectedResult {
 		check = false
-		for fr := range finalResult{
-			if ev==fr{
+		for fr := range finalResult {
+			if ev == fr {
 				check = true
 			}
 		}
 
-		if !check{
+		if !check {
 			break
 		}
 	}
 
-	assert.True(t,check,"Wrong result")
+	assert.True(t, check, "Wrong result")
 
 	log.LLvl1(finalResult)
 }

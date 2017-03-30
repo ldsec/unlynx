@@ -354,9 +354,18 @@ func (s *Store) PushQuerierKeyEncryptedResponses(keySwitchedResponse []FilteredR
 }
 
 // PullDeliverableResults gets the results.
-func (s *Store) PullDeliverableResults() []FilteredResponse {
+func (s *Store) PullDeliverableResults(diffPri bool, noise CipherText) []FilteredResponse {
 	results := s.DeliverableResults
 	s.DeliverableResults = s.DeliverableResults[:0]
+
+	if diffPri == true {
+		for _, v := range results {
+			for _, aggr := range v.AggregatingAttributes {
+				aggr.Add(aggr, noise)
+			}
+		}
+	}
+
 	return results
 }
 
