@@ -236,7 +236,7 @@ func (s *Service) HandleSurveyDpQuery(sdq *SurveyDpQuery) (network.Message, onet
 		}
 
 		// server saves its own response
-		s.Mutex.Lock()
+		//s.Mutex.Lock()
 		if s.Survey[sdq.SurveyGenID].IntermediateResults == nil {
 			tmp := s.Survey[sdq.SurveyGenID]
 			tmp.IntermediateResults = make(map[ResultID]lib.FilteredResponse)
@@ -246,7 +246,7 @@ func (s *Service) HandleSurveyDpQuery(sdq *SurveyDpQuery) (network.Message, onet
 			s.Survey[sdq.SurveyGenID] = tmp
 		}
 		s.Survey[sdq.SurveyGenID].IntermediateResults[ResultID{ServerID: s.ServerIdentity().ID, SurveyID: sdq.SurveyID}] = r1[0]
-		s.Mutex.Unlock()
+		//s.Mutex.Unlock()
 
 		if int64(len(s.Survey[sdq.SurveyGenID].IntermediateResults)) == services.CountDps(sdq.MapDPs) {
 			(s.Survey[sdq.SurveyGenID].IntermediateChannel) <- 1
@@ -256,7 +256,7 @@ func (s *Service) HandleSurveyDpQuery(sdq *SurveyDpQuery) (network.Message, onet
 		log.Lvl1(s.ServerIdentity(), " completed the first part")
 
 		// if the server is the root... FirstTime ensures it only executes this piece of code once (no matter the number of DPs)
-		s.Mutex.Lock()
+		//s.Mutex.Lock()
 		tmp := s.Survey[sdq.SurveyGenID]
 		if s.ServerIdentity().ID == sdq.Roster.List[0].ID && tmp.FirstTime {
 			log.LLvl1(s.ServerIdentity(), " executes part 2")
@@ -265,9 +265,9 @@ func (s *Service) HandleSurveyDpQuery(sdq *SurveyDpQuery) (network.Message, onet
 			tmp.Query = s.Survey[sdq.SurveyID].Query
 			tmp.Store = s.Survey[sdq.SurveyID].Store
 			s.Survey[sdq.SurveyGenID] = tmp
-			s.Mutex.Unlock()
+			//s.Mutex.Unlock()
 
-			s.StartServicePartTwo(sdq.SurveyGenID)
+			s.StartServicePartTwo(sdq.SurveyGenID, (sdq.QueryMode==1))
 
 			finalResultsUnformatted := s.Survey[sdq.SurveyGenID].PullDeliverableResults()
 
@@ -277,6 +277,9 @@ func (s *Service) HandleSurveyDpQuery(sdq *SurveyDpQuery) (network.Message, onet
 			for v := range s.Survey[sdq.SurveyGenID].IntermediateResults {
 				finalResults[ResultID{ServerID: v.ServerID, SurveyID: v.SurveyID}] = finalResultsUnformatted[counter]
 				counter = counter + 1
+				if (sdq.QueryMode==1){
+					break
+				}
 			}
 
 			// convert the the map to two different arrays (basically serialize the object)
@@ -300,15 +303,21 @@ func (s *Service) HandleSurveyDpQuery(sdq *SurveyDpQuery) (network.Message, onet
 			tmp = s.Survey[sdq.SurveyGenID]
 			tmp.FinalResults = finalResults
 			s.Survey[sdq.SurveyGenID] = tmp
-
+			log.LLvl1(s.Survey[sdq.SurveyGenID].FinalResults)
 			for i:=int64(0); i<sdq.MapDPs[s.ServerIdentity().String()]; i++ {
 				(s.Survey[sdq.SurveyGenID].FinalChannel) <- 1
 			}
 		}
 
-		s.Mutex.Lock()
+		//s.Mutex.Lock()
 		<-s.Survey[sdq.SurveyGenID].FinalChannel
-		s.Mutex.Unlock()
+		//s.Mutex.Unlock()
+
+		if (sdq.QueryMode==1) {
+			for _,v := range s.Survey[sdq.SurveyGenID].FinalResults{
+				return &ServiceResult{Results: v}, nil
+			}
+		}
 
 		return &ServiceResult{Results: s.Survey[sdq.SurveyGenID].FinalResults[ResultID{ServerID: s.ServerIdentity().ID, SurveyID: sdq.SurveyID}]}, nil
 
@@ -385,18 +394,41 @@ func (s *Service) StartServicePartOne(targetSurvey SurveyID) error {
 }
 
 // StartServicePartOne starts the service (with all its different steps/protocols)
-func (s *Service) StartServicePartTwo(targetSurvey SurveyID) error {
+func (s *Service) StartServicePartTwo(targetSurvey SurveyID, aggr bool) error {
 
 	log.LLvl1(s.ServerIdentity(), " starts a Medco Protocol for survey ", targetSurvey)
 
 	// Tagging Phase
 	start := lib.StartTimer(s.ServerIdentity().String() + "_TaggingPhase")
 
-	//TODO put it in the new Protocol for survey
-	err := s.ShufflingPhase(targetSurvey)
-	if err != nil {
-		log.Fatal("Error in the Tagging Phase")
+	if !aggr {
+		err := s.ShufflingPhase(targetSurvey)
+		if err != nil {
+			log.Fatal("Error in the Tagging Phase")
+		}
+	} else {
+		aggrResponses := []lib.ProcessResponse{}
+		for i, v := range s.Survey[targetSurvey].IntermediateResults {
+			newProcessResponse := lib.ProcessResponse{GroupByEnc: v.GroupByEnc, AggregatingAttributes: v.AggregatingAttributes}
+			for j, w := range s.Survey[targetSurvey].IntermediateResults {
+				if j != i {
+					cv := lib.NewCipherVector(len(newProcessResponse.AggregatingAttributes))
+					cv.Add(newProcessResponse.AggregatingAttributes, w.AggregatingAttributes)
+					if s.Survey[targetSurvey].Query.Proofs == true {
+						proof := lib.PublishedSimpleAdditionProof{newProcessResponse.AggregatingAttributes, w.AggregatingAttributes, *cv}
+						_=proof
+					}
+					newProcessResponse.AggregatingAttributes = *cv
+				}
+
+			}
+			aggrResponses = append(aggrResponses, newProcessResponse)
+			break
+		}
+		s.Survey[targetSurvey].PushShuffledProcessResponses(aggrResponses)
 	}
+	//TODO put it in the new Protocol for survey
+
 
 	lib.EndTimer(start)
 
@@ -412,7 +444,7 @@ func (s *Service) StartServicePartTwo(targetSurvey SurveyID) error {
 	// here we use the table to store the responses used in key switching
 	s.Survey[targetSurvey].PushQuerierKeyEncryptedResponses(shuffledFinalResponsesFormat)
 
-	err = s.KeySwitchingPhase(s.Survey[targetSurvey].Query.SurveyID)
+	err := s.KeySwitchingPhase(s.Survey[targetSurvey].Query.SurveyID)
 	if err != nil {
 		log.Fatal("Error in the Tagging Phase")
 	}
@@ -583,7 +615,7 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 
 // HandleSurveyResponseSharing handles reception of initial results in i2b2 query case
 func (s *Service) HandleSurveyResultsSharing(resp *SurveyResultSharing) (network.Message, onet.ClientError) {
-	s.Mutex.Lock()
+	//s.Mutex.Lock()
 	if s.Survey[resp.SurveyGenID].IntermediateResults == nil {
 		tmp := s.Survey[resp.SurveyGenID]
 		tmp.IntermediateResults = make(map[ResultID]lib.FilteredResponse)
@@ -593,7 +625,7 @@ func (s *Service) HandleSurveyResultsSharing(resp *SurveyResultSharing) (network
 		s.Survey[resp.SurveyGenID] = tmp
 	}
 	s.Survey[resp.SurveyGenID].IntermediateResults[ResultID{ServerID: resp.ServerID, SurveyID: resp.SurveyID}] = resp.Result
-	s.Mutex.Unlock()
+	//s.Mutex.Unlock()
 
 	log.LLvl1(s.ServerIdentity(), " gets a survey response for ", resp.SurveyGenID, " from ", resp.ServerID)
 	log.LLvl1(s.ServerIdentity(), " now has ", len(s.Survey[resp.SurveyGenID].IntermediateResults), " surveys with response(s)")
@@ -632,14 +664,14 @@ func (s *Service) HandleSurveyFinalResultsSharing(respArr *SurveyFinalResultsSha
 	// this is received only once and then the channel is unblocked to proceed to last step
 	log.LLvl1(s.ServerIdentity(), " gets a final survey response for from ", s.ServerIdentity().String())
 
-	s.Mutex.Lock()
+	//s.Mutex.Lock()
 	tmp := s.Survey[resp.SurveyGenID]
 	tmp.FinalResults = resp.Results
 	s.Survey[resp.SurveyGenID] = tmp
-	s.Mutex.Unlock()
+	//s.Mutex.Unlock()
 
 	// count the number of responses associated with the server or in other words the number of DPs (to unlock the FinalChannel)
-	for k := range resp.Results{
+	for k := range tmp.IntermediateResults{
 		if k.ServerID == s.ServerIdentity().ID{
 			(s.Survey[resp.SurveyGenID].FinalChannel) <- 1
 		}

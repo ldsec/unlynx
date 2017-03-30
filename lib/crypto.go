@@ -213,6 +213,11 @@ func discreteLog(P abstract.Point) int64 {
 	currentGreatestM = Bi
 	PointToInt[Bi.String()] = m
 	currentGreatestInt = m
+
+	//no negative responses
+	if m == MaxHomomorphicInt {
+		return 0
+	}
 	return m
 }
 
