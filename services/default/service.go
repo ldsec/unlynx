@@ -295,8 +295,6 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 	survey := castToSurvey(s.Survey.Get(string(conf.Data)))
 	log.LLvl1("2.5")
 
-
-
 	switch tn.ProtocolName() {
 	case protocols.ShufflingProtocolName:
 		pi, err = protocols.NewShufflingProtocol(tn)
