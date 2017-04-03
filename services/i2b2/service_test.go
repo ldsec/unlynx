@@ -123,7 +123,6 @@ func TestServiceShuffle(t *testing.T) {
 	log.LLvl1(finalResult)
 }
 
-
 func TestServiceAggr(t *testing.T) {
 	log.LLvl1("***************************************************************************************************")
 	os.Remove("pre_compute_multiplications.gob")
@@ -191,7 +190,7 @@ func TestServiceAggr(t *testing.T) {
 	go func(i int) {
 		defer wg.Done()
 		data1 := append(data, lib.ProcessResponse{WhereEnc: sliceWhere, AggregatingAttributes: aggr})
-		_, result1, _ = client1.SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, true/*this permits to use precomputation for shuffling*/, sum, count, whereQueryValues, pred, groupBy, data1, 1)
+		_, result1, _ = client1.SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, true /*this permits to use precomputation for shuffling*/, sum, count, whereQueryValues, pred, groupBy, data1, 1)
 	}(0)
 	go func() {
 		defer wg.Done()
@@ -206,30 +205,30 @@ func TestServiceAggr(t *testing.T) {
 
 	lib.EndParallelize(wg)
 
-	finalResult := make([]int64,0)
-	expectedResult := []int64{3,4,6}
+	finalResult := make([]int64, 0)
+	expectedResult := []int64{3, 4, 6}
 
-	finalResult = append(finalResult,lib.DecryptIntVector(secKey, &result.AggregatingAttributes)...)
-	finalResult = append(finalResult,lib.DecryptIntVector(secKey, &result1.AggregatingAttributes)...)
-	finalResult = append(finalResult,lib.DecryptIntVector(secKey, &result2.AggregatingAttributes)...)
+	finalResult = append(finalResult, lib.DecryptIntVector(secKey, &result.AggregatingAttributes)...)
+	finalResult = append(finalResult, lib.DecryptIntVector(secKey, &result1.AggregatingAttributes)...)
+	finalResult = append(finalResult, lib.DecryptIntVector(secKey, &result2.AggregatingAttributes)...)
 
-	assert.Equal(t,len(finalResult),len(expectedResult),"The size of the result is different")
+	assert.Equal(t, len(finalResult), len(expectedResult), "The size of the result is different")
 
 	var check bool
-	for ev := range expectedResult{
+	for ev := range expectedResult {
 		check = false
-		for fr := range finalResult{
-			if ev==fr{
+		for fr := range finalResult {
+			if ev == fr {
 				check = true
 			}
 		}
 
-		if !check{
+		if !check {
 			break
 		}
 	}
 
-	assert.True(t,check,"Wrong result")
+	assert.True(t, check, "Wrong result")
 
 	log.LLvl1(finalResult)
 }

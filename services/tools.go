@@ -48,7 +48,7 @@ func PrecomputeForShuffling(serverName, gobFile string, surveySecret abstract.Sc
 	return precomputeShuffle
 }
 
-// PrecomputationWritingForShuffling reads the precomputation data from the .gob file if it already exists or generates a new one
+// PrecomputationWritingForShuffling reads the precomputation data from a .gob file if it already exists or generates a new one
 func PrecomputationWritingForShuffling(appFlag bool, gobFile, serverName string, surveySecret abstract.Scalar, collectiveKey abstract.Point, lineSize int) []lib.CipherVectorScalar {
 	log.Lvl1(serverName, " precomputes for shuffling")
 	precomputeShuffle := []lib.CipherVectorScalar{}
@@ -75,7 +75,8 @@ func PrecomputationWritingForShuffling(appFlag bool, gobFile, serverName string,
 	return precomputeShuffle
 }
 
-func ReadPrecomputedFile(fileName string) []lib.CipherVectorScalar{
+// ReadPrecomputedFile reads the precomputation data from a .gob file
+func ReadPrecomputedFile(fileName string) []lib.CipherVectorScalar {
 	precomputeShuffle := []lib.CipherVectorScalar{}
 	if _, err := os.Stat(fileName); !os.IsNotExist(err) {
 		var encoded []lib.CipherVectorScalarBytes
