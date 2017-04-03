@@ -340,16 +340,16 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 		}
 
 		// waits for all other nodes to finish the tagging phase
-		counter := len(tn.Roster().List) - 1
-		for counter > 0 {
-			counter = counter - (<-castToSurvey(s.Survey.Get(string(conf.Data))).DDTChannel)
-		}
-
 		groupedData := survey.PullLocallyAggregatedResponses()
 		s.Survey.Put(string(target), survey)
 
 		pi.(*protocols.CollectiveAggregationProtocol).GroupedData = &groupedData
 		pi.(*protocols.CollectiveAggregationProtocol).Proofs = survey.Query.Proofs
+
+		counter := len(tn.Roster().List) - 1
+		for counter > 0 {
+			counter = counter - (<-castToSurvey(s.Survey.Get(string(conf.Data))).DDTChannel)
+		}
 
 	case protocols.DROProtocolName:
 		pi, err := protocols.NewShufflingProtocol(tn)
