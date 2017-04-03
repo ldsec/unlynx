@@ -66,6 +66,13 @@ type Survey struct {
 	Noise               lib.CipherText
 }
 
+func castToSurvey(object interface{}, err error) Survey {
+	if err != nil {
+		log.Fatal("Error reading map")
+	}
+	return object.(Survey)
+}
+
 // MsgTypes defines the Message Type ID for all the service's intra-messages.
 type MsgTypes struct {
 	msgSurveyDpQuery            network.MessageTypeID
@@ -733,11 +740,4 @@ func (s *Service) KeySwitchingPhase(targetSurvey SurveyID) error {
 	survey.PushQuerierKeyEncryptedResponses(keySwitchedAggregatedResponses)
 	s.Survey.Put(string(targetSurvey), survey)
 	return err
-}
-
-func castToSurvey(object interface{}, err error) Survey {
-	if err != nil {
-		log.Fatal("Error reading map")
-	}
-	return object.(Survey)
 }

@@ -129,7 +129,7 @@ func TestStoring(t *testing.T) {
 	filteredResponses := []lib.FilteredResponse{{GroupByEnc: testAggr2, AggregatingAttributes: testAggr2},
 		{GroupByEnc: testAggr1, AggregatingAttributes: testAggr2}, {GroupByEnc: testAggr2, AggregatingAttributes: testAggr1}}
 	storage.PushQuerierKeyEncryptedResponses(filteredResponses)
-	results := storage.PullDeliverableResults()
+	results := storage.PullDeliverableResults(false, lib.CipherText{})
 
 	assert.True(t, len(results) == 3)
 	assert.Empty(t, len(storage.DeliverableResults), 0)
