@@ -328,6 +328,7 @@ func (s *Store) PullCothorityAggregatedFilteredResponses(diffPri bool, noise Cip
 	aggregatedResults := make([]FilteredResponse, len(s.GroupedDeterministicFilteredResponses))
 	aggregatedGrps = make([]GroupingKey, len(s.GroupedDeterministicFilteredResponses))
 	count := 0
+
 	for i, value := range s.GroupedDeterministicFilteredResponses {
 		aggregatedResults[count] = value
 		aggregatedGrps[count] = i
