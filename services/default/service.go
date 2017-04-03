@@ -289,8 +289,11 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 	var pi onet.ProtocolInstance
 	var err error
 
+	log.LLvl1("1.")
 	target := SurveyID(string(conf.Data))
 	survey := castToSurvey(s.Survey.Get(string(conf.Data)))
+
+	log.LLvl1("2.")
 
 	switch tn.ProtocolName() {
 	case protocols.ShufflingProtocolName:
@@ -339,9 +342,13 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 			return nil, err
 		}
 
+		log.LLvl1("3")
+
 		// waits for all other nodes to finish the tagging phase
 		groupedData := survey.PullLocallyAggregatedResponses()
 		s.Survey.Put(string(target), survey)
+
+		log.LLvl1("4.")
 
 		pi.(*protocols.CollectiveAggregationProtocol).GroupedData = &groupedData
 		pi.(*protocols.CollectiveAggregationProtocol).Proofs = survey.Query.Proofs
@@ -350,6 +357,8 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 		for counter > 0 {
 			counter = counter - (<-castToSurvey(s.Survey.Get(string(conf.Data))).DDTChannel)
 		}
+
+		log.LLvl1("5")
 
 	case protocols.DROProtocolName:
 		pi, err := protocols.NewShufflingProtocol(tn)
