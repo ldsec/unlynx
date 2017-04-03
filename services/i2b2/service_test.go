@@ -142,7 +142,7 @@ func TestServiceAggr(t *testing.T) {
 
 	sum := []string{"sum1"}
 	count := false
-	whereQueryValues := []lib.WhereQueryAttribute{{"w1", *lib.EncryptInt(el.Aggregate, 1)}, {"w2", *lib.EncryptInt(el.Aggregate, 1)}, {"w3", *lib.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
+	whereQueryValues := []lib.WhereQueryAttribute{{Name: "w1", Value: *lib.EncryptInt(el.Aggregate, 1)}, {Name: "w2", Value: *lib.EncryptInt(el.Aggregate, 1)}, {Name: "w3", Value: *lib.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
 	pred := "(v0 == v1 || v2 == v3) && v4 == v5"
 	groupBy := []string{}
 
