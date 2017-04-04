@@ -105,8 +105,7 @@ type SurveyResultSharing struct {
 	SurveyGenID SurveyID
 	ID          ResultID
 	Result      lib.FilteredResponse
-	NbrDPs      int64
-	NbrDPsLocal int64
+	MapDPs      map[string]int64
 }
 
 // SurveyFinalResultsSharing represents a message containing survey ids and responses
@@ -256,7 +255,7 @@ func (s *Service) HandleSurveyDpQuery(sdq *SurveyDpQuery) (network.Message, onet
 		s.Survey.Put(string(sdq.SurveyID), survey)
 
 		// share intermediate results
-		err = services.SendISMOthers(s.ServiceProcessor, &sdq.Roster, &SurveyResultSharing{sdq.SurveyGenID, ResultID{SurveyID: sdq.SurveyID, ServerID: s.ServerIdentity().ID}, r1[0], services.CountDPs(sdq.MapDPs), nbrDPsLocal})
+		err = services.SendISMOthers(s.ServiceProcessor, &sdq.Roster, &SurveyResultSharing{sdq.SurveyGenID, ResultID{SurveyID: sdq.SurveyID, ServerID: s.ServerIdentity().ID}, r1[0], sdq.MapDPs})
 		if err != nil {
 			log.Error("broadcasting error ", err)
 		}
@@ -418,8 +417,8 @@ func (s *Service) HandleSurveyResultsSharing(resp *SurveyResultSharing) (network
 	//if it is the last survey result needed then unblock the channel
 	size := len(survey.IntermediateResults)
 
-	if int64(size) == resp.NbrDPs {
-		for i:= 0; i< int(resp.NbrDPsLocal); i++{
+	if int64(size) == services.CountDPs(resp.MapDPs) {
+		for i:= 0; i< int(resp.MapDPs[s.String()]); i++{
 			(castToSurvey(s.Survey.Get((string)(resp.SurveyGenID))).IntermediateChannel) <- 1
 		}
 	}
