@@ -13,6 +13,7 @@ import (
 	"os"
 	"reflect"
 	"strconv"
+	"sync"
 )
 
 // numberGrpAttr is the number of group attributes.
@@ -56,7 +57,7 @@ func TestServiceClearAttr(t *testing.T) {
 		nbrDPs[server.String()] = 2 // 2 DPs for each server
 	}
 
-	surveyID, err := client.SendSurveyCreationQuery(el, serviceDefault.SurveyID("testSurvey"), serviceDefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
+	surveyID, err := client.SendSurveyCreationQuery(el, serviceDefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
 
 	if err != nil {
 		t.Fatal("Service did not start.", err)
@@ -162,7 +163,7 @@ func TestServiceClearGrpEncWhereAttr(t *testing.T) {
 		nbrDPs[server.String()] = 2 // 2 DPs for each server
 	}
 
-	surveyID, err := client.SendSurveyCreationQuery(el, serviceDefault.SurveyID("testSurvey"), serviceDefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
+	surveyID, err := client.SendSurveyCreationQuery(el, serviceDefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
 
 	if err != nil {
 		t.Fatal("Service did not start.", err)
@@ -261,7 +262,7 @@ func TestServiceEncGrpClearWhereAttr(t *testing.T) {
 		nbrDPs[server.String()] = 2 // 2 DPs for each server
 	}
 
-	surveyID, err := client.SendSurveyCreationQuery(el, serviceDefault.SurveyID("testSurvey"), serviceDefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
+	surveyID, err := client.SendSurveyCreationQuery(el, serviceDefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
 
 	if err != nil {
 		t.Fatal("Service did not start.", err)
@@ -361,7 +362,7 @@ func TestServiceEncGrpAndWhereAttr(t *testing.T) {
 		nbrDPs[server.String()] = 2 // 2 DPs for each server
 	}
 
-	surveyID, err := client.SendSurveyCreationQuery(el, serviceDefault.SurveyID("testSurvey"), serviceDefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
+	surveyID, err := client.SendSurveyCreationQuery(el, serviceDefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
 
 	if err != nil {
 		t.Fatal("Service did not start.", err)
@@ -464,7 +465,7 @@ func TestServiceEverything(t *testing.T) {
 		nbrDPs[server.String()] = 2 // 2 DPs for each server
 	}
 
-	surveyID, err := client.SendSurveyCreationQuery(el, serviceDefault.SurveyID("testSurvey"), serviceDefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
+	surveyID, err := client.SendSurveyCreationQuery(el, serviceDefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
 
 	if err != nil {
 		t.Fatal("Service did not start.", err)
@@ -536,6 +537,7 @@ func TestServiceEverything(t *testing.T) {
 	}
 }
 
+//______________________________________________________________________________________________________________________
 // Only encrypted attributes with count
 func TestServiceEncGrpAndWhereAttrWithCount(t *testing.T) {
 	log.LLvl1("***************************************************************************************************")
@@ -562,7 +564,7 @@ func TestServiceEncGrpAndWhereAttrWithCount(t *testing.T) {
 		nbrDPs[server.String()] = 2 // 2 DPs for each server
 	}
 
-	surveyID, err := client.SendSurveyCreationQuery(el, serviceDefault.SurveyID("testSurvey"), serviceDefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
+	surveyID, err := client.SendSurveyCreationQuery(el, serviceDefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
 
 	if err != nil {
 		t.Fatal("Service did not start.", err)
@@ -637,6 +639,7 @@ func TestServiceEncGrpAndWhereAttrWithCount(t *testing.T) {
 // TEST BATCH 2 -> different number of DPs
 //______________________________________________________________________________________________________________________
 
+//______________________________________________________________________________________________________________________
 // Servers with no DPs
 func TestAllServersNoDPs(t *testing.T) {
 	log.LLvl1("***************************************************************************************************")
@@ -667,7 +670,7 @@ func TestAllServersNoDPs(t *testing.T) {
 		}
 	}
 
-	surveyID, err := client.SendSurveyCreationQuery(el, serviceDefault.SurveyID("testSurvey"), serviceDefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
+	surveyID, err := client.SendSurveyCreationQuery(el, serviceDefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
 
 	if err != nil {
 		t.Fatal("Service did not start.")
@@ -739,6 +742,7 @@ func TestAllServersNoDPs(t *testing.T) {
 	}
 }
 
+//______________________________________________________________________________________________________________________
 // Servers with a different number of DPs
 func TestAllServersRandomDPs(t *testing.T) {
 	log.LLvl1("***************************************************************************************************")
@@ -767,7 +771,7 @@ func TestAllServersRandomDPs(t *testing.T) {
 	predicate := "(v0 == v1 || v2 == v3) && v4 == v5"
 	groupBy := []string{"g1", "g2", "g3"}
 
-	surveyID, err := client.SendSurveyCreationQuery(el, serviceDefault.SurveyID("testSurvey"), serviceDefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
+	surveyID, err := client.SendSurveyCreationQuery(el, serviceDefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
 
 	if err != nil {
 		t.Fatal("Service did not start.")
@@ -846,6 +850,128 @@ func TestAllServersRandomDPs(t *testing.T) {
 		}
 	}
 
+}
+
+// TEST BATCH 3 -> Concurrent operations
+//______________________________________________________________________________________________________________________
+
+//______________________________________________________________________________________________________________________
+// Test multiple requests at the same time
+func TestConcurrentSurveys(t *testing.T) {
+	log.LLvl1("***************************************************************************************************")
+	os.Remove("pre_compute_multiplications.gob")
+	log.SetDebugVisible(2)
+	local := onet.NewLocalTest()
+	// generate 5 hosts, they don't connect, they process messages, and they
+	// don't register the tree or entitylist
+	_, el, _ := local.GenTree(5, true)
+	defer local.CloseAll()
+
+	var wg sync.WaitGroup
+	numberThreads := 4
+
+	for i := 0; i < numberThreads; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			// Send a request to the service
+			client := serviceDefault.NewMedcoClient(el.List[0], strconv.Itoa(0))
+
+			nbrDPs := make(map[string]int64)
+			//how many data providers for each server
+			nbrDPs[el.List[0].String()] = 0
+			nbrDPs[el.List[1].String()] = 2
+			nbrDPs[el.List[2].String()] = 1
+			nbrDPs[el.List[3].String()] = 3
+			nbrDPs[el.List[4].String()] = 4
+
+			sum := []string{"s1", "s2"}
+			count := false
+			whereQueryValues := []lib.WhereQueryAttribute{{Name: "w1", Value: *lib.EncryptInt(el.Aggregate, 1)}, {Name: "w2", Value: *lib.EncryptInt(el.Aggregate, 1)}, {Name: "w3", Value: *lib.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
+			predicate := "(v0 == v1 || v2 == v3) && v4 == v5"
+			groupBy := []string{"g1", "g2", "g3"}
+
+			surveyID, err := client.SendSurveyCreationQuery(el, serviceDefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
+
+			if err != nil {
+				t.Fatal("Service did not start.")
+			}
+
+			//save values in a map to verify them at the end
+			expectedResults := make(map[[numberGrpAttr]int64][]int64)
+			log.Lvl1("Sending response data... ")
+			dataHolder := make([]*serviceDefault.API, 10)
+			for i := 0; i < len(dataHolder); i++ {
+				if i < 2 {
+					dataHolder[i] = serviceDefault.NewMedcoClient(el.List[1], strconv.Itoa(i+1))
+				} else if i == 2 {
+					dataHolder[i] = serviceDefault.NewMedcoClient(el.List[2], strconv.Itoa(i+1))
+				} else if i < 6 {
+					dataHolder[i] = serviceDefault.NewMedcoClient(el.List[3], strconv.Itoa(i+1))
+				} else {
+					dataHolder[i] = serviceDefault.NewMedcoClient(el.List[4], strconv.Itoa(i+1))
+				}
+
+				grp := [numberGrpAttr]int64{}
+				aggr := make(map[string]int64, numberAttr)
+
+				grp[0] = int64(i % 4)
+				aggr["s"+strconv.Itoa(i+1)] = 3
+
+				//convert tab in slice (was a tab only for the test)
+				val := int64(1)
+				if i == 2 {
+					val = int64(2)
+				}
+				sliceWhere := make(map[string]int64, numberGrpAttr)
+				for j := range grp {
+					sliceWhere["w"+strconv.Itoa(j+1)] = int64(val)
+				}
+
+				sliceGrp := make(map[string]int64, numberGrpAttr)
+				for j := range grp {
+					sliceGrp["g"+strconv.Itoa(j+1)] = int64(j)
+				}
+				sliceGrp1 := make(map[string]int64, numberGrpAttr)
+				for j := range grp {
+					sliceGrp1["g"+strconv.Itoa(j+1)] = int64(j + 1)
+				}
+
+				aggr = make(map[string]int64, numberAttr)
+				for j := 0; j < numberAttr; j++ {
+					aggr["s"+strconv.Itoa(j+1)] = int64(j)
+				}
+
+				responses := []lib.DpClearResponse{{WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
+				dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
+			}
+			expectedResults[[3]int64{0, 1, 2}] = []int64{0, 9}
+			expectedResults[[3]int64{1, 2, 3}] = []int64{0, 9}
+			grp, aggr, err := client.SendSurveyResultsQuery(*surveyID)
+
+			if err != nil {
+				t.Fatal("Service could not output the results.")
+			}
+
+			log.Lvl1("Service output:")
+			var tabVerify [][]int64
+			tabVerify = *grp
+			for i := range tabVerify {
+				log.Lvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
+
+				//convert from slice to tab in order to test the values
+				grpTab := [numberGrpAttr]int64{}
+				for ind, v := range (tabVerify)[i] {
+					grpTab[ind] = v
+				}
+				data, ok := expectedResults[grpTab]
+				if !ok || !reflect.DeepEqual(data, (*aggr)[i]) {
+					t.Error("Not expected results, got ", (*aggr)[i], " when expected ", data)
+				}
+			}
+		}()
+	}
+	wg.Wait()
 }
 
 func TestFilteringFunc(t *testing.T) {

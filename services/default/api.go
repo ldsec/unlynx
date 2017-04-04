@@ -36,7 +36,7 @@ func NewMedcoClient(entryPoint *network.ServerIdentity, clientID string) *API {
 //______________________________________________________________________________________________________________________
 
 // SendSurveyCreationQuery creates a survey based on a set of entities (servers) and a survey description.
-func (c *API) SendSurveyCreationQuery(entities *onet.Roster, surveyGenID, surveyID SurveyID, clientPubKey abstract.Point, nbrDPs map[string]int64, proofs, appFlag bool, sum []string, count bool, where []lib.WhereQueryAttribute, predicate string, groupBy []string) (*SurveyID, error) {
+func (c *API) SendSurveyCreationQuery(entities *onet.Roster, surveyID SurveyID, clientPubKey abstract.Point, nbrDPs map[string]int64, proofs, appFlag bool, sum []string, count bool, where []lib.WhereQueryAttribute, predicate string, groupBy []string) (*SurveyID, error) {
 	log.Lvl1(c, "is creating a survey with id: ", surveyID)
 
 	var newSurveyID SurveyID

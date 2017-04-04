@@ -12,6 +12,7 @@ import (
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"
+	"time"
 )
 
 // ServiceName is the registered name for the medco service.
@@ -139,8 +140,6 @@ func NewService(c *onet.Context) onet.Service {
 	c.RegisterProcessor(newMedCoInstance, msgTypes.msgSurveyCreationQuery)
 	c.RegisterProcessor(newMedCoInstance, msgTypes.msgSurveyResultsQuery)
 	c.RegisterProcessor(newMedCoInstance, msgTypes.msgDDTfinished)
-
-	//newMedCoInstance.ProtocolRegister(DROProtocolName, newMedCoInstance.NewDROProtocol)
 	return newMedCoInstance
 }
 
@@ -214,7 +213,6 @@ func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.
 	})
 
 	log.Lvl1(s.ServerIdentity(), " created the survey ", recq.SurveyID)
-	log.Lvl1(s.ServerIdentity(), " has a list of ", s.Survey.Size(), " survey(s)")
 
 	// update surveyChannel so that the server knows he can start to process data from DPs
 	(castToSurvey(s.Survey.Get((string)(recq.SurveyID))).SurveyChannel) <- 1
@@ -223,7 +221,19 @@ func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.
 
 // HandleSurveyResponseQuery handles a survey answers submission by a subject.
 func (s *Service) HandleSurveyResponseQuery(resp *SurveyResponseQuery) (network.Message, onet.ClientError) {
-	survey := castToSurvey(s.Survey.Get((string)(resp.SurveyID)))
+	var el interface{}
+	el = nil
+	for el==nil{
+		el,_ = s.Survey.Get((string)(resp.SurveyID))
+
+		if(el!=nil){
+			break
+		}
+
+		time.Sleep(time.Millisecond * 100)
+	}
+
+	survey := el.(Survey)
 	if survey.Query.SurveyID == resp.SurveyID {
 		<-castToSurvey(s.Survey.Get((string)(resp.SurveyID))).SurveyChannel
 
@@ -289,11 +299,8 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 	var pi onet.ProtocolInstance
 	var err error
 
-	log.LLvl1("1.")
 	target := SurveyID(string(conf.Data))
-	log.LLvl1("2.")
 	survey := castToSurvey(s.Survey.Get(string(conf.Data)))
-	log.LLvl1("2.5")
 
 	switch tn.ProtocolName() {
 	case protocols.ShufflingProtocolName:
@@ -342,13 +349,9 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 			return nil, err
 		}
 
-		log.LLvl1("3")
-
 		// waits for all other nodes to finish the tagging phase
 		groupedData := survey.PullLocallyAggregatedResponses()
 		s.Survey.Put(string(target), survey)
-
-		log.LLvl1("4.")
 
 		pi.(*protocols.CollectiveAggregationProtocol).GroupedData = &groupedData
 		pi.(*protocols.CollectiveAggregationProtocol).Proofs = survey.Query.Proofs
@@ -357,8 +360,6 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 		for counter > 0 {
 			counter = counter - (<-castToSurvey(s.Survey.Get(string(conf.Data))).DDTChannel)
 		}
-
-		log.LLvl1("5")
 
 	case protocols.DROProtocolName:
 		pi, err := protocols.NewShufflingProtocol(tn)
