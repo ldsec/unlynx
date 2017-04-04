@@ -223,10 +223,10 @@ func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.
 func (s *Service) HandleSurveyResponseQuery(resp *SurveyResponseQuery) (network.Message, onet.ClientError) {
 	var el interface{}
 	el = nil
-	for el==nil{
-		el,_ = s.Survey.Get((string)(resp.SurveyID))
+	for el == nil {
+		el, _ = s.Survey.Get((string)(resp.SurveyID))
 
-		if(el!=nil){
+		if el != nil {
 			break
 		}
 

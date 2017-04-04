@@ -106,6 +106,7 @@ type SurveyResultSharing struct {
 	ID          ResultID
 	Result      lib.FilteredResponse
 	NbrDPs      int64
+	NbrDPsLocal int64
 }
 
 // SurveyFinalResultsSharing represents a message containing survey ids and responses
@@ -205,6 +206,7 @@ func (s *Service) HandleSurveyDpQuery(sdq *SurveyDpQuery) (network.Message, onet
 
 	// if this server is the one receiving the query from the client
 	if !sdq.IntraMessage {
+		nbrDPsLocal := sdq.MapDPs[s.String()]
 		sdq.IntraMessage = true
 		sdq.MessageSource = s.ServerIdentity()
 
@@ -254,7 +256,7 @@ func (s *Service) HandleSurveyDpQuery(sdq *SurveyDpQuery) (network.Message, onet
 		s.Survey.Put(string(sdq.SurveyID), survey)
 
 		// share intermediate results
-		err = services.SendISMOthers(s.ServiceProcessor, &sdq.Roster, &SurveyResultSharing{sdq.SurveyGenID, ResultID{SurveyID: sdq.SurveyID, ServerID: s.ServerIdentity().ID}, r1[0], services.CountDPs(sdq.MapDPs)})
+		err = services.SendISMOthers(s.ServiceProcessor, &sdq.Roster, &SurveyResultSharing{sdq.SurveyGenID, ResultID{SurveyID: sdq.SurveyID, ServerID: s.ServerIdentity().ID}, r1[0], services.CountDPs(sdq.MapDPs), nbrDPsLocal})
 		if err != nil {
 			log.Error("broadcasting error ", err)
 		}
@@ -281,21 +283,30 @@ func (s *Service) HandleSurveyDpQuery(sdq *SurveyDpQuery) (network.Message, onet
 		survey = castToSurvey(s.Survey.Get((string)(sdq.SurveyGenID)))
 		size := len(survey.IntermediateResults)
 
-		s.Mutex.Unlock()
-
 		if int64(size) == services.CountDPs(sdq.MapDPs) {
-			(castToSurvey(s.Survey.Get((string)(sdq.SurveyGenID))).IntermediateChannel) <- 1
+			for i:= 0; i< int(nbrDPsLocal); i++ {
+				(castToSurvey(s.Survey.Get((string)(sdq.SurveyGenID))).IntermediateChannel) <- 1
+			}
 		}
+		s.Mutex.Unlock()
 
 		<-castToSurvey(s.Survey.Get((string)(sdq.SurveyGenID))).IntermediateChannel
 
 		log.LLvl1(s.ServerIdentity(), " END ROUND 1")
 
-		// if the server is the root... FirstTime ensures it only executes this piece of code once (no matter the number of DPs)
+		var localCheck bool = false
+		s.Mutex.Lock()
 		survey = castToSurvey(s.Survey.Get((string)(sdq.SurveyGenID)))
-		if s.ServerIdentity().ID == sdq.Roster.List[0].ID && survey.FirstTime {
+		if survey.FirstTime {
 			survey.FirstTime = false
+			localCheck = true
+		}
+		s.Survey.Put((string)(sdq.SurveyGenID), survey)
+		s.Mutex.Unlock()
 
+
+		// if the server is the root... FirstTime ensures it only executes this piece of code once (no matter the number of DPs)
+		if s.ServerIdentity().ID == sdq.Roster.List[0].ID && localCheck {
 			aux := castToSurvey(s.Survey.Get((string)(sdq.SurveyID)))
 			survey.Query = aux.Query
 			survey.Store = aux.Store
@@ -341,7 +352,7 @@ func (s *Service) HandleSurveyDpQuery(sdq *SurveyDpQuery) (network.Message, onet
 			survey.FinalResults = finalResults
 			s.Survey.Put((string)(sdq.SurveyGenID), survey)
 
-			for i := int64(0); i < sdq.MapDPs[s.ServerIdentity().String()]; i++ {
+			for i := int64(0); i < sdq.MapDPs[s.String()]; i++ {
 				(castToSurvey(s.Survey.Get((string)(sdq.SurveyGenID))).FinalChannel) <- 1
 			}
 		}
@@ -380,6 +391,7 @@ func (s *Service) HandleSurveyDpQuery(sdq *SurveyDpQuery) (network.Message, onet
 
 // HandleSurveyResultsSharing shares the intermediate results (Round 1)
 func (s *Service) HandleSurveyResultsSharing(resp *SurveyResultSharing) (network.Message, onet.ClientError) {
+	defer s.Mutex.Unlock()
 	s.Mutex.Lock()
 	cpy, err := s.Survey.Get((string)(resp.SurveyGenID))
 
@@ -405,10 +417,11 @@ func (s *Service) HandleSurveyResultsSharing(resp *SurveyResultSharing) (network
 
 	//if it is the last survey result needed then unblock the channel
 	size := len(survey.IntermediateResults)
-	s.Mutex.Unlock()
 
 	if int64(size) == resp.NbrDPs {
-		(castToSurvey(s.Survey.Get((string)(resp.SurveyGenID))).IntermediateChannel) <- 1
+		for i:= 0; i< int(resp.NbrDPsLocal); i++{
+			(castToSurvey(s.Survey.Get((string)(resp.SurveyGenID))).IntermediateChannel) <- 1
+		}
 	}
 
 	return &ServiceResult{}, nil
