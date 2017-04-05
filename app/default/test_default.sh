@@ -9,16 +9,15 @@ DBG_CLIENT=1
 BUILDDIR=$(pwd)
 STATICDIR=test
 
-. lib/test/libtest.sh
+. $GOPATH/src/gopkg.in/dedis/onet.v1/app/libtest.sh
 
 main(){
     startTest
-    build
     test Build
     test ServerCfg
-    test RunMedco
-    clearSrv
-    stopTest
+    #test RunMedco
+    #clearSrv
+    #stopTest
 }
 
 
@@ -41,15 +40,15 @@ build(){
     echo "Building in $DIR"
 
     if [ ! -x medco ]; then
-        go build -o medco -a $BUILDDIR/medco/*go
+        go build -o medco -a $BUILDDIR/*go
     fi
 
     for n in $(seq $NBR); do
         srv=srv$n
         rm -rf $srv
         mkdir $srv
-        cp $BUILDDIR/medco/medco_test_data.txt $srv
-        cp $BUILDDIR/medco/pre_compute_multiplications.gob $srv
+        cp $BUILDDIR/medco_test_data.txt $srv
+        # cp $BUILDDIR/pre_compute_multiplications.gob $srv
     done
 }
 
@@ -58,13 +57,13 @@ build(){
 testServerCfg(){
     for n in $(seq $NBR); do
         runSrvCfg $n
-        pkill medco
-        testFile srv$n/config.toml
+        pkill -9 medco
+        testFile srv$n/private.toml
     done
 }
 
 runSrvCfg(){
-    echo -e "127.0.0.1:200$1\n$(pwd)/srv$1\n" | ./medco server setup > $OUT
+    echo -e "127.0.0.1:200$1\nMedco $1\n$(pwd)/srv$1\n" | ./medco server setup > $OUT
 }
 
 

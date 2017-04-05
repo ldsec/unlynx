@@ -4,14 +4,14 @@ import (
 	"os"
 
 	"github.com/btcsuite/goleveldb/leveldb/errors"
-	"gopkg.in/dedis/onet.v1/app"
 	"gopkg.in/codegangsta/cli.v1"
-	"github.com/dedis/cothority/sda"
-	"github.com/dedis/cothority/log"
+	"gopkg.in/dedis/onet.v1"
+	"gopkg.in/dedis/onet.v1/app"
+	"gopkg.in/dedis/onet.v1/log"
 )
 
 // BEGIN CLIENT: QUERIER ----------
-func startQuery(el *sda.Roster, proofs bool) {
+func startQuery(el *onet.Roster, proofs bool) {
 	/*client := medco.NewMedcoClient(el.List[0])
 
 	// Generate Survey Data
@@ -46,11 +46,11 @@ func runMedco(c *cli.Context) error {
 	proofs := c.Bool("proofs")
 
 	// query parameters
-	sum:=c.StringSlice("sum")
-	count:=c.Bool("count")
-	whereQueryValues:=c.StringSlice("where")
-	predicate:=c.String("predicate")
-	groupBy:=c.StringSlice("groupBy")
+	sum := c.StringSlice("sum")
+	count := c.Bool("count")
+	whereQueryValues := c.StringSlice("where")
+	predicate := c.String("predicate")
+	groupBy := c.StringSlice("groupBy")
 
 	log.LLvl1(sum, count, whereQueryValues, predicate, groupBy)
 

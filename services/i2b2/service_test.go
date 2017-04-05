@@ -10,8 +10,8 @@ import (
 	"gopkg.in/dedis/onet.v1/network"
 	"os"
 	"strconv"
-	"testing"
 	"sync"
+	"testing"
 )
 
 // TEST BATCH 1 -> normal querying mode
@@ -393,7 +393,7 @@ func TestServiceDifferentQuery(t *testing.T) {
 	//For the fourth server
 	client5 := serviceI2B2.NewMedcoClient(el.List[3], strconv.Itoa(4))
 
-	sum := []string{"s1","s2","count"}
+	sum := []string{"s1", "s2", "count"}
 	count := true
 	whereQueryValues := []lib.WhereQueryAttribute{{Name: "w1", Value: *lib.EncryptInt(el.Aggregate, 1)}} // v1
 	pred := "v0 == v1"
@@ -476,7 +476,7 @@ func TestServiceDifferentQuery(t *testing.T) {
 	lib.EndParallelize(wg)
 
 	finalResult := make([]int64, 0)
-	expectedResult := []int64{2, 2, 2, 4, 4, 4, 4, 4, 4, 4, 4 ,4 ,2, 2, 2, 3, 3, 3}
+	expectedResult := []int64{2, 2, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 2, 2, 2, 3, 3, 3}
 
 	finalResult = append(finalResult, lib.DecryptIntVector(secKey, &result.AggregatingAttributes)...)
 	finalResult = append(finalResult, lib.DecryptIntVector(secKey, &result1.AggregatingAttributes)...)
@@ -1002,7 +1002,7 @@ func TestServiceDifferentQueryAggr(t *testing.T) {
 	//For the fourth server
 	client5 := serviceI2B2.NewMedcoClient(el.List[3], strconv.Itoa(4))
 
-	sum := []string{"s1","s2","count"}
+	sum := []string{"s1", "s2", "count"}
 	count := true
 	whereQueryValues := []lib.WhereQueryAttribute{{Name: "w1", Value: *lib.EncryptInt(el.Aggregate, 1)}} // v1
 	pred := "v0 == v1"
@@ -1085,7 +1085,7 @@ func TestServiceDifferentQueryAggr(t *testing.T) {
 	lib.EndParallelize(wg)
 
 	finalResult := make([]int64, 0)
-	expectedResult := []int64{19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19 ,19 ,19, 19, 19, 19, 19, 19}
+	expectedResult := []int64{19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19}
 
 	finalResult = append(finalResult, lib.DecryptIntVector(secKey, &result.AggregatingAttributes)...)
 	finalResult = append(finalResult, lib.DecryptIntVector(secKey, &result1.AggregatingAttributes)...)

@@ -25,7 +25,7 @@ const (
 	optionGroupFile      = "file"
 	optionGroupFileShort = "f"
 
-	optionProofs      = "proofs"
+	optionProofs = "proofs"
 
 	// query flags
 

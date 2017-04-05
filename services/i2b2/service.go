@@ -283,7 +283,7 @@ func (s *Service) HandleSurveyDpQuery(sdq *SurveyDpQuery) (network.Message, onet
 		size := len(survey.IntermediateResults)
 
 		if int64(size) == services.CountDPs(sdq.MapDPs) {
-			for i:= 0; i< int(nbrDPsLocal); i++ {
+			for i := 0; i < int(nbrDPsLocal); i++ {
 				(castToSurvey(s.Survey.Get((string)(sdq.SurveyGenID))).IntermediateChannel) <- 1
 			}
 		}
@@ -293,7 +293,7 @@ func (s *Service) HandleSurveyDpQuery(sdq *SurveyDpQuery) (network.Message, onet
 
 		log.LLvl1(s.ServerIdentity(), " END ROUND 1")
 
-		var localCheck bool = false
+		localCheck := false
 		s.Mutex.Lock()
 		survey = castToSurvey(s.Survey.Get((string)(sdq.SurveyGenID)))
 		if survey.FirstTime {
@@ -302,7 +302,6 @@ func (s *Service) HandleSurveyDpQuery(sdq *SurveyDpQuery) (network.Message, onet
 		}
 		s.Survey.Put((string)(sdq.SurveyGenID), survey)
 		s.Mutex.Unlock()
-
 
 		// if the server is the root... FirstTime ensures it only executes this piece of code once (no matter the number of DPs)
 		if s.ServerIdentity().ID == sdq.Roster.List[0].ID && localCheck {
@@ -418,7 +417,7 @@ func (s *Service) HandleSurveyResultsSharing(resp *SurveyResultSharing) (network
 	size := len(survey.IntermediateResults)
 
 	if int64(size) == services.CountDPs(resp.MapDPs) {
-		for i:= 0; i< int(resp.MapDPs[s.String()]); i++{
+		for i := 0; i < int(resp.MapDPs[s.String()]); i++ {
 			(castToSurvey(s.Survey.Get((string)(resp.SurveyGenID))).IntermediateChannel) <- 1
 		}
 	}
