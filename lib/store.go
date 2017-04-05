@@ -321,12 +321,10 @@ func (s *Store) HasNextAggregatedFilteredResponses() bool {
 	return len(s.GroupedDeterministicFilteredResponses) > 0
 }
 
-var aggregatedGrps []GroupingKey
-
 // PullCothorityAggregatedFilteredResponses returns the local results of the grouping.
 func (s *Store) PullCothorityAggregatedFilteredResponses(diffPri bool, noise CipherText) []FilteredResponse {
 	aggregatedResults := make([]FilteredResponse, len(s.GroupedDeterministicFilteredResponses))
-	aggregatedGrps = make([]GroupingKey, len(s.GroupedDeterministicFilteredResponses))
+	aggregatedGrps := make([]GroupingKey, len(s.GroupedDeterministicFilteredResponses))
 	count := 0
 
 	for i, value := range s.GroupedDeterministicFilteredResponses {
