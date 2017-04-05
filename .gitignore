@@ -41,3 +41,5 @@ simul/deter.toml
 simul/server_list
 simul/platform/mininet/build/
 simul/platform/mininet/deploy/
+
+app/default/medco_test_data.txt
