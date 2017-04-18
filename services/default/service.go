@@ -4,6 +4,7 @@ import (
 	"github.com/JoaoAndreSa/MedCo/lib"
 	"github.com/JoaoAndreSa/MedCo/protocols"
 	"github.com/JoaoAndreSa/MedCo/services"
+	"github.com/JoaoAndreSa/MedCo/services/data"
 	"github.com/btcsuite/goleveldb/leveldb/errors"
 	"github.com/fanliao/go-concurrentMap"
 	"github.com/satori/go.uuid"
@@ -13,6 +14,7 @@ import (
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"
 	"time"
+	"strconv"
 )
 
 // ServiceName is the registered name for the medco service.
@@ -214,6 +216,22 @@ func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.
 
 	log.Lvl1(s.ServerIdentity(), " created the survey ", recq.SurveyID)
 
+	// if it is a app download the data from the test file
+	if recq.AppFlag{
+		index := 0
+		for index=0; index<len(recq.Roster.List); index++{
+			if recq.Roster.List[index].String() == s.ServerIdentity().String(){
+				break
+			}
+		}
+		test_data := data.ReadDataFromFile("medco_test_data.txt")
+		resp := EncryptDataToSurvey(s.ServerIdentity().String(),recq.SurveyID,test_data[strconv.Itoa(index)],recq.Roster.Aggregate,1,recq.Count)
+		s.PushData(resp, recq.Proofs)
+
+		//number of data providers who have already pushed the data
+		(castToSurvey(s.Survey.Get((string)(resp.SurveyID))).DpChannel) <- 1
+	}
+
 	// update surveyChannel so that the server knows he can start to process data from DPs
 	(castToSurvey(s.Survey.Get((string)(recq.SurveyID))).SurveyChannel) <- 1
 	return &ServiceState{recq.SurveyID}, nil
@@ -238,7 +256,6 @@ func (s *Service) HandleSurveyResponseQuery(resp *SurveyResponseQuery) (network.
 		<-castToSurvey(s.Survey.Get((string)(resp.SurveyID))).SurveyChannel
 
 		s.PushData(resp, survey.Query.Proofs)
-		s.Survey.Put(string(resp.SurveyID), survey)
 
 		//unblock the channel to allow another DP to send its data
 		(castToSurvey(s.Survey.Get((string)(resp.SurveyID))).SurveyChannel) <- 1
@@ -422,6 +439,9 @@ func (s *Service) StartProtocol(name string, targetSurvey SurveyID) (onet.Protoc
 	conf := onet.GenericConfig{Data: []byte(string(targetSurvey))}
 
 	pi, err := s.NewProtocol(tn, &conf)
+	if err != nil{
+		log.Fatal("Error running"+name)
+	}
 
 	s.RegisterProtocolInstance(pi)
 	go pi.Dispatch()

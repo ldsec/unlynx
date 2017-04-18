@@ -41,7 +41,7 @@ const (
 	optionPredicate      = "predicate"
 	optionPredicateShort = "p"
 
-	optionGroupBy      = "group"
+	optionGroupBy      = "groupBy"
 	optionGroupByShort = "g"
 )
 
@@ -72,15 +72,15 @@ func main() {
 
 		// query flags
 
-		cli.StringSliceFlag{
+		cli.StringFlag{
 			Name:  optionSum + ", " + optionSumShort,
 			Usage: "SELECT s1, s2 -> {s1, s2}",
 		},
 		cli.BoolFlag{
 			Name:  optionCount + ", " + optionCountShort,
-			Usage: "SELECT COUNT(s1)",
+			Usage: "Toggle count query",
 		},
-		cli.StringSliceFlag{
+		cli.StringFlag{
 			Name:  optionWhere + ", " + optionWhereShort,
 			Usage: "WHERE w1 ... (attributes) -> {w1, 1, w2, 27}",
 		},
@@ -88,9 +88,9 @@ func main() {
 			Name:  optionPredicate + ", " + optionPredicateShort,
 			Usage: "WHERE x AND y OR z (predicate) -> (v0 == v1 || v2 == v3) && v4 == v5",
 		},
-		cli.StringSliceFlag{
+		cli.StringFlag{
 			Name:  optionGroupBy + ", " + optionGroupByShort,
-			Usage: "GROUP BY s1, s2 -> {s1, s2}",
+			Usage: "GROUP BY g1, g2, g3 -> {g1, g2, g3}",
 		},
 	}
 

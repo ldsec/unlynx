@@ -15,9 +15,8 @@ main(){
     startTest
     test Build
     test ServerCfg
-    #test RunMedco
-    #clearSrv
-    #stopTest
+    test RunMedco
+    clearSrv
 }
 
 
@@ -43,7 +42,7 @@ build(){
         go build -o medco -a $BUILDDIR/*go
     fi
 
-    for n in $(seq $NBR); do
+    for ((n=1; n <= $NBR*2; n+=2)) do
         srv=srv$n
         rm -rf $srv
         mkdir $srv
@@ -55,7 +54,7 @@ build(){
 
 #------- SERVER CONFIGURATION --------#
 testServerCfg(){
-    for n in $(seq $NBR); do
+    for ((n=1; n <= $NBR*2; n+=2)) do
         runSrvCfg $n
         pkill -9 medco
         testFile srv$n/private.toml
@@ -76,14 +75,14 @@ testRunMedco(){
 
 setupServers(){
     rm -f group.toml
-    for n in $(seq $NBR); do
+    for ((n=1; n <= $NBR*2; n+=2)) do
         srv=srv$n
         rm -f $srv/*
         runSrvCfg $n
-        tail -n 4 $srv/group.toml >> group.toml
+        tail -n 4 $srv/public.toml >> group.toml
 
-        cp $BUILDDIR/medco/medco_test_data.txt $srv
-        cp $BUILDDIR/medco/pre_compute_multiplications.gob $srv
+        cp $BUILDDIR/medco_test_data.txt $srv
+        #cp $BUILDDIR/medco/pre_compute_multiplications.gob $srv
 
         runSrv $n &
     done
@@ -93,7 +92,7 @@ setupServers(){
 
 runSrv(){
     cd srv$1
-    ../medco -d $DBG_SRV server -c config.toml
+    ../medco -d $DBG_SRV server -c private.toml
     cd ..
 }
 
@@ -101,14 +100,13 @@ runCl(){
     G=group.toml
     shift
     echo "Running Client with $G $@"
-    ./medco -d $DBG_CLIENT $@ -g $G
+    ./medco -d $DBG_CLIENT $@ -f $G -s "{s0, s1}" -w "{w0, 1, w1, 1}" -p "(v0 == v1 && v2 == v3)" -g "{g0, g1, g2}"
 }
 
 
 #------- CLEAR SERVERS --------#
 clearSrv(){
-    #rm -rf $BUILDDIR/$STATICDIR
-    pkill medco
+    pkill -9 medco
 }
 
 

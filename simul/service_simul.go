@@ -119,7 +119,7 @@ func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
 			groupBy[i] = "g" + strconv.Itoa(i)
 		}
 
-		surveyID, err := client.SendSurveyCreationQuery(el, serviceDefault.SurveyID("testSurvey"), serviceDefault.SurveyID(""), nil, nbrDPs, sim.Proofs, false, sum, count, whereQueryValues, predicate, groupBy)
+		surveyID, err := client.SendSurveyCreationQuery(el, serviceDefault.SurveyID(""), nil, nbrDPs, sim.Proofs, false, sum, count, whereQueryValues, predicate, groupBy)
 
 		if err != nil {
 			log.Fatal("Service did not start.")
@@ -128,6 +128,9 @@ func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
 		// RandomGroups (true/false) is to respectively generate random or non random entries
 		testData := data.GenerateData(int64(sim.NbrDPs), sim.NbrResponsesTot, sim.NbrResponsesFiltered, sim.NbrGroupsClear, sim.NbrGroupsEnc,
 			sim.NbrWhereClear, sim.NbrWhereEncrypted, sim.NbrAggrClear, sim.NbrAggrEncrypted, sim.NbrGroupAttributes, sim.RandomGroups)
+
+		log.LLvl1("Saving test data...")
+		data.WriteDataToFile("medco_test_data.txt",testData)
 
 		/// START SERVICE PROTOCOL
 		if lib.TIME {
