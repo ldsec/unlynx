@@ -130,7 +130,7 @@ func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
 			sim.NbrWhereClear, sim.NbrWhereEncrypted, sim.NbrAggrClear, sim.NbrAggrEncrypted, sim.NbrGroupAttributes, sim.RandomGroups)
 
 		log.LLvl1("Saving test data...")
-		data.WriteDataToFile("medco_test_data.txt",testData)
+		data.WriteDataToFile("medco_test_data.txt", testData)
 
 		/// START SERVICE PROTOCOL
 		if lib.TIME {
