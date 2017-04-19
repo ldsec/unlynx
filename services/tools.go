@@ -108,7 +108,6 @@ func FilterResponses(pred string, whereQueryValues []lib.WhereQueryAttributeTagg
 			}
 
 		}
-
 		keep, err := expression.Evaluate(parameters)
 		if keep.(bool) {
 			result = append(result, lib.FilteredResponseDet{DetTagGroupBy: v.DetTagGroupBy, Fr: lib.FilteredResponse{GroupByEnc: v.PR.GroupByEnc, AggregatingAttributes: v.PR.AggregatingAttributes}})
