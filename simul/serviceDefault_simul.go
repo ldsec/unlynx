@@ -27,9 +27,9 @@ type SimulationMedCo struct {
 	NbrResponsesFiltered int64   //number of entries to be filtered (the ones we keep)
 	NbrGroupsClear       int64   //number of non-sensitive (clear) grouping attributes
 	NbrGroupsEnc         int64   //number of sensitive (encrypted) grouping attributes
+	NbrGroupAttributes   []int64 //number of different groups inside each grouping attribute
 	NbrWhereClear        int64   //number of non-sensitive (clear) where attributes
 	NbrWhereEncrypted    int64   //number of sensitive (encrypted) where attributes
-	NbrGroupAttributes   []int64 //number of different groups inside each grouping attribute
 	NbrAggrClear         int64   //number of non-sensitive (clear) aggregating attributes
 	NbrAggrEncrypted     int64   //number of sensitive (encrypted) aggregating attributes
 	Count                bool    //toggle count queries
@@ -129,8 +129,8 @@ func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
 		testData := data.GenerateData(int64(sim.NbrDPs), sim.NbrResponsesTot, sim.NbrResponsesFiltered, sim.NbrGroupsClear, sim.NbrGroupsEnc,
 			sim.NbrWhereClear, sim.NbrWhereEncrypted, sim.NbrAggrClear, sim.NbrAggrEncrypted, sim.NbrGroupAttributes, sim.RandomGroups)
 
-		log.LLvl1("Saving test data...")
-		data.WriteDataToFile("medco_test_data.txt", testData)
+		/*log.LLvl1("Saving test data...")
+		data.WriteDataToFile("medco_test_data.txt", testData)*/
 
 		/// START SERVICE PROTOCOL
 		if lib.TIME {
@@ -147,12 +147,12 @@ func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
 			if lib.PARALLELIZE {
 				go func(i int, client *serviceDefault.API) {
 					mutexDH.Lock()
-					data := testData[strconv.Itoa(i)]
+					dataCollection := testData[strconv.Itoa(i)]
 					server := el.List[i%nbrHosts]
 					mutexDH.Unlock()
 
 					client = serviceDefault.NewMedcoClient(server, strconv.Itoa(i+1))
-					client.SendSurveyResponseQuery(*surveyID, data, el.Aggregate, sim.DataRepetitions, count)
+					client.SendSurveyResponseQuery(*surveyID, dataCollection, el.Aggregate, sim.DataRepetitions, count)
 					defer wg.Done()
 				}(i, client)
 			} else {

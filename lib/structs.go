@@ -443,6 +443,34 @@ func (dr *DpResponse) FromDpResponseToSend(dprts DpResponseToSend) {
 	}
 }
 
+// joinAttributes joins clear and encrypted attributes into one encrypted container (CipherVector)
+func joinAttributes(clear, enc map[string]int64, identifier string, encryptionKey abstract.Point) CipherVector{
+	clearContainer := ConvertMapToData(clear,identifier,0)
+	encContainer := ConvertMapToData(enc,identifier,len(clear))
+
+	result := make(CipherVector,0)
+
+	for i:=0; i<len(clearContainer); i++{
+		result = append(result,*EncryptInt(encryptionKey, int64(clearContainer[i])))
+	}
+	for i:=0; i<len(encContainer); i++{
+		result = append(result,*EncryptInt(encryptionKey, int64(encContainer[i])))
+	}
+
+	return result
+}
+
+// FromDpClearResponseToProcess converts a DpClearResponse struct to a ProcessResponse struct
+func (dcr *DpClearResponse) FromDpClearResponseToProcess(encryptionKey abstract.Point) ProcessResponse {
+	result := ProcessResponse{}
+
+	result.AggregatingAttributes = joinAttributes(dcr.AggregatingAttributesClear,dcr.AggregatingAttributesEnc,"s",encryptionKey)
+	result.WhereEnc = joinAttributes(dcr.WhereClear,dcr.WhereEnc,"w",encryptionKey)
+	result.GroupByEnc = joinAttributes(dcr.GroupByClear,dcr.GroupByEnc,"g",encryptionKey)
+
+	return result
+}
+
 // MapBytesToMapCipherText transform objects in a map from bytes to ciphertexts
 func MapBytesToMapCipherText(mapBytes map[string][]byte) map[string]CipherText {
 	result := make(map[string]CipherText)
