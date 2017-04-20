@@ -12,7 +12,7 @@ import (
 // API represents a client with the server to which he is connected and its public/private key pair.
 type API struct {
 	*onet.Client
-	clientID   string
+	ClientID   string
 	entryPoint *network.ServerIdentity
 	public     abstract.Point
 	private    abstract.Scalar
@@ -24,7 +24,7 @@ func NewMedcoClient(entryPoint *network.ServerIdentity, clientID string) *API {
 
 	newClient := &API{
 		Client:     onet.NewClient(ServiceName),
-		clientID:   clientID,
+		ClientID:   clientID,
 		entryPoint: entryPoint,
 		public:     keys.Public,
 		private:    keys.Secret,
@@ -37,7 +37,7 @@ func NewMedcoClient(entryPoint *network.ServerIdentity, clientID string) *API {
 
 // SendSurveyDpQuery creates a survey based on a set of entities (servers) and a survey description.
 func (c *API) SendSurveyDpQuery(entities *onet.Roster, surveyGenID, surveyID SurveyID, clientPubKey abstract.Point, nbrDPs map[string]int64, proofs, appFlag bool, sum []string, count bool, where []lib.WhereQueryAttribute, predicate string, groupBy []string, data []lib.ProcessResponse, mode int64) (*SurveyID, lib.FilteredResponse, error) {
-	log.Lvl1("Client", c.clientID, "is creating a survey with General ID:", surveyGenID)
+	log.Lvl1("Client", c.ClientID, "is creating a survey with General ID:", surveyGenID)
 
 	var newSurveyID SurveyID
 

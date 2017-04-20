@@ -205,6 +205,9 @@ func (s *Service) HandleSurveyDpQuery(sdq *SurveyDpQuery) (network.Message, onet
 
 	// if this server is the one receiving the query from the client
 	if !sdq.IntraMessage {
+		log.LLvl1("1.",s.ServerIdentity())
+
+
 		nbrDPsLocal := sdq.MapDPs[s.String()]
 		sdq.IntraMessage = true
 		sdq.MessageSource = s.ServerIdentity()

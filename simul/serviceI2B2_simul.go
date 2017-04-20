@@ -14,13 +14,6 @@ import (
 	"sync"
 )
 
-// API represents a client with the server to which he is connected and its public/private key pair.
-type Client struct {
-	*serviceI2B2.API
-	Public     abstract.Point
-	Private    abstract.Scalar
-}
-
 //Defines the simulation for the service-medCo to be run with cothority/simul.
 func init() {
 	onet.SimulationRegister("ServiceMedCoI2B2", NewSimulationMedCoI2B2)
@@ -33,9 +26,6 @@ type SimulationMedCoI2B2 struct {
 	NbrDPs               int     //number of clients (or in other words data holders)
 	NbrResponsesTot      int64   //number of survey entries (ClientClearResponse) per host
 	NbrResponsesFiltered int64   //number of entries to be filtered (the ones we keep)
-	NbrGroupsClear       int64   //number of non-sensitive (clear) grouping attributes
-	NbrGroupsEnc         int64   //number of sensitive (encrypted) grouping attributes
-	NbrGroupAttributes   []int64 //number of different groups inside each grouping attribute
 	NbrWhereClear        int64   //number of non-sensitive (clear) where attributes
 	NbrWhereEncrypted    int64   //number of sensitive (encrypted) where attributes
 	NbrAggrClear         int64   //number of non-sensitive (clear) aggregating attributes
@@ -44,6 +34,7 @@ type SimulationMedCoI2B2 struct {
 	RandomGroups         bool    //generate data randomly or num entries == num groups (deterministically)
 	DataRepetitions      int     //repeat the number of entries x times (e.g. 1 no repetition; 1000 repetitions)
 	Proofs               bool    //with proofs of correctness everywhere
+	QueryMode	     int64   //define the query mode (1 result per data provider or one single aggregated result)
 }
 
 // NewSimulationMedCoI2B2 constructs a full MedCoI2B2 service simulation.
@@ -86,17 +77,21 @@ func (sim *SimulationMedCoI2B2) Run(config *onet.SimulationConfig) error {
 	}
 	el := (*config.Tree).Roster
 
+	// querier public and private keys
+	secKey := network.Suite.Scalar().Pick(random.Stream)
+	pubKey := network.Suite.Point().Mul(network.Suite.Point().Base(), secKey)
+
+
+
 	for round := 0; round < sim.Rounds; round++ {
 		log.Lvl1("Starting round", round, el)
 
 		nbrDPs := make(map[string]int64)
-		clients := make([]Client,0)
+		clients := make([]*serviceI2B2.API,0)
 		for i:= 0; i<sim.NbrDPs; i++ {
 			index := i%sim.Hosts
 
-			secKey := network.Suite.Scalar().Pick(random.Stream)
-
-			clients = append(clients,Client{API: serviceI2B2.NewMedcoClient(el.List[index], strconv.Itoa(i%sim.NbrDPs)), Public: network.Suite.Point().Mul(network.Suite.Point().Base(), secKey), Private: secKey})
+			clients = append(clients,serviceI2B2.NewMedcoClient(el.List[index], strconv.Itoa(i%sim.NbrDPs)))
 
 			if _, exists := nbrDPs[el.List[index].String()]; exists {
 				current := nbrDPs[el.List[index].String()]
@@ -130,45 +125,36 @@ func (sim *SimulationMedCoI2B2) Run(config *onet.SimulationConfig) error {
 		// remove the last &&
 		predicate = predicate[:len(predicate)-2]
 
-		// Group by attributes
-		NbrGroups := sim.NbrGroupsClear + sim.NbrGroupsEnc
-		groupBy := make([]string, NbrGroups)
-		for i := 0; i < int(NbrGroups); i++ {
-			groupBy[i] = "g" + strconv.Itoa(i)
-		}
-
 		// RandomGroups (true/false) is to respectively generate random or non random entries
-		testData := data.GenerateData(int64(sim.NbrDPs), sim.NbrResponsesTot, sim.NbrResponsesFiltered, sim.NbrGroupsClear, sim.NbrGroupsEnc,
-			sim.NbrWhereClear, sim.NbrWhereEncrypted, sim.NbrAggrClear, sim.NbrAggrEncrypted, sim.NbrGroupAttributes, sim.RandomGroups)
+		testData := data.GenerateData(int64(sim.NbrDPs), sim.NbrResponsesTot, sim.NbrResponsesFiltered, int64(0), int64(0),
+			sim.NbrWhereClear, sim.NbrWhereEncrypted, sim.NbrAggrClear, sim.NbrAggrEncrypted, []int64{}, sim.RandomGroups)
 
 		/*log.LLvl1("Saving test data...")
 		data.WriteDataToFile("medco_test_data.txt", testData)*/
-
 
 		finalResult := make([]int64, 0)
 		mutex := &sync.Mutex{}
 
 		wg := lib.StartParallelize(len(clients))
 
-		for i,client := range clients {
-			go func(i int, pubKey abstract.Point, secKey abstract.Scalar) {
+		for i,v := range clients {
+			go func(i int, dp *serviceI2B2.API, aggregate abstract.Point) {
 				defer wg.Done()
 
 				clientData := testData[strconv.Itoa(i)]
 				processData := make([]lib.ProcessResponse,0)
 
 				for _,elem := range clientData{
-					processData = append(processData,elem.FromDpClearResponseToProcess(pubKey))
+					processData = append(processData,elem.FromDpClearResponseToProcess(aggregate))
 				}
-				_, result, _ :=  client.SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), client.Public, nbrDPs, false, true, sum, count, whereQueryValues, predicate, groupBy, processData, 0)
-
-				resultClear := lib.DecryptIntVector(secKey, &result.AggregatingAttributes)
+				_, result, _ :=  dp.SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, false, sum, count, whereQueryValues, predicate, []string{}, processData, sim.QueryMode)
 
 				mutex.Lock()
+				resultClear := lib.DecryptIntVector(secKey, &result.AggregatingAttributes)
 				finalResult = append(finalResult,resultClear...)
 				mutex.Unlock()
 
-			}(i,client.Public,client.Private)
+			}(i, v, el.Aggregate)
 
 		}
 
@@ -179,8 +165,56 @@ func (sim *SimulationMedCoI2B2) Run(config *onet.SimulationConfig) error {
 		log.LLvl1(finalResult)
 
 		// Test Service I2B2 Simulation
-		expectedResults := data.ComputeExpectedResult(testData, sim.DataRepetitions, true)
-		log.LLvl1(expectedResults)
+		finalExpectedResult := make([]int64, 0)
+		for k,v := range testData {
+			map1DP := make(map[string][]lib.DpClearResponse,0)
+			map1DP[k] = v
+			expectedResults := data.ComputeExpectedResult(map1DP, sim.DataRepetitions, true)
+
+			tmp := make([]int64, 0)
+			tmp = lib.ConvertMapToData(expectedResults[0].AggregatingAttributesClear,"s",0)
+			tmp = append(tmp,lib.ConvertMapToData(expectedResults[0].AggregatingAttributesEnc,"s",len(expectedResults[0].AggregatingAttributesClear))...)
+
+			finalExpectedResult = append(finalExpectedResult,tmp...)
+		}
+
+		// if query mode == 1 it means the results are aggregated by the servers
+		if sim.QueryMode == int64(1) {
+			aggrResult := make([]int64,NbrAggr)
+			for i,v := range finalExpectedResult{
+				index := int64(i)%NbrAggr
+				aggrResult[index] += v
+			}
+
+			for i := range finalExpectedResult{
+				index := int64(i)%NbrAggr
+				finalExpectedResult[i]=aggrResult[index]
+			}
+		}
+
+		if len(finalResult) != len(finalExpectedResult) {
+			log.Fatal("The size of the result is different")
+		}
+
+		var check bool
+		for _, ev := range finalExpectedResult {
+			check = false
+			for _, fr := range finalResult {
+				if ev == fr {
+					check = true
+				}
+			}
+
+			if !check {
+				break
+			}
+		}
+
+		if !check {
+			log.LLvl1("Result is wrong! :(")
+		} else {
+			log.LLvl1("Result is right! :)")
+		}
 	}
 	return nil
 }
