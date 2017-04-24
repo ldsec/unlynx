@@ -10,6 +10,14 @@ MedCo is developed by LCA1 (Laboratory for Communications and Applications from 
 * To check or code organisation, have a look at [Layout](https://github.com/JoaoAndreSa/MedCo/wiki/Layout)
 * For more information on how to run our services, simulations and apps, go to [Running MedCo](https://github.com/JoaoAndreSa/MedCo/wiki/Running-MedCo)
 
+## Getting Started
+
+To use the code of this repository you need to:
+
+- Install [Golang](https://golang.org/doc/install)
+- Set [`$GOPATH`](https://golang.org/doc/code.html#GOPATH) to point to your workspace directory
+- Add `$GOPATH/bin` to `$PATH`
+
 ## Version
 
 The version in the `master`-branch is stable and has no incompatible changes.
