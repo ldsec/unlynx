@@ -7,8 +7,8 @@ MedCo is developed by LCA1 (Laboratory for Communications and Applications from 
 
 * The MedCo library does an intensive use of [Overlay-network (ONet) library](https://github.com/dedis/onet)
 * For more information regarding the underlying architecture please refer to `gopkg.in/dedis/onet`
-* To check or code organisation, have a look at [Code Organization](https://github.com/JoaoAndreSa/MedCo/wiki/stuff)
-* For more information on how to run our services, simulations and apps, go to [Running MedCo](https://github.com/dedis/cothority/wiki/Conode)
+* To check or code organisation, have a look at [Layout](https://github.com/JoaoAndreSa/MedCo/wiki/Layout)
+* For more information on how to run our services, simulations and apps, go to [Running MedCo](https://github.com/JoaoAndreSa/MedCo/wiki/Running-MedCo)
 
 ## Version
 
