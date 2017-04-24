@@ -1,13 +1,13 @@
 # UnLynx [![Coverage Status](https://coveralls.io/repos/github/JoaoAndreSa/MedCo/badge.svg?branch=master)](https://coveralls.io/github/JoaoAndreSa/MedCo?branch=master)
 MedCo is a library for simulating a privacy-preserving data sharing tool. It offers a series of independent protocols that when combined offer a robust and safe way to share sensitive data (e.g., medical data).  
 
-MedCo is developed by LCA1 (Laboratory for Communications and Applications from EPFL) as part of the MedCo project that aims to deploy a privacy-preserving software tool for sharing medical data.  
+MedCo is developed by LCA1 (Laboratory for Communications and Applications from EPFL).  
 
 ## Documentation
 
 * The MedCo library does an intensive use of [Overlay-network (ONet) library](https://github.com/dedis/onet)
 * For more information regarding the underlying architecture please refer to `gopkg.in/dedis/onet`
-* To check or code organisation, have a look at [Layout](https://github.com/JoaoAndreSa/MedCo/wiki/Layout)
+* To check the code organisation, have a look at [Layout](https://github.com/JoaoAndreSa/MedCo/wiki/Layout)
 * For more information on how to run our services, simulations and apps, go to [Running MedCo](https://github.com/JoaoAndreSa/MedCo/wiki/Running-MedCo)
 
 ## Getting Started
