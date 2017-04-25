@@ -199,15 +199,12 @@ func (s *Service) HandleSurveyGenerated(recq *SurveyGenerated) (network.Message,
 
 // HandleSurveyDpQuery handles the reception of a survey creation query by instantiating the corresponding survey and it will directly request the results
 func (s *Service) HandleSurveyDpQuery(sdq *SurveyDpQuery) (network.Message, onet.ClientError) {
-	log.LLvl1(s.ServerIdentity().String(), " received a Survey Dp Query")
+	log.LLvl1(s.ServerIdentity().String(), " received a Survey Dp Query",sdq.SurveyID)
 
 	surveySecret := network.Suite.Scalar().Pick(random.Stream)
 
 	// if this server is the one receiving the query from the client
 	if !sdq.IntraMessage {
-		log.LLvl1("1.",s.ServerIdentity())
-
-
 		nbrDPsLocal := sdq.MapDPs[s.String()]
 		sdq.IntraMessage = true
 		sdq.MessageSource = s.ServerIdentity()

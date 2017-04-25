@@ -12,6 +12,7 @@ import (
 	"github.com/JoaoAndreSa/MedCo/services/i2b2"
 	"github.com/JoaoAndreSa/MedCo/services/data"
 	"sync"
+	//"time"
 )
 
 //Defines the simulation for the service-medCo to be run with cothority/simul.
@@ -127,7 +128,7 @@ func (sim *SimulationMedCoI2B2) Run(config *onet.SimulationConfig) error {
 
 		// RandomGroups (true/false) is to respectively generate random or non random entries
 		testData := data.GenerateData(int64(sim.NbrDPs), sim.NbrResponsesTot, sim.NbrResponsesFiltered, int64(0), int64(0),
-			sim.NbrWhereClear, sim.NbrWhereEncrypted, sim.NbrAggrClear, sim.NbrAggrEncrypted, []int64{}, sim.RandomGroups)
+			sim.NbrWhereClear, sim.NbrWhereEncrypted, sim.NbrAggrClear, sim.NbrAggrEncrypted, []int64{}, true)
 
 		/*log.LLvl1("Saving test data...")
 		data.WriteDataToFile("medco_test_data.txt", testData)*/
