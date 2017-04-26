@@ -444,17 +444,17 @@ func (dr *DpResponse) FromDpResponseToSend(dprts DpResponseToSend) {
 }
 
 // joinAttributes joins clear and encrypted attributes into one encrypted container (CipherVector)
-func joinAttributes(clear, enc map[string]int64, identifier string, encryptionKey abstract.Point) CipherVector{
-	clearContainer := ConvertMapToData(clear,identifier,0)
-	encContainer := ConvertMapToData(enc,identifier,len(clear))
+func joinAttributes(clear, enc map[string]int64, identifier string, encryptionKey abstract.Point) CipherVector {
+	clearContainer := ConvertMapToData(clear, identifier, 0)
+	encContainer := ConvertMapToData(enc, identifier, len(clear))
 
-	result := make(CipherVector,0)
+	result := make(CipherVector, 0)
 
-	for i:=0; i<len(clearContainer); i++{
-		result = append(result,*EncryptInt(encryptionKey, int64(clearContainer[i])))
+	for i := 0; i < len(clearContainer); i++ {
+		result = append(result, *EncryptInt(encryptionKey, int64(clearContainer[i])))
 	}
-	for i:=0; i<len(encContainer); i++{
-		result = append(result,*EncryptInt(encryptionKey, int64(encContainer[i])))
+	for i := 0; i < len(encContainer); i++ {
+		result = append(result, *EncryptInt(encryptionKey, int64(encContainer[i])))
 	}
 
 	return result
@@ -464,9 +464,9 @@ func joinAttributes(clear, enc map[string]int64, identifier string, encryptionKe
 func (dcr *DpClearResponse) FromDpClearResponseToProcess(encryptionKey abstract.Point) ProcessResponse {
 	result := ProcessResponse{}
 
-	result.AggregatingAttributes = joinAttributes(dcr.AggregatingAttributesClear,dcr.AggregatingAttributesEnc,"s",encryptionKey)
-	result.WhereEnc = joinAttributes(dcr.WhereClear,dcr.WhereEnc,"w",encryptionKey)
-	result.GroupByEnc = joinAttributes(dcr.GroupByClear,dcr.GroupByEnc,"g",encryptionKey)
+	result.AggregatingAttributes = joinAttributes(dcr.AggregatingAttributesClear, dcr.AggregatingAttributesEnc, "s", encryptionKey)
+	result.WhereEnc = joinAttributes(dcr.WhereClear, dcr.WhereEnc, "w", encryptionKey)
+	result.GroupByEnc = joinAttributes(dcr.GroupByClear, dcr.GroupByEnc, "g", encryptionKey)
 
 	return result
 }

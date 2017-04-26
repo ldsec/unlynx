@@ -169,7 +169,7 @@ func (s *Service) PushData(resp *SurveyResponseQuery, proofs bool) {
 	}
 	s.Survey.Put(string(resp.SurveyID), survey)
 
-	log.Lvl1(s.ServerIdentity(), " uploaded response data for survey ", resp.SurveyID)
+	log.LLvl1(s.ServerIdentity(), " uploaded response data for survey ", resp.SurveyID)
 }
 
 // Query Handlers
@@ -184,14 +184,14 @@ func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.
 		newID := SurveyID(uuid.NewV4().String())
 		recq.SurveyID = newID
 
-		log.Lvl1(s.ServerIdentity().String(), " handles this new survey ", recq.SurveyID)
+		log.LLvl1(s.ServerIdentity().String(), " handles this new survey ", recq.SurveyID)
 
 		// broadcasts the query
 		err := services.SendISMOthers(s.ServiceProcessor, &recq.Roster, recq)
 		if err != nil {
 			log.Error("broadcasting error ", err)
 		}
-		log.Lvl1(s.ServerIdentity(), " initiated the survey ", newID)
+		log.LLvl1(s.ServerIdentity(), " initiated the survey ", newID)
 
 	}
 
@@ -214,8 +214,8 @@ func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.
 		DDTChannel:    make(chan int, 100),
 	})
 
-	log.Lvl1(s.ServerIdentity(), " created the survey ", recq.SurveyID)
-
+	log.LLvl1(s.ServerIdentity(), " created the survey ", recq.SurveyID)
+	log.LLvl1()
 	// if it is a app download the data from the test file
 	if recq.AppFlag {
 		index := 0
@@ -265,14 +265,14 @@ func (s *Service) HandleSurveyResponseQuery(resp *SurveyResponseQuery) (network.
 		return &ServiceState{"1"}, nil
 	}
 
-	log.Lvl1(s.ServerIdentity(), " does not know about this survey!")
+	log.LLvl1(s.ServerIdentity(), " does not know about this survey!")
 	return &ServiceState{resp.SurveyID}, nil
 }
 
 // HandleSurveyResultsQuery handles the survey result query by the surveyor.
 func (s *Service) HandleSurveyResultsQuery(resq *SurveyResultsQuery) (network.Message, onet.ClientError) {
 
-	log.Lvl1(s.ServerIdentity(), " received a survey result query")
+	log.LLvl1(s.ServerIdentity(), " received a survey result query")
 
 	survey := castToSurvey(s.Survey.Get((string)(resq.SurveyID)))
 	survey.Query.ClientPubKey = resq.ClientPublic
@@ -287,7 +287,7 @@ func (s *Service) HandleSurveyResultsQuery(resq *SurveyResultsQuery) (network.Me
 		}
 		s.StartService(resq.SurveyID, true)
 
-		log.Lvl1(s.ServerIdentity(), " completed the query processing...")
+		log.LLvl1(s.ServerIdentity(), " completed the query processing...")
 
 		survey := castToSurvey(s.Survey.Get((string)(resq.SurveyID)))
 		results := survey.PullDeliverableResults(false, lib.CipherText{})
@@ -456,7 +456,7 @@ func (s *Service) StartProtocol(name string, targetSurvey SurveyID) (onet.Protoc
 // StartService starts the service (with all its different steps/protocols)
 func (s *Service) StartService(targetSurvey SurveyID, root bool) error {
 
-	log.Lvl1(s.ServerIdentity(), " is waiting on channel")
+	log.LLvl1(s.ServerIdentity(), " is waiting on channel")
 	<-castToSurvey(s.Survey.Get((string)(targetSurvey))).SurveyChannel
 
 	survey := castToSurvey(s.Survey.Get((string)(targetSurvey)))
@@ -464,7 +464,7 @@ func (s *Service) StartService(targetSurvey SurveyID, root bool) error {
 	counter := survey.Query.MapDPs[s.ServerIdentity().String()]
 
 	for counter > int64(0) {
-		log.Lvl1(s.ServerIdentity(), " is waiting for ", counter, " data providers to send their data")
+		log.LLvl1(s.ServerIdentity(), " is waiting for ", counter, " data providers to send their data")
 		counter = counter - int64(<-castToSurvey(s.Survey.Get((string)(targetSurvey))).DpChannel)
 	}
 	log.LLvl1("All data providers (", survey.Query.MapDPs[s.ServerIdentity().String()], ") for server ", s.ServerIdentity(), " have sent their data")
@@ -537,7 +537,7 @@ func (s *Service) ShufflingPhase(targetSurvey SurveyID) error {
 	survey := castToSurvey(s.Survey.Get((string)(targetSurvey)))
 
 	if len(survey.DpResponses) == 0 && len(survey.DpResponsesAggr) == 0 {
-		log.Lvl1(s.ServerIdentity(), " no data to shuffle")
+		log.LLvl1(s.ServerIdentity(), " no data to shuffle")
 		return nil
 	}
 

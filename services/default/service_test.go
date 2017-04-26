@@ -65,7 +65,7 @@ func TestServiceClearAttr(t *testing.T) {
 
 	//save values in a map to verify them at the end
 	expectedResults := make(map[[numberGrpAttr]int64][]int64)
-	log.Lvl1("Sending response data... ")
+	log.LLvl1("Sending response data... ")
 	dataHolder := make([]*serviceDefault.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
 		dataHolder[i] = serviceDefault.NewMedcoClient(el.List[i%5], strconv.Itoa(i+1))
@@ -118,11 +118,11 @@ func TestServiceClearAttr(t *testing.T) {
 		t.Fatal("Service could not output the results.")
 	}
 
-	log.Lvl1("Service output:")
+	log.LLvl1("Service output:")
 	var tabVerify [][]int64
 	tabVerify = *grp
 	for i := range tabVerify {
-		log.Lvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
+		log.LLvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
 
 		//convert from slice to tab in order to test the values
 		grpTab := [numberGrpAttr]int64{}
@@ -171,7 +171,7 @@ func TestServiceClearGrpEncWhereAttr(t *testing.T) {
 
 	//save values in a map to verify them at the end
 	expectedResults := make(map[[numberGrpAttr]int64][]int64)
-	log.Lvl1("Sending response data... ")
+	log.LLvl1("Sending response data... ")
 	dataHolder := make([]*serviceDefault.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
 		dataHolder[i] = serviceDefault.NewMedcoClient(el.List[i%5], strconv.Itoa(i+1))
@@ -217,11 +217,11 @@ func TestServiceClearGrpEncWhereAttr(t *testing.T) {
 		t.Fatal("Service could not output the results.")
 	}
 
-	log.Lvl1("Service output:")
+	log.LLvl1("Service output:")
 	var tabVerify [][]int64
 	tabVerify = *grp
 	for i := range tabVerify {
-		log.Lvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
+		log.LLvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
 
 		//convert from slice to tab in order to test the values
 		grpTab := [numberGrpAttr]int64{}
@@ -270,7 +270,7 @@ func TestServiceEncGrpClearWhereAttr(t *testing.T) {
 
 	//save values in a map to verify them at the end
 	expectedResults := make(map[[numberGrpAttr]int64][]int64)
-	log.Lvl1("Sending response data... ")
+	log.LLvl1("Sending response data... ")
 	dataHolder := make([]*serviceDefault.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
 		dataHolder[i] = serviceDefault.NewMedcoClient(el.List[i%5], strconv.Itoa(i+1))
@@ -317,11 +317,11 @@ func TestServiceEncGrpClearWhereAttr(t *testing.T) {
 		t.Fatal("Service could not output the results.")
 	}
 
-	log.Lvl1("Service output:")
+	log.LLvl1("Service output:")
 	var tabVerify [][]int64
 	tabVerify = *grp
 	for i := range tabVerify {
-		log.Lvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
+		log.LLvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
 
 		//convert from slice to tab in order to test the values
 		grpTab := [numberGrpAttr]int64{}
@@ -370,7 +370,7 @@ func TestServiceEncGrpAndWhereAttr(t *testing.T) {
 
 	//save values in a map to verify them at the end
 	expectedResults := make(map[[numberGrpAttr]int64][]int64)
-	log.Lvl1("Sending response data... ")
+	log.LLvl1("Sending response data... ")
 	dataHolder := make([]*serviceDefault.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
 		dataHolder[i] = serviceDefault.NewMedcoClient(el.List[i%5], strconv.Itoa(i+1))
@@ -420,11 +420,11 @@ func TestServiceEncGrpAndWhereAttr(t *testing.T) {
 		t.Fatal("Service could not output the results.")
 	}
 
-	log.Lvl1("Service output:")
+	log.LLvl1("Service output:")
 	var tabVerify [][]int64
 	tabVerify = *grp
 	for i := range tabVerify {
-		log.Lvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
+		log.LLvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
 
 		//convert from slice to tab in order to test the values
 		grpTab := [numberGrpAttr]int64{}
@@ -473,7 +473,7 @@ func TestServiceEverything(t *testing.T) {
 
 	//save values in a map to verify them at the end
 	expectedResults := make(map[[numberGrpAttr]int64][]int64)
-	log.Lvl1("Sending response data... ")
+	log.LLvl1("Sending response data... ")
 	dataHolder := make([]*serviceDefault.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
 		dataHolder[i] = serviceDefault.NewMedcoClient(el.List[i%5], strconv.Itoa(i+1))
@@ -519,11 +519,11 @@ func TestServiceEverything(t *testing.T) {
 		t.Fatal("Service could not output the results.")
 	}
 
-	log.Lvl1("Service output:")
+	log.LLvl1("Service output:")
 	var tabVerify [][]int64
 	tabVerify = *grp
 	for i := range tabVerify {
-		log.Lvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
+		log.LLvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
 
 		//convert from slice to tab in order to test the values
 		grpTab := [numberGrpAttr]int64{}
@@ -572,7 +572,7 @@ func TestServiceEncGrpAndWhereAttrWithCount(t *testing.T) {
 
 	//save values in a map to verify them at the end
 	expectedResults := make(map[[numberGrpAttr]int64][]int64)
-	log.Lvl1("Sending response data... ")
+	log.LLvl1("Sending response data... ")
 	dataHolder := make([]*serviceDefault.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
 		dataHolder[i] = serviceDefault.NewMedcoClient(el.List[i%5], strconv.Itoa(i+1))
@@ -618,11 +618,11 @@ func TestServiceEncGrpAndWhereAttrWithCount(t *testing.T) {
 		t.Fatal("Service could not output the results.")
 	}
 
-	log.Lvl1("Service output:")
+	log.LLvl1("Service output:")
 	var tabVerify [][]int64
 	tabVerify = *grp
 	for i := range tabVerify {
-		log.Lvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
+		log.LLvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
 
 		//convert from slice to tab in order to test the values
 		grpTab := [numberGrpAttr]int64{}
@@ -678,7 +678,7 @@ func TestAllServersNoDPs(t *testing.T) {
 
 	//save values in a map to verify them at the end
 	expectedResults := make(map[[numberGrpAttr]int64][]int64)
-	log.Lvl1("Sending response data... ")
+	log.LLvl1("Sending response data... ")
 	dataHolder := make([]*serviceDefault.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
 		dataHolder[i] = serviceDefault.NewMedcoClient(el.List[i%2], strconv.Itoa(i+1))
@@ -724,11 +724,11 @@ func TestAllServersNoDPs(t *testing.T) {
 		t.Fatal("Service could not output the results.")
 	}
 
-	log.Lvl1("Service output:")
+	log.LLvl1("Service output:")
 	var tabVerify [][]int64
 	tabVerify = *grp
 	for i := range tabVerify {
-		log.Lvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
+		log.LLvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
 
 		//convert from slice to tab in order to test the values
 		grpTab := [numberGrpAttr]int64{}
@@ -779,7 +779,7 @@ func TestAllServersRandomDPs(t *testing.T) {
 
 	//save values in a map to verify them at the end
 	expectedResults := make(map[[numberGrpAttr]int64][]int64)
-	log.Lvl1("Sending response data... ")
+	log.LLvl1("Sending response data... ")
 	dataHolder := make([]*serviceDefault.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
 		if i < 2 {
@@ -833,11 +833,11 @@ func TestAllServersRandomDPs(t *testing.T) {
 		t.Fatal("Service could not output the results.")
 	}
 
-	log.Lvl1("Service output:")
+	log.LLvl1("Service output:")
 	var tabVerify [][]int64
 	tabVerify = *grp
 	for i := range tabVerify {
-		log.Lvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
+		log.LLvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
 
 		//convert from slice to tab in order to test the values
 		grpTab := [numberGrpAttr]int64{}
@@ -899,7 +899,7 @@ func TestConcurrentSurveys(t *testing.T) {
 
 			//save values in a map to verify them at the end
 			expectedResults := make(map[[numberGrpAttr]int64][]int64)
-			log.Lvl1("Sending response data... ")
+			log.LLvl1("Sending response data... ")
 			dataHolder := make([]*serviceDefault.API, 10)
 			for i := 0; i < len(dataHolder); i++ {
 				if i < 2 {
@@ -953,11 +953,11 @@ func TestConcurrentSurveys(t *testing.T) {
 				t.Fatal("Service could not output the results.")
 			}
 
-			log.Lvl1("Service output:")
+			log.LLvl1("Service output:")
 			var tabVerify [][]int64
 			tabVerify = *grp
 			for i := range tabVerify {
-				log.Lvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
+				log.LLvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
 
 				//convert from slice to tab in order to test the values
 				grpTab := [numberGrpAttr]int64{}

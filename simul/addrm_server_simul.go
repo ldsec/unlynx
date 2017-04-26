@@ -49,7 +49,7 @@ func (sim *AddRmSimulation) Setup(dir string, hosts []string) (*onet.SimulationC
 		return nil, err
 	}
 
-	log.Lvl1("Setup done")
+	log.LLvl1("Setup done")
 
 	return sc, nil
 }
@@ -58,7 +58,7 @@ func (sim *AddRmSimulation) Setup(dir string, hosts []string) (*onet.SimulationC
 func (sim *AddRmSimulation) Run(config *onet.SimulationConfig) error {
 	log.SetDebugVisible(1)
 	for round := 0; round < sim.Rounds; round++ {
-		log.Lvl1("Starting round", round)
+		log.LLvl1("Starting round", round)
 
 		rooti, err := config.Overlay.CreateProtocol("AddRmServer", config.Tree, onet.NilServiceID)
 

@@ -47,7 +47,7 @@ func (sim *LocalClearAggregationSimulation) Setup(dir string, hosts []string) (*
 		return nil, err
 	}
 
-	log.Lvl1("Setup done")
+	log.LLvl1("Setup done")
 
 	return sc, nil
 }
@@ -55,7 +55,7 @@ func (sim *LocalClearAggregationSimulation) Setup(dir string, hosts []string) (*
 // Run starts the simulation.
 func (sim *LocalClearAggregationSimulation) Run(config *onet.SimulationConfig) error {
 	for round := 0; round < sim.Rounds; round++ {
-		log.Lvl1("Starting round", round)
+		log.LLvl1("Starting round", round)
 		rooti, err := config.Overlay.CreateProtocol("LocalClearAggregation", config.Tree, onet.NilServiceID)
 		if err != nil {
 			return err

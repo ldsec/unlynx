@@ -45,7 +45,7 @@ func (sim *ShufflingSimulation) Setup(dir string, hosts []string) (*onet.Simulat
 	if err != nil {
 		return nil, err
 	}
-	log.Lvl1("Setup done")
+	log.LLvl1("Setup done")
 	return sc, nil
 }
 
@@ -62,7 +62,7 @@ func (sim *ShufflingSimulation) Node(config *onet.SimulationConfig) error {
 // Run starts the simulation.
 func (sim *ShufflingSimulation) Run(config *onet.SimulationConfig) error {
 	for round := 0; round < sim.Rounds; round++ {
-		log.Lvl1("Starting round", round)
+		log.LLvl1("Starting round", round)
 		rooti, err := config.Overlay.CreateProtocol("ShufflingSimul", config.Tree, onet.NilServiceID)
 
 		if err != nil {

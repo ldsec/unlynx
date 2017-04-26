@@ -37,7 +37,7 @@ func NewMedcoClient(entryPoint *network.ServerIdentity, clientID string) *API {
 
 // SendSurveyCreationQuery creates a survey based on a set of entities (servers) and a survey description.
 func (c *API) SendSurveyCreationQuery(entities *onet.Roster, surveyID SurveyID, clientPubKey abstract.Point, nbrDPs map[string]int64, proofs, appFlag bool, sum []string, count bool, where []lib.WhereQueryAttribute, predicate string, groupBy []string) (*SurveyID, error) {
-	log.Lvl1(c, "is creating a survey with id: ", surveyID)
+	log.LLvl1(c, "is creating a survey with id: ", surveyID)
 
 	var newSurveyID SurveyID
 
@@ -113,7 +113,7 @@ func (c *API) SendSurveyResultsQuery(surveyID SurveyID) (*[][]int64, *[][]int64,
 func EncryptDataToSurvey(name string, surveyID SurveyID, dpClearResponses []lib.DpClearResponse, groupKey abstract.Point, dataRepetitions int, count bool) *SurveyResponseQuery {
 	nbrResponses := len(dpClearResponses)
 
-	log.Lvl1(name, " responds with ", nbrResponses, " response(s)")
+	log.LLvl1(name, " responds with ", nbrResponses, " response(s)")
 
 	var dpResponses []lib.DpResponseToSend
 	dpResponses = make([]lib.DpResponseToSend, nbrResponses*dataRepetitions)

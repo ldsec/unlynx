@@ -225,14 +225,14 @@ func (p *KeySwitchingProtocol) Dispatch() error {
 
 	// If the tree node is the root then protocol returns.
 	if p.IsRoot() {
-		log.Lvl1(p.ServerIdentity(), " completed key switching.")
+		log.LLvl1(p.ServerIdentity(), " completed key switching.")
 		result := make([]lib.FilteredResponse, len(keySwitchingTarget.DataKey))
 		for i, v := range keySwitchingTarget.DataKey {
 			result[i] = v.Response
 		}
 		p.FeedbackChannel <- result
 	} else {
-		log.Lvl1(p.ServerIdentity(), " carried on key switching on ", len(keySwitchingTarget.DataKey), " .")
+		log.LLvl1(p.ServerIdentity(), " carried on key switching on ", len(keySwitchingTarget.DataKey), " .")
 		sending(p, keySwitchingTarget)
 	}
 
@@ -244,7 +244,7 @@ func (p *KeySwitchingProtocol) Dispatch() error {
 func (p *KeySwitchingProtocol) sendToNext(msg interface{}) {
 	err := p.SendTo(p.nextNodeInCircuit, msg)
 	if err != nil {
-		log.Lvl1(p.Name(), " has an error sending a message: ", err)
+		log.LLvl1(p.Name(), " has an error sending a message: ", err)
 	}
 }
 

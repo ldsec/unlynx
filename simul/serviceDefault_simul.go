@@ -58,7 +58,7 @@ func (sim *SimulationMedCo) Setup(dir string, hosts []string) (*onet.SimulationC
 		return nil, err
 	}
 
-	log.Lvl1("Setup done")
+	log.LLvl1("Setup done")
 
 	return sc, nil
 }
@@ -69,7 +69,7 @@ func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
 	log.SetDebugVisible(1)
 	// Setup Simulation
 	nbrHosts := config.Tree.Size()
-	log.Lvl1("Size:", nbrHosts, ", Rounds:", sim.Rounds)
+	log.LLvl1("Size:", nbrHosts, ", Rounds:", sim.Rounds)
 
 	// Does not make sense to have more servers than clients!!
 	if nbrHosts > sim.NbrDPs {
@@ -79,7 +79,7 @@ func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
 	el := (*config.Tree).Roster
 
 	for round := 0; round < sim.Rounds; round++ {
-		log.Lvl1("Starting round", round, el)
+		log.LLvl1("Starting round", round, el)
 		client := serviceDefault.NewMedcoClient(el.List[0], strconv.Itoa(0))
 
 		// Define how many data providers for each server
@@ -137,7 +137,7 @@ func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
 			start = monitor.NewTimeMeasure("SendingData")
 		}
 
-		log.Lvl1("Sending response data... ")
+		log.LLvl1("Sending response data... ")
 		dataHolder := make([]*serviceDefault.API, sim.NbrDPs)
 		wg := lib.StartParallelize(len(dataHolder))
 
@@ -186,9 +186,9 @@ func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
 
 		// Print Output
 		allData := make([]lib.DpClearResponse, 0)
-		log.Lvl1("Service output:")
+		log.LLvl1("Service output:")
 		for i := range *grp {
-			log.Lvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
+			log.LLvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
 			allData = append(allData, lib.DpClearResponse{GroupByClear: lib.ConvertDataToMap((*grp)[i], "g", 0), AggregatingAttributesClear: lib.ConvertDataToMap((*aggr)[i], "s", 0)})
 		}
 

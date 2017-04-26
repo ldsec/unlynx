@@ -143,7 +143,7 @@ func (p *CollectiveAggregationProtocol) Dispatch() error {
 
 	// 2. Ascending aggregation phase
 	aggregatedData := p.ascendingAggregationPhase()
-	log.Lvl1(p.ServerIdentity(), " completed aggregation phase (", len(*aggregatedData), "group(s) )")
+	log.LLvl1(p.ServerIdentity(), " completed aggregation phase (", len(*aggregatedData), "group(s) )")
 
 	// 3. Result reporting
 	if p.IsRoot() {

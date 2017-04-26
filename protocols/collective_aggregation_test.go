@@ -55,12 +55,12 @@ func TestCollectiveAggregation(t *testing.T) {
 
 	select {
 	case encryptedResult := <-feedback:
-		log.Lvl1("Recieved results:")
+		log.LLvl1("Recieved results:")
 		resultData := make(map[lib.GroupingKey][]int64)
 		for k, v := range encryptedResult.GroupedData {
 			resultData[k] = lib.DecryptIntVector(clientPrivate, &v.AggregatingAttributes)
 
-			log.Lvl1(k, resultData[k])
+			log.LLvl1(k, resultData[k])
 		}
 		for k, v1 := range expectedGroups {
 			if v2, ok := encryptedResult.GroupedData[k]; ok {

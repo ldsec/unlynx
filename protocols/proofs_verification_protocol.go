@@ -63,7 +63,7 @@ func (p *ProofsVerificationProtocol) Start() error {
 	nbrCollectiveAggrProofs := len(p.TargetOfVerification.CollectiveAggregationProofs)
 	resultSize := nbrKsProofs + nbrAggrProofs + nbrDtProofs + nbrDetTagAddProofs + nbrShuffleProofs + nbrCollectiveAggrProofs
 
-	//log.Lvl1(nbrKsProofs, nbrDtProofs, nbrDetTagAddProofs, nbrAggrProofs, nbrShuffleProofs, nbrCollectiveAggrProofs, resultSize)
+	//log.LLvl1(nbrKsProofs, nbrDtProofs, nbrDetTagAddProofs, nbrAggrProofs, nbrShuffleProofs, nbrCollectiveAggrProofs, resultSize)
 
 	result := make([]bool, resultSize)
 

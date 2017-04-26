@@ -187,7 +187,7 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 	}
 
 	lib.EndParallelize(wg)
-	log.Lvl1(p.ServerIdentity(), " preparation round for deterministic tagging")
+	log.LLvl1(p.ServerIdentity(), " preparation round for deterministic tagging")
 
 	sendingDet(*p, deterministicTaggingTargetBef)
 
@@ -235,9 +235,9 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 		}
 
 		lib.EndParallelize(wg1)
-		log.Lvl1(p.ServerIdentity(), " completed deterministic Tagging (", len(detCreatedData), "row )")
+		log.LLvl1(p.ServerIdentity(), " completed deterministic Tagging (", len(detCreatedData), "row )")
 	} else {
-		log.Lvl1(p.ServerIdentity(), " carried on deterministic Tagging.", len(deterministicTaggingTarget.Data))
+		log.LLvl1(p.ServerIdentity(), " carried on deterministic Tagging.", len(deterministicTaggingTarget.Data))
 	}
 
 	lib.EndTimer(roundTotalComputation)
@@ -258,7 +258,7 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 func (p *DeterministicTaggingProtocol) sendToNext(msg interface{}) {
 	err := p.SendTo(p.nextNodeInCircuit, msg)
 	if err != nil {
-		log.Lvl1("Had an error sending a message: ", err)
+		log.LLvl1("Had an error sending a message: ", err)
 	}
 }
 

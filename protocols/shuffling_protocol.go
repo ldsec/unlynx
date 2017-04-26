@@ -128,7 +128,7 @@ func (p *ShufflingProtocol) Start() error {
 	}
 
 	nbrProcessResponses := len(*p.TargetOfShuffle)
-	log.Lvl1("["+p.Name()+"]", " started a Shuffling Protocol (", nbrProcessResponses, " responses)")
+	log.LLvl1("["+p.Name()+"]", " started a Shuffling Protocol (", nbrProcessResponses, " responses)")
 
 	shuffleTarget := *p.TargetOfShuffle
 
@@ -233,9 +233,9 @@ func (p *ShufflingProtocol) Dispatch() error {
 	shufflingTarget = shuffledData
 
 	if p.IsRoot() {
-		log.Lvl1(p.ServerIdentity(), " completed shuffling (", len(shufflingTarget), " responses)")
+		log.LLvl1(p.ServerIdentity(), " completed shuffling (", len(shufflingTarget), " responses)")
 	} else {
-		log.Lvl1(p.ServerIdentity(), " carried on shuffling.")
+		log.LLvl1(p.ServerIdentity(), " carried on shuffling.")
 	}
 
 	lib.EndTimer(roundTotalComputation)
@@ -265,7 +265,7 @@ func (p *ShufflingProtocol) Dispatch() error {
 func (p *ShufflingProtocol) sendToNext(msg interface{}) {
 	err := p.SendTo(p.nextNodeInCircuit, msg)
 	if err != nil {
-		log.Lvl1("Had an error sending a message: ", err)
+		log.LLvl1("Had an error sending a message: ", err)
 	}
 }
 

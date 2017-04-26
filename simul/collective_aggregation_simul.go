@@ -75,7 +75,7 @@ func (sim *CollectiveAggregationSimulation) Setup(dir string, hosts []string) (*
 		return nil, err
 	}
 
-	log.Lvl1("Setup done")
+	log.LLvl1("Setup done")
 
 	return sc, nil
 }
@@ -93,7 +93,7 @@ func (sim *CollectiveAggregationSimulation) Node(config *onet.SimulationConfig) 
 // Run starts the simulation of the protocol and measures its runtime.
 func (sim *CollectiveAggregationSimulation) Run(config *onet.SimulationConfig) error {
 	for round := 0; round < sim.Rounds; round++ {
-		log.Lvl1("Starting round", round)
+		log.LLvl1("Starting round", round)
 		rooti, err := config.Overlay.CreateProtocol("CollectiveAggregationSimul", config.Tree, onet.NilServiceID)
 		if err != nil {
 			log.LLvl1("error Run")
