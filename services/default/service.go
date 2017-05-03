@@ -215,7 +215,6 @@ func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.
 	})
 
 	log.LLvl1(s.ServerIdentity(), " created the survey ", recq.SurveyID)
-	log.LLvl1()
 	// if it is a app download the data from the test file
 	if recq.AppFlag {
 		index := 0
@@ -574,7 +573,14 @@ func (s *Service) TaggingPhase(targetSurvey SurveyID) error {
 		queryWhereTag = append(queryWhereTag, newElem)
 	}
 	deterministicTaggingResult = deterministicTaggingResult[len(survey.Query.Where):]
-	filteredResponses := services.FilterResponses(survey.Query.Predicate, queryWhereTag, deterministicTaggingResult)
+
+	var filteredResponses []lib.FilteredResponseDet
+	if survey.Query.Predicate == "" || len(queryWhereTag) == 0 {
+		filteredResponses = services.FilterNone(deterministicTaggingResult)
+	} else {
+		filteredResponses = services.FilterResponses(survey.Query.Predicate, queryWhereTag, deterministicTaggingResult)
+	}
+
 	survey.PushDeterministicFilteredResponses(filteredResponses, s.ServerIdentity().String(), survey.Query.Proofs)
 	s.Survey.Put(string(targetSurvey), survey)
 	return err

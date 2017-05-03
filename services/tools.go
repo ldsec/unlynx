@@ -116,6 +116,15 @@ func FilterResponses(pred string, whereQueryValues []lib.WhereQueryAttributeTagg
 	return result
 }
 
+// FilterNone skips the filtering of attributes when there is no predicate (the number of where attributes == 0)
+func FilterNone(responsesToFilter []lib.ProcessResponseDet) []lib.FilteredResponseDet {
+	result := []lib.FilteredResponseDet{}
+	for _, v := range responsesToFilter {
+		result = append(result, lib.FilteredResponseDet{DetTagGroupBy: v.DetTagGroupBy, Fr: lib.FilteredResponse{GroupByEnc: v.PR.GroupByEnc, AggregatingAttributes: v.PR.AggregatingAttributes}})
+	}
+	return result
+}
+
 // CountDPs counts the number of data providers targeted by a query/survey
 func CountDPs(m map[string]int64) int64 {
 	result := int64(0)

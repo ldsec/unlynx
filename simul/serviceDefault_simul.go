@@ -102,15 +102,18 @@ func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
 		NbrWhere := sim.NbrWhereClear + sim.NbrWhereEncrypted
 		whereQueryValues := make([]lib.WhereQueryAttribute, NbrWhere)
 
-		var predicate string
+		predicate := ""
 		counter := 0
-		for i := 0; i < int(NbrWhere); i++ {
-			whereQueryValues[i] = lib.WhereQueryAttribute{Name: "w" + strconv.Itoa(i), Value: *lib.EncryptInt(el.Aggregate, 1)}
-			predicate = predicate + " v" + strconv.Itoa(counter) + " == v" + strconv.Itoa(counter+1) + " &&"
-			counter = counter + 2
+
+		if int(NbrWhere) > 0 {
+			for i := 0; i < int(NbrWhere); i++ {
+				whereQueryValues[i] = lib.WhereQueryAttribute{Name: "w" + strconv.Itoa(i), Value: *lib.EncryptInt(el.Aggregate, 1)}
+				predicate = predicate + " v" + strconv.Itoa(counter) + " == v" + strconv.Itoa(counter+1) + " &&"
+				counter = counter + 2
+			}
+			// remove the last &&
+			predicate = predicate[:len(predicate)-2]
 		}
-		// remove the last &&
-		predicate = predicate[:len(predicate)-2]
 
 		// Group by attributes
 		NbrGroups := sim.NbrGroupsClear + sim.NbrGroupsEnc

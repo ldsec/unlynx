@@ -7,4 +7,4 @@ Bandwidth = 1000
 NbrGroupAttributes = [2,5,2]
 
 Hosts, NbrDPs, NbrResponsesTot, NbrResponsesFiltered, NbrGroupsClear, NbrGroupsEnc, NbrWhereClear, NbrWhereEncrypted, NbrAggrClear, NbrAggrEncrypted, Count, RandomGroups, DataRepetitions, Proofs
-3, 3, 300, 30, 0, 3, 0, 2, 0, 2, false, true, 1, false
+3, 3, 300, 30, 0, 3, 0, 0, 0, 2, false, true, 1, false
