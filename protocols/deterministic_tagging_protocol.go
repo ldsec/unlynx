@@ -150,7 +150,13 @@ func (p *DeterministicTaggingProtocol) Start() error {
 func (p *DeterministicTaggingProtocol) Dispatch() error {
 	//************ ----- first round, add value derivated from ephemeral secret to message ---- ********************
 	lengthBef := (<-p.LengthNodeChannel).CVLength
+
+	receiving := lib.StartTimer(p.Name() + "_ReceivingDet")
+
 	deterministicTaggingTargetBytesBef := <-p.PreviousNodeInPathChannel
+
+	lib.EndTimer(receiving)
+
 	deterministicTaggingTargetBef := DeterministicTaggingMessage{Data: make([]GroupingAttributes, 0)}
 	deterministicTaggingTargetBef.FromBytes(deterministicTaggingTargetBytesBef.Data, lengthBef)
 
@@ -187,13 +193,17 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 	lib.EndParallelize(wg)
 	log.Lvl1(p.ServerIdentity(), " preparation round for deterministic tagging")
 
-
-
 	sendingDet(*p, deterministicTaggingTargetBef)
 
 	//************ ----- second round, deterministic tag creation  ---- ********************
 	length := (<-p.LengthNodeChannel).CVLength
+
+	receiving = lib.StartTimer(p.Name() + "_ReceivingDet")
+
 	deterministicTaggingTargetBytes := <-p.PreviousNodeInPathChannel
+
+	lib.EndTimer(receiving)
+
 	deterministicTaggingTarget := DeterministicTaggingMessage{Data: make([]GroupingAttributes, 0)}
 	deterministicTaggingTarget.FromBytes(deterministicTaggingTargetBytes.Data, length)
 
@@ -266,8 +276,13 @@ func (p *DeterministicTaggingProtocol) sendToNext(msg interface{}) {
 // sendingDet sends DeterministicTaggingBytes messages
 func sendingDet(p DeterministicTaggingProtocol, detTarget DeterministicTaggingMessage) {
 	data, cvLength := detTarget.ToBytes()
+
+	sending := lib.StartTimer(p.Name() + "_SendingDet")
+
 	p.sendToNext(&DTBLengthMessage{CVLength: cvLength})
 	p.sendToNext(&DeterministicTaggingBytesMessage{Data: data})
+
+	lib.EndTimer(sending)
 }
 
 // DeterministicTagFormat creates a response with a deterministic tag

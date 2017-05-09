@@ -155,6 +155,7 @@ func (p *CollectiveAggregationProtocol) Dispatch() error {
 // Announce forwarding down the tree.
 func (p *CollectiveAggregationProtocol) aggregationAnnouncementPhase() {
 	dataReferenceMessage := <-p.DataReferenceChannel
+
 	if !p.IsLeaf() {
 		p.SendToChildren(&dataReferenceMessage.DataReferenceMessage)
 	}
@@ -176,10 +177,16 @@ func (p *CollectiveAggregationProtocol) ascendingAggregationPhase() *map[lib.Gro
 		for _, v := range <-p.LengthNodeChannel {
 			length = append(length, v)
 		}
+
+		receiving := lib.StartTimer(p.Name() + "_ReceivingAggr")
+
 		datas := make([]childAggregatedDataBytesStruct, 0)
 		for _, v := range <-p.ChildDataChannel {
 			datas = append(datas, v)
 		}
+
+		lib.EndTimer(receiving)
+
 		for i, v := range length {
 			childrenContribution := ChildAggregatedDataMessage{}
 			childrenContribution.FromBytes(datas[i].Data, v.GacbLength, v.AabLength, v.PgaebLength, v.DtbLength)
@@ -237,8 +244,12 @@ func (p *CollectiveAggregationProtocol) ascendingAggregationPhase() *map[lib.Gro
 		childrenContribution := ChildAggregatedDataMessage{}
 		childrenContribution.FromBytes(message.Data, gacbLength, aabLength, pgaebLength, dtbLength)
 
+		sending := lib.StartTimer(p.Name() + "_SendingAggr")
+
 		p.SendToParent(&CADBLengthMessage{gacbLength, aabLength, pgaebLength, dtbLength})
 		p.SendToParent(&message)
+
+		lib.EndTimer(sending)
 	}
 
 	return p.GroupedData

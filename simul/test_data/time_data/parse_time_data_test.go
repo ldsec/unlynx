@@ -6,9 +6,9 @@ import (
 	"github.com/JoaoAndreSa/MedCo/simul/test_data/time_data"
 )
 
-const filename_read = "../proofs_verification.csv"
+const filename_read = "../shuffling.csv"
 const filename_write = "result.txt"
-const filename_toml = "../../runfiles/proofs_verification.toml"
+const filename_toml = "../../runfiles/shuffling.toml"
 
 var flags = []string{"bf", "depth", "rounds", "runwait", "servers", "\n",
 	"Shuffling(START)", "Shuffling(DISPATCH)", "Shuffling(START-noProof)", "Shuffling(DISPATCH-noProof)", "Shuffling(START-Proof)", "Shuffling(DISPATCH-Proof)", "ShufflingPhase", "\n",
@@ -19,8 +19,9 @@ var flags = []string{"bf", "depth", "rounds", "runwait", "servers", "\n",
 	"LocalAggregation(PROTOCOL)","LocalAggregation(PROOFS)","\n",
 	"KeySwitching(START)", "KeySwitching(DISPATCH)", "KeySwitchingPhase", "\n",
 	"SendingData", "ServerLocalAggregation", "ClientEncryption", "IndividualSendSurveyResults", "IndividualNewMedcoClient", "\n", "\n",
-	"Simulation", "Sending", "Receiving", "Shuffling(SIMULATION)", "MethodSending", "MethodReceiving", "SendingBytes", "sendingKey", "receivingKey", "KeySwitching(SIMULATION)", "\n", "\n",
-	"KeySwitchingVerif", "DetTagVerif", "DetTagAddVerif", "LocalAggrVerif", "ShufflingVerif", "CollectiveAggrVerif", "AddRmServer(PROTOCOL)", "AddRmServer(PROOFS)", "AddRmServer(PROOFSVerif)"}
+	"Simulation", "Shuffling(SIMULATION)", "MethodSending", "MethodReceiving", "SendingBytes", "sendingKey", "receivingKey", "KeySwitching(SIMULATION)", "\n", "\n",
+	"KeySwitchingVerif", "DetTagVerif", "DetTagAddVerif", "LocalAggrVerif", "ShufflingVerif", "CollectiveAggrVerif", "AddRmServer(PROTOCOL)", "AddRmServer(PROOFS)", "AddRmServer(PROOFSVerif)",
+	"SendingShuff", "ReceivingShuff", "SendingKey", "ReceivingKey", "SendingDet", "ReceivingDet", "SendingAggr", "ReceivingAggr"}
 
 func TestReadTomlSetup(t *testing.T) {
 	time_data.ReadTomlSetup(filename_toml, 0)

@@ -196,9 +196,14 @@ func getAttributesAndEphemKeys(cv lib.CipherVector) (lib.CipherVector, []abstrac
 
 // Dispatch is called on each node. It waits for incoming messages and handles them.
 func (p *KeySwitchingProtocol) Dispatch() error {
-
 	length := <-p.LengthNodeChannel
+
+	receiving := lib.StartTimer(p.Name() + "_ReceivingKey")
+
 	keySwitchingTargetBytes := (<-p.PreviousNodeInPathChannel).KeySwitchedCipherBytesMessage.Data
+
+	lib.EndTimer(receiving)
+
 	keySwitchingTarget := &KeySwitchedCipherMessage{}
 	(*keySwitchingTarget).FromBytes(keySwitchingTargetBytes, length.L1, length.L2, length.L3, length.L4, length.L5, length.L6)
 
@@ -252,8 +257,13 @@ func (p *KeySwitchingProtocol) sendToNext(msg interface{}) {
 // sending sends KeySwitchedCipherBytes messages
 func sending(p *KeySwitchingProtocol, kscm *KeySwitchedCipherMessage) {
 	data, l1, l2, l3, l4, l5, l6 := kscm.ToBytes()
+
+	sending := lib.StartTimer(p.Name() + "_SendingKey")
+
 	p.sendToNext(&KSCBLengthMessage{l1, l2, l3, l4, l5, l6})
 	p.sendToNext(&KeySwitchedCipherBytesMessage{data})
+
+	lib.EndTimer(sending)
 }
 
 //ClientResponseKeySwitching applies key switching on a client response

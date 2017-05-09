@@ -1,0 +1,6 @@
+# This file contains your private key.
+# Do not give it away lightly!
+Public = "c314cabfc50be00af858d4740b58be3be322e845f2bc1ae9fd7fc782c76a11ae"
+Private = "0a17dfe4b2d37c824efbd55ed2e507829bb92c09cb9a580ed43486a5054e0d01"
+Address = "tcp://127.0.0.1:2003"
+Description = "Medco 3"

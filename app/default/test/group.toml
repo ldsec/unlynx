@@ -1,0 +1,12 @@
+[[servers]]
+  Address = "tcp://127.0.0.1:2001"
+  Public = "62Cv5+57leU9RP5zj/Pve8szkLSmrQmF+iCPw86sg8o="
+  Description = "Medco 1"
+[[servers]]
+  Address = "tcp://127.0.0.1:2003"
+  Public = "wxTKv8UL4Ar4WNR0C1i+O+Mi6EXyvBrp/X/HgsdqEa4="
+  Description = "Medco 3"
+[[servers]]
+  Address = "tcp://127.0.0.1:2005"
+  Public = "uDY5+c4vB/wBRXSKvbUxSmYJ5GZU4/ADNvKcMD/NBqE="
+  Description = "Medco 5"

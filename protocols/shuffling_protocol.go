@@ -156,11 +156,11 @@ func (p *ShufflingProtocol) Start() error {
 	lib.EndTimer(roundShufflingStartProof)
 	lib.EndTimer(roundTotalStart)
 
-	sendingStart := lib.StartTimer(p.Name() + "_Sending")
-
 	message := ShufflingBytesMessage{}
 	var cgaLength, eaaLength, egaLength int
 	message.Data, cgaLength, eaaLength, egaLength = (&ShufflingMessage{shuffledData}).ToBytes()
+
+	sendingStart := lib.StartTimer(p.Name() + "_SendingShuff")
 
 	p.sendToNext(&SBLengthMessage{cgaLength, eaaLength, egaLength})
 	p.sendToNext(&message)
@@ -175,14 +175,14 @@ func (p *ShufflingProtocol) Dispatch() error {
 
 	shufflingLength := <-p.LengthNodeChannel
 
-	receiving := lib.StartTimer(p.Name() + "_Receiving")
+	receiving := lib.StartTimer(p.Name() + "_ReceivingShuff")
 	tmp := <-p.PreviousNodeInPathChannel
+
+	lib.EndTimer(receiving)
 
 	sm := ShufflingMessage{}
 	sm.FromBytes(tmp.Data, shufflingLength.GacbLength, shufflingLength.AabLength, shufflingLength.PgaebLength)
 	shufflingTarget := sm.Data
-
-	lib.EndTimer(receiving)
 
 	roundTotalComputation := lib.StartTimer(p.Name() + "_Shuffling(DISPATCH)")
 
@@ -229,11 +229,12 @@ func (p *ShufflingProtocol) Dispatch() error {
 		p.FeedbackChannel <- shufflingTarget
 	} else {
 		// Forward switched message.
-		sending := lib.StartTimer(p.Name() + "_Sending")
 
 		message := ShufflingBytesMessage{}
 		var cgaLength, eaaLength, egaLength int
 		message.Data, cgaLength, eaaLength, egaLength = (&ShufflingMessage{shuffledData}).ToBytes()
+
+		sending := lib.StartTimer(p.Name() + "_SendingShuff")
 
 		p.sendToNext(&SBLengthMessage{cgaLength, eaaLength, egaLength})
 		p.sendToNext(&message)

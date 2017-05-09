@@ -1,0 +1,4 @@
+[[servers]]
+  Address = "tcp://127.0.0.1:2003"
+  Public = "wxTKv8UL4Ar4WNR0C1i+O+Mi6EXyvBrp/X/HgsdqEa4="
+  Description = "Medco 3"

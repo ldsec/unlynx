@@ -1,0 +1,12 @@
+[[servers]]
+  Address = "tcp://10.90.38.3:6879"
+  Public = "Y0tHcuqFDWBuWILyc4XeiQRRF2vXHsiuHA9Hpe2VjYQ="
+  Description = "Node 1"
+[[servers]]
+  Address = "tcp://10.90.38.5:6879"
+  Public = "tbFWZl2ZANS24JU8BHEWVxJslSNL9SsrEZw+FZZrjgM="
+  Description = "Node 2"
+[[servers]]
+  Address = "tcp://10.90.38.6:6879"
+  Public = "dyfLWlODKLdAxQ9EPOmQu7YgFQTBjgrE20iX5TVMa4A="
+  Description = "Node 3"
