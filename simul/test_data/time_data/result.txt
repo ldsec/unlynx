@@ -6,59 +6,62 @@
 |-------------------------------------------------------------------------|
 
 
-Hosts:                                             2 
-NbrResponses:                                      15000
-NbrGroupAttributes:                                2
+NbrGroupsEnc:                                      2
 NbrAggrAttributes:                                 10
+RandomGroups:                                      true
 Proofs:                                            false
-PreCompute:                                        true
+Hosts:                                             3
+NbrResponses:                                      500
+DataRepetitions:                                   10
+NbrDPs:                                            3
+NbrGroupsClear:                                    0
 
 bf:                                                2
 depth:                                             1
 rounds:                                            1
 runwait:                                           6000000
-servers:                                           2
+servers:                                           3
 
-Shuffling(START):                                  0.397355
-Shuffling(DISPATCH):                               0.000073, 0.205222
-Shuffling(START-noProof):                          0.397032
-Shuffling(DISPATCH-noProof):                       0.204853
-Shuffling(START-Proof):                            0.000000
-Shuffling(DISPATCH-Proof):                         0.000000
-ShufflingPhase:                                    
+Shuffling(START):                                  0.088548, 0.114726, 0.113491
+Shuffling(DISPATCH):                               0.141758, 0.087453, 0.049359
+Shuffling(START-noProof):                          0.088308, 0.113947, 0.113086
+Shuffling(DISPATCH-noProof):                       0.141224, 0.086959, 0.048849
+Shuffling(START-Proof):                            0.000000, 0.000000, 0.000000
+Shuffling(DISPATCH-Proof):                         0.000002
+ShufflingPhase:                                    5.108270, 4.044614, 4.836759
 
 Rerandomization-2xADDS:                            
 Rerandomization-2xMULTIS:                          
 
-DetTagging(START):                                 
-DetTagging(DISPATCH):                              
+DetTagging(START):                                 0.000151, 0.000223, 0.000132
+DetTagging(DISPATCH):                              0.902841, 1.254590, 1.183689
 DetTagging1(DISPATCH):                             
-TaggingPhase:                                      
+TaggingPhase:                                      4.416702, 4.953017, 3.640567
 
-ShufflingPhase+TaggingPhase:                       
+ShufflingPhase+TaggingPhase:                       10.120704, 9.828729, 8.477463
 
-CollectiveAggregation(Aggregation):                
-CollectiveAggregation(ascendingAggregation):       
-CollectiveAggregation(Proof-1stPart):              
-CollectiveAggregation(Proof-2ndPart):              
-AggregationPhase:                                  
+CollectiveAggregation(Aggregation):                0.001256
+CollectiveAggregation(ascendingAggregation):       0.250953, 0.000000, 0.000000
+CollectiveAggregation(Proof-1stPart):              0.000001
+CollectiveAggregation(Proof-2ndPart):              0.000000
+AggregationPhase:                                  0.251321
 
 LocalAggregation(PROTOCOL):                        
 LocalAggregation(PROOFS):                          
 
-KeySwitching(START):                               
-KeySwitching(DISPATCH):                            
-KeySwitchingPhase:                                 
+KeySwitching(START):                               0.000158
+KeySwitching(DISPATCH):                            0.020839, 0.017460, 0.017856
+KeySwitchingPhase:                                 0.590378
 
-SendingData:                                       
-ServerLocalAggregation:                            
-ClientEncryption:                                  
+SendingData:                                       5.999162
+ServerLocalAggregation:                            0.157523, 0.121413, 0.152361
+ClientEncryption:                                  0.843264, 0.841386, 0.762485
 IndividualSendSurveyResults:                       
 IndividualNewMedcoClient:                          
 
 
-Simulation:                                        
-Shuffling(SIMULATION):                             1.985199
+Simulation:                                        11.046520
+Shuffling(SIMULATION):                             
 MethodSending:                                     
 MethodReceiving:                                   
 SendingBytes:                                      
@@ -76,11 +79,11 @@ CollectiveAggrVerif:
 AddRmServer(PROTOCOL):                             
 AddRmServer(PROOFS):                               
 AddRmServer(PROOFSVerif):                          
-SendingShuff:                                      0.125445, 0.114169
-ReceivingShuff:                                    0.128774, 0.120707
-SendingKey:                                        
-ReceivingKey:                                      
-SendingDet:                                        
-ReceivingDet:                                      
-SendingAggr:                                       
-ReceivingAggr:                                     
+SendingShuff:                                      1.030126, 2.027909, 2.651227
+ReceivingShuff:                                    1.075384, 0.913663, 0.555350
+SendingKey:                                        0.000300, 0.000173, 0.000178
+ReceivingKey:                                      0.080489, 0.000001, 0.000001
+SendingDet:                                        0.010287, 0.013872, 0.009470
+ReceivingDet:                                      1.368579, 1.326057, 1.014358
+SendingAggr:                                       0.000424, 0.000503
+ReceivingAggr:                                     0.000795

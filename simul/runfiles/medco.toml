@@ -1,11 +1,11 @@
 Simulation = "ServiceMedCo"
-Servers = 2
+Servers = 3
 Bf = 2
 Rounds = 1
 RunWait = 6000000
-Bandwidth = 100
-Delay = 70
+Bandwidth = 1000
+Delay = 10
 NbrGroupAttributes = [2,5]
 
 Hosts, NbrDPs, NbrResponses, NbrGroupsClear, NbrGroupsEnc, NbrAggrAttributes, RandomGroups, DataRepetitions, Proofs
-1, 1, 500, 0, 2, 10, true, 10, false
+3, 3, 500, 0, 2, 10, true, 10, false
