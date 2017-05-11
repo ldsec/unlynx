@@ -10,6 +10,7 @@ import (
 	"os"
 	"strconv"
 	"testing"
+	"fmt"
 )
 
 func TestPrecomputationWritingForShuffling(t *testing.T) {
@@ -37,18 +38,19 @@ func TestPrecomputationWritingForShuffling(t *testing.T) {
 func TestFilterResponses(t *testing.T) {
 	// ****************************************
 	// simple predicate
-	predicate := "v0 == v1"
+	predicate := "exists(v0, r) && exists(v1, r)"
 
 	whereAttributes := make([]lib.WhereQueryAttributeTagged, 0)
 	whereAttributes = append(whereAttributes, lib.WhereQueryAttributeTagged{Name: "w0", Value: "1"})
+	whereAttributes = append(whereAttributes, lib.WhereQueryAttributeTagged{Name: "w1", Value: "2"})
 
 	data := make([]lib.ProcessResponseDet, 0)
 
 	// predicate is true
-	whereTrue := [1]lib.GroupingKey{lib.GroupingKey("1")}
+	whereTrue := [2]lib.GroupingKey{lib.GroupingKey("1"), lib.GroupingKey("2")}
 
 	// predicate is false
-	whereFalse := [1]lib.GroupingKey{lib.GroupingKey("0")}
+	whereFalse := [1]lib.GroupingKey{lib.GroupingKey("1")}
 
 	data = append(data, lib.ProcessResponseDet{PR: lib.ProcessResponse{}, DetTagGroupBy: "", DetTagWhere: whereTrue[:]})
 	data = append(data, lib.ProcessResponseDet{PR: lib.ProcessResponse{}, DetTagGroupBy: "", DetTagWhere: whereFalse[:]})
@@ -67,29 +69,38 @@ func TestFilterResponses(t *testing.T) {
 
 	// ****************************************
 	// more complex predicate
-	predicate = "v0 != v1 || (v2 == v3 && v4 == v5)"
+	predicate = "(exists(v0, r) || exists(v1, r)) && (exists(v2, r) || exists(v3, r)) && exists(v4, r)"
 
 	whereAttributes = make([]lib.WhereQueryAttributeTagged, 0)
 	whereAttributes = append(whereAttributes, lib.WhereQueryAttributeTagged{Name: "w0", Value: "27"})
 	whereAttributes = append(whereAttributes, lib.WhereQueryAttributeTagged{Name: "w1", Value: "0"})
 	whereAttributes = append(whereAttributes, lib.WhereQueryAttributeTagged{Name: "w2", Value: "99"})
+	whereAttributes = append(whereAttributes, lib.WhereQueryAttributeTagged{Name: "w3", Value: "599"})
+	whereAttributes = append(whereAttributes, lib.WhereQueryAttributeTagged{Name: "w4", Value: "99999"})
+
 
 	// predicate is true
-	whereTrue1 := [3]lib.GroupingKey{lib.GroupingKey("21"), lib.GroupingKey("6"), lib.GroupingKey("0")}
-	whereTrue2 := [3]lib.GroupingKey{lib.GroupingKey("27"), lib.GroupingKey("0"), lib.GroupingKey("99")}
+	whereTrue1 := [4]lib.GroupingKey{lib.GroupingKey("99999"), lib.GroupingKey("27"), lib.GroupingKey("599"), lib.GroupingKey("99999")}
+	whereTrue2 := [4]lib.GroupingKey{lib.GroupingKey("27"), lib.GroupingKey("0"), lib.GroupingKey("99"), lib.GroupingKey("99999")}
 
 	// predicate is false
-	whereFalse1 := [3]lib.GroupingKey{lib.GroupingKey("27"), lib.GroupingKey("6"), lib.GroupingKey("0")}
+	whereFalse1 := [5]lib.GroupingKey{lib.GroupingKey("27"), lib.GroupingKey("6"), lib.GroupingKey("6"),lib.GroupingKey("6"),lib.GroupingKey("0")}
 
 	data = make([]lib.ProcessResponseDet, 0)
 	data = append(data, lib.ProcessResponseDet{PR: lib.ProcessResponse{}, DetTagGroupBy: "", DetTagWhere: whereTrue1[:]})
 	data = append(data, lib.ProcessResponseDet{PR: lib.ProcessResponse{}, DetTagGroupBy: "", DetTagWhere: whereTrue2[:]})
 	data = append(data, lib.ProcessResponseDet{PR: lib.ProcessResponse{}, DetTagGroupBy: "", DetTagWhere: whereFalse1[:]})
+	data = append(data, lib.ProcessResponseDet{PR: lib.ProcessResponse{}, DetTagGroupBy: "", DetTagWhere: whereFalse1[:]})
+	data = append(data, lib.ProcessResponseDet{PR: lib.ProcessResponse{}, DetTagGroupBy: "", DetTagWhere: whereFalse1[:]})
+	data = append(data, lib.ProcessResponseDet{PR: lib.ProcessResponse{}, DetTagGroupBy: "", DetTagWhere: whereTrue2[:]})
+	data = append(data, lib.ProcessResponseDet{PR: lib.ProcessResponse{}, DetTagGroupBy: "", DetTagWhere: whereTrue2[:]})
 
 	result = services.FilterResponses(predicate, whereAttributes, data)
 
+	fmt.Println(result)
+
 	// 2 result(s) are true
-	assert.Equal(t, len(result), 2)
+	assert.Equal(t, len(result), 4)
 }
 
 func TestCountDPs(t *testing.T) {

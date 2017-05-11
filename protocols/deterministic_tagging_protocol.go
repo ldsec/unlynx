@@ -17,6 +17,8 @@ import (
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"
 	"sync"
+	"reflect"
+	"unsafe"
 )
 
 // DeterministicTaggingProtocolName is the registered name for the deterministic tagging protocol.
@@ -49,9 +51,9 @@ type DeterministicTaggingBytesMessage struct {
 	Data []byte
 }
 
-// DTBLengthMessage represents a message containing the length of a DeterministicTaggingMessageBytes message
+// DTBLengthMessage represents a message containing the lengths of a DeterministicTaggingMessageBytes message
 type DTBLengthMessage struct {
-	CVLength int
+	CVLengths []byte
 }
 
 // Structs
@@ -152,10 +154,11 @@ func (p *DeterministicTaggingProtocol) Start() error {
 // Dispatch is called on each tree node. It waits for incoming messages and handles them.
 func (p *DeterministicTaggingProtocol) Dispatch() error {
 	//************ ----- first round, add value derivated from ephemeral secret to message ---- ********************
-	lengthBef := (<-p.LengthNodeChannel).CVLength
+	lengthBef := <-p.LengthNodeChannel
 	deterministicTaggingTargetBytesBef := <-p.PreviousNodeInPathChannel
 	deterministicTaggingTargetBef := DeterministicTaggingMessage{Data: make([]GroupingAttributes, 0)}
-	deterministicTaggingTargetBef.FromBytes(deterministicTaggingTargetBytesBef.Data, lengthBef, p.NbrQueryAttributes)
+	deterministicTaggingTargetBef.FromBytes(deterministicTaggingTargetBytesBef.Data, lengthBef.CVLengths)
+
 	wg := lib.StartParallelize(len(deterministicTaggingTargetBef.Data))
 	toAdd := network.Suite.Point().Mul(network.Suite.Point().Base(), *p.SurveySecretKey)
 	for i := range deterministicTaggingTargetBef.Data {
@@ -188,14 +191,13 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 
 	lib.EndParallelize(wg)
 	log.LLvl1(p.ServerIdentity(), " preparation round for deterministic tagging")
-
 	sendingDet(*p, deterministicTaggingTargetBef)
 
 	//************ ----- second round, deterministic tag creation  ---- ********************
-	length := (<-p.LengthNodeChannel).CVLength
+	length := <-p.LengthNodeChannel
 	deterministicTaggingTargetBytes := <-p.PreviousNodeInPathChannel
 	deterministicTaggingTarget := DeterministicTaggingMessage{Data: make([]GroupingAttributes, 0)}
-	deterministicTaggingTarget.FromBytes(deterministicTaggingTargetBytes.Data, length, p.NbrQueryAttributes)
+	deterministicTaggingTarget.FromBytes(deterministicTaggingTargetBytes.Data, length.CVLengths)
 
 	roundTotalComputation := lib.StartTimer(p.Name() + "_DetTagging(DISPATCH)")
 
@@ -264,8 +266,8 @@ func (p *DeterministicTaggingProtocol) sendToNext(msg interface{}) {
 
 // sendingDet sends DeterministicTaggingBytes messages
 func sendingDet(p DeterministicTaggingProtocol, detTarget DeterministicTaggingMessage) {
-	data, cvLength := detTarget.ToBytes(p.NbrQueryAttributes)
-	p.sendToNext(&DTBLengthMessage{CVLength: cvLength})
+	data, cvLengths := detTarget.ToBytes()
+	p.sendToNext(&DTBLengthMessage{CVLengths: cvLengths})
 	p.sendToNext(&DeterministicTaggingBytesMessage{Data: data})
 }
 
@@ -290,11 +292,28 @@ func deterministicTagFormat(i int, v GroupingAttributes, targetofSwitch *[]lib.P
 // Conversion
 //______________________________________________________________________________________________________________________
 
+// cast using reflect []int <-> []byte
+// from http://stackoverflow.com/questions/17539001/converting-int32-to-byte-array-in-go
+const INT_BYTE_SIZE = int(unsafe.Sizeof(int(0)))
+
+func UnsafeCastIntsToBytes(ints []int) []byte {
+	length := len(ints) * INT_BYTE_SIZE
+	hdr := reflect.SliceHeader{Data: uintptr(unsafe.Pointer(&ints[0])), Len: length, Cap: length}
+	return *(*[]byte)(unsafe.Pointer(&hdr))
+}
+
+func UnsafeCastBytesToInts(bytes []byte) []int {
+	length := len(bytes) / INT_BYTE_SIZE
+	hdr := reflect.SliceHeader{Data: uintptr(unsafe.Pointer(&bytes[0])), Len: length, Cap: length}
+	return *(*[]int)(unsafe.Pointer(&hdr))
+}
+
 // ToBytes converts a DeterministicTaggingMessage to a byte array
-func (dtm *DeterministicTaggingMessage) ToBytes(nbrQueryAttributes int) ([]byte, int) {
-	var cvLength int
+func (dtm *DeterministicTaggingMessage) ToBytes() ([]byte, []byte) {
 
 	length := len((*dtm).Data)
+	cvLengths := make([]int, length)
+
 	b := make([]byte, 0)
 	bb := make([][]byte, length)
 
@@ -308,23 +327,11 @@ func (dtm *DeterministicTaggingMessage) ToBytes(nbrQueryAttributes int) ([]byte,
 				mutexD.Lock()
 				data := (*dtm).Data[i].Vector
 				mutexD.Unlock()
-				aux, cvAux := data.ToBytes()
 
-				mutexD.Lock()
-				bb[i] = aux
-				if i >= nbrQueryAttributes {
-					cvLength = cvAux
-				}
-
-				mutexD.Unlock()
+				bb[i], cvLengths[i] = data.ToBytes()
 			}(i)
 		} else {
-			if i > nbrQueryAttributes {
-				bb[i], cvLength = (*dtm).Data[i].Vector.ToBytes()
-			} else {
-				bb[i], _ = (*dtm).Data[i].Vector.ToBytes()
-			}
-
+			bb[i], cvLengths[i] = (*dtm).Data[i].Vector.ToBytes()
 		}
 
 	}
@@ -332,38 +339,38 @@ func (dtm *DeterministicTaggingMessage) ToBytes(nbrQueryAttributes int) ([]byte,
 	for _, v := range bb {
 		b = append(b, v...)
 	}
-	return b, cvLength
+
+	return b, UnsafeCastIntsToBytes(cvLengths)
 }
 
 // FromBytes converts a byte array to a DeterministicTaggingMessage. Note that you need to create the (empty) object beforehand.
-func (dtm *DeterministicTaggingMessage) FromBytes(data []byte, cvLength int, nbrQueryAttributes int) {
-	cvByteLength := (cvLength * 64) //TODO: hardcoded 64 (size of el-gamal element C,K)
-	nbrQueryAttrBytes := nbrQueryAttributes * 64
-	nbrGroupingAttributes := (len(data) - nbrQueryAttrBytes) / cvByteLength
+func (dtm *DeterministicTaggingMessage) FromBytes(data []byte, cvLengthsByte []byte) {
 
-	(*dtm).Data = make([]GroupingAttributes, nbrGroupingAttributes+nbrQueryAttributes)
-	for i := 0; i < nbrQueryAttributes; i++ {
-		cv := make(lib.CipherVector, 1)
-		cv.FromBytes(data[i*64:i*64+64], 1)
-		(*dtm).Data[i] = GroupingAttributes{cv}
-	}
-	data = data[nbrQueryAttrBytes:]
+	cvLengths := UnsafeCastBytesToInts(cvLengthsByte)
+	(*dtm).Data = make([]GroupingAttributes, len(cvLengths))
 
-	wg := lib.StartParallelize(nbrGroupingAttributes)
+	wg := lib.StartParallelize(len(cvLengths))
 
-	for i := nbrQueryAttributes; i < nbrQueryAttributes+nbrGroupingAttributes; i++ {
-		v := data[(i-nbrQueryAttributes)*cvByteLength : (i-nbrQueryAttributes)*cvByteLength+cvByteLength]
-		cv := make(lib.CipherVector, cvLength)
+	// iter over each value in the flatten data byte array
+	bytePos := 0
+	for i := 0 ; i < len(cvLengths) ; i++ {
+		nextBytePos := bytePos + cvLengths[i] * 64 //TODO: hardcoded 64 (size of el-gamal element C,K)
+
+		cv := make(lib.CipherVector, cvLengths[i])
+		v := data[bytePos : nextBytePos]
 		if lib.PARALLELIZE {
 			go func(v []byte, i int) {
 				defer wg.Done()
-				cv.FromBytes(v, cvLength)
+				cv.FromBytes(v, cvLengths[i])
 				(*dtm).Data[i] = GroupingAttributes{cv}
 			}(v, i)
 		} else {
-			cv.FromBytes(v, cvLength)
+			cv.FromBytes(v, cvLengths[i])
 			(*dtm).Data[i] = GroupingAttributes{cv}
 		}
+
+		// advance pointer
+		bytePos = nextBytePos
 	}
 	lib.EndParallelize(wg)
 }
