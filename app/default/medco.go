@@ -9,6 +9,9 @@ import (
 )
 
 const (
+	// Name of the binary
+	BinaryName = "medco"
+
 	// Version of the binary
 	Version = "1.00"
 
