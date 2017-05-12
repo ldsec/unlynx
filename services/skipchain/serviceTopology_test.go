@@ -7,6 +7,7 @@ import (
 	"gopkg.in/dedis/onet.v1"
 	"github.com/JoaoAndreSa/MedCo/services/skipchain"
 	"strconv"
+	"medblock/service/topology"
 )
 
 func TestMain(m *testing.M) {
@@ -17,7 +18,7 @@ func TestMain(m *testing.M) {
 /// Test the creation of a new topology skipchain
 func TestServiceCreateTopologySkipchain(t *testing.T) {
 	log.LLvl1("***************************************************************************************************")
-	log.SetDebugVisible(2)
+	log.SetDebugVisible(1)
 	local := onet.NewLocalTest()
 	// generate 3 hosts, they don't connect, they process messages, and they
 	// don't register the tree or entitylist
@@ -27,7 +28,7 @@ func TestServiceCreateTopologySkipchain(t *testing.T) {
 	// Send a request to the service
 	client := serviceSkipchain.NewTopologyClient(el.List[0], strconv.Itoa(0))
 
-	cerr := client.SendTopologyCreationQuery(el,serviceSkipchain.DataTopology{})
+	cerr := client.SendTopologyCreationQuery(el,topology.DataTopology{})
 	if cerr!=nil{
 		log.Fatal("While creating a topology skipchain",cerr)
 	}

@@ -6,6 +6,7 @@ import (
 	"gopkg.in/dedis/onet.v1/network"
 	"gopkg.in/dedis/crypto.v0/config"
 	"gopkg.in/dedis/onet.v1/log"
+	"medblock/service/topology"
 )
 
 // API represents a client with the server to which he is connected and its public/private key pair.
@@ -37,10 +38,10 @@ func NewTopologyClient(entryPoint *network.ServerIdentity, clientID string) *API
 
 // SendTopologyCreationQuery asks the server to validate the new block and then request the skipchain cothority to use
 // as the genesis block for a new topology skipchain
-func (c *API) SendTopologyCreationQuery(entities *onet.Roster, data DataTopology) (error) {
+func (c *API) SendTopologyCreationQuery(entities *onet.Roster, data topology.DataTopology) (error) {
 	log.LLvl1("Client [",c.clientID, "] requests the creation of a new topology skipchain")
 
-	st := &StateTopology{Data: data}
+	st := &topology.StateTopology{Data: data}
 
 	tcq := TopologyCreationQuery{
 		StateTopology: st,
@@ -51,9 +52,6 @@ func (c *API) SendTopologyCreationQuery(entities *onet.Roster, data DataTopology
 	resp := ServiceState{}
 	err := c.SendProtobuf(c.entryPoint, &tcq, &resp)
 	if err != nil {
-		return err
-	}
-	if resp.Error != nil {
 		return err
 	}
 
