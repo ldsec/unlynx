@@ -30,6 +30,19 @@ type TopologyCreationQuery struct {
 	Roster onet.Roster
 }
 
+// TopologyUpdateQuery asking all nodes in Roster to participate and sign the new block before
+// sending it to the skipchain cothority.
+type TopologyUpdateQuery struct {
+	//Topology to be stored in the genesis block
+	*topology.StateTopology
+	//If the message comes from a client or from a server
+	IntraMessage bool
+	//Conodes which have to participate in the creation of the topology skipchain
+	Roster onet.Roster
+	//Previous skipblock (or any other skipblock)
+	PrevSB *skipchain.SkipBlock
+}
+
 // ServiceState is the response to the different api requests
 type ServiceState struct {
 	Block *skipchain.SkipBlock
@@ -43,17 +56,11 @@ type SignatureResponse struct {
 
 //SERVICE
 
-// MsgTypes defines the Message Type ID for all the service's intra-messages.
-type MsgTypes struct {
-	msgTopologyCreationQuery network.MessageTypeID
-}
-
-var msgTypes = MsgTypes{}
-
 func init() {
 	onet.RegisterNewService(ServiceName, NewService)
 
-	msgTypes.msgTopologyCreationQuery = network.RegisterMessage(&TopologyCreationQuery{})
+	network.RegisterMessage(&TopologyCreationQuery{})
+	network.RegisterMessage(&TopologyUpdateQuery{})
 
 	network.RegisterMessage(&ServiceState{})
 }
@@ -71,17 +78,11 @@ func NewService(c *onet.Context) onet.Service {
 	if cerr := newInstance.RegisterHandler(newInstance.HandleTopologyCreationQuery); cerr != nil {
 		log.Fatal("Wrong Handler.", cerr)
 	}
-
-	c.RegisterProcessor(newInstance, msgTypes.msgTopologyCreationQuery)
-	return newInstance
-}
-
-// Process implements the processor interface and is used to recognize messages broadcasted between servers
-func (s *Service) Process(msg *network.Envelope) {
-	if msg.MsgType.Equal(msgTypes.msgTopologyCreationQuery) {
-		tmp := (msg.Msg).(*TopologyCreationQuery)
-		s.HandleTopologyCreationQuery(tmp)
+	if cerr := newInstance.RegisterHandler(newInstance.HandleTopologyUpdateQuery); cerr != nil {
+		log.Fatal("Wrong Handler.", cerr)
 	}
+
+	return newInstance
 }
 
 // Query Handlers
@@ -91,35 +92,79 @@ func (s *Service) Process(msg *network.Envelope) {
 func (s *Service) HandleTopologyCreationQuery(tcq *TopologyCreationQuery) (network.Message, onet.ClientError) {
 	log.LLvl1(s.ServerIdentity(), "received a request for a new topology skipchain")
 
+	st, cerr := s.StartUpdateService(tcq.Roster, tcq.StateTopology)
+	if cerr != nil {
+		return nil, cerr
+	}
+
+	// Send a request to the skipchain medblock service
+	client := topology.NewTopologyClient()
+	sb, cerr := client.CreateNewTopology(&tcq.Roster, st)
+	if cerr != nil {
+		log.LLvl1("Error adding block")
+		return &ServiceState{}, onet.NewClientErrorCode(4100, "Could not add block to the skipchain cothority")
+	}
+
+	log.LLvl1(s.ServerIdentity(), "successfuly created a topology skipchain")
+	return &ServiceState{Block: sb}, nil
+}
+
+// HandleTopologyUpdateQuery handles the reception of a topology update query.
+func (s *Service) HandleTopologyUpdateQuery(tuq *TopologyUpdateQuery) (network.Message, onet.ClientError) {
+	log.LLvl1(s.ServerIdentity(), "received a request for an update on the topology skipchain")
+
+	st, cerr := s.StartUpdateService(tuq.Roster, tuq.StateTopology)
+	if cerr != nil {
+		return nil, cerr
+	}
+
+	// Send a request to the skipchain medblock service
+	client := topology.NewTopologyClient()
+	sb, cerr := client.UpdateTopology(&tuq.Roster, tuq.PrevSB, st)
+	if cerr != nil {
+		log.LLvl1("Error adding block")
+		return &ServiceState{}, onet.NewClientErrorCode(4100, "Could not add block to the skipchain cothority")
+	}
+
+	log.LLvl1(s.ServerIdentity(), "successfuly added a new topology skipblock")
+	return &ServiceState{Block: sb}, nil
+}
+
+// Service Phases
+//______________________________________________________________________________________________________________________
+
+// StartUpdateService starts a create or update service to create a new skipchain or add a new block to that skipchain
+func (s *Service) StartUpdateService(roster onet.Roster, st *topology.StateTopology) (*topology.StateTopology, onet.ClientError) {
+
 	log.LLvl1("Check if each node agrees with the new topology skipblock")
 
-	roster, err := s.AgreementPhase(tcq)
+	rosterAccepted, err := s.AgreementPhase(roster, st)
 	if err != nil {
 		return nil, err
 	}
-	tcq.Roster = *roster
+	roster = *rosterAccepted
 
-	if len(tcq.Roster.List) > 0 {
-		res, err := s.CoSiPhase(tcq)
+	if len(roster.List) > 0 {
+		res, err := s.CoSiPhase(roster, st)
 		if err != nil {
 			return nil, err
 		}
 
-		dataSigned, _ := network.Marshal(&tcq.StateTopology.Data)
+		dataSigned, _ := network.Marshal(&st.Data)
 
 		// verify the response still
-		verif := cosi.VerifySignature(network.Suite, tcq.Roster.Publics(), dataSigned, res.Signature)
+		verif := cosi.VerifySignature(network.Suite, roster.Publics(), dataSigned, res.Signature)
 
 		if verif != nil {
 			log.LLvl1("Invalid CoSi signature")
-			return &ServiceState{}, onet.NewClientErrorCode(4100, "Invalid CoSi signature")
+			return nil, onet.NewClientErrorCode(4100, "Invalid CoSi signature")
 		}
 
 		log.LLvl1("Valid CoSi signature")
 
 		// Add data to state topology block to be sent to the skipchain cothority
-		tcq.StateTopology.SignKeys = tcq.Roster.Publics()
-		tcq.StateTopology.Signature = res.Signature
+		st.SignKeys = roster.Publics()
+		st.Signature = res.Signature
 
 		//log.LLvl1("ANSWER:",verif)
 
@@ -127,27 +172,15 @@ func (s *Service) HandleTopologyCreationQuery(tcq *TopologyCreationQuery) (netwo
 
 		//log.LLvl1("ANSWER:",verif)
 
-		// Send a request to the skipchain medblock service
-		client := topology.NewTopologyClient()
-		sb, cerr := client.CreateNewTopology(&tcq.Roster, tcq.StateTopology)
-		if cerr != nil {
-			log.LLvl1("Error adding block")
-			return &ServiceState{}, onet.NewClientErrorCode(4100, "Could not add block to the skipchain cothority")
-		}
-
-		log.LLvl1(s.ServerIdentity(), "successfuly created a topology skipchain")
-		return &ServiceState{Block: sb}, nil
+		return st, nil
 	}
 
-	return &ServiceState{Block: nil}, onet.NewClientErrorCode(4100, "No node agreed to add this block")
+	return nil, onet.NewClientErrorCode(4100, "No node agreed to add this block")
 }
 
-// Service Phases
-//______________________________________________________________________________________________________________________
-
 // AgreementPhase starts a VerifyBlock protocol
-func (s *Service) AgreementPhase(tcq *TopologyCreationQuery) (*onet.Roster, onet.ClientError) {
-	tree := tcq.Roster.GenerateNaryTreeWithRoot(2, s.ServerIdentity())
+func (s *Service) AgreementPhase(roster onet.Roster, st *topology.StateTopology) (*onet.Roster, onet.ClientError) {
+	tree := roster.GenerateNaryTreeWithRoot(2, s.ServerIdentity())
 	tn := s.NewTreeNodeInstance(tree, tree.Root, protocols.VerifyBlockProtocolName)
 
 	pi, err := protocols.NewVerifyBlockProtocol(tn)
@@ -159,7 +192,7 @@ func (s *Service) AgreementPhase(tcq *TopologyCreationQuery) (*onet.Roster, onet
 
 	pverif := pi.(*protocols.VerifyBlockProtocol)
 
-	b, err := network.Marshal(tcq.StateTopology)
+	b, err := network.Marshal(st)
 	if err != nil {
 		log.Fatal("While marshalling")
 		return nil, onet.NewClientErrorCode(4100, "Couldn't marshal the block: "+err.Error())
@@ -172,13 +205,13 @@ func (s *Service) AgreementPhase(tcq *TopologyCreationQuery) (*onet.Roster, onet
 
 	f := <-pverif.FeedbackChannel
 
-	roster := onet.Roster{List: f.List}
-	return &roster, nil
+	rosterAccept := onet.Roster{List: f.List}
+	return &rosterAccept, nil
 }
 
 // CoSiPhase starts a CoSi protocol
-func (s *Service) CoSiPhase(tcq *TopologyCreationQuery) (*SignatureResponse, onet.ClientError) {
-	tree := tcq.Roster.GenerateNaryTreeWithRoot(2, s.ServerIdentity())
+func (s *Service) CoSiPhase(roster onet.Roster, st *topology.StateTopology) (*SignatureResponse, onet.ClientError) {
+	tree := roster.GenerateNaryTreeWithRoot(2, s.ServerIdentity())
 	tn := s.NewTreeNodeInstance(tree, tree.Root, cosi.Name)
 
 	pi, err := cosi.NewProtocol(tn)
@@ -190,7 +223,7 @@ func (s *Service) CoSiPhase(tcq *TopologyCreationQuery) (*SignatureResponse, one
 
 	pcosi := pi.(*cosi.CoSi)
 
-	message, err := network.Marshal(&tcq.StateTopology.Data)
+	message, err := network.Marshal(&st.Data)
 	pcosi.SigningMessage(message)
 	h, err := crypto.HashBytes(network.Suite.Hash(), message)
 	if err != nil {

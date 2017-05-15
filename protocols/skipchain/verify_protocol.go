@@ -197,6 +197,7 @@ func chooseVerifFunction(block []byte) (bool, error) {
 	return accept, nil
 }
 
+// TODO: What to actually verify (good question :/)?
 // verifyTopologyBlock verifies if the block makes sense and accepts or rejects it
 func verifyTopologyBlock(st *topology.StateTopology) (bool, error) {
 	return true, nil

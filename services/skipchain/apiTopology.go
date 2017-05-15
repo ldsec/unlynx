@@ -1,6 +1,7 @@
 package serviceSkipchain
 
 import (
+	"github.com/dedis/cothority/skipchain"
 	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/crypto.v0/config"
 	"gopkg.in/dedis/onet.v1"
@@ -37,7 +38,7 @@ func NewTopologyClient(entryPoint *network.ServerIdentity, clientID string) *API
 
 // SendTopologyCreationQuery asks the server to validate the new block and then request the skipchain cothority to use
 // as the genesis block for a new topology skipchain
-func (c *API) SendTopologyCreationQuery(entities *onet.Roster, st *topology.StateTopology) error {
+func (c *API) SendTopologyCreationQuery(entities *onet.Roster, st *topology.StateTopology) (*skipchain.SkipBlock, error) {
 	log.LLvl1("Client [", c.clientID, "] requests the creation of a new topology skipchain")
 
 	tcq := TopologyCreationQuery{
@@ -49,13 +50,13 @@ func (c *API) SendTopologyCreationQuery(entities *onet.Roster, st *topology.Stat
 	resp := ServiceState{}
 	err := c.SendProtobuf(c.entryPoint, &tcq, &resp)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	log.LLvl1("Client [", c.clientID, "] successfully created a new topology skipchain")
 
 	log.LLvl1("Genesis block:", *topology.UnmarshalData(resp.Block))
-	return nil
+	return resp.Block, nil
 }
 
 // Update the Topology Skipchain (to be performed by an admin or data provider)
@@ -63,8 +64,26 @@ func (c *API) SendTopologyCreationQuery(entities *onet.Roster, st *topology.Stat
 
 // SendTopologyUpdateQuery asks the server to validate the new block and then request the skipchain cothority to add it
 // to the topology skipchain
-func (c *API) SendTopologyUpdateQuery() {
+func (c *API) SendTopologyUpdateQuery(entities *onet.Roster, prevSB *skipchain.SkipBlock, st *topology.StateTopology) (*skipchain.SkipBlock, error) {
+	log.LLvl1("Client [", c.clientID, "] requests the addition of a new topology skipblock")
 
+	tuq := TopologyUpdateQuery{
+		StateTopology: st,
+		IntraMessage:  false,
+		Roster:        *entities,
+		PrevSB:        prevSB,
+	}
+
+	resp := ServiceState{}
+	err := c.SendProtobuf(c.entryPoint, &tuq, &resp)
+	if err != nil {
+		return nil, err
+	}
+
+	log.LLvl1("Client [", c.clientID, "] successfully added a new topology skipblock")
+
+	log.LLvl1("Added block:", *topology.UnmarshalData(resp.Block))
+	return resp.Block, nil
 }
 
 // Get Last Block of the Topology Skipchain (to be performed by the querier prior to starting a medco protocol)
