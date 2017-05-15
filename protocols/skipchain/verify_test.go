@@ -4,11 +4,11 @@ import (
 	"testing"
 
 	"github.com/JoaoAndreSa/MedCo/protocols/skipchain"
+	"github.com/dedis/onet/log"
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/network"
-	"time"
 	"medblock/service/topology"
-	"github.com/dedis/onet/log"
+	"time"
 )
 
 // TestVerifyTopology tests verify topology protocol
@@ -24,9 +24,8 @@ func TestVerifyTopology(t *testing.T) {
 	}
 	protocol := rootInstance.(*protocols.VerifyBlockProtocol)
 
-
-	block := topology.RandomData(1,4,2)
-	b,err := network.Marshal(block)
+	block := topology.RandomData(1, 4, 2)
+	b, err := network.Marshal(block)
 	if err != nil {
 		log.Fatal("While marshalling", err)
 	}

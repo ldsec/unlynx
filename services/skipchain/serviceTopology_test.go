@@ -3,11 +3,11 @@ package serviceSkipchain_test
 import (
 	"testing"
 
-	"gopkg.in/dedis/onet.v1/log"
-	"gopkg.in/dedis/onet.v1"
 	"github.com/JoaoAndreSa/MedCo/services/skipchain"
-	"strconv"
+	"gopkg.in/dedis/onet.v1"
+	"gopkg.in/dedis/onet.v1/log"
 	"medblock/service/topology"
+	"strconv"
 )
 
 func TestMain(m *testing.M) {
@@ -29,11 +29,9 @@ func TestServiceCreateTopologySkipchain(t *testing.T) {
 	// Send a request to the service
 	client := serviceSkipchain.NewTopologyClient(el.List[0], strconv.Itoa(0))
 
-
 	data := topology.RandomData(1, 3, 4)
-	cerr := client.SendTopologyCreationQuery(el,data)
-	if cerr!=nil{
-		log.Fatal("While creating a topology skipchain",cerr)
+	cerr := client.SendTopologyCreationQuery(el, data)
+	if cerr != nil {
+		log.Fatal("While creating a topology skipchain", cerr)
 	}
 }
-

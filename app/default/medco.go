@@ -9,6 +9,7 @@ import (
 )
 
 const (
+	// BinaryName is the executable name
 	BinaryName = "medco"
 
 	// Version of the binary

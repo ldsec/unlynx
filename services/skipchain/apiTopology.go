@@ -2,10 +2,10 @@ package serviceSkipchain
 
 import (
 	"gopkg.in/dedis/crypto.v0/abstract"
-	"gopkg.in/dedis/onet.v1"
-	"gopkg.in/dedis/onet.v1/network"
 	"gopkg.in/dedis/crypto.v0/config"
+	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
+	"gopkg.in/dedis/onet.v1/network"
 	"medblock/service/topology"
 )
 
@@ -32,19 +32,18 @@ func NewTopologyClient(entryPoint *network.ServerIdentity, clientID string) *API
 	return newClient
 }
 
-
 // Create the Topology Skipchain (to be performed by an admin or data provider)
 //______________________________________________________________________________________________________________________
 
 // SendTopologyCreationQuery asks the server to validate the new block and then request the skipchain cothority to use
 // as the genesis block for a new topology skipchain
-func (c *API) SendTopologyCreationQuery(entities *onet.Roster, st *topology.StateTopology) (error) {
-	log.LLvl1("Client [",c.clientID, "] requests the creation of a new topology skipchain")
+func (c *API) SendTopologyCreationQuery(entities *onet.Roster, st *topology.StateTopology) error {
+	log.LLvl1("Client [", c.clientID, "] requests the creation of a new topology skipchain")
 
 	tcq := TopologyCreationQuery{
 		StateTopology: st,
-		IntraMessage: false,
-		Roster: *entities,
+		IntraMessage:  false,
+		Roster:        *entities,
 	}
 
 	resp := ServiceState{}
@@ -53,9 +52,9 @@ func (c *API) SendTopologyCreationQuery(entities *onet.Roster, st *topology.Stat
 		return err
 	}
 
-	log.LLvl1("Client [",c.clientID,"] successfully created a new topology skipchain")
+	log.LLvl1("Client [", c.clientID, "] successfully created a new topology skipchain")
 
-	log.LLvl1("Genesis block:",*topology.UnmarshalData(resp.Block))
+	log.LLvl1("Genesis block:", *topology.UnmarshalData(resp.Block))
 	return nil
 }
 
@@ -64,7 +63,7 @@ func (c *API) SendTopologyCreationQuery(entities *onet.Roster, st *topology.Stat
 
 // SendTopologyUpdateQuery asks the server to validate the new block and then request the skipchain cothority to add it
 // to the topology skipchain
-func (c *API) SendTopologyUpdateQuery() () {
+func (c *API) SendTopologyUpdateQuery() {
 
 }
 
@@ -73,7 +72,7 @@ func (c *API) SendTopologyUpdateQuery() () {
 
 // SendTopologyGetQuery asks the server to to communicate with the skipchain cothority and retrieve the last block from
 // the topology skipchain
-func (c *API) SendTopologyGetQuery() () {
+func (c *API) SendTopologyGetQuery() {
 
 }
 
@@ -82,7 +81,6 @@ func (c *API) SendTopologyGetQuery() () {
 
 // SendTopologySearchQuery asks the server to communicate with the skipchain cothority and requests all the blocks that
 // exist in a certain time interval.
-func (c *API) SendTopologySearchQuery() () {
+func (c *API) SendTopologySearchQuery() {
 
 }
-

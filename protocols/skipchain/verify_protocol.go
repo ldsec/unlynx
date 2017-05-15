@@ -9,13 +9,13 @@ package protocols
 import (
 	"errors"
 
-	"gopkg.in/dedis/onet.v1"
-	"gopkg.in/dedis/onet.v1/network"
-	"gopkg.in/dedis/onet.v1/log"
-	"medblock/service/topology"
-	"gopkg.in/dedis/onet.v1/crypto"
-	"gopkg.in/dedis/crypto.v0/abstract"
 	"bytes"
+	"gopkg.in/dedis/crypto.v0/abstract"
+	"gopkg.in/dedis/onet.v1"
+	"gopkg.in/dedis/onet.v1/crypto"
+	"gopkg.in/dedis/onet.v1/log"
+	"gopkg.in/dedis/onet.v1/network"
+	"medblock/service/topology"
 )
 
 // VerifyBlockProtocolName is the registered name for the verify block protocol.
@@ -50,10 +50,10 @@ type BlockAndAnswer struct {
 // BlockVerifMessage identifies the message that contains the hash of the block and a signature over that hash (to
 // verify the authenticity of the sender)
 type BlockVerifMessage struct {
-	Answer 		bool
-	Hash 		[]byte
-	Signature 	crypto.SchnorrSig
-	PubKey          abstract.Point
+	Answer    bool
+	Hash      []byte
+	Signature crypto.SchnorrSig
+	PubKey    abstract.Point
 }
 
 // Structs
@@ -71,7 +71,6 @@ type blockVerifMessageStruct struct {
 	BlockVerifMessage
 }
 
-
 // Protocol
 //______________________________________________________________________________________________________________________
 
@@ -80,16 +79,15 @@ type VerifyBlockProtocol struct {
 	*onet.TreeNodeInstance
 
 	// Protocol feedback channel
-	FeedbackChannel 	chan VerifyData
+	FeedbackChannel chan VerifyData
 
 	// Protocol communication channels
-	BlockChannel         	chan blockMessageStruct
-	BlockVerifChannel       chan blockVerifMessageStruct
+	BlockChannel      chan blockMessageStruct
+	BlockVerifChannel chan blockVerifMessageStruct
 
 	// Protocol state data
-	TargetBlock 		[]byte
+	TargetBlock []byte
 }
-
 
 // NewVerifyBlockProtocol initializes the protocol instance.
 func NewVerifyBlockProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
@@ -111,7 +109,7 @@ func NewVerifyBlockProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, er
 
 // Start is called at the root to begin the execution of the protocol.
 func (p *VerifyBlockProtocol) Start() error {
-	listNodesAccept := make([]*network.ServerIdentity,0)
+	listNodesAccept := make([]*network.ServerIdentity, 0)
 
 	accept, err := chooseVerifFunction(p.TargetBlock)
 	if err != nil {
@@ -119,30 +117,30 @@ func (p *VerifyBlockProtocol) Start() error {
 	}
 
 	if accept {
-		log.LLvl1("Node",p.ServerIdentity(),"accepted to sign the block")
-		listNodesAccept = append(listNodesAccept,p.ServerIdentity())
+		log.LLvl1("Node", p.ServerIdentity(), "accepted to sign the block")
+		listNodesAccept = append(listNodesAccept, p.ServerIdentity())
 	}
 
-	p.Broadcast(&BlockMessage{Block:p.TargetBlock})
+	p.Broadcast(&BlockMessage{Block: p.TargetBlock})
 
-	numberNodes := p.Tree().Size()-1
+	numberNodes := p.Tree().Size() - 1
 	i := 0
 	for i < numberNodes {
 		m := <-p.BlockVerifChannel
 		i++
 
-		valid := crypto.VerifySchnorr(network.Suite,m.PubKey,m.Hash,m.Signature)
+		valid := crypto.VerifySchnorr(network.Suite, m.PubKey, m.Hash, m.Signature)
 
 		//Get the hash of the block and answer to verify signature
-		h, err := hashBlockAndAnswer(p.TargetBlock,m.Answer)
+		h, err := hashBlockAndAnswer(p.TargetBlock, m.Answer)
 		if err != nil {
 			return err
 		}
 
 		if valid == nil {
-			if bytes.Compare(m.Hash,h)==0 && m.Answer == true{
-				log.LLvl1("Node",m.ServerIdentity,"accepted to sign the block")
-				listNodesAccept = append(listNodesAccept,m.ServerIdentity)
+			if bytes.Compare(m.Hash, h) == 0 && m.Answer == true {
+				log.LLvl1("Node", m.ServerIdentity, "accepted to sign the block")
+				listNodesAccept = append(listNodesAccept, m.ServerIdentity)
 			}
 		}
 
@@ -168,27 +166,26 @@ func (p *VerifyBlockProtocol) Dispatch() error {
 	}
 
 	response := BlockVerifMessage{
-		Answer: accept,
-		Hash:   h,
+		Answer:    accept,
+		Hash:      h,
 		Signature: *signature,
-		PubKey:  p.Public(),
+		PubKey:    p.Public(),
 	}
 
-	p.SendTo(p.Root(),&response)
+	p.SendTo(p.Root(), &response)
 	// Now we can add more verification functions depending on the block :D
 
 	return nil
 }
 
-
-func chooseVerifFunction(block []byte) (bool, error){
-	mType, message,err := network.Unmarshal(block)
+func chooseVerifFunction(block []byte) (bool, error) {
+	mType, message, err := network.Unmarshal(block)
 	if err != nil {
 		return false, err
 	}
 
 	var accept bool
-	if mType.Equal(network.MessageType(topology.StateTopology{})){
+	if mType.Equal(network.MessageType(topology.StateTopology{})) {
 		stBlock := message.(*topology.StateTopology)
 		accept, err = verifyTopologyBlock(stBlock)
 	}
@@ -200,16 +197,15 @@ func chooseVerifFunction(block []byte) (bool, error){
 	return accept, nil
 }
 
-
 // verifyTopologyBlock verifies if the block makes sense and accepts or rejects it
 func verifyTopologyBlock(st *topology.StateTopology) (bool, error) {
-	return true,nil
+	return true, nil
 }
 
 func signBlockAndAnswer(block []byte, answer bool, private abstract.Scalar) ([]byte, *crypto.SchnorrSig, error) {
-	h, err := hashBlockAndAnswer(block,answer)
+	h, err := hashBlockAndAnswer(block, answer)
 
-	signature, err := crypto.SignSchnorr(network.Suite,private,h)
+	signature, err := crypto.SignSchnorr(network.Suite, private, h)
 	if err != nil {
 		log.Fatal("Could not sign hash of block")
 		return nil, nil, err
@@ -218,7 +214,7 @@ func signBlockAndAnswer(block []byte, answer bool, private abstract.Scalar) ([]b
 	return h, &signature, nil
 }
 
-func hashBlockAndAnswer(block []byte, answer bool) ([]byte, error){
+func hashBlockAndAnswer(block []byte, answer bool) ([]byte, error) {
 	h, err := crypto.HashBytes(network.Suite.Hash(), block)
 	if err != nil {
 		log.Fatal("Could not hash block")
@@ -226,11 +222,10 @@ func hashBlockAndAnswer(block []byte, answer bool) ([]byte, error){
 	}
 
 	if answer == true {
-		h = append(h,byte(1))
+		h = append(h, byte(1))
 	} else {
-		h = append(h,byte(0))
+		h = append(h, byte(0))
 	}
 
-	return h,nil
+	return h, nil
 }
-

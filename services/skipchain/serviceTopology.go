@@ -1,22 +1,21 @@
 package serviceSkipchain
 
 import (
-	"gopkg.in/dedis/onet.v1"
-	"time"
-	"gopkg.in/dedis/onet.v1/network"
-	"gopkg.in/dedis/onet.v1/log"
-	"github.com/dedis/cothority/cosi/protocol"
-	"gopkg.in/dedis/onet.v1/crypto"
-	"medblock/service/topology"
 	"github.com/JoaoAndreSa/MedCo/protocols/skipchain"
-	"gopkg.in/dedis/onet.v1/app"
-	"os"
+	"github.com/dedis/cothority/cosi/protocol"
 	"github.com/dedis/cothority/skipchain"
+	"gopkg.in/dedis/onet.v1"
+	"gopkg.in/dedis/onet.v1/app"
+	"gopkg.in/dedis/onet.v1/crypto"
+	"gopkg.in/dedis/onet.v1/log"
+	"gopkg.in/dedis/onet.v1/network"
+	"medblock/service/topology"
+	"os"
+	"time"
 )
 
 // ServiceName is the registered name for the skipchain topology service.
 const ServiceName = "Topology"
-
 
 //MESSAGES
 
@@ -31,9 +30,9 @@ type TopologyCreationQuery struct {
 	Roster onet.Roster
 }
 
-// Service state is the response to the different api requests
+// ServiceState is the response to the different api requests
 type ServiceState struct {
-	Block	*skipchain.SkipBlock
+	Block *skipchain.SkipBlock
 }
 
 // SignatureResponse is what the Cosi protocol will reply to clients.
@@ -50,7 +49,6 @@ type MsgTypes struct {
 }
 
 var msgTypes = MsgTypes{}
-
 
 func init() {
 	onet.RegisterNewService(ServiceName, NewService)
@@ -131,7 +129,7 @@ func (s *Service) HandleTopologyCreationQuery(tcq *TopologyCreationQuery) (netwo
 
 		// Send a request to the skipchain medblock service
 		client := topology.NewTopologyClient()
-		sb, cerr := client.CreateNewTopology(&tcq.Roster,tcq.StateTopology)
+		sb, cerr := client.CreateNewTopology(&tcq.Roster, tcq.StateTopology)
 		if cerr != nil {
 			log.LLvl1("Error adding block")
 			return &ServiceState{}, onet.NewClientErrorCode(4100, "Could not add block to the skipchain cothority")
@@ -139,17 +137,16 @@ func (s *Service) HandleTopologyCreationQuery(tcq *TopologyCreationQuery) (netwo
 
 		log.LLvl1(s.ServerIdentity(), "successfuly created a topology skipchain")
 		return &ServiceState{Block: sb}, nil
-	} else {
-		return &ServiceState{Block: nil}, onet.NewClientErrorCode(4100, "No node agreed to add this block")
 	}
-}
 
+	return &ServiceState{Block: nil}, onet.NewClientErrorCode(4100, "No node agreed to add this block")
+}
 
 // Service Phases
 //______________________________________________________________________________________________________________________
 
-
-func (s *Service) AgreementPhase(tcq *TopologyCreationQuery) (*onet.Roster, onet.ClientError){
+// AgreementPhase starts a VerifyBlock protocol
+func (s *Service) AgreementPhase(tcq *TopologyCreationQuery) (*onet.Roster, onet.ClientError) {
 	tree := tcq.Roster.GenerateNaryTreeWithRoot(2, s.ServerIdentity())
 	tn := s.NewTreeNodeInstance(tree, tree.Root, protocols.VerifyBlockProtocolName)
 
@@ -173,14 +170,13 @@ func (s *Service) AgreementPhase(tcq *TopologyCreationQuery) (*onet.Roster, onet
 	log.LLvl1("Starting up root protocol")
 	go pi.Start()
 
-	f := <- pverif.FeedbackChannel
+	f := <-pverif.FeedbackChannel
 
 	roster := onet.Roster{List: f.List}
 	return &roster, nil
 }
 
-
-// StartProtocol starts a CoSi protocol
+// CoSiPhase starts a CoSi protocol
 func (s *Service) CoSiPhase(tcq *TopologyCreationQuery) (*SignatureResponse, onet.ClientError) {
 	tree := tcq.Roster.GenerateNaryTreeWithRoot(2, s.ServerIdentity())
 	tn := s.NewTreeNodeInstance(tree, tree.Root, cosi.Name)
@@ -227,7 +223,7 @@ func getRoster(filepath string) (*onet.Roster, error) {
 	}
 	el, err := app.ReadGroupToml(f)
 
-	if err!= nil{
+	if err != nil {
 		return nil, err
 	}
 
