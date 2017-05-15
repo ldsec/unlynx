@@ -15,6 +15,7 @@ import (
 	"medblock/service/topology"
 	"gopkg.in/dedis/onet.v1/crypto"
 	"gopkg.in/dedis/crypto.v0/abstract"
+	"bytes"
 )
 
 // VerifyBlockProtocolName is the registered name for the verify block protocol.
@@ -132,12 +133,19 @@ func (p *VerifyBlockProtocol) Start() error {
 
 		valid := crypto.VerifySchnorr(network.Suite,m.PubKey,m.Hash,m.Signature)
 
+		//Get the hash of the block and answer to verify signature
+		h, err := hashBlockAndAnswer(p.TargetBlock,m.Answer)
+		if err != nil {
+			return err
+		}
+
 		if valid == nil {
-			if m.Answer == true{
+			if bytes.Compare(m.Hash,h)==0 && m.Answer == true{
 				log.LLvl1("Node",m.ServerIdentity,"accepted to sign the block")
 				listNodesAccept = append(listNodesAccept,m.ServerIdentity)
 			}
 		}
+
 	}
 
 	p.FeedbackChannel <- VerifyData{List: listNodesAccept}
@@ -199,17 +207,7 @@ func verifyTopologyBlock(st *topology.StateTopology) (bool, error) {
 }
 
 func signBlockAndAnswer(block []byte, answer bool, private abstract.Scalar) ([]byte, *crypto.SchnorrSig, error) {
-	h, err := crypto.HashBytes(network.Suite.Hash(), block)
-	if err != nil {
-		log.Fatal("Could not hash block")
-		return nil, nil, err
-	}
-
-	if answer == true {
-		h = append(h,byte(1))
-	} else {
-		h = append(h,byte(0))
-	}
+	h, err := hashBlockAndAnswer(block,answer)
 
 	signature, err := crypto.SignSchnorr(network.Suite,private,h)
 	if err != nil {
@@ -218,5 +216,21 @@ func signBlockAndAnswer(block []byte, answer bool, private abstract.Scalar) ([]b
 	}
 
 	return h, &signature, nil
+}
+
+func hashBlockAndAnswer(block []byte, answer bool) ([]byte, error){
+	h, err := crypto.HashBytes(network.Suite.Hash(), block)
+	if err != nil {
+		log.Fatal("Could not hash block")
+		return nil, err
+	}
+
+	if answer == true {
+		h = append(h,byte(1))
+	} else {
+		h = append(h,byte(0))
+	}
+
+	return h,nil
 }
 

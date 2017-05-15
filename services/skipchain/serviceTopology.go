@@ -107,17 +107,17 @@ func (s *Service) HandleTopologyCreationQuery(tcq *TopologyCreationQuery) (netwo
 			return nil, err
 		}
 
-		dataSigned, _ := network.Marshal(tcq.StateTopology)
+		dataSigned, _ := network.Marshal(&tcq.StateTopology.Data)
 
 		// verify the response still
 		verif := cosi.VerifySignature(network.Suite, tcq.Roster.Publics(), dataSigned, res.Signature)
 
 		if verif != nil {
-			log.LLvl1("Invalid signature")
-			return &ServiceState{}, onet.NewClientErrorCode(4100, "Invalid signature")
+			log.LLvl1("Invalid CoSi signature")
+			return &ServiceState{}, onet.NewClientErrorCode(4100, "Invalid CoSi signature")
 		}
 
-		log.LLvl1("Valid signature")
+		log.LLvl1("Valid CoSi signature")
 
 		// Add data to state topology block to be sent to the skipchain cothority
 		tcq.StateTopology.SignKeys = tcq.Roster.Publics()
@@ -130,7 +130,6 @@ func (s *Service) HandleTopologyCreationQuery(tcq *TopologyCreationQuery) (netwo
 		//log.LLvl1("ANSWER:",verif)
 
 		// Send a request to the skipchain medblock service
-		log.LLvl1("Sending the block to the skipchain cothority")
 		client := topology.NewTopologyClient()
 		sb, cerr := client.CreateNewTopology(&tcq.Roster,tcq.StateTopology)
 		if cerr != nil {
@@ -195,7 +194,7 @@ func (s *Service) CoSiPhase(tcq *TopologyCreationQuery) (*SignatureResponse, one
 
 	pcosi := pi.(*cosi.CoSi)
 
-	message, err := network.Marshal(tcq.StateTopology)
+	message, err := network.Marshal(&tcq.StateTopology.Data)
 	pcosi.SigningMessage(message)
 	h, err := crypto.HashBytes(network.Suite.Hash(), message)
 	if err != nil {

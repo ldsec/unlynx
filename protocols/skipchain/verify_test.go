@@ -25,8 +25,8 @@ func TestVerifyTopology(t *testing.T) {
 	protocol := rootInstance.(*protocols.VerifyBlockProtocol)
 
 
-	block := topology.StateTopology{}
-	b,err := network.Marshal(&block)
+	block := topology.RandomData(1,4,2)
+	b,err := network.Marshal(block)
 	if err != nil {
 		log.Fatal("While marshalling", err)
 	}
