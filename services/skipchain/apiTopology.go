@@ -38,10 +38,8 @@ func NewTopologyClient(entryPoint *network.ServerIdentity, clientID string) *API
 
 // SendTopologyCreationQuery asks the server to validate the new block and then request the skipchain cothority to use
 // as the genesis block for a new topology skipchain
-func (c *API) SendTopologyCreationQuery(entities *onet.Roster, data topology.DataTopology) (error) {
+func (c *API) SendTopologyCreationQuery(entities *onet.Roster, st *topology.StateTopology) (error) {
 	log.LLvl1("Client [",c.clientID, "] requests the creation of a new topology skipchain")
-
-	st := &topology.StateTopology{Data: data}
 
 	tcq := TopologyCreationQuery{
 		StateTopology: st,
@@ -57,6 +55,7 @@ func (c *API) SendTopologyCreationQuery(entities *onet.Roster, data topology.Dat
 
 	log.LLvl1("Client [",c.clientID,"] successfully created a new topology skipchain")
 
+	log.LLvl1("Genesis block:",*topology.UnmarshalData(resp.Block))
 	return nil
 }
 

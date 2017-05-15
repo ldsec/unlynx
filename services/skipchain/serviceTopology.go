@@ -8,6 +8,10 @@ import (
 	"github.com/dedis/cothority/cosi/protocol"
 	"gopkg.in/dedis/onet.v1/crypto"
 	"medblock/service/topology"
+	"github.com/JoaoAndreSa/MedCo/protocols/skipchain"
+	"gopkg.in/dedis/onet.v1/app"
+	"os"
+	"github.com/dedis/cothority/skipchain"
 )
 
 // ServiceName is the registered name for the skipchain topology service.
@@ -28,7 +32,9 @@ type TopologyCreationQuery struct {
 }
 
 // Service state is the response to the different api requests
-type ServiceState struct {}
+type ServiceState struct {
+	Block	*skipchain.SkipBlock
+}
 
 // SignatureResponse is what the Cosi protocol will reply to clients.
 type SignatureResponse struct {
@@ -87,29 +93,92 @@ func (s *Service) Process(msg *network.Envelope) {
 func (s *Service) HandleTopologyCreationQuery(tcq *TopologyCreationQuery) (network.Message, onet.ClientError) {
 	log.LLvl1(s.ServerIdentity(), "received a request for a new topology skipchain")
 
-	res, err := s.CoSiPhase(tcq)
+	log.LLvl1("Check if each node agrees with the new topology skipblock")
+
+	roster, err := s.AgreementPhase(tcq)
 	if err != nil {
 		return nil, err
 	}
+	tcq.Roster = *roster
 
-	a, _ := network.Marshal(tcq.StateTopology)
+	if len(tcq.Roster.List) > 0 {
+		res, err := s.CoSiPhase(tcq)
+		if err != nil {
+			return nil, err
+		}
 
-	// verify the response still
-	verif := cosi.VerifySignature(network.Suite, tcq.Roster.Publics(), a, res.Signature)
+		dataSigned, _ := network.Marshal(tcq.StateTopology)
 
-	log.LLvl1("ANSWER",verif)
+		// verify the response still
+		verif := cosi.VerifySignature(network.Suite, tcq.Roster.Publics(), dataSigned, res.Signature)
 
-	verif = cosi.VerifySignature(network.Suite, tcq.Roster.Publics(), []byte(string("ola")), res.Signature)
+		if verif != nil {
+			log.LLvl1("Invalid signature")
+			return &ServiceState{}, onet.NewClientErrorCode(4100, "Invalid signature")
+		}
 
-	log.LLvl1("ANSWER",verif)
+		log.LLvl1("Valid signature")
 
-	log.LLvl1(s.ServerIdentity(), "successfuly created a topology skipchain")
-	return &ServiceState{}, nil
+		// Add data to state topology block to be sent to the skipchain cothority
+		tcq.StateTopology.SignKeys = tcq.Roster.Publics()
+		tcq.StateTopology.Signature = res.Signature
+
+		//log.LLvl1("ANSWER:",verif)
+
+		//verif = cosi.VerifySignature(network.Suite, tcq.Roster.Publics(), []byte(string("ola")), res.Signature)
+
+		//log.LLvl1("ANSWER:",verif)
+
+		// Send a request to the skipchain medblock service
+		log.LLvl1("Sending the block to the skipchain cothority")
+		client := topology.NewTopologyClient()
+		sb, cerr := client.CreateNewTopology(&tcq.Roster,tcq.StateTopology)
+		if cerr != nil {
+			log.LLvl1("Error adding block")
+			return &ServiceState{}, onet.NewClientErrorCode(4100, "Could not add block to the skipchain cothority")
+		}
+
+		log.LLvl1(s.ServerIdentity(), "successfuly created a topology skipchain")
+		return &ServiceState{Block: sb}, nil
+	} else {
+		return &ServiceState{Block: nil}, onet.NewClientErrorCode(4100, "No node agreed to add this block")
+	}
 }
 
 
 // Service Phases
 //______________________________________________________________________________________________________________________
+
+
+func (s *Service) AgreementPhase(tcq *TopologyCreationQuery) (*onet.Roster, onet.ClientError){
+	tree := tcq.Roster.GenerateNaryTreeWithRoot(2, s.ServerIdentity())
+	tn := s.NewTreeNodeInstance(tree, tree.Root, protocols.VerifyBlockProtocolName)
+
+	pi, err := protocols.NewVerifyBlockProtocol(tn)
+	if err != nil {
+		return nil, onet.NewClientErrorCode(4100, "Couldn't make new protocol: "+err.Error())
+	}
+
+	s.RegisterProtocolInstance(pi)
+
+	pverif := pi.(*protocols.VerifyBlockProtocol)
+
+	b, err := network.Marshal(tcq.StateTopology)
+	if err != nil {
+		log.Fatal("While marshalling")
+		return nil, onet.NewClientErrorCode(4100, "Couldn't marshal the block: "+err.Error())
+	}
+
+	pverif.TargetBlock = b
+
+	log.LLvl1("Starting up root protocol")
+	go pi.Start()
+
+	f := <- pverif.FeedbackChannel
+
+	roster := onet.Roster{List: f.List}
+	return &roster, nil
+}
 
 
 // StartProtocol starts a CoSi protocol
@@ -149,4 +218,19 @@ func (s *Service) CoSiPhase(tcq *TopologyCreationQuery) (*SignatureResponse, one
 		Hash:      h,
 		Signature: sig,
 	}, nil
+}
+
+// Get the skipchain cothority roster
+func getRoster(filepath string) (*onet.Roster, error) {
+	f, err := os.Open(filepath)
+	if err != nil {
+		return nil, err
+	}
+	el, err := app.ReadGroupToml(f)
+
+	if err!= nil{
+		return nil, err
+	}
+
+	return el, nil
 }

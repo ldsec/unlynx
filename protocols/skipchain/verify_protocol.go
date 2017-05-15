@@ -112,6 +112,16 @@ func NewVerifyBlockProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, er
 func (p *VerifyBlockProtocol) Start() error {
 	listNodesAccept := make([]*network.ServerIdentity,0)
 
+	accept, err := chooseVerifFunction(p.TargetBlock)
+	if err != nil {
+		return nil
+	}
+
+	if accept {
+		log.LLvl1("Node",p.ServerIdentity(),"accepted to sign the block")
+		listNodesAccept = append(listNodesAccept,p.ServerIdentity())
+	}
+
 	p.Broadcast(&BlockMessage{Block:p.TargetBlock})
 
 	numberNodes := p.Tree().Size()-1
@@ -139,34 +149,49 @@ func (p *VerifyBlockProtocol) Start() error {
 func (p *VerifyBlockProtocol) Dispatch() error {
 	m := <-p.BlockChannel
 
-
-	mType, message,err := network.Unmarshal(m.BlockMessage.Block)
+	accept, err := chooseVerifFunction(m.BlockMessage.Block)
 	if err != nil {
-		return err
+		return nil
 	}
 
-	if mType.Equal(network.MessageType(topology.StateTopology{})){
-		stBlock := message.(*topology.StateTopology)
-		accept,_ := verifyTopologyBlock(stBlock)
-
-		h, signature, err := signBlockAndAnswer(m.BlockMessage.Block, accept, p.Private())
-		if err != nil {
-			return nil
-		}
-
-		response := BlockVerifMessage{
-			Answer: accept,
-			Hash:   h,
-			Signature: *signature,
-			PubKey:  p.Public(),
-		}
-
-		p.SendTo(p.Root(),&response)
+	h, signature, err := signBlockAndAnswer(m.BlockMessage.Block, accept, p.Private())
+	if err != nil {
+		return nil
 	}
+
+	response := BlockVerifMessage{
+		Answer: accept,
+		Hash:   h,
+		Signature: *signature,
+		PubKey:  p.Public(),
+	}
+
+	p.SendTo(p.Root(),&response)
 	// Now we can add more verification functions depending on the block :D
 
 	return nil
 }
+
+
+func chooseVerifFunction(block []byte) (bool, error){
+	mType, message,err := network.Unmarshal(block)
+	if err != nil {
+		return false, err
+	}
+
+	var accept bool
+	if mType.Equal(network.MessageType(topology.StateTopology{})){
+		stBlock := message.(*topology.StateTopology)
+		accept, err = verifyTopologyBlock(stBlock)
+	}
+
+	if err != nil {
+		return false, err
+	}
+
+	return accept, nil
+}
+
 
 // verifyTopologyBlock verifies if the block makes sense and accepts or rejects it
 func verifyTopologyBlock(st *topology.StateTopology) (bool, error) {

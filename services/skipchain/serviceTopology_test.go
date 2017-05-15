@@ -20,6 +20,7 @@ func TestServiceCreateTopologySkipchain(t *testing.T) {
 	log.LLvl1("***************************************************************************************************")
 	log.SetDebugVisible(1)
 	local := onet.NewLocalTest()
+
 	// generate 3 hosts, they don't connect, they process messages, and they
 	// don't register the tree or entitylist
 	_, el, _ := local.GenTree(3, true)
@@ -28,7 +29,9 @@ func TestServiceCreateTopologySkipchain(t *testing.T) {
 	// Send a request to the service
 	client := serviceSkipchain.NewTopologyClient(el.List[0], strconv.Itoa(0))
 
-	cerr := client.SendTopologyCreationQuery(el,topology.DataTopology{})
+
+	data := topology.RandomData(1, 3, 4)
+	cerr := client.SendTopologyCreationQuery(el,data)
 	if cerr!=nil{
 		log.Fatal("While creating a topology skipchain",cerr)
 	}
