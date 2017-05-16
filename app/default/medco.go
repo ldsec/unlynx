@@ -17,7 +17,7 @@ const (
 
 	// DefaultGroupFile is the name of the default file to lookup for group
 	// definition
-	DefaultGroupFile = "public.toml"
+	DefaultGroupFile = "group.toml"
 
 	optionConfig      = "config"
 	optionConfigShort = "c"
@@ -43,6 +43,21 @@ const (
 
 	optionGroupBy      = "groupBy"
 	optionGroupByShort = "g"
+
+	// skipchain flags
+
+	optionGroupSkipFile      = "fileSkip"
+	optionGroupSkipFileShort = "fS"
+
+	// DefaultGroupSkipFile is the name of the default file to lookup for group
+	// definition for the skipchain cothority
+	DefaultGroupSkipFile = "group.toml"
+
+	optionBlock = "block"
+	optionBlockShort = "b"
+
+	// DefaultBlockFile is the name of the file that contains the data for the block
+	DefaultBlockFile = "block.txt"
 )
 
 func main() {
@@ -94,6 +109,24 @@ func main() {
 		},
 	}
 
+	skipchainFlags := []cli.Flag{
+		cli.StringFlag{
+			Name:  optionGroupFile + ", " + optionGroupFileShort,
+			Value: DefaultGroupFile,
+			Usage: "Medco group definition file",
+		},
+		cli.StringFlag{
+			Name:  optionGroupSkipFile + ", " + optionGroupSkipFileShort,
+			Value: DefaultGroupSkipFile,
+			Usage: "Skipchain cothority group definition file",
+		},
+		cli.StringFlag{
+			Name:  optionBlock + ", " + optionBlockShort,
+			Value: DefaultBlockFile,
+			Usage: "Data file that represents a block",
+		},
+	}
+
 	serverFlags := []cli.Flag{
 		cli.StringFlag{
 			Name:  optionConfig + ", " + optionConfigShort,
@@ -113,6 +146,31 @@ func main() {
 			Usage:   "Run Medco service",
 			Action:  runMedco,
 			Flags:   querierFlags,
+		},
+		{
+			Name:    "skipchain",
+			Aliases: []string{"skip"},
+			Usage:   "Access skipchain data",
+			Action: func(c *cli.Context) error {
+				log.Fatal("Please specify which skipchain command you want to perform")
+				return nil
+			},
+			Subcommands: []cli.Command{
+				{
+					Name:    "createTopology",
+					Aliases: []string{"ct"},
+					Usage:   "Create a topology skipchain",
+					Action:  createTopology,
+					Flags:   skipchainFlags,
+				},
+				{
+					Name:    "AddTopology",
+					Aliases: []string{"at"},
+					Usage:   "Add a block to the topology skipchain",
+					Action:  addBlockTopology,
+					Flags:   skipchainFlags,
+				},
+			},
 		},
 		// CLIENT END: QUERIER ----------
 

@@ -57,23 +57,32 @@ func runMedco(c *cli.Context) error {
 	predicate := c.String("predicate")
 	groupBy := c.String("groupBy")
 
-	f, err := os.Open(tomlFileName)
+	el, err := openGroupToml(tomlFileName)
 	if err != nil {
 		return err
-	}
-	el, err := app.ReadGroupToml(f)
-	if err != nil {
-		return err
-	}
-
-	if len(el.List) <= 0 {
-		return errors.New("Empty or invalid medco group file:" + tomlFileName)
 	}
 
 	sumFinal, countFinal, whereFinal, predicateFinal, groupByFinal := parseQuery(el, sum, count, whereQueryValues, predicate, groupBy)
 	startQuery(el, proofs, sumFinal, countFinal, whereFinal, predicateFinal, groupByFinal)
 
 	return nil
+}
+
+func openGroupToml(tomlFileName string) (*onet.Roster, error){
+	f, err := os.Open(tomlFileName)
+	if err != nil {
+		return nil, err
+	}
+	el, err := app.ReadGroupToml(f)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(el.List) <= 0 {
+		return nil, errors.New("Empty or invalid medco group file:" + tomlFileName)
+	}
+
+	return el, nil
 }
 
 func checkRegex(input, expression, errorMessage string) {

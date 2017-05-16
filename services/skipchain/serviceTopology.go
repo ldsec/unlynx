@@ -92,7 +92,7 @@ func NewService(c *onet.Context) onet.Service {
 func (s *Service) HandleTopologyCreationQuery(tcq *TopologyCreationQuery) (network.Message, onet.ClientError) {
 	log.LLvl1(s.ServerIdentity(), "received a request for a new topology skipchain")
 
-	st, cerr := s.StartUpdateService(tcq.Roster, tcq.StateTopology)
+	st, cerr := s.StartService(tcq.Roster, tcq.StateTopology)
 	if cerr != nil {
 		return nil, cerr
 	}
@@ -113,7 +113,7 @@ func (s *Service) HandleTopologyCreationQuery(tcq *TopologyCreationQuery) (netwo
 func (s *Service) HandleTopologyUpdateQuery(tuq *TopologyUpdateQuery) (network.Message, onet.ClientError) {
 	log.LLvl1(s.ServerIdentity(), "received a request for an update on the topology skipchain")
 
-	st, cerr := s.StartUpdateService(tuq.Roster, tuq.StateTopology)
+	st, cerr := s.StartService(tuq.Roster, tuq.StateTopology)
 	if cerr != nil {
 		return nil, cerr
 	}
@@ -130,11 +130,16 @@ func (s *Service) HandleTopologyUpdateQuery(tuq *TopologyUpdateQuery) (network.M
 	return &ServiceState{Block: sb}, nil
 }
 
+
+
+
+// HandleTopologyUpdateQuery handles the reception of a topology update query.
+
 // Service Phases
 //______________________________________________________________________________________________________________________
 
-// StartUpdateService starts a create or update service to create a new skipchain or add a new block to that skipchain
-func (s *Service) StartUpdateService(roster onet.Roster, st *topology.StateTopology) (*topology.StateTopology, onet.ClientError) {
+// StartService starts a create or update service to create a new skipchain or add a new block to that skipchain
+func (s *Service) StartService(roster onet.Roster, st *topology.StateTopology) (*topology.StateTopology, onet.ClientError) {
 
 	log.LLvl1("Check if each node agrees with the new topology skipblock")
 
