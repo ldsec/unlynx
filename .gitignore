@@ -44,6 +44,7 @@ simul/platform/mininet/deploy/
 server_list
 
 app/default/medco_test_data.txt
+app/default/block.toml
 app/default/test
 app/default/service_storage
 

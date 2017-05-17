@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"github.com/JoaoAndreSa/MedCo/services/skipchain"
 	"medblock/service/topology"
+	"encoding/hex"
 )
 
 // BEGIN CLIENT: SKIPCHAIN ----------
@@ -23,18 +24,20 @@ func createTopology(c *cli.Context) error {
 		log.Fatal("Error reading second group toml:", err)
 	}
 
+	log.LLvl1(elSkip)
+
 	client := serviceSkipchain.NewTopologyClient(el.List[0], strconv.Itoa(0))
 
-	st := topology.RandomData(1,3,3)
-
-
-
+	st := topology.ReadTopologyToml(fileBlock)
 	sb, err := client.SendTopologyCreationQuery(el, st)
 	if err != nil {
 		log.Fatal("Error creating topology:", err)
 	}
 
-	log.LLvl1(sb,elSkip,fileBlock)
+	log.LLvl1("ASSDAD",hex.EncodeToString(sb.Hash))
+
+	st = topology.UnmarshalData(sb)
+	topology.WriteTopologyToml("block_added.toml",st)
 
 	return nil
 }

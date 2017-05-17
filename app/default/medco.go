@@ -57,7 +57,7 @@ const (
 	optionBlockShort = "b"
 
 	// DefaultBlockFile is the name of the file that contains the data for the block
-	DefaultBlockFile = "block.txt"
+	DefaultBlockFile = "block."
 )
 
 func main() {
