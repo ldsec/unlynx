@@ -1,14 +1,14 @@
 # UnLynx [![Coverage Status](https://coveralls.io/repos/github/JoaoAndreSa/MedCo/badge.svg?branch=master)](https://coveralls.io/github/JoaoAndreSa/MedCo?branch=master)
-MedCo is a library for simulating a privacy-preserving data sharing tool. It offers a series of independent protocols that when combined offer a robust and safe way to share sensitive data (e.g., medical data).  
+UnLynx is a library for simulating a privacy-preserving data sharing tool. It offers a series of independent protocols that when combined offer a robust and safe way to share sensitive data (e.g., medical data).  
 
-MedCo is developed by LCA1 (Laboratory for Communications and Applications in EPFL).  
+UnLynx is developed by LCA1 (Laboratory for Communications and Applications in EPFL).  
 
 ## Documentation
 
-* The MedCo library does an intensive use of [Overlay-network (ONet) library](https://github.com/dedis/onet)
+* The UnLynx library does an intensive use of [Overlay-network (ONet) library](https://github.com/dedis/onet)
 * For more information regarding the underlying architecture please refer to the stable version of ONet `gopkg.in/dedis/onet.v1`
 * To check the code organisation, have a look at [Layout](https://github.com/JoaoAndreSa/MedCo/wiki/Layout)
-* For more information on how to run our services, simulations and apps, go to [Running MedCo](https://github.com/JoaoAndreSa/MedCo/wiki/Running-MedCo)
+* For more information on how to run our services, simulations and apps, go to [Running UnLynx](https://github.com/JoaoAndreSa/MedCo/wiki/Running-UnLynx)
 
 ## Getting Started
 
@@ -25,7 +25,7 @@ The version in the `master`-branch is stable and has no incompatible changes.
 
 ## License
 
-Medco is licensed under a End User Software License Agreement ('EULA') for non-commercial use. If you want to have more information, please contact us.
+UnLynx is licensed under a End User Software License Agreement ('EULA') for non-commercial use. If you want to have more information, please contact us.
 
 ## Contact
 You can contact any of the developers for more information or any other member of [LCA1](http://lca.epfl.ch/people/lca1/):
