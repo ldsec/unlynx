@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import pandas as pd
-
+import numpy
 
 def addComma(v, index):
     v = v[:index] + ',' + v[index:]
@@ -15,7 +15,8 @@ plt.rc('font', **font)
 raw_data = {'x_label': ['12', '120', '1,2K', '12K', '120K', '1,2M'],  # Number responses
             'y1_label': [0.02, 0.02, 0.19, 1.8, 18.3, 189],  # Server transformation
             'y2_label': [0.02, 0.11, 0.67, 6.6, 71.7, 958],  # Server transformation -> proof creation
-            'y3_label': [0.04, 0.11, 0.82, 6.9, 68.6, 643]}  # Server transformation -> proof verification
+            'y3_label': [0.04, 0.11, 0.82, 6.9, 68.6, 643],}  # Server transformation -> proof verification
+
 
 df = pd.DataFrame(raw_data, raw_data['x_label'])
 
@@ -72,6 +73,11 @@ bars.append(ax1.bar(bar_l,
                     alpha=0.5,
                     # with color
                     color='#A747B8'))
+
+x = numpy.array([12, 120, 1200, 12000, 120000, 1200000])
+y = 0.00148996 * x + 0
+x1 = numpy.array([1.25, 2.25, 3.25, 4.25, 5.25, 6.25])
+ax1.plot(x1, y, linestyle='--', color='red', label="Trendline")
 
 # Set the x ticks with names
 plt.xticks(tick_pos, df['x_label'])
@@ -131,3 +137,4 @@ ax1.set_yticklabels(labels)
 plt.xlim([min(tick_pos) - bar_width, max(tick_pos) + bar_width + 0.2])
 
 plt.savefig('dynamic_cothority.pdf', format='pdf')
+
