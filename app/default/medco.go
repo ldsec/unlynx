@@ -9,6 +9,9 @@ import (
 )
 
 const (
+	// BinaryName is the name of the medco application
+	BinaryName = "medco"
+
 	// Version of the binary
 	Version = "1.00"
 
