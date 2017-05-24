@@ -9,7 +9,6 @@ import (
 )
 
 const (
-	// BinaryName is the name of the unlynx application
 	BinaryName = "unlynx"
 
 	// Version of the binary
@@ -17,7 +16,7 @@ const (
 
 	// DefaultGroupFile is the name of the default file to lookup for group
 	// definition
-	DefaultGroupFile = "public.toml"
+	DefaultGroupFile = "group.toml"
 
 	optionConfig      = "config"
 	optionConfigShort = "c"

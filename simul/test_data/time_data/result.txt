@@ -6,20 +6,20 @@
 |-------------------------------------------------------------------------|
 
 
-NbrDPs:                                            3
-NbrResponsesTot:                                   500
-NbrResponsesFiltered:                              0
-NbrGroupsClear:                                    0
-NbrWhereClear:                                     0
-Count:                                             false
-DataRepetitions:                                   1
+Count:                                             true
 Hosts:                                             3
-NbrAggrEncrypted:                                  10
+NbrGroupsClear:                                    0
+NbrResponsesFiltered:                              0
 NbrGroupsEnc:                                      2
-NbrWhereEncrypted:                                 0
+NbrWhereClear:                                     0
 NbrAggrClear:                                      0
 RandomGroups:                                      true
 Proofs:                                            false
+NbrDPs:                                            3
+NbrResponsesTot:                                   50
+DataRepetitions:                                   1
+NbrWhereEncrypted:                                 0
+NbrAggrEncrypted:                                  10
 
 bf:                                                2
 depth:                                             1
