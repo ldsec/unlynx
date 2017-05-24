@@ -68,7 +68,7 @@ func runUnLynx(c *cli.Context) error {
 	return nil
 }
 
-func openGroupToml(tomlFileName string) (*onet.Roster, error){
+func openGroupToml(tomlFileName string) (*onet.Roster, error) {
 	f, err := os.Open(tomlFileName)
 	if err != nil {
 		return nil, err
