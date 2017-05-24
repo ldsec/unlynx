@@ -9,6 +9,7 @@ import (
 )
 
 const (
+	// BinaryName is the name of the unlynx app
 	BinaryName = "unlynx"
 
 	// Version of the binary

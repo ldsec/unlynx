@@ -10,7 +10,7 @@ install:
 
 env:
   global:
-    secure: "VswWg0Bu9bkVmXZDg0paGJ6NFA5n4GYxM"
+    secure: "OG8RvTU36AxYSc3fsctPQkScWmrzLluwx"
 
 script:
   - make test
