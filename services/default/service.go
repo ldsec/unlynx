@@ -138,7 +138,6 @@ func NewService(c *onet.Context) onet.Service {
 	if cerr := newMedCoInstance.RegisterHandler(newMedCoInstance.HandleDDTfinished); cerr != nil {
 		log.Fatal("Wrong Handler.", cerr)
 	}
-
 	c.RegisterProcessor(newMedCoInstance, msgTypes.msgSurveyCreationQuery)
 	c.RegisterProcessor(newMedCoInstance, msgTypes.msgSurveyResultsQuery)
 	c.RegisterProcessor(newMedCoInstance, msgTypes.msgDDTfinished)
