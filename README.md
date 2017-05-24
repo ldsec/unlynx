@@ -1,4 +1,4 @@
-[![Go Report Card](https://goreportcard.com/badge/github.com/LCA1/UnLynx)](https://goreportcard.com/report/github.com/LCA1/UnLynx) [![Coverage Status](https://coveralls.io/repos/github/LCA1/UnLynx/badge.svg?branch=master)](https://coveralls.io/github/LCA1/UnLynx?branch=master)
+[![Build Status](https://travis-ci.org/LCA1/UnLynx.svg?branch=master)](https://travis-ci.org/LCA1/UnLynx) [![Go Report Card](https://goreportcard.com/badge/github.com/LCA1/UnLynx)](https://goreportcard.com/report/github.com/LCA1/UnLynx) [![Coverage Status](https://coveralls.io/repos/github/LCA1/UnLynx/badge.svg?branch=master)](https://coveralls.io/github/LCA1/UnLynx?branch=master)
 # UnLynx 
 UnLynx is a library for simulating a privacy-preserving data sharing tool. It offers a series of independent protocols that when combined offer a robust and safe way to share sensitive data (e.g., medical data).  
 
