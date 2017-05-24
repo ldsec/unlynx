@@ -1,4 +1,5 @@
-# UnLynx [![Coverage Status](https://coveralls.io/repos/github/LCA1/UnLynx/badge.svg?branch=master)](https://coveralls.io/github/LCA1/UnLynx?branch=master)
+[![Go Report Card](https://goreportcard.com/badge/github.com/LCA1/UnLynx)](https://goreportcard.com/report/github.com/LCA1/UnLynx) [![Coverage Status](https://coveralls.io/repos/github/LCA1/UnLynx/badge.svg?branch=master)](https://coveralls.io/github/LCA1/UnLynx?branch=master)
+# UnLynx 
 UnLynx is a library for simulating a privacy-preserving data sharing tool. It offers a series of independent protocols that when combined offer a robust and safe way to share sensitive data (e.g., medical data).  
 
 UnLynx is developed by LCA1 (Laboratory for Communications and Applications in EPFL) in collaboration with DeDis (Laboratory for Decentralized and Distributed Systems).  
