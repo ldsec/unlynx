@@ -4,7 +4,7 @@ import (
 	"encoding/gob"
 	"os"
 
-	"github.com/JoaoAndreSa/MedCo/lib"
+	"github.com/LCA1/UnLynx/lib"
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"
 )

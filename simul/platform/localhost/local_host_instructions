@@ -3,4 +3,4 @@
 /--------------------------------------------------------------------------------/
 
 - Execute inside simul/ :
-    ./simul -platform localhost [-debug 1] runfiles/medco.toml
+    ./simul -platform localhost [-debug 1] runfiles/unlynx.toml

@@ -3,8 +3,8 @@ package main
 import (
 	"os"
 
-	"github.com/JoaoAndreSa/MedCo/lib"
-	"github.com/JoaoAndreSa/MedCo/services/default"
+	"github.com/LCA1/UnLynx/lib"
+	"github.com/LCA1/UnLynx/services/default"
 	"github.com/btcsuite/goleveldb/leveldb/errors"
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/app"
@@ -17,7 +17,7 @@ import (
 
 // BEGIN CLIENT: QUERIER ----------
 func startQuery(el *onet.Roster, proofs bool, sum []string, count bool, whereQueryValues []lib.WhereQueryAttribute, predicate string, groupBy []string) {
-	client := serviceDefault.NewMedcoClient(el.List[0], strconv.Itoa(0))
+	client := serviceDefault.NewUnLynxClient(el.List[0], strconv.Itoa(0))
 
 	// Generate Survey Data
 	nbrDPs := make(map[string]int64)
@@ -45,7 +45,7 @@ func startQuery(el *onet.Roster, proofs bool, sum []string, count bool, whereQue
 	}
 }
 
-func runMedco(c *cli.Context) error {
+func runUnLynx(c *cli.Context) error {
 	tomlFileName := c.String("file")
 
 	proofs := c.Bool("proofs")
@@ -67,7 +67,7 @@ func runMedco(c *cli.Context) error {
 	}
 
 	if len(el.List) <= 0 {
-		return errors.New("Empty or invalid medco group file:" + tomlFileName)
+		return errors.New("Empty or invalid unlynx group file:" + tomlFileName)
 	}
 
 	sumFinal, countFinal, whereFinal, predicateFinal, groupByFinal := parseQuery(el, sum, count, whereQueryValues, predicate, groupBy)

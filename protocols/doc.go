@@ -1,5 +1,5 @@
-// Package protocols contains the code for the medco protocols.
-// Medco stands for medical cothority and more precisely for privacy-preserving medical data sharing
+// Package protocols contains the code for the unlynx protocols.
+// UnLynx stands for medical cothority and more precisely for privacy-preserving medical data sharing
 // using a cothority. We use medical data and more precisely medical surveys as a working example
 // but we intend to create a more general framework which would be a decentralized database containing
 // any kind of data that could be queried in a privacy-preserving way.

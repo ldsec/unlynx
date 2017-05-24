@@ -2,9 +2,9 @@ package main
 
 import (
 	"github.com/BurntSushi/toml"
-	"github.com/JoaoAndreSa/MedCo/lib"
-	"github.com/JoaoAndreSa/MedCo/services/data"
-	"github.com/JoaoAndreSa/MedCo/services/i2b2"
+	"github.com/LCA1/UnLynx/lib"
+	"github.com/LCA1/UnLynx/services/data"
+	"github.com/LCA1/UnLynx/services/i2b2"
 	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/crypto.v0/random"
 	"gopkg.in/dedis/onet.v1"
@@ -17,11 +17,11 @@ import (
 
 //Defines the simulation for the service-medCo to be run with cothority/simul.
 func init() {
-	onet.SimulationRegister("ServiceMedCoI2B2", NewSimulationMedCoI2B2)
+	onet.SimulationRegister("ServiceUnLynxI2B2", NewSimulationUnLynxI2B2)
 }
 
-// SimulationMedCoI2B2 the state of a simulation.
-type SimulationMedCoI2B2 struct {
+// SimulationUnLynxI2B2 the state of a simulation.
+type SimulationUnLynxI2B2 struct {
 	onet.SimulationBFTree
 
 	NbrDPs               int   //number of clients (or in other words data holders)
@@ -38,9 +38,9 @@ type SimulationMedCoI2B2 struct {
 	QueryMode            int64 //define the query mode (1 result per data provider or one single aggregated result)
 }
 
-// NewSimulationMedCoI2B2 constructs a full MedCoI2B2 service simulation.
-func NewSimulationMedCoI2B2(config string) (onet.Simulation, error) {
-	es := &SimulationMedCoI2B2{}
+// NewSimulationUnLynxI2B2 constructs a full UnLynxI2B2 service simulation.
+func NewSimulationUnLynxI2B2(config string) (onet.Simulation, error) {
+	es := &SimulationUnLynxI2B2{}
 	_, err := toml.Decode(config, es)
 	if err != nil {
 		return nil, err
@@ -49,7 +49,7 @@ func NewSimulationMedCoI2B2(config string) (onet.Simulation, error) {
 }
 
 // Setup creates the tree used for that simulation
-func (sim *SimulationMedCoI2B2) Setup(dir string, hosts []string) (*onet.SimulationConfig, error) {
+func (sim *SimulationUnLynxI2B2) Setup(dir string, hosts []string) (*onet.SimulationConfig, error) {
 	sc := &onet.SimulationConfig{}
 	sim.CreateRoster(sc, hosts, 2000)
 	err := sim.CreateTree(sc)
@@ -64,9 +64,7 @@ func (sim *SimulationMedCoI2B2) Setup(dir string, hosts []string) (*onet.Simulat
 }
 
 // Run starts the simulation.
-func (sim *SimulationMedCoI2B2) Run(config *onet.SimulationConfig) error {
-	//var start *monitor.TimeMeasure
-	log.SetDebugVisible(1)
+func (sim *SimulationUnLynxI2B2) Run(config *onet.SimulationConfig) error {
 	// Setup Simulation
 	nbrHosts := config.Tree.Size()
 	log.LLvl1("Size:", nbrHosts, ", Rounds:", sim.Rounds)
@@ -90,7 +88,7 @@ func (sim *SimulationMedCoI2B2) Run(config *onet.SimulationConfig) error {
 		for i := 0; i < sim.NbrDPs; i++ {
 			index := i % sim.Hosts
 
-			clients = append(clients, serviceI2B2.NewMedcoClient(el.List[index], strconv.Itoa(i%sim.NbrDPs)))
+			clients = append(clients, serviceI2B2.NewUnLynxClient(el.List[index], strconv.Itoa(i%sim.NbrDPs)))
 
 			if _, exists := nbrDPs[el.List[index].String()]; exists {
 				current := nbrDPs[el.List[index].String()]
@@ -129,7 +127,7 @@ func (sim *SimulationMedCoI2B2) Run(config *onet.SimulationConfig) error {
 			sim.NbrWhereClear, sim.NbrWhereEncrypted, sim.NbrAggrClear, sim.NbrAggrEncrypted, []int64{}, true)
 
 		/*log.LLvl1("Saving test data...")
-		data.WriteDataToFile("medco_test_data.txt", testData)*/
+		data.WriteDataToFile("unlynx_test_data.txt", testData)*/
 
 		finalResult := make([]int64, 0)
 		mutex := &sync.Mutex{}

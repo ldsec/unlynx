@@ -6,8 +6,8 @@ import (
 
 	"os"
 
-	"github.com/JoaoAndreSa/MedCo/lib"
-	"github.com/JoaoAndreSa/MedCo/services/data"
+	"github.com/LCA1/UnLynx/lib"
+	"github.com/LCA1/UnLynx/services/data"
 	"gopkg.in/dedis/crypto.v0/random"
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"

@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-go build -o medco *.go
+go build -o unlynx *.go

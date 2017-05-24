@@ -138,4 +138,4 @@ plt.legend(loc='upper left')
 ax1.tick_params(axis='x', labelsize=24)
 ax1.tick_params(axis='y', labelsize=24)
 
-plt.savefig('medco_i2b2.pdf', format='pdf')
+plt.savefig('unlynx_i2b2.pdf', format='pdf')

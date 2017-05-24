@@ -2,24 +2,22 @@ package main
 
 import (
 	"github.com/BurntSushi/toml"
+	"github.com/LCA1/UnLynx/lib"
+	"github.com/LCA1/UnLynx/services/data"
+	"github.com/LCA1/UnLynx/services/default"
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
-
-	"github.com/JoaoAndreSa/MedCo/lib"
-	"github.com/JoaoAndreSa/MedCo/services/data"
-	"github.com/JoaoAndreSa/MedCo/services/default"
 	"gopkg.in/dedis/onet.v1/simul/monitor"
 	"strconv"
-	"sync"
 )
 
 //Defines the simulation for the service-medCo to be run with cothority/simul.
 func init() {
-	onet.SimulationRegister("ServiceMedCo", NewSimulationMedCo)
+	onet.SimulationRegister("ServiceUnLynx", NewSimulationUnLynx)
 }
 
-// SimulationMedCo the state of a simulation.
-type SimulationMedCo struct {
+// SimulationUnLynx the state of a simulation.
+type SimulationUnLynx struct {
 	onet.SimulationBFTree
 
 	NbrDPs               int     //number of clients (or in other words data holders)
@@ -38,9 +36,9 @@ type SimulationMedCo struct {
 	Proofs               bool    //with proofs of correctness everywhere
 }
 
-// NewSimulationMedCo constructs a full MedCo service simulation.
-func NewSimulationMedCo(config string) (onet.Simulation, error) {
-	es := &SimulationMedCo{}
+// NewSimulationUnLynx constructs a full UnLynx service simulation.
+func NewSimulationUnLynx(config string) (onet.Simulation, error) {
+	es := &SimulationUnLynx{}
 	_, err := toml.Decode(config, es)
 	if err != nil {
 		return nil, err
@@ -49,7 +47,7 @@ func NewSimulationMedCo(config string) (onet.Simulation, error) {
 }
 
 // Setup creates the tree used for that simulation
-func (sim *SimulationMedCo) Setup(dir string, hosts []string) (*onet.SimulationConfig, error) {
+func (sim *SimulationUnLynx) Setup(dir string, hosts []string) (*onet.SimulationConfig, error) {
 	sc := &onet.SimulationConfig{}
 	sim.CreateRoster(sc, hosts, 2000)
 	err := sim.CreateTree(sc)
@@ -64,9 +62,8 @@ func (sim *SimulationMedCo) Setup(dir string, hosts []string) (*onet.SimulationC
 }
 
 // Run starts the simulation.
-func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
+func (sim *SimulationUnLynx) Run(config *onet.SimulationConfig) error {
 	var start *monitor.TimeMeasure
-	log.SetDebugVisible(1)
 	// Setup Simulation
 	nbrHosts := config.Tree.Size()
 	log.LLvl1("Size:", nbrHosts, ", Rounds:", sim.Rounds)
@@ -80,7 +77,7 @@ func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
 
 	for round := 0; round < sim.Rounds; round++ {
 		log.LLvl1("Starting round", round, el)
-		client := serviceDefault.NewMedcoClient(el.List[0], strconv.Itoa(0))
+		client := serviceDefault.NewUnLynxClient(el.List[0], strconv.Itoa(0))
 
 		// Define how many data providers for each server
 		nbrDPs := make(map[string]int64)
@@ -133,7 +130,7 @@ func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
 			sim.NbrWhereClear, sim.NbrWhereEncrypted, sim.NbrAggrClear, sim.NbrAggrEncrypted, sim.NbrGroupAttributes, sim.RandomGroups)
 
 		/*log.LLvl1("Saving test data...")
-		data.WriteDataToFile("medco_test_data.txt", testData)*/
+		data.WriteDataToFile("unlynx_test_data.txt", testData)*/
 
 		/// START SERVICE PROTOCOL
 		if lib.TIME {
@@ -144,24 +141,21 @@ func (sim *SimulationMedCo) Run(config *onet.SimulationConfig) error {
 		dataHolder := make([]*serviceDefault.API, sim.NbrDPs)
 		wg := lib.StartParallelize(len(dataHolder))
 
-		var mutexDH sync.Mutex
 		for i, client := range dataHolder {
 			start1 := lib.StartTimer(strconv.Itoa(i) + "_IndividualSendingData")
 			if lib.PARALLELIZE {
 				go func(i int, client *serviceDefault.API) {
-					mutexDH.Lock()
 					dataCollection := testData[strconv.Itoa(i)]
 					server := el.List[i%nbrHosts]
-					mutexDH.Unlock()
 
-					client = serviceDefault.NewMedcoClient(server, strconv.Itoa(i+1))
+					client = serviceDefault.NewUnLynxClient(server, strconv.Itoa(i+1))
 					client.SendSurveyResponseQuery(*surveyID, dataCollection, el.Aggregate, sim.DataRepetitions, count)
 					defer wg.Done()
 				}(i, client)
 			} else {
-				start2 := lib.StartTimer(strconv.Itoa(i) + "_IndividualNewMedcoClient")
+				start2 := lib.StartTimer(strconv.Itoa(i) + "_IndividualNewUnLynxClient")
 
-				client = serviceDefault.NewMedcoClient(el.List[i%nbrHosts], strconv.Itoa(i+1))
+				client = serviceDefault.NewUnLynxClient(el.List[i%nbrHosts], strconv.Itoa(i+1))
 
 				lib.EndTimer(start2)
 				start3 := lib.StartTimer(strconv.Itoa(i) + "_IndividualSendSurveyResults")

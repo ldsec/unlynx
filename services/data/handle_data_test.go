@@ -3,13 +3,13 @@ package data_test
 import (
 	"testing"
 
-	"github.com/JoaoAndreSa/MedCo/lib"
-	"github.com/JoaoAndreSa/MedCo/services/data"
+	"github.com/LCA1/UnLynx/lib"
+	"github.com/LCA1/UnLynx/services/data"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/dedis/onet.v1/log"
 )
 
-const filename = "medco_test_data.txt"
+const filename = "unlynx_test_data.txt"
 const numDPs = 2
 const numEntries = 10
 const numEntriesFiltered = 5

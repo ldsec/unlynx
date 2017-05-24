@@ -7,7 +7,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/JoaoAndreSa/MedCo/lib"
+	"github.com/LCA1/UnLynx/lib"
 	"gopkg.in/dedis/onet.v1/log"
 
 	"os"
@@ -60,7 +60,7 @@ func AllPossibleGroups(numType []int64, group []int64, pos int) {
 	}
 }
 
-// GenerateData generates test data for MedCo (survey entries) and stores it in a txt file (e.g. medco_test_data.txt)
+// GenerateData generates test data for UnLynx (survey entries) and stores it in a txt file (e.g. unlynx_test_data.txt)
 //
 //  	filename:    name of the file (.txt) where we will store the test data
 //
@@ -287,7 +287,7 @@ func ClearExpectedResult(expectedResult []lib.DpClearResponse) []lib.DpClearResp
 	return clearExpectedResult
 }
 
-// ComputeExpectedResult computes the expected results from the test_data (we can then compare with the result obtained by service MedCo)
+// ComputeExpectedResult computes the expected results from the test_data (we can then compare with the result obtained by service UnLynx)
 func ComputeExpectedResult(testData map[string][]lib.DpClearResponse, dataRepetitions int, clear bool) []lib.DpClearResponse {
 	allData := make([]lib.DpClearResponse, 0)
 

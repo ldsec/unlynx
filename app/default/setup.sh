@@ -8,11 +8,11 @@ SERVERS="$@"
 for s in $SERVERS; do
     login=root@iccluster0$s.iccluster.epfl.ch
 
-    scp medco $login:
-    scp medco_test_data.txt $login:
+    scp unlynx $login:
+    scp unlynx_test_data.txt $login:
     #scp pre_compute_multiplications.gob $login:
 done
 
-rm -rf medco
+rm -rf unlynx
 
 ./compileMac.sh

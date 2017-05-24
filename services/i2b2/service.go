@@ -8,9 +8,9 @@ import (
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"
 
-	"github.com/JoaoAndreSa/MedCo/lib"
-	"github.com/JoaoAndreSa/MedCo/protocols"
-	"github.com/JoaoAndreSa/MedCo/services"
+	"github.com/LCA1/UnLynx/lib"
+	"github.com/LCA1/UnLynx/protocols"
+	"github.com/LCA1/UnLynx/services"
 	"github.com/btcsuite/goleveldb/leveldb/errors"
 	"github.com/fanliao/go-concurrentMap"
 	"os"
@@ -19,8 +19,8 @@ import (
 
 const gobFile = "pre_compute_multiplications.gob"
 
-// ServiceName is the registered name for the medco service.
-const ServiceName = "MedCoI2b2"
+// ServiceName is the registered name for the unlynx service.
+const ServiceName = "UnLynxI2b2"
 
 // SurveyID unique ID for each survey.
 type SurveyID string
@@ -131,7 +131,7 @@ type ServiceResult struct {
 	Results lib.FilteredResponse
 }
 
-// Service defines a service in medco with a survey.
+// Service defines a service in unlynx with a survey.
 type Service struct {
 	*onet.ServiceProcessor
 
@@ -141,34 +141,34 @@ type Service struct {
 
 // NewService constructor which registers the needed messages.
 func NewService(c *onet.Context) onet.Service {
-	newMedCoInstance := &Service{
+	newUnLynxInstance := &Service{
 		ServiceProcessor: onet.NewServiceProcessor(c),
 		Survey:           concurrent.NewConcurrentMap(),
 		Mutex:            &sync.Mutex{},
 	}
 
-	if cerr := newMedCoInstance.RegisterHandler(newMedCoInstance.HandleSurveyDpQuery); cerr != nil {
+	if cerr := newUnLynxInstance.RegisterHandler(newUnLynxInstance.HandleSurveyDpQuery); cerr != nil {
 		log.Fatal("Wrong Handler.", cerr)
 	}
 
-	if cerr := newMedCoInstance.RegisterHandler(newMedCoInstance.HandleSurveyResultsSharing); cerr != nil {
+	if cerr := newUnLynxInstance.RegisterHandler(newUnLynxInstance.HandleSurveyResultsSharing); cerr != nil {
 		log.Fatal("Wrong Handler.", cerr)
 	}
 
-	if cerr := newMedCoInstance.RegisterHandler(newMedCoInstance.HandleSurveyFinalResultsSharing); cerr != nil {
+	if cerr := newUnLynxInstance.RegisterHandler(newUnLynxInstance.HandleSurveyFinalResultsSharing); cerr != nil {
 		log.Fatal("Wrong Handler.", cerr)
 	}
 
-	if cerr := newMedCoInstance.RegisterHandler(newMedCoInstance.HandleSurveyGenerated); cerr != nil {
+	if cerr := newUnLynxInstance.RegisterHandler(newUnLynxInstance.HandleSurveyGenerated); cerr != nil {
 		log.Fatal("Wrong Handler.", cerr)
 	}
 
-	c.RegisterProcessor(newMedCoInstance, msgTypes.msgSurveyGenerated)
-	c.RegisterProcessor(newMedCoInstance, msgTypes.msgSurveyDpQuery)
-	c.RegisterProcessor(newMedCoInstance, msgTypes.msgSurveyResultSharing)
-	c.RegisterProcessor(newMedCoInstance, msgTypes.msgSurveyFinalResultSharing)
+	c.RegisterProcessor(newUnLynxInstance, msgTypes.msgSurveyGenerated)
+	c.RegisterProcessor(newUnLynxInstance, msgTypes.msgSurveyDpQuery)
+	c.RegisterProcessor(newUnLynxInstance, msgTypes.msgSurveyResultSharing)
+	c.RegisterProcessor(newUnLynxInstance, msgTypes.msgSurveyFinalResultSharing)
 
-	return newMedCoInstance
+	return newUnLynxInstance
 }
 
 // Process implements the processor interface and is used to recognize messages broadcasted between servers
@@ -584,7 +584,7 @@ func (s *Service) StartProtocol(name string, targetSurvey SurveyID) (onet.Protoc
 // StartServicePartOne starts the first part of the service (with all its different steps/protocols)
 func (s *Service) StartServicePartOne(targetSurvey SurveyID) error {
 
-	log.LLvl1(s.ServerIdentity(), " starts a Medco Protocol (Round 1) for survey", targetSurvey)
+	log.LLvl1(s.ServerIdentity(), " starts a UnLynx Protocol (Round 1) for survey", targetSurvey)
 
 	// Tagging Phase
 	start := lib.StartTimer(s.ServerIdentity().String() + "_TaggingPhase1")
@@ -611,7 +611,7 @@ func (s *Service) StartServicePartOne(targetSurvey SurveyID) error {
 // StartServicePartTwo starts the second part of the service (with all its different steps/protocols)
 func (s *Service) StartServicePartTwo(targetSurvey SurveyID, aggr bool) error {
 
-	log.LLvl1(s.ServerIdentity(), " starts a Medco Protocol (Round 2) for survey", targetSurvey)
+	log.LLvl1(s.ServerIdentity(), " starts a UnLynx Protocol (Round 2) for survey", targetSurvey)
 
 	// Tagging Phase
 	start := lib.StartTimer(s.ServerIdentity().String() + "_TaggingPhase2")

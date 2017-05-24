@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/JoaoAndreSa/MedCo/lib"
-	"github.com/JoaoAndreSa/MedCo/protocols"
-	"github.com/JoaoAndreSa/MedCo/services/data"
+	"github.com/LCA1/UnLynx/lib"
+	"github.com/LCA1/UnLynx/protocols"
+	"github.com/LCA1/UnLynx/services/data"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/network"

@@ -1,7 +1,7 @@
 package serviceDefault
 
 import (
-	"github.com/JoaoAndreSa/MedCo/lib"
+	"github.com/LCA1/UnLynx/lib"
 	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/crypto.v0/config"
 	"gopkg.in/dedis/onet.v1"
@@ -18,8 +18,8 @@ type API struct {
 	private    abstract.Scalar
 }
 
-// NewMedcoClient constructor of a client.
-func NewMedcoClient(entryPoint *network.ServerIdentity, clientID string) *API {
+// NewUnLynxClient constructor of a client.
+func NewUnLynxClient(entryPoint *network.ServerIdentity, clientID string) *API {
 	keys := config.NewKeyPair(network.Suite)
 
 	newClient := &API{

@@ -1,4 +1,4 @@
-# UnLynx [![Coverage Status](https://coveralls.io/repos/github/JoaoAndreSa/MedCo/badge.svg?branch=master)](https://coveralls.io/github/JoaoAndreSa/MedCo?branch=master)
+# UnLynx [![Coverage Status](https://coveralls.io/repos/github/JoaoAndreSa/UnLynx/badge.svg?branch=master)](https://coveralls.io/github/JoaoAndreSa/UnLynx?branch=master)
 UnLynx is a library for simulating a privacy-preserving data sharing tool. It offers a series of independent protocols that when combined offer a robust and safe way to share sensitive data (e.g., medical data).  
 
 UnLynx is developed by LCA1 (Laboratory for Communications and Applications in EPFL).  
@@ -7,8 +7,8 @@ UnLynx is developed by LCA1 (Laboratory for Communications and Applications in E
 
 * The UnLynx library does an intensive use of [Overlay-network (ONet) library](https://github.com/dedis/onet)
 * For more information regarding the underlying architecture please refer to the stable version of ONet `gopkg.in/dedis/onet.v1`
-* To check the code organisation, have a look at [Layout](https://github.com/JoaoAndreSa/MedCo/wiki/Layout)
-* For more information on how to run our services, simulations and apps, go to [Running UnLynx](https://github.com/JoaoAndreSa/MedCo/wiki/Running-UnLynx)
+* To check the code organisation, have a look at [Layout](https://github.com/LCA1/UnLynx/wiki/Layout)
+* For more information on how to run our services, simulations and apps, go to [Running UnLynx](https://github.com/LCA1/UnLynx/wiki/Running-UnLynx)
 
 ## Getting Started
 

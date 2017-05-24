@@ -8,7 +8,7 @@ import (
 
 	"gopkg.in/dedis/onet.v1/network"
 
-	"github.com/JoaoAndreSa/MedCo/lib"
+	"github.com/LCA1/UnLynx/lib"
 	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/onet.v1/crypto"
 	"gopkg.in/dedis/onet.v1/log"
@@ -65,7 +65,7 @@ func CreateDatabaseConcept(maxSensitive int, pubKeyString string, delete bool, o
 	checkErr(err)
 
 	//access database
-	db, err := sql.Open("postgres", "user=froelicher dbname=i2b2-medco host=icsil1noteb206.epfl.ch password=froelicher port=15432")
+	db, err := sql.Open("postgres", "user=froelicher dbname=i2b2-unlynx host=icsil1noteb206.epfl.ch password=froelicher port=15432")
 	checkErr(err)
 	err = db.Ping()
 	if err != nil {
@@ -263,7 +263,7 @@ func CreateDatabaseConcept(maxSensitive int, pubKeyString string, delete bool, o
 // CreateDatabasePatient permits to create a patient_dimension table with encrypted information (not used yet)
 func CreateDatabasePatient(pubKey abstract.Point) {
 	//database access
-	db, err := sql.Open("postgres", "user=froelicher dbname=i2b2-medco host=icsil1noteb206.epfl.ch password=froelicher port=15432")
+	db, err := sql.Open("postgres", "user=froelicher dbname=i2b2-unlynx host=icsil1noteb206.epfl.ch password=froelicher port=15432")
 	checkErr(err)
 	err = db.Ping()
 	if err != nil {

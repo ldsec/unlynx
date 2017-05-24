@@ -40,6 +40,6 @@
         and remove keys from .ssh/know_hosts
 
     * To execute inside simul/:
-        ./simul -platform mininet [-debug 1] runfiles/medco.toml
+        ./simul -platform mininet [-debug 1] runfiles/unlynx.toml
 
     * You can check the log by accessing cat tmp/mininet.log

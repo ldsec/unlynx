@@ -3,12 +3,12 @@ package timedata_test
 import (
 	"testing"
 
-	"github.com/JoaoAndreSa/MedCo/simul/test_data/time_data"
+	"github.com/LCA1/UnLynx/simul/test_data/time_data"
 )
 
-const filename_read = "../medco.csv"
+const filename_read = "../unlynx.csv"
 const filename_write = "result.txt"
-const filename_toml = "../../runfiles/medco.toml"
+const filename_toml = "../../runfiles/unlynx.toml"
 
 var flags = []string{"bf", "depth", "rounds", "runwait", "servers", "\n",
 	"Shuffling(START)", "Shuffling(DISPATCH)", "Shuffling(START-noProof)", "Shuffling(DISPATCH-noProof)", "Shuffling(START-Proof)", "Shuffling(DISPATCH-Proof)", "ShufflingPhase", "\n",
@@ -18,7 +18,7 @@ var flags = []string{"bf", "depth", "rounds", "runwait", "servers", "\n",
 	"CollectiveAggregation(Aggregation)", "CollectiveAggregation(ascendingAggregation)", "CollectiveAggregation(Proof-1stPart)", "CollectiveAggregation(Proof-2ndPart)", "AggregationPhase", "\n",
 	"LocalAggregation(PROTOCOL)", "LocalAggregation(PROOFS)", "\n",
 	"KeySwitching(START)", "KeySwitching(DISPATCH)", "KeySwitchingPhase", "\n",
-	"SendingData", "ServerLocalAggregation", "ClientEncryption", "IndividualSendSurveyResults", "IndividualNewMedcoClient", "\n", "\n",
+	"SendingData", "ServerLocalAggregation", "ClientEncryption", "IndividualSendSurveyResults", "IndividualNewUnLynxClient", "\n", "\n",
 	"Simulation", "Sending", "Receiving", "Shuffling(SIMULATION)", "MethodSending", "MethodReceiving", "SendingBytes", "sendingKey", "receivingKey", "KeySwitching(SIMULATION)", "\n", "\n",
 	"KeySwitchingVerif", "DetTagVerif", "DetTagAddVerif", "LocalAggrVerif", "ShufflingVerif", "CollectiveAggrVerif", "AddRmServer(PROTOCOL)", "AddRmServer(PROOFS)", "AddRmServer(PROOFSVerif)"}
 

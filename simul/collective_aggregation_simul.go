@@ -2,8 +2,8 @@ package main
 
 import (
 	"github.com/BurntSushi/toml"
-	"github.com/JoaoAndreSa/MedCo/lib"
-	"github.com/JoaoAndreSa/MedCo/protocols"
+	"github.com/LCA1/UnLynx/lib"
+	"github.com/LCA1/UnLynx/protocols"
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"

@@ -1,8 +1,8 @@
 package serviceI2B2_test
 
 import (
-	"github.com/JoaoAndreSa/MedCo/lib"
-	"github.com/JoaoAndreSa/MedCo/services/i2b2"
+	"github.com/LCA1/UnLynx/lib"
+	"github.com/LCA1/UnLynx/services/i2b2"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/dedis/crypto.v0/random"
 	"gopkg.in/dedis/onet.v1"
@@ -32,9 +32,9 @@ func TestServiceShuffle(t *testing.T) {
 	secKey := network.Suite.Scalar().Pick(random.Stream)
 	pubKey := network.Suite.Point().Mul(network.Suite.Point().Base(), secKey)
 	// Send a request to the service
-	client := serviceI2B2.NewMedcoClient(el.List[0], strconv.Itoa(0))
-	client1 := serviceI2B2.NewMedcoClient(el.List[1], strconv.Itoa(1))
-	client2 := serviceI2B2.NewMedcoClient(el.List[2], strconv.Itoa(2))
+	client := serviceI2B2.NewUnLynxClient(el.List[0], strconv.Itoa(0))
+	client1 := serviceI2B2.NewUnLynxClient(el.List[1], strconv.Itoa(1))
+	client2 := serviceI2B2.NewUnLynxClient(el.List[2], strconv.Itoa(2))
 
 	sum := []string{"s1"}
 	count := false
@@ -144,8 +144,8 @@ func TestServiceNoDPs(t *testing.T) {
 	secKey := network.Suite.Scalar().Pick(random.Stream)
 	pubKey := network.Suite.Point().Mul(network.Suite.Point().Base(), secKey)
 	// Send a request to the service
-	client := serviceI2B2.NewMedcoClient(el.List[0], strconv.Itoa(0))
-	client1 := serviceI2B2.NewMedcoClient(el.List[1], strconv.Itoa(1))
+	client := serviceI2B2.NewUnLynxClient(el.List[0], strconv.Itoa(0))
+	client1 := serviceI2B2.NewUnLynxClient(el.List[1], strconv.Itoa(1))
 
 	sum := []string{"s1"}
 	count := false
@@ -250,13 +250,13 @@ func TestServiceDifferentDPs(t *testing.T) {
 	pubKey := network.Suite.Point().Mul(network.Suite.Point().Base(), secKey)
 	// Send a request to the service
 	// For the first server
-	client := serviceI2B2.NewMedcoClient(el.List[0], strconv.Itoa(0))
-	client1 := serviceI2B2.NewMedcoClient(el.List[0], strconv.Itoa(1))
+	client := serviceI2B2.NewUnLynxClient(el.List[0], strconv.Itoa(0))
+	client1 := serviceI2B2.NewUnLynxClient(el.List[0], strconv.Itoa(1))
 
 	//For the second server
-	client2 := serviceI2B2.NewMedcoClient(el.List[1], strconv.Itoa(2))
-	client3 := serviceI2B2.NewMedcoClient(el.List[1], strconv.Itoa(3))
-	client4 := serviceI2B2.NewMedcoClient(el.List[1], strconv.Itoa(4))
+	client2 := serviceI2B2.NewUnLynxClient(el.List[1], strconv.Itoa(2))
+	client3 := serviceI2B2.NewUnLynxClient(el.List[1], strconv.Itoa(3))
+	client4 := serviceI2B2.NewUnLynxClient(el.List[1], strconv.Itoa(4))
 
 	sum := []string{"s1"}
 	count := false
@@ -382,16 +382,16 @@ func TestServiceDifferentQuery(t *testing.T) {
 	pubKey := network.Suite.Point().Mul(network.Suite.Point().Base(), secKey)
 	// Send a request to the service
 	// For the first server
-	client := serviceI2B2.NewMedcoClient(el.List[0], strconv.Itoa(0))
-	client1 := serviceI2B2.NewMedcoClient(el.List[0], strconv.Itoa(1))
+	client := serviceI2B2.NewUnLynxClient(el.List[0], strconv.Itoa(0))
+	client1 := serviceI2B2.NewUnLynxClient(el.List[0], strconv.Itoa(1))
 
 	//For the second server
-	client2 := serviceI2B2.NewMedcoClient(el.List[1], strconv.Itoa(2))
-	client3 := serviceI2B2.NewMedcoClient(el.List[1], strconv.Itoa(3))
-	client4 := serviceI2B2.NewMedcoClient(el.List[1], strconv.Itoa(4))
+	client2 := serviceI2B2.NewUnLynxClient(el.List[1], strconv.Itoa(2))
+	client3 := serviceI2B2.NewUnLynxClient(el.List[1], strconv.Itoa(3))
+	client4 := serviceI2B2.NewUnLynxClient(el.List[1], strconv.Itoa(4))
 
 	//For the fourth server
-	client5 := serviceI2B2.NewMedcoClient(el.List[3], strconv.Itoa(4))
+	client5 := serviceI2B2.NewUnLynxClient(el.List[3], strconv.Itoa(4))
 
 	sum := []string{"s1", "s2", "count"}
 	count := true
@@ -532,13 +532,13 @@ func TestServiceConcurrentSurveys(t *testing.T) {
 			pubKey := network.Suite.Point().Mul(network.Suite.Point().Base(), secKey)
 			// Send a request to the service
 			// For the first server
-			client := serviceI2B2.NewMedcoClient(el.List[0], strconv.Itoa(0))
-			client1 := serviceI2B2.NewMedcoClient(el.List[0], strconv.Itoa(1))
+			client := serviceI2B2.NewUnLynxClient(el.List[0], strconv.Itoa(0))
+			client1 := serviceI2B2.NewUnLynxClient(el.List[0], strconv.Itoa(1))
 
 			//For the second server
-			client2 := serviceI2B2.NewMedcoClient(el.List[1], strconv.Itoa(2))
-			client3 := serviceI2B2.NewMedcoClient(el.List[1], strconv.Itoa(3))
-			client4 := serviceI2B2.NewMedcoClient(el.List[1], strconv.Itoa(4))
+			client2 := serviceI2B2.NewUnLynxClient(el.List[1], strconv.Itoa(2))
+			client3 := serviceI2B2.NewUnLynxClient(el.List[1], strconv.Itoa(3))
+			client4 := serviceI2B2.NewUnLynxClient(el.List[1], strconv.Itoa(4))
 
 			sum := []string{"s1"}
 			count := false
@@ -671,9 +671,9 @@ func TestServiceAggr(t *testing.T) {
 	secKey := network.Suite.Scalar().Pick(random.Stream)
 	pubKey := network.Suite.Point().Mul(network.Suite.Point().Base(), secKey)
 	// Send a request to the service
-	client := serviceI2B2.NewMedcoClient(el.List[0], strconv.Itoa(0))
-	client1 := serviceI2B2.NewMedcoClient(el.List[1], strconv.Itoa(1))
-	client2 := serviceI2B2.NewMedcoClient(el.List[2], strconv.Itoa(2))
+	client := serviceI2B2.NewUnLynxClient(el.List[0], strconv.Itoa(0))
+	client1 := serviceI2B2.NewUnLynxClient(el.List[1], strconv.Itoa(1))
+	client2 := serviceI2B2.NewUnLynxClient(el.List[2], strconv.Itoa(2))
 
 	sum := []string{"sum1"}
 	count := false
@@ -783,8 +783,8 @@ func TestServiceNoDPsAggr(t *testing.T) {
 	secKey := network.Suite.Scalar().Pick(random.Stream)
 	pubKey := network.Suite.Point().Mul(network.Suite.Point().Base(), secKey)
 	// Send a request to the service
-	client := serviceI2B2.NewMedcoClient(el.List[0], strconv.Itoa(0))
-	client1 := serviceI2B2.NewMedcoClient(el.List[1], strconv.Itoa(1))
+	client := serviceI2B2.NewUnLynxClient(el.List[0], strconv.Itoa(0))
+	client1 := serviceI2B2.NewUnLynxClient(el.List[1], strconv.Itoa(1))
 
 	sum := []string{"s1"}
 	count := false
@@ -874,13 +874,13 @@ func TestServiceDifferentDPsAggr(t *testing.T) {
 	pubKey := network.Suite.Point().Mul(network.Suite.Point().Base(), secKey)
 	// Send a request to the service
 	// For the first server
-	client := serviceI2B2.NewMedcoClient(el.List[0], strconv.Itoa(0))
-	client1 := serviceI2B2.NewMedcoClient(el.List[0], strconv.Itoa(1))
+	client := serviceI2B2.NewUnLynxClient(el.List[0], strconv.Itoa(0))
+	client1 := serviceI2B2.NewUnLynxClient(el.List[0], strconv.Itoa(1))
 
 	//For the second server
-	client2 := serviceI2B2.NewMedcoClient(el.List[1], strconv.Itoa(2))
-	client3 := serviceI2B2.NewMedcoClient(el.List[1], strconv.Itoa(3))
-	client4 := serviceI2B2.NewMedcoClient(el.List[1], strconv.Itoa(4))
+	client2 := serviceI2B2.NewUnLynxClient(el.List[1], strconv.Itoa(2))
+	client3 := serviceI2B2.NewUnLynxClient(el.List[1], strconv.Itoa(3))
+	client4 := serviceI2B2.NewUnLynxClient(el.List[1], strconv.Itoa(4))
 
 	sum := []string{"s1"}
 	count := false
@@ -991,16 +991,16 @@ func TestServiceDifferentQueryAggr(t *testing.T) {
 	pubKey := network.Suite.Point().Mul(network.Suite.Point().Base(), secKey)
 	// Send a request to the service
 	// For the first server
-	client := serviceI2B2.NewMedcoClient(el.List[0], strconv.Itoa(0))
-	client1 := serviceI2B2.NewMedcoClient(el.List[0], strconv.Itoa(1))
+	client := serviceI2B2.NewUnLynxClient(el.List[0], strconv.Itoa(0))
+	client1 := serviceI2B2.NewUnLynxClient(el.List[0], strconv.Itoa(1))
 
 	//For the second server
-	client2 := serviceI2B2.NewMedcoClient(el.List[1], strconv.Itoa(2))
-	client3 := serviceI2B2.NewMedcoClient(el.List[1], strconv.Itoa(3))
-	client4 := serviceI2B2.NewMedcoClient(el.List[1], strconv.Itoa(4))
+	client2 := serviceI2B2.NewUnLynxClient(el.List[1], strconv.Itoa(2))
+	client3 := serviceI2B2.NewUnLynxClient(el.List[1], strconv.Itoa(3))
+	client4 := serviceI2B2.NewUnLynxClient(el.List[1], strconv.Itoa(4))
 
 	//For the fourth server
-	client5 := serviceI2B2.NewMedcoClient(el.List[3], strconv.Itoa(4))
+	client5 := serviceI2B2.NewUnLynxClient(el.List[3], strconv.Itoa(4))
 
 	sum := []string{"s1", "s2", "count"}
 	count := true
@@ -1126,13 +1126,13 @@ func TestServiceConcurrentSurveysAggr(t *testing.T) {
 			pubKey := network.Suite.Point().Mul(network.Suite.Point().Base(), secKey)
 			// Send a request to the service
 			// For the first server
-			client := serviceI2B2.NewMedcoClient(el.List[0], strconv.Itoa(0))
-			client1 := serviceI2B2.NewMedcoClient(el.List[0], strconv.Itoa(1))
+			client := serviceI2B2.NewUnLynxClient(el.List[0], strconv.Itoa(0))
+			client1 := serviceI2B2.NewUnLynxClient(el.List[0], strconv.Itoa(1))
 
 			//For the second server
-			client2 := serviceI2B2.NewMedcoClient(el.List[1], strconv.Itoa(2))
-			client3 := serviceI2B2.NewMedcoClient(el.List[1], strconv.Itoa(3))
-			client4 := serviceI2B2.NewMedcoClient(el.List[1], strconv.Itoa(4))
+			client2 := serviceI2B2.NewUnLynxClient(el.List[1], strconv.Itoa(2))
+			client3 := serviceI2B2.NewUnLynxClient(el.List[1], strconv.Itoa(3))
+			client4 := serviceI2B2.NewUnLynxClient(el.List[1], strconv.Itoa(4))
 
 			sum := []string{"s1"}
 			count := false

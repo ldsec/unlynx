@@ -1,4 +1,4 @@
-Simulation = "ServiceMedCoI2B2"
+Simulation = "ServiceUnLynxI2B2"
 Servers = 4
 Bf = 2
 Rounds = 1

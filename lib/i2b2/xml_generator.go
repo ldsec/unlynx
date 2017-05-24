@@ -11,7 +11,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/JoaoAndreSa/MedCo/lib"
+	"github.com/LCA1/UnLynx/lib"
 	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"
@@ -42,16 +42,16 @@ type Data struct {
 	Columns         []Column `xml:"column"`
 }
 
-// Medco is the root of xml file
-type Medco struct {
-	XMLName xml.Name `xml:"medco"`
+// UnLynx is the root of xml file
+type UnLynx struct {
+	XMLName xml.Name `xml:"unlynx"`
 	Results []Result `xml:"result"`
 	Data    []Data   `xml:"data"`
 }
 
 // CreateXMLResult creates xml file containing a result
 func CreateXMLResult(result string, filename string) {
-	v := &Medco{}
+	v := &UnLynx{}
 	v.Results = append(v.Results, Result{Value: result})
 
 	file, _ := os.Create(filename)
@@ -74,7 +74,7 @@ func ReadXMLResult(fileName string) string {
 	defer xmlFile.Close()
 
 	XMLdata, _ := ioutil.ReadAll(xmlFile)
-	var m Medco
+	var m UnLynx
 	xml.Unmarshal(XMLdata, &m)
 
 	log.LLvl1("Result read: ", m.Results[0].Value)
@@ -83,7 +83,7 @@ func ReadXMLResult(fileName string) string {
 
 // CreateXMLData creates xml file containing data for an Unlynx query
 func CreateXMLData(surveyID string, pubKey string, priKey string, nbrDataProviders string, mode string, columns [][]string, operations []string, filename string) {
-	v := &Medco{}
+	v := &UnLynx{}
 	cols := make([]Column, len(columns))
 	for i, v := range columns {
 		for _, w := range v {
@@ -117,7 +117,7 @@ func ReadXMLData(fileName string, collectiveKey abstract.Point) (surveyID lib.Su
 	}
 	defer xmlFile.Close()
 	XMLdata, _ := ioutil.ReadAll(xmlFile)
-	var m Medco
+	var m UnLynx
 	xml.Unmarshal(XMLdata, &m)
 
 	surveyID = lib.SurveyID(m.Data[0].SurveyID)

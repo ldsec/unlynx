@@ -32,6 +32,8 @@ _testmain.go
 
 lib/i2b2/*.xml
 
+services/data/unly
+
 simul/test_data/*.csv
 simul/test_data/graphs/*.pdf
 simul/build/
@@ -43,9 +45,9 @@ simul/platform/mininet/deploy/
 
 server_list
 
-app/default/medco_test_data.txt
+app/default/unlynx_test_data.txt
 app/default/test
 app/default/service_storage
 
 group.toml
-medco
+unlynx

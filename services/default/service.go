@@ -1,10 +1,10 @@
 package serviceDefault
 
 import (
-	"github.com/JoaoAndreSa/MedCo/lib"
-	"github.com/JoaoAndreSa/MedCo/protocols"
-	"github.com/JoaoAndreSa/MedCo/services"
-	"github.com/JoaoAndreSa/MedCo/services/data"
+	"github.com/LCA1/UnLynx/lib"
+	"github.com/LCA1/UnLynx/protocols"
+	"github.com/LCA1/UnLynx/services"
+	"github.com/LCA1/UnLynx/services/data"
 	"github.com/btcsuite/goleveldb/leveldb/errors"
 	"github.com/fanliao/go-concurrentMap"
 	"github.com/satori/go.uuid"
@@ -17,8 +17,8 @@ import (
 	"time"
 )
 
-// ServiceName is the registered name for the medco service.
-const ServiceName = "MedCo"
+// ServiceName is the registered name for the unlynx service.
+const ServiceName = "UnLynx"
 
 const gobFile = "pre_compute_multiplications.gob"
 
@@ -51,7 +51,7 @@ type Survey struct {
 
 	// channels
 	SurveyChannel chan int // To wait for the survey to be created before loading data
-	DpChannel     chan int // To wait for all data to be read before starting medco service protocol
+	DpChannel     chan int // To wait for all data to be read before starting unlynx service protocol
 	DDTChannel    chan int // To wait for all nodes to finish the tagging before continuing
 
 	Noise lib.CipherText
@@ -113,7 +113,7 @@ type ServiceResult struct {
 	Results []lib.FilteredResponse
 }
 
-// Service defines a service in medco with a survey.
+// Service defines a service in unlynx with a survey.
 type Service struct {
 	*onet.ServiceProcessor
 
@@ -122,26 +122,27 @@ type Service struct {
 
 // NewService constructor which registers the needed messages.
 func NewService(c *onet.Context) onet.Service {
-	newMedCoInstance := &Service{
+	newUnLynxInstance := &Service{
 		ServiceProcessor: onet.NewServiceProcessor(c),
 		Survey:           concurrent.NewConcurrentMap(),
 	}
-	if cerr := newMedCoInstance.RegisterHandler(newMedCoInstance.HandleSurveyCreationQuery); cerr != nil {
+	if cerr := newUnLynxInstance.RegisterHandler(newUnLynxInstance.HandleSurveyCreationQuery); cerr != nil {
 		log.Fatal("Wrong Handler.", cerr)
 	}
-	if cerr := newMedCoInstance.RegisterHandler(newMedCoInstance.HandleSurveyResponseQuery); cerr != nil {
+	if cerr := newUnLynxInstance.RegisterHandler(newUnLynxInstance.HandleSurveyResponseQuery); cerr != nil {
 		log.Fatal("Wrong Handler.", cerr)
 	}
-	if cerr := newMedCoInstance.RegisterHandler(newMedCoInstance.HandleSurveyResultsQuery); cerr != nil {
+	if cerr := newUnLynxInstance.RegisterHandler(newUnLynxInstance.HandleSurveyResultsQuery); cerr != nil {
 		log.Fatal("Wrong Handler.", cerr)
 	}
-	if cerr := newMedCoInstance.RegisterHandler(newMedCoInstance.HandleDDTfinished); cerr != nil {
+	if cerr := newUnLynxInstance.RegisterHandler(newUnLynxInstance.HandleDDTfinished); cerr != nil {
 		log.Fatal("Wrong Handler.", cerr)
 	}
-	c.RegisterProcessor(newMedCoInstance, msgTypes.msgSurveyCreationQuery)
-	c.RegisterProcessor(newMedCoInstance, msgTypes.msgSurveyResultsQuery)
-	c.RegisterProcessor(newMedCoInstance, msgTypes.msgDDTfinished)
-	return newMedCoInstance
+
+	c.RegisterProcessor(newUnLynxInstance, msgTypes.msgSurveyCreationQuery)
+	c.RegisterProcessor(newUnLynxInstance, msgTypes.msgSurveyResultsQuery)
+	c.RegisterProcessor(newUnLynxInstance, msgTypes.msgDDTfinished)
+	return newUnLynxInstance
 }
 
 // Process implements the processor interface and is used to recognize messages broadcasted between servers
@@ -222,7 +223,7 @@ func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.
 				break
 			}
 		}
-		testData := data.ReadDataFromFile("medco_test_data.txt")
+		testData := data.ReadDataFromFile("unlynx_test_data.txt")
 		resp := EncryptDataToSurvey(s.ServerIdentity().String(), recq.SurveyID, testData[strconv.Itoa(index)], recq.Roster.Aggregate, 1, recq.Count)
 		s.PushData(resp, recq.Proofs)
 
@@ -467,7 +468,7 @@ func (s *Service) StartService(targetSurvey SurveyID, root bool) error {
 	}
 	log.LLvl1("All data providers (", survey.Query.MapDPs[s.ServerIdentity().String()], ") for server ", s.ServerIdentity(), " have sent their data")
 
-	log.LLvl1(s.ServerIdentity(), " starts a Medco Protocol for survey ", targetSurvey)
+	log.LLvl1(s.ServerIdentity(), " starts a UnLynx Protocol for survey ", targetSurvey)
 
 	target := castToSurvey(s.Survey.Get((string)(targetSurvey)))
 

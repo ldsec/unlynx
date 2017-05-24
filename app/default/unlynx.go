@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	// BinaryName is the name of the medco application
-	BinaryName = "medco"
+	// BinaryName is the name of the unlynx application
+	BinaryName = "unlynx"
 
 	// Version of the binary
 	Version = "1.00"
@@ -47,7 +47,7 @@ const (
 
 func main() {
 	cliApp := cli.NewApp()
-	cliApp.Name = "medco"
+	cliApp.Name = BinaryName
 	cliApp.Usage = "Query medical information securely and privately"
 	cliApp.Version = Version
 
@@ -63,7 +63,7 @@ func main() {
 		cli.StringFlag{
 			Name:  optionGroupFile + ", " + optionGroupFileShort,
 			Value: DefaultGroupFile,
-			Usage: "Medco group definition file",
+			Usage: "UnLynx group definition file",
 		},
 		cli.BoolFlag{
 			Name:  optionProofs,
@@ -110,8 +110,8 @@ func main() {
 		{
 			Name:    "run",
 			Aliases: []string{"r"},
-			Usage:   "Run Medco service",
-			Action:  runMedco,
+			Usage:   "Run UnLynx service",
+			Action:  runUnLynx,
 			Flags:   querierFlags,
 		},
 		// CLIENT END: QUERIER ----------
@@ -119,7 +119,7 @@ func main() {
 		// BEGIN SERVER --------
 		{
 			Name:  "server",
-			Usage: "Start medco server",
+			Usage: "Start unlynx server",
 			Action: func(c *cli.Context) error {
 				runServer(c)
 				return nil

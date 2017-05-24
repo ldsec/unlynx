@@ -3,12 +3,12 @@ package serviceDefault_test
 import (
 	"testing"
 
-	"github.com/JoaoAndreSa/MedCo/lib"
-	"github.com/JoaoAndreSa/MedCo/services/default"
+	"github.com/LCA1/UnLynx/lib"
+	"github.com/LCA1/UnLynx/services/default"
 
 	"gopkg.in/dedis/onet.v1/log"
 
-	"github.com/JoaoAndreSa/MedCo/services"
+	"github.com/LCA1/UnLynx/services"
 	"gopkg.in/dedis/onet.v1"
 	"os"
 	"reflect"
@@ -43,7 +43,7 @@ func TestServiceClearAttr(t *testing.T) {
 	defer local.CloseAll()
 
 	// Send a request to the service
-	client := serviceDefault.NewMedcoClient(el.List[0], strconv.Itoa(0))
+	client := serviceDefault.NewUnLynxClient(el.List[0], strconv.Itoa(0))
 
 	sum := []string{"s1", "s2"}
 	count := false
@@ -68,7 +68,7 @@ func TestServiceClearAttr(t *testing.T) {
 	log.LLvl1("Sending response data... ")
 	dataHolder := make([]*serviceDefault.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
-		dataHolder[i] = serviceDefault.NewMedcoClient(el.List[i%5], strconv.Itoa(i+1))
+		dataHolder[i] = serviceDefault.NewUnLynxClient(el.List[i%5], strconv.Itoa(i+1))
 		grp := [numberGrpAttr]int64{}
 		aggr := make(map[string]int64, numberAttr)
 
@@ -149,7 +149,7 @@ func TestServiceClearGrpEncWhereAttr(t *testing.T) {
 	defer local.CloseAll()
 
 	// Send a request to the service
-	client := serviceDefault.NewMedcoClient(el.List[0], strconv.Itoa(0))
+	client := serviceDefault.NewUnLynxClient(el.List[0], strconv.Itoa(0))
 
 	sum := []string{"s1", "s2"}
 	count := false
@@ -174,7 +174,7 @@ func TestServiceClearGrpEncWhereAttr(t *testing.T) {
 	log.LLvl1("Sending response data... ")
 	dataHolder := make([]*serviceDefault.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
-		dataHolder[i] = serviceDefault.NewMedcoClient(el.List[i%5], strconv.Itoa(i+1))
+		dataHolder[i] = serviceDefault.NewUnLynxClient(el.List[i%5], strconv.Itoa(i+1))
 		grp := [numberGrpAttr]int64{}
 		aggr := make(map[string]int64, numberAttr)
 
@@ -248,7 +248,7 @@ func TestServiceEncGrpClearWhereAttr(t *testing.T) {
 	defer local.CloseAll()
 
 	// Send a request to the service
-	client := serviceDefault.NewMedcoClient(el.List[0], strconv.Itoa(0))
+	client := serviceDefault.NewUnLynxClient(el.List[0], strconv.Itoa(0))
 
 	sum := []string{"s1", "s2"}
 	count := false
@@ -273,7 +273,7 @@ func TestServiceEncGrpClearWhereAttr(t *testing.T) {
 	log.LLvl1("Sending response data... ")
 	dataHolder := make([]*serviceDefault.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
-		dataHolder[i] = serviceDefault.NewMedcoClient(el.List[i%5], strconv.Itoa(i+1))
+		dataHolder[i] = serviceDefault.NewUnLynxClient(el.List[i%5], strconv.Itoa(i+1))
 		grp := [numberGrpAttr]int64{}
 		aggr := make(map[string]int64, numberAttr)
 
@@ -348,7 +348,7 @@ func TestServiceEncGrpAndWhereAttr(t *testing.T) {
 	defer local.CloseAll()
 
 	// Send a request to the service
-	client := serviceDefault.NewMedcoClient(el.List[0], strconv.Itoa(0))
+	client := serviceDefault.NewUnLynxClient(el.List[0], strconv.Itoa(0))
 
 	sum := []string{"s1", "s2"}
 	count := false
@@ -373,7 +373,7 @@ func TestServiceEncGrpAndWhereAttr(t *testing.T) {
 	log.LLvl1("Sending response data... ")
 	dataHolder := make([]*serviceDefault.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
-		dataHolder[i] = serviceDefault.NewMedcoClient(el.List[i%5], strconv.Itoa(i+1))
+		dataHolder[i] = serviceDefault.NewUnLynxClient(el.List[i%5], strconv.Itoa(i+1))
 		grp := [numberGrpAttr]int64{}
 		aggr := make(map[string]int64, numberAttr)
 
@@ -451,7 +451,7 @@ func TestServiceEverything(t *testing.T) {
 	defer local.CloseAll()
 
 	// Send a request to the service
-	client := serviceDefault.NewMedcoClient(el.List[0], strconv.Itoa(0))
+	client := serviceDefault.NewUnLynxClient(el.List[0], strconv.Itoa(0))
 
 	sum := []string{"s1", "s2"}
 	count := false
@@ -476,7 +476,7 @@ func TestServiceEverything(t *testing.T) {
 	log.LLvl1("Sending response data... ")
 	dataHolder := make([]*serviceDefault.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
-		dataHolder[i] = serviceDefault.NewMedcoClient(el.List[i%5], strconv.Itoa(i+1))
+		dataHolder[i] = serviceDefault.NewUnLynxClient(el.List[i%5], strconv.Itoa(i+1))
 		grp := [numberGrpAttr]int64{}
 		aggr := make(map[string]int64, numberAttr)
 
@@ -550,7 +550,7 @@ func TestServiceEncGrpAndWhereAttrWithCount(t *testing.T) {
 	defer local.CloseAll()
 
 	// Send a request to the service
-	client := serviceDefault.NewMedcoClient(el.List[0], strconv.Itoa(0))
+	client := serviceDefault.NewUnLynxClient(el.List[0], strconv.Itoa(0))
 
 	sum := []string{"s1", "s2", "count"}
 	count := true
@@ -575,7 +575,7 @@ func TestServiceEncGrpAndWhereAttrWithCount(t *testing.T) {
 	log.LLvl1("Sending response data... ")
 	dataHolder := make([]*serviceDefault.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
-		dataHolder[i] = serviceDefault.NewMedcoClient(el.List[i%5], strconv.Itoa(i+1))
+		dataHolder[i] = serviceDefault.NewUnLynxClient(el.List[i%5], strconv.Itoa(i+1))
 		grp := [numberGrpAttr]int64{}
 		aggr := make(map[string]int64, numberAttr)
 
@@ -652,7 +652,7 @@ func TestAllServersNoDPs(t *testing.T) {
 	defer local.CloseAll()
 
 	// Send a request to the service
-	client := serviceDefault.NewMedcoClient(el.List[0], strconv.Itoa(0))
+	client := serviceDefault.NewUnLynxClient(el.List[0], strconv.Itoa(0))
 
 	sum := []string{"s1", "s2"}
 	count := false
@@ -681,7 +681,7 @@ func TestAllServersNoDPs(t *testing.T) {
 	log.LLvl1("Sending response data... ")
 	dataHolder := make([]*serviceDefault.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
-		dataHolder[i] = serviceDefault.NewMedcoClient(el.List[i%2], strconv.Itoa(i+1))
+		dataHolder[i] = serviceDefault.NewUnLynxClient(el.List[i%2], strconv.Itoa(i+1))
 		grp := [numberGrpAttr]int64{}
 		aggr := make(map[string]int64, numberAttr)
 
@@ -755,7 +755,7 @@ func TestAllServersRandomDPs(t *testing.T) {
 	defer local.CloseAll()
 
 	// Send a request to the service
-	client := serviceDefault.NewMedcoClient(el.List[0], strconv.Itoa(0))
+	client := serviceDefault.NewUnLynxClient(el.List[0], strconv.Itoa(0))
 
 	nbrDPs := make(map[string]int64)
 	//how many data providers for each server
@@ -783,13 +783,13 @@ func TestAllServersRandomDPs(t *testing.T) {
 	dataHolder := make([]*serviceDefault.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
 		if i < 2 {
-			dataHolder[i] = serviceDefault.NewMedcoClient(el.List[1], strconv.Itoa(i+1))
+			dataHolder[i] = serviceDefault.NewUnLynxClient(el.List[1], strconv.Itoa(i+1))
 		} else if i == 2 {
-			dataHolder[i] = serviceDefault.NewMedcoClient(el.List[2], strconv.Itoa(i+1))
+			dataHolder[i] = serviceDefault.NewUnLynxClient(el.List[2], strconv.Itoa(i+1))
 		} else if i < 6 {
-			dataHolder[i] = serviceDefault.NewMedcoClient(el.List[3], strconv.Itoa(i+1))
+			dataHolder[i] = serviceDefault.NewUnLynxClient(el.List[3], strconv.Itoa(i+1))
 		} else {
-			dataHolder[i] = serviceDefault.NewMedcoClient(el.List[4], strconv.Itoa(i+1))
+			dataHolder[i] = serviceDefault.NewUnLynxClient(el.List[4], strconv.Itoa(i+1))
 		}
 
 		grp := [numberGrpAttr]int64{}
@@ -875,7 +875,7 @@ func TestConcurrentSurveys(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			// Send a request to the service
-			client := serviceDefault.NewMedcoClient(el.List[0], strconv.Itoa(0))
+			client := serviceDefault.NewUnLynxClient(el.List[0], strconv.Itoa(0))
 
 			nbrDPs := make(map[string]int64)
 			//how many data providers for each server
@@ -903,13 +903,13 @@ func TestConcurrentSurveys(t *testing.T) {
 			dataHolder := make([]*serviceDefault.API, 10)
 			for i := 0; i < len(dataHolder); i++ {
 				if i < 2 {
-					dataHolder[i] = serviceDefault.NewMedcoClient(el.List[1], strconv.Itoa(i+1))
+					dataHolder[i] = serviceDefault.NewUnLynxClient(el.List[1], strconv.Itoa(i+1))
 				} else if i == 2 {
-					dataHolder[i] = serviceDefault.NewMedcoClient(el.List[2], strconv.Itoa(i+1))
+					dataHolder[i] = serviceDefault.NewUnLynxClient(el.List[2], strconv.Itoa(i+1))
 				} else if i < 6 {
-					dataHolder[i] = serviceDefault.NewMedcoClient(el.List[3], strconv.Itoa(i+1))
+					dataHolder[i] = serviceDefault.NewUnLynxClient(el.List[3], strconv.Itoa(i+1))
 				} else {
-					dataHolder[i] = serviceDefault.NewMedcoClient(el.List[4], strconv.Itoa(i+1))
+					dataHolder[i] = serviceDefault.NewUnLynxClient(el.List[4], strconv.Itoa(i+1))
 				}
 
 				grp := [numberGrpAttr]int64{}

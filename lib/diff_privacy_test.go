@@ -1,7 +1,7 @@
 package lib_test
 
 import (
-	"github.com/JoaoAndreSa/MedCo/lib"
+	"github.com/LCA1/UnLynx/lib"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

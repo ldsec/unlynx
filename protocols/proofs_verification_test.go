@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/JoaoAndreSa/MedCo/lib"
-	"github.com/JoaoAndreSa/MedCo/protocols"
+	"github.com/LCA1/UnLynx/lib"
+	"github.com/LCA1/UnLynx/protocols"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/crypto.v0/random"

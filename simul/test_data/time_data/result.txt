@@ -8,18 +8,18 @@
 
 NbrDPs:                                            3
 NbrResponsesTot:                                   500
-NbrGroupsEnc:                                      2
-NbrAggrClear:                                      0
-NbrAggrEncrypted:                                  10
-RandomGroups:                                      true
-NbrWhereEncrypted:                                 0
 NbrResponsesFiltered:                              0
-NbrWhereClear:                                     0
-Proofs:                                            false
-Hosts:                                             3
 NbrGroupsClear:                                    0
+NbrWhereClear:                                     0
 Count:                                             false
-DataRepetitions:                                   10
+DataRepetitions:                                   1
+Hosts:                                             3
+NbrAggrEncrypted:                                  10
+NbrGroupsEnc:                                      2
+NbrWhereEncrypted:                                 0
+NbrAggrClear:                                      0
+RandomGroups:                                      true
+Proofs:                                            false
 
 bf:                                                2
 depth:                                             1
@@ -62,7 +62,7 @@ SendingData:
 ServerLocalAggregation:                            
 ClientEncryption:                                  
 IndividualSendSurveyResults:                       
-IndividualNewMedcoClient:                          
+IndividualNewUnLynxClient:                         
 
 
 Simulation:                                        

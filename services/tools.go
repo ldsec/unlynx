@@ -1,9 +1,9 @@
 package services
 
 import (
-	"github.com/JoaoAndreSa/MedCo/lib"
-	"github.com/JoaoAndreSa/MedCo/services/data"
 	"github.com/Knetic/govaluate"
+	"github.com/LCA1/UnLynx/lib"
+	"github.com/LCA1/UnLynx/services/data"
 	"github.com/btcsuite/goleveldb/leveldb/errors"
 	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/onet.v1"
