@@ -79,7 +79,7 @@ func openGroupToml(tomlFileName string) (*onet.Roster, error){
 	}
 
 	if len(el.List) <= 0 {
-		return nil, errors.New("Empty or invalid medco group file:" + tomlFileName)
+		return nil, errors.New("Empty or invalid unlynx group file:" + tomlFileName)
 	}
 
 	return el, nil
