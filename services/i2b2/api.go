@@ -1,7 +1,7 @@
 package serviceI2B2
 
 import (
-	"github.com/LCA1/UnLynx/lib"
+	"github.com/lca1/unlynx/lib"
 	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/crypto.v0/config"
 	"gopkg.in/dedis/onet.v1"

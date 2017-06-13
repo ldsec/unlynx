@@ -2,9 +2,9 @@ package services
 
 import (
 	"github.com/Knetic/govaluate"
-	"github.com/LCA1/UnLynx/lib"
-	"github.com/LCA1/UnLynx/services/data"
 	"github.com/btcsuite/goleveldb/leveldb/errors"
+	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/services/data"
 	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"

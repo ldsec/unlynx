@@ -2,11 +2,10 @@ package data
 
 import (
 	"encoding/gob"
-	"os"
-
-	"github.com/LCA1/UnLynx/lib"
+	"github.com/lca1/unlynx/lib"
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"
+	"os"
 )
 
 // WriteToGobFile stores object (e.g. lib.Enc_CipherVectorScalar) in a gob file. Note that the object must contain serializable stuff, for example byte arrays.

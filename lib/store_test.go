@@ -1,7 +1,7 @@
 package lib_test
 
 import (
-	"github.com/LCA1/UnLynx/lib"
+	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/dedis/crypto.v0/random"
 	"gopkg.in/dedis/onet.v1/network"

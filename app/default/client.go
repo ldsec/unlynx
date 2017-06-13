@@ -3,9 +3,9 @@ package main
 import (
 	"os"
 
-	"github.com/LCA1/UnLynx/lib"
-	"github.com/LCA1/UnLynx/services/default"
 	"github.com/btcsuite/goleveldb/leveldb/errors"
+	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/services/default"
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/app"
 	"gopkg.in/dedis/onet.v1/log"

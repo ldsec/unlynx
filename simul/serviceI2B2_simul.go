@@ -2,9 +2,9 @@ package main
 
 import (
 	"github.com/BurntSushi/toml"
-	"github.com/LCA1/UnLynx/lib"
-	"github.com/LCA1/UnLynx/services/data"
-	"github.com/LCA1/UnLynx/services/i2b2"
+	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/services/data"
+	"github.com/lca1/unlynx/services/i2b2"
 	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/crypto.v0/random"
 	"gopkg.in/dedis/onet.v1"
@@ -12,7 +12,6 @@ import (
 	"gopkg.in/dedis/onet.v1/network"
 	"strconv"
 	"sync"
-	//"time"
 )
 
 //Defines the simulation for the service-medCo to be run with cothority/simul.

@@ -3,7 +3,7 @@ package timedata_test
 import (
 	"testing"
 
-	"github.com/LCA1/UnLynx/simul/test_data/time_data"
+	"github.com/lca1/unlynx/simul/test_data/time_data"
 )
 
 const filename_read = "../unlynx.csv"

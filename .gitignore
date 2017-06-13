@@ -30,26 +30,20 @@ _testmain.go
 
 .idea/
 
-lib/i2b2/*.xml
-
-services/data/unly
+services/data/*.txt
 
 simul/test_data/*.csv
 simul/test_data/graphs/*.pdf
+simul/test_data/time_data/*.txt
 simul/build/
 simul/deploy/
 simul/simul
 simul/deter.toml
-simul/test_data/time_data/result.txt
-simul/platform/mininet/build/
-simul/platform/mininet/deploy/
 
-server_list
-
-app/default/unlynx_test_data.txt
-app/default/block.toml
+app/default/*.toml
 app/default/test
 app/default/service_storage
 
-group.toml
 unlynx
+skipchain
+server_list

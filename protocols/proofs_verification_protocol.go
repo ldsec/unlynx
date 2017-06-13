@@ -5,7 +5,7 @@
 package protocols
 
 import (
-	"github.com/LCA1/UnLynx/lib"
+	"github.com/lca1/unlynx/lib"
 	"gopkg.in/dedis/onet.v1"
 )
 

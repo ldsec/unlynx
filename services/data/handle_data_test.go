@@ -1,12 +1,11 @@
 package data_test
 
 import (
-	"testing"
-
-	"github.com/LCA1/UnLynx/lib"
-	"github.com/LCA1/UnLynx/services/data"
+	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/services/data"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/dedis/onet.v1/log"
+	"testing"
 )
 
 const filename = "unlynx_test_data.txt"

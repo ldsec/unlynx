@@ -1,8 +1,8 @@
 package services_test
 
 import (
-	"github.com/LCA1/UnLynx/lib"
-	"github.com/LCA1/UnLynx/services"
+	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/services"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/dedis/crypto.v0/random"
 	"gopkg.in/dedis/onet.v1"

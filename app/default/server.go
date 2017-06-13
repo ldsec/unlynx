@@ -5,8 +5,8 @@ import (
 
 	// Empty imports to have the init-functions called which should
 	// register the protocol
-	_ "github.com/LCA1/UnLynx/protocols"
-	_ "github.com/LCA1/UnLynx/services"
+	_ "github.com/lca1/unlynx/protocols"
+	_ "github.com/lca1/unlynx/services"
 	"gopkg.in/dedis/onet.v1/app"
 )
 

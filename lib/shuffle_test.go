@@ -3,7 +3,7 @@ package lib_test
 import (
 	"testing"
 
-	"github.com/LCA1/UnLynx/lib"
+	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"

@@ -3,16 +3,14 @@ package data
 import (
 	"bufio"
 	"fmt"
+	"github.com/lca1/unlynx/lib"
+	"gopkg.in/dedis/onet.v1/log"
 	"math"
 	"math/rand"
-	"time"
-
-	"github.com/LCA1/UnLynx/lib"
-	"gopkg.in/dedis/onet.v1/log"
-
 	"os"
 	"reflect"
 	"strings"
+	"time"
 )
 
 // Groups identifies all different groups to be added to the test data file

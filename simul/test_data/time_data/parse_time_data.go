@@ -4,10 +4,9 @@ import (
 	"bufio"
 	"encoding/csv"
 	"fmt"
+	"gopkg.in/dedis/onet.v1/log"
 	"os"
 	"strings"
-
-	"gopkg.in/dedis/onet.v1/log"
 )
 
 const spacing = 50

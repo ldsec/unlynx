@@ -2,14 +2,12 @@
 package lib
 
 import (
-	"strconv"
-	"strings"
-
-	"sync"
-
 	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/crypto.v0/cipher"
 	"gopkg.in/dedis/onet.v1/network"
+	"strconv"
+	"strings"
+	"sync"
 )
 
 // Objects

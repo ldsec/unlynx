@@ -1,19 +1,16 @@
 package serviceDefault_test
 
 import (
-	"testing"
-
-	"github.com/LCA1/UnLynx/lib"
-	"github.com/LCA1/UnLynx/services/default"
-
-	"gopkg.in/dedis/onet.v1/log"
-
-	"github.com/LCA1/UnLynx/services"
+	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/services"
+	"github.com/lca1/unlynx/services/default"
 	"gopkg.in/dedis/onet.v1"
+	"gopkg.in/dedis/onet.v1/log"
 	"os"
 	"reflect"
 	"strconv"
 	"sync"
+	"testing"
 )
 
 // numberGrpAttr is the number of group attributes.

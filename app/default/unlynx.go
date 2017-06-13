@@ -1,11 +1,10 @@
 package main
 
 import (
-	"os"
-
 	"gopkg.in/dedis/onet.v1/app"
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/urfave/cli.v1"
+	"os"
 )
 
 const (

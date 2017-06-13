@@ -2,8 +2,8 @@ package main
 
 import (
 	"github.com/BurntSushi/toml"
-	"github.com/LCA1/UnLynx/protocols"
-	"github.com/LCA1/UnLynx/services/data"
+	"github.com/lca1/unlynx/protocols"
+	"github.com/lca1/unlynx/services/data"
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/simul/monitor"
