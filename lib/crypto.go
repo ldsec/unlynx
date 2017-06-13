@@ -2,12 +2,12 @@ package lib
 
 import (
 	"fmt"
-	"sync"
-	"strings"
 	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/crypto.v0/random"
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"
+	"strings"
+	"sync"
 )
 
 // MaxHomomorphicInt is upper bound for integers used in messages, a failed decryption will return this value.

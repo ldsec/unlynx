@@ -1,13 +1,13 @@
 package lib_test
 
 import (
-	"reflect"
-	"testing"
 	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/crypto.v0/random"
 	"gopkg.in/dedis/onet.v1/network"
+	"reflect"
+	"testing"
 )
 
 var suite = network.Suite

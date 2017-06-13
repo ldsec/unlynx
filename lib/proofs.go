@@ -1,13 +1,13 @@
 package lib
 
 import (
-	"reflect"
-	"sync"
 	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/crypto.v0/proof"
 	"gopkg.in/dedis/crypto.v0/shuffle"
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"
+	"reflect"
+	"sync"
 )
 
 // SwitchKeyProof proof for key switching

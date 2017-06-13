@@ -22,8 +22,12 @@
         a. Actions -> Power -> Power Cycle (for each server)
 
 - Run servers:
+    0. Remove corresponding ssh keys from .ssh/know_hosts)
+
     1. inside simul/ execute (the numbers are relative to the number of each machine, e.g. iccluster029 -> 29):
         ~/Go/src/gopkg.in/dedis/onet.v1/simul/platform/mininet/setup_iccluster.sh 29 30 31
+
+        - Well! Now you just wait! :)
 
     2. To watch what is happening do:
         watch "ps aux | tail"
@@ -32,7 +36,14 @@
         mn
         or comment line in setup_servers.sh and re-run setup_icccluster.sh: #ssh -f $login "./install_mininet.sh &> /dev/null"
 
-    4. To see cores execution htop
+    4. To see cores execution htop and network bandwidth nload
+
+    5. Clean mininet
+        - for a in 29 30 31; do ssh root@iccluster0$a.iccluster.epfl.ch mn -c; done
+
+    6. Run simulation:
+        - Execute inside simul/:
+            ./simul -platform mininet [-debug 1] runfiles/xxxxx.toml
 
 - Notes:
     * To access each machine:

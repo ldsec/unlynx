@@ -18,24 +18,24 @@
 
 - Login in the platform
 
-- Access MedCo Experiment:
+- Access UnLynx Experiment:
     1. In "Projects" tab:
         a. Select SAFER in the PID column
-        b. Search for MedCo in "Experiments" tab
+        b. Search for UnLynx in "Experiments" tab
         c. Well just select it man!!!
 
 - Modify Experiment (select the machines):
-    1. In the MedCo Experiment window select "Modify experiment":
+    1. In the UnLynx Experiment window select "Modify experiment":
         a. set server_count = number of servers
         b. set server_delay = network delay (e.g. 10ms)
         c. uncomment one of these tb-set-hardware $server($i) xxxxx (xxxxx is the type of machines), e.g.:
              tb-set-hardware $server($i) MicroCloud
 
     Note.
-    You should check the availability of the machines (# number of free machines of that type) in the MeCo Experiment window under the "Experiment Options" menu
+    You should check the availability of the machines (# number of free machines of that type) in the UnLynx Experiment window under the "Experiment Options" menu
 
 - Setup servers:
-    1. In the MedCo Experiment window select "Swap In"
+    1. In the UnLynx Experiment window select "Swap In"
     2. Wait until you get the Swap Success message
 
     Note.
