@@ -57,13 +57,13 @@ func TestKeySwitching(t *testing.T) {
 		cv1 := encryptedResult[0]
 		res := lib.DecryptIntVector(clientPrivate, &cv1.AggregatingAttributes)
 		resGrp := lib.DecryptIntVector(clientPrivate, &cv1.GroupByEnc)
-		log.LLvl1("Recieved results (attributes) ", res)
-		log.LLvl1("Recieved results (groups) ", resGrp)
+		log.Lvl1("Recieved results (attributes) ", res)
+		log.Lvl1("Recieved results (groups) ", resGrp)
 		cv2 := encryptedResult[1]
 		res1 := lib.DecryptIntVector(clientPrivate, &cv2.AggregatingAttributes)
 		resGrp1 := lib.DecryptIntVector(clientPrivate, &cv2.GroupByEnc)
-		log.LLvl1("Recieved results (attributes) ", res1)
-		log.LLvl1("Recieved results (groups) ", resGrp1)
+		log.Lvl1("Recieved results (attributes) ", res1)
+		log.Lvl1("Recieved results (groups) ", resGrp1)
 
 		if !reflect.DeepEqual(res, expRes) {
 			t.Fatal("Wrong results, expected", expRes, "but got", res)

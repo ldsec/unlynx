@@ -47,7 +47,7 @@ func (sim *LocalAggregationSimulation) Setup(dir string, hosts []string) (*onet.
 		return nil, err
 	}
 
-	log.LLvl1("Setup done")
+	log.Lvl1("Setup done")
 
 	return sc, nil
 }
@@ -55,7 +55,7 @@ func (sim *LocalAggregationSimulation) Setup(dir string, hosts []string) (*onet.
 // Run starts the simulation.
 func (sim *LocalAggregationSimulation) Run(config *onet.SimulationConfig) error {
 	for round := 0; round < sim.Rounds; round++ {
-		log.LLvl1("Starting round", round)
+		log.Lvl1("Starting round", round)
 		rooti, err := config.Overlay.CreateProtocol("LocalAggregation", config.Tree, onet.NilServiceID)
 		if err != nil {
 			return err
@@ -95,13 +95,13 @@ func (sim *LocalAggregationSimulation) Run(config *onet.SimulationConfig) error 
 			}
 
 			newDetResponse := lib.FilteredResponseDet{Fr: cr, DetTagGroupBy: deterministicGroupAttributes.Key()}
-			log.LLvl1("step: ", i, " / ", sim.NbrGroups, " in preparation")
+			log.Lvl1("step: ", i, " / ", sim.NbrGroups, " in preparation")
 			for j := 0; j < sim.NbrResponses/sim.NbrGroups; j++ {
 				detResponses = append(detResponses, newDetResponse)
 			}
 		}
 
-		log.LLvl1("starting protocol with ", len(detResponses), " responses")
+		log.Lvl1("starting protocol with ", len(detResponses), " responses")
 
 		root.ProtocolInstance().(*protocols.LocalAggregationProtocol).TargetOfAggregation = detResponses
 		root.ProtocolInstance().(*protocols.LocalAggregationProtocol).Proofs = sim.Proofs
@@ -110,7 +110,7 @@ func (sim *LocalAggregationSimulation) Run(config *onet.SimulationConfig) error 
 
 		root.Start()
 		results := <-root.ProtocolInstance().(*protocols.LocalAggregationProtocol).FeedbackChannel
-		log.LLvl1("Number of aggregated lines: ", len(results))
+		log.Lvl1("Number of aggregated lines: ", len(results))
 
 		lib.EndTimer(round)
 

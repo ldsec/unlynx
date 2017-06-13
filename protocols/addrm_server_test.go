@@ -59,8 +59,8 @@ func TestAddRmServer(t *testing.T) {
 	dpResponses[1] = lib.DpResponse{GroupByClear: notEncrypted, GroupByEnc: encrypted, WhereClear: notEncrypted, WhereEnc: encrypted, AggregatingAttributesClear: notEncrypted, AggregatingAttributesEnc: encrypted}
 	dpResponses[2] = lib.DpResponse{GroupByClear: notEncrypted, GroupByEnc: encrypted, WhereClear: notEncrypted, WhereEnc: encrypted, AggregatingAttributesClear: notEncrypted, AggregatingAttributesEnc: encrypted}
 
-	log.LLvl1("CipherTexts to transform ")
-	log.LLvl1(dpResponses)
+	log.Lvl1("CipherTexts to transform ")
+	log.Lvl1(dpResponses)
 
 	protocol.TargetOfTransformation = dpResponses
 	protocol.Proofs = true
@@ -74,8 +74,8 @@ func TestAddRmServer(t *testing.T) {
 
 	select {
 	case results := <-feedback:
-		log.LLvl1("Results: ")
-		log.LLvl1(results)
+		log.Lvl1("Results: ")
+		log.Lvl1(results)
 		decryptedResult := make(map[string]int64)
 		for i, v := range results[0].AggregatingAttributesEnc {
 			decryptedResult[i] = lib.DecryptInt(secKeyAfter, v)

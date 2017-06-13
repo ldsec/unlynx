@@ -134,7 +134,7 @@ func (p *DeterministicTaggingProtocol) Start() error {
 
 	nbrProcessResponses := len(*p.TargetOfSwitch)
 
-	log.LLvl1("["+p.Name()+"]", " starts a Deterministic Tagging Protocol on ", nbrProcessResponses, " element(s)")
+	log.Lvl1("["+p.Name()+"]", " starts a Deterministic Tagging Protocol on ", nbrProcessResponses, " element(s)")
 
 	// create process response with deterministic tag, at first step the tag creation part is a copy of the proba
 	// grouping attributes
@@ -187,7 +187,7 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 	}
 
 	lib.EndParallelize(wg)
-	log.LLvl1(p.ServerIdentity(), " preparation round for deterministic tagging")
+	log.Lvl1(p.ServerIdentity(), " preparation round for deterministic tagging")
 
 	sendingDet(*p, deterministicTaggingTargetBef)
 
@@ -235,9 +235,9 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 		}
 
 		lib.EndParallelize(wg1)
-		log.LLvl1(p.ServerIdentity(), " completed deterministic Tagging (", len(detCreatedData), "row )")
+		log.Lvl1(p.ServerIdentity(), " completed deterministic Tagging (", len(detCreatedData), "row )")
 	} else {
-		log.LLvl1(p.ServerIdentity(), " carried on deterministic Tagging.", len(deterministicTaggingTarget.Data))
+		log.Lvl1(p.ServerIdentity(), " carried on deterministic Tagging.", len(deterministicTaggingTarget.Data))
 	}
 
 	lib.EndTimer(roundTotalComputation)
@@ -258,7 +258,7 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 func (p *DeterministicTaggingProtocol) sendToNext(msg interface{}) {
 	err := p.SendTo(p.nextNodeInCircuit, msg)
 	if err != nil {
-		log.LLvl1("Had an error sending a message: ", err)
+		log.Lvl1("Had an error sending a message: ", err)
 	}
 }
 

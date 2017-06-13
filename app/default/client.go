@@ -37,11 +37,11 @@ func startQuery(el *onet.Roster, proofs bool, sum []string, count bool, whereQue
 	}
 
 	// Print Output
-	log.LLvl1("Service output:")
+	log.Lvl1("Service output:")
 	var tabVerify [][]int64
 	tabVerify = *grp
 	for i := range tabVerify {
-		log.LLvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
+		log.Lvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
 	}
 }
 

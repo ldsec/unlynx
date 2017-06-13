@@ -45,7 +45,7 @@ func (sim *ProofsVerificationSimulation) Setup(dir string, hosts []string) (*one
 	if err != nil {
 		return nil, err
 	}
-	log.LLvl1("Setup done")
+	log.Lvl1("Setup done")
 	return sc, nil
 }
 
@@ -53,7 +53,7 @@ func (sim *ProofsVerificationSimulation) Setup(dir string, hosts []string) (*one
 func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) error {
 
 	for round := 0; round < sim.Rounds; round++ {
-		log.LLvl1("Starting round", round)
+		log.Lvl1("Starting round", round)
 		rooti, err := config.Overlay.CreateProtocol("ProofsVerification", config.Tree, onet.NilServiceID)
 		if err != nil {
 			return err
@@ -176,14 +176,14 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 
 		//shuffling *****************************************************************************
 
-		log.LLvl1("Starting shuffling (can take some time)")
+		log.Lvl1("Starting shuffling (can take some time)")
 		responsesToShuffle := make([]lib.ProcessResponse, sim.NbrResponses/sim.NbrServers)
 		for i := 0; i < sim.NbrResponses/sim.NbrServers; i++ {
 			responsesToShuffle[i] = lib.ProcessResponse{GroupByEnc: cipherVectGr, AggregatingAttributes: testCipherVect1}
 		}
 
 		clientResponsesShuffled, pi, beta := lib.ShuffleSequence(responsesToShuffle, nil, root.Roster().Aggregate, nil)
-		log.LLvl1("Starting shuffling proof creation")
+		log.Lvl1("Starting shuffling proof creation")
 		shufflingProof := lib.ShufflingProofCreation(responsesToShuffle, clientResponsesShuffled, nil, root.Roster().Aggregate, beta, pi)
 		shufflingProofs := make([]lib.PublishedShufflingProof, sim.NbrServers*sim.NbrServers)
 		for i := range shufflingProofs {
@@ -213,7 +213,7 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 		round := lib.StartTimer("ProofsVerification(SIMULATION)")
 		root.Start()
 		results := <-root.ProtocolInstance().(*protocols.ProofsVerificationProtocol).FeedbackChannel
-		log.LLvl1(len(results), " proofs verified")
+		log.Lvl1(len(results), " proofs verified")
 		lib.EndTimer(round)
 	}
 	return nil

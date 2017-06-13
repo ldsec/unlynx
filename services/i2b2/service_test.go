@@ -20,7 +20,7 @@ import (
 //______________________________________________________________________________________________________________________
 // Default (1 data provider per server)
 func TestServiceShuffle(t *testing.T) {
-	log.LLvl1("***************************************************************************************************")
+	log.Lvl1("***************************************************************************************************")
 	os.Remove("pre_compute_multiplications.gob")
 	log.SetDebugVisible(2)
 	local := onet.NewLocalTest()
@@ -126,13 +126,13 @@ func TestServiceShuffle(t *testing.T) {
 
 	assert.True(t, check, "Wrong result")
 
-	log.LLvl1(finalResult)
+	log.Lvl1(finalResult)
 }
 
 //______________________________________________________________________________________________________________________
 // Some servers without DPs
 func TestServiceNoDPs(t *testing.T) {
-	log.LLvl1("***************************************************************************************************")
+	log.Lvl1("***************************************************************************************************")
 	os.Remove("pre_compute_multiplications.gob")
 	log.SetDebugVisible(2)
 	local := onet.NewLocalTest()
@@ -231,13 +231,13 @@ func TestServiceNoDPs(t *testing.T) {
 
 	assert.True(t, check, "Wrong result")
 
-	log.LLvl1(finalResult)
+	log.Lvl1(finalResult)
 }
 
 //______________________________________________________________________________________________________________________
 // Servers with a different number of DPs
 func TestServiceDifferentDPs(t *testing.T) {
-	log.LLvl1("***************************************************************************************************")
+	log.Lvl1("***************************************************************************************************")
 	os.Remove("pre_compute_multiplications.gob")
 	log.SetDebugVisible(2)
 	local := onet.NewLocalTest()
@@ -363,13 +363,13 @@ func TestServiceDifferentDPs(t *testing.T) {
 
 	assert.True(t, check, "Wrong result")
 
-	log.LLvl1(finalResult)
+	log.Lvl1(finalResult)
 }
 
 //______________________________________________________________________________________________________________________
 // Test a different query and one more node
 func TestServiceDifferentQuery(t *testing.T) {
-	log.LLvl1("***************************************************************************************************")
+	log.Lvl1("***************************************************************************************************")
 	os.Remove("pre_compute_multiplications.gob")
 	log.SetDebugVisible(2)
 	local := onet.NewLocalTest()
@@ -503,13 +503,13 @@ func TestServiceDifferentQuery(t *testing.T) {
 
 	assert.True(t, check, "Wrong result")
 
-	log.LLvl1(finalResult)
+	log.Lvl1(finalResult)
 }
 
 //______________________________________________________________________________________________________________________
 // Servers with a different number of DPs
 func TestServiceConcurrentSurveys(t *testing.T) {
-	log.LLvl1("***************************************************************************************************")
+	log.Lvl1("***************************************************************************************************")
 	os.Remove("pre_compute_multiplications.gob")
 	log.SetDebugVisible(2)
 	local := onet.NewLocalTest()
@@ -647,7 +647,7 @@ func TestServiceConcurrentSurveys(t *testing.T) {
 
 			assert.True(t, check, "Wrong result")
 
-			log.LLvl1(finalResult)
+			log.Lvl1(finalResult)
 		}(i)
 	}
 	wg.Wait()
@@ -659,7 +659,7 @@ func TestServiceConcurrentSurveys(t *testing.T) {
 //______________________________________________________________________________________________________________________
 // Default (1 data provider per server)
 func TestServiceAggr(t *testing.T) {
-	log.LLvl1("***************************************************************************************************")
+	log.Lvl1("***************************************************************************************************")
 	os.Remove("pre_compute_multiplications.gob")
 	log.SetDebugVisible(2)
 	local := onet.NewLocalTest()
@@ -765,13 +765,13 @@ func TestServiceAggr(t *testing.T) {
 
 	assert.True(t, check, "Wrong result")
 
-	log.LLvl1(finalResult)
+	log.Lvl1(finalResult)
 }
 
 //______________________________________________________________________________________________________________________
 // Some servers without DPs
 func TestServiceNoDPsAggr(t *testing.T) {
-	log.LLvl1("***************************************************************************************************")
+	log.Lvl1("***************************************************************************************************")
 	os.Remove("pre_compute_multiplications.gob")
 	log.SetDebugVisible(2)
 	local := onet.NewLocalTest()
@@ -855,13 +855,13 @@ func TestServiceNoDPsAggr(t *testing.T) {
 	assert.Equal(t, len(finalResult), len(expectedResult), "The size of the result is different")
 	assert.Equal(t, finalResult, expectedResult, "Wrong result")
 
-	log.LLvl1(finalResult)
+	log.Lvl1(finalResult)
 }
 
 //______________________________________________________________________________________________________________________
 // Servers with a different number of DPs
 func TestServiceDifferentDPsAggr(t *testing.T) {
-	log.LLvl1("***************************************************************************************************")
+	log.Lvl1("***************************************************************************************************")
 	os.Remove("pre_compute_multiplications.gob")
 	log.SetDebugVisible(2)
 	local := onet.NewLocalTest()
@@ -972,13 +972,13 @@ func TestServiceDifferentDPsAggr(t *testing.T) {
 	assert.Equal(t, len(finalResult), len(expectedResult), "The size of the result is different")
 	assert.Equal(t, finalResult, expectedResult, "Wrong result")
 
-	log.LLvl1(finalResult)
+	log.Lvl1(finalResult)
 }
 
 //______________________________________________________________________________________________________________________
 // Test a different query and one more node
 func TestServiceDifferentQueryAggr(t *testing.T) {
-	log.LLvl1("***************************************************************************************************")
+	log.Lvl1("***************************************************************************************************")
 	os.Remove("pre_compute_multiplications.gob")
 	log.SetDebugVisible(2)
 	local := onet.NewLocalTest()
@@ -1097,13 +1097,13 @@ func TestServiceDifferentQueryAggr(t *testing.T) {
 	assert.Equal(t, len(finalResult), len(expectedResult), "The size of the result is different")
 	assert.Equal(t, finalResult, expectedResult, "Wrong result")
 
-	log.LLvl1(finalResult)
+	log.Lvl1(finalResult)
 }
 
 //______________________________________________________________________________________________________________________
 // Servers with a different number of DPs
 func TestServiceConcurrentSurveysAggr(t *testing.T) {
-	log.LLvl1("***************************************************************************************************")
+	log.Lvl1("***************************************************************************************************")
 	os.Remove("pre_compute_multiplications.gob")
 	log.SetDebugVisible(2)
 	local := onet.NewLocalTest()
@@ -1226,7 +1226,7 @@ func TestServiceConcurrentSurveysAggr(t *testing.T) {
 			assert.Equal(t, len(finalResult), len(expectedResult), "The size of the result is different")
 			assert.Equal(t, finalResult, expectedResult, "Wrong result")
 
-			log.LLvl1(finalResult)
+			log.Lvl1(finalResult)
 		}(i)
 	}
 	wg.Wait()

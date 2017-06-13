@@ -74,7 +74,7 @@ func TestShuffling(t *testing.T) {
 	mapi[2] = processResponse3
 	mapi[3] = processResponse1
 
-	log.LLvl1("Data before shuffling ", mapi)
+	log.Lvl1("Data before shuffling ", mapi)
 
 	protocol.TargetOfShuffle = &mapi
 	protocol.CollectiveKey = groupPub
@@ -90,7 +90,7 @@ func TestShuffling(t *testing.T) {
 
 		for _, v := range encryptedResult {
 			decryptedVAggr := lib.DecryptIntVector(groupSec, &v.AggregatingAttributes)
-			log.LLvl1(decryptedVAggr)
+			log.Lvl1(decryptedVAggr)
 			decryptedVGrp := lib.DecryptIntVector(groupSec, &v.GroupByEnc)
 			present := false
 			for _, w := range mapi {
@@ -103,7 +103,7 @@ func TestShuffling(t *testing.T) {
 			if !present {
 				t.Error("ERROR")
 			}
-			log.LLvl1(v)
+			log.Lvl1(v)
 		}
 
 	case <-time.After(timeout):

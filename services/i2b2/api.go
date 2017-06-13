@@ -37,7 +37,7 @@ func NewUnLynxClient(entryPoint *network.ServerIdentity, clientID string) *API {
 
 // SendSurveyDpQuery creates a survey based on a set of entities (servers) and a survey description.
 func (c *API) SendSurveyDpQuery(entities *onet.Roster, surveyGenID, surveyID SurveyID, clientPubKey abstract.Point, nbrDPs map[string]int64, proofs, appFlag bool, sum []string, count bool, where []lib.WhereQueryAttribute, predicate string, groupBy []string, data []lib.ProcessResponse, mode int64) (*SurveyID, lib.FilteredResponse, error) {
-	log.LLvl1("Client", c.ClientID, "is creating a survey with General ID:", surveyGenID)
+	log.Lvl1("Client", c.ClientID, "is creating a survey with General ID:", surveyGenID)
 
 	var newSurveyID SurveyID
 

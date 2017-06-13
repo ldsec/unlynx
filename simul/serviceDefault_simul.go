@@ -56,7 +56,7 @@ func (sim *SimulationUnLynx) Setup(dir string, hosts []string) (*onet.Simulation
 		return nil, err
 	}
 
-	log.LLvl1("Setup done")
+	log.Lvl1("Setup done")
 
 	return sc, nil
 }
@@ -66,7 +66,7 @@ func (sim *SimulationUnLynx) Run(config *onet.SimulationConfig) error {
 	var start *monitor.TimeMeasure
 	// Setup Simulation
 	nbrHosts := config.Tree.Size()
-	log.LLvl1("Size:", nbrHosts, ", Rounds:", sim.Rounds)
+	log.Lvl1("Size:", nbrHosts, ", Rounds:", sim.Rounds)
 
 	// Does not make sense to have more servers than clients!!
 	if nbrHosts > sim.NbrDPs {
@@ -76,7 +76,7 @@ func (sim *SimulationUnLynx) Run(config *onet.SimulationConfig) error {
 	el := (*config.Tree).Roster
 
 	for round := 0; round < sim.Rounds; round++ {
-		log.LLvl1("Starting round", round, el)
+		log.Lvl1("Starting round", round, el)
 		client := serviceDefault.NewUnLynxClient(el.List[0], strconv.Itoa(0))
 
 		// Define how many data providers for each server
@@ -129,7 +129,7 @@ func (sim *SimulationUnLynx) Run(config *onet.SimulationConfig) error {
 		testData := data.GenerateData(int64(sim.NbrDPs), sim.NbrResponsesTot, sim.NbrResponsesFiltered, sim.NbrGroupsClear, sim.NbrGroupsEnc,
 			sim.NbrWhereClear, sim.NbrWhereEncrypted, sim.NbrAggrClear, sim.NbrAggrEncrypted, sim.NbrGroupAttributes, sim.RandomGroups)
 
-		/*log.LLvl1("Saving test data...")
+		/*log.Lvl1("Saving test data...")
 		data.WriteDataToFile("unlynx_test_data.txt", testData)*/
 
 		/// START SERVICE PROTOCOL
@@ -137,7 +137,7 @@ func (sim *SimulationUnLynx) Run(config *onet.SimulationConfig) error {
 			start = monitor.NewTimeMeasure("SendingData")
 		}
 
-		log.LLvl1("Sending response data... ")
+		log.Lvl1("Sending response data... ")
 		dataHolder := make([]*serviceDefault.API, sim.NbrDPs)
 		wg := lib.StartParallelize(len(dataHolder))
 
@@ -183,17 +183,17 @@ func (sim *SimulationUnLynx) Run(config *onet.SimulationConfig) error {
 
 		// Print Output
 		allData := make([]lib.DpClearResponse, 0)
-		log.LLvl1("Service output:")
+		log.Lvl1("Service output:")
 		for i := range *grp {
-			log.LLvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
+			log.Lvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
 			allData = append(allData, lib.DpClearResponse{GroupByClear: lib.ConvertDataToMap((*grp)[i], "g", 0), AggregatingAttributesClear: lib.ConvertDataToMap((*aggr)[i], "s", 0)})
 		}
 
 		// Test Service Simulation
 		if data.CompareClearResponses(data.ComputeExpectedResult(testData, sim.DataRepetitions, true), allData) {
-			log.LLvl1("Result is right! :)")
+			log.Lvl1("Result is right! :)")
 		} else {
-			log.LLvl1("Result is wrong! :(")
+			log.Lvl1("Result is wrong! :(")
 		}
 	}
 

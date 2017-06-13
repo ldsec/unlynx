@@ -45,7 +45,7 @@ func NewLocalAggregationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstanc
 // Start is called at the root to start the execution of the key switching.
 func (p *LocalAggregationProtocol) Start() error {
 
-	log.LLvl1(p.ServerIdentity(), "started a local aggregation Protocol")
+	log.Lvl1(p.ServerIdentity(), "started a local aggregation Protocol")
 	roundComput := lib.StartTimer(p.Name() + "_LocalAggregation(PROTOCOL)")
 
 	resultingMap := make(map[lib.GroupingKey]lib.FilteredResponse)

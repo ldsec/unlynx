@@ -35,7 +35,7 @@ func SendISMOthers(s *onet.ServiceProcessor, el *onet.Roster, msg interface{}) e
 
 // PrecomputeForShuffling precomputes data to be used in the shuffling protocol (to make it faster) and saves it in a .gob file
 func PrecomputeForShuffling(serverName, gobFile string, surveySecret abstract.Scalar, collectiveKey abstract.Point, lineSize int) []lib.CipherVectorScalar {
-	log.LLvl1(serverName, " precomputes for shuffling")
+	log.Lvl1(serverName, " precomputes for shuffling")
 	precomputeShuffle := lib.CreatePrecomputedRandomize(network.Suite.Point().Base(), collectiveKey, network.Suite.Cipher(surveySecret.Bytes()), lineSize*2, 10)
 
 	encoded, err := data.EncodeCipherVectorScalar(precomputeShuffle)
@@ -50,7 +50,7 @@ func PrecomputeForShuffling(serverName, gobFile string, surveySecret abstract.Sc
 
 // PrecomputationWritingForShuffling reads the precomputation data from  .gob file if it already exists or generates a new one
 func PrecomputationWritingForShuffling(appFlag bool, gobFile, serverName string, surveySecret abstract.Scalar, collectiveKey abstract.Point, lineSize int) []lib.CipherVectorScalar {
-	log.LLvl1(serverName, " precomputes for shuffling")
+	log.Lvl1(serverName, " precomputes for shuffling")
 	precomputeShuffle := []lib.CipherVectorScalar{}
 	if appFlag {
 		if _, err := os.Stat(gobFile); os.IsNotExist(err) {

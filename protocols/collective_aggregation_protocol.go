@@ -128,7 +128,7 @@ func (p *CollectiveAggregationProtocol) Start() error {
 	if p.GroupedData == nil {
 		return errors.New("No data reference provided for aggregation")
 	}
-	log.LLvl1(p.ServerIdentity(), " started a Colective Aggregation Protocol (", len(*p.GroupedData), "local group(s) )")
+	log.Lvl1(p.ServerIdentity(), " started a Colective Aggregation Protocol (", len(*p.GroupedData), "local group(s) )")
 	p.SendToChildren(&DataReferenceMessage{})
 	return nil
 }
@@ -143,7 +143,7 @@ func (p *CollectiveAggregationProtocol) Dispatch() error {
 
 	// 2. Ascending aggregation phase
 	aggregatedData := p.ascendingAggregationPhase()
-	log.LLvl1(p.ServerIdentity(), " completed aggregation phase (", len(*aggregatedData), "group(s) )")
+	log.Lvl1(p.ServerIdentity(), " completed aggregation phase (", len(*aggregatedData), "group(s) )")
 
 	// 3. Result reporting
 	if p.IsRoot() {

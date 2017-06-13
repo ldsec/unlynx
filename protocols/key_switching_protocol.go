@@ -143,7 +143,7 @@ func (p *KeySwitchingProtocol) Start() error {
 		return errors.New("No new public key to be switched on provided")
 	}
 
-	log.LLvl1(p.ServerIdentity(), " started a Key Switching Protocol")
+	log.Lvl1(p.ServerIdentity(), " started a Key Switching Protocol")
 
 	// Initializes the target ciphertext and extract the original ephemeral keys.
 	dataLength := len(*p.TargetOfSwitch)
@@ -225,14 +225,14 @@ func (p *KeySwitchingProtocol) Dispatch() error {
 
 	// If the tree node is the root then protocol returns.
 	if p.IsRoot() {
-		log.LLvl1(p.ServerIdentity(), " completed key switching.")
+		log.Lvl1(p.ServerIdentity(), " completed key switching.")
 		result := make([]lib.FilteredResponse, len(keySwitchingTarget.DataKey))
 		for i, v := range keySwitchingTarget.DataKey {
 			result[i] = v.Response
 		}
 		p.FeedbackChannel <- result
 	} else {
-		log.LLvl1(p.ServerIdentity(), " carried on key switching on ", len(keySwitchingTarget.DataKey), " .")
+		log.Lvl1(p.ServerIdentity(), " carried on key switching on ", len(keySwitchingTarget.DataKey), " .")
 		sending(p, keySwitchingTarget)
 	}
 
@@ -244,7 +244,7 @@ func (p *KeySwitchingProtocol) Dispatch() error {
 func (p *KeySwitchingProtocol) sendToNext(msg interface{}) {
 	err := p.SendTo(p.nextNodeInCircuit, msg)
 	if err != nil {
-		log.LLvl1(p.Name(), " has an error sending a message: ", err)
+		log.Lvl1(p.Name(), " has an error sending a message: ", err)
 	}
 }
 

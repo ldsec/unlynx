@@ -43,7 +43,7 @@ var finalResultClearAggr = make(chan []lib.DpClearResponse)
 
 // Start is called at the root to start the execution of the local clear aggregation.
 func (p *LocalClearAggregationProtocol) Start() error {
-	log.LLvl1(p.ServerIdentity(), "started a local clear aggregation protocol")
+	log.Lvl1(p.ServerIdentity(), "started a local clear aggregation protocol")
 	roundComput := lib.StartTimer(p.Name() + "_LocalClearAggregation(START)")
 	result := lib.AddInClear(p.TargetOfAggregation)
 	lib.EndTimer(roundComput)

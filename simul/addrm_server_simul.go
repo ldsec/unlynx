@@ -49,7 +49,7 @@ func (sim *AddRmSimulation) Setup(dir string, hosts []string) (*onet.SimulationC
 		return nil, err
 	}
 
-	log.LLvl1("Setup done")
+	log.Lvl1("Setup done")
 
 	return sc, nil
 }
@@ -57,7 +57,7 @@ func (sim *AddRmSimulation) Setup(dir string, hosts []string) (*onet.SimulationC
 // Run starts the simulation.
 func (sim *AddRmSimulation) Run(config *onet.SimulationConfig) error {
 	for round := 0; round < sim.Rounds; round++ {
-		log.LLvl1("Starting round", round)
+		log.Lvl1("Starting round", round)
 
 		rooti, err := config.Overlay.CreateProtocol("AddRmServer", config.Tree, onet.NilServiceID)
 
@@ -95,7 +95,7 @@ func (sim *AddRmSimulation) Run(config *onet.SimulationConfig) error {
 			detResponses = append(detResponses, cr)
 		}
 
-		log.LLvl1("starting protocol with ", len(detResponses), " responses")
+		log.Lvl1("starting protocol with ", len(detResponses), " responses")
 
 		root.ProtocolInstance().(*protocols.AddRmServerProtocol).TargetOfTransformation = detResponses
 		root.ProtocolInstance().(*protocols.AddRmServerProtocol).Proofs = sim.Proofs
@@ -106,7 +106,7 @@ func (sim *AddRmSimulation) Run(config *onet.SimulationConfig) error {
 
 		root.Start()
 		results := <-root.ProtocolInstance().(*protocols.AddRmServerProtocol).FeedbackChannel
-		log.LLvl1("Number of aggregated lines: ", len(results))
+		log.Lvl1("Number of aggregated lines: ", len(results))
 
 		lib.EndTimer(round)
 

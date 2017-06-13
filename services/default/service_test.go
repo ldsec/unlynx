@@ -30,7 +30,7 @@ func TestMain(m *testing.M) {
 //______________________________________________________________________________________________________________________
 /// Only clear where and group by attributes + tests shuffling if 1 element -> add a dummy one
 func TestServiceClearAttr(t *testing.T) {
-	log.LLvl1("***************************************************************************************************")
+	log.Lvl1("***************************************************************************************************")
 	os.Remove("pre_compute_multiplications.gob")
 	log.SetDebugVisible(2)
 	local := onet.NewLocalTest()
@@ -62,7 +62,7 @@ func TestServiceClearAttr(t *testing.T) {
 
 	//save values in a map to verify them at the end
 	expectedResults := make(map[[numberGrpAttr]int64][]int64)
-	log.LLvl1("Sending response data... ")
+	log.Lvl1("Sending response data... ")
 	dataHolder := make([]*serviceDefault.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
 		dataHolder[i] = serviceDefault.NewUnLynxClient(el.List[i%5], strconv.Itoa(i+1))
@@ -102,7 +102,7 @@ func TestServiceClearAttr(t *testing.T) {
 		//responses:= []lib.DpClearResponse{{WhereClear: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr},{WhereClear: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr},{WhereClear: sliceWhere, GroupByClear: sliceGrp1, AggregatingAttributesEnc: aggr}}
 		responses := []lib.DpClearResponse{{WhereClear: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereClear: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr}}
 
-		log.LLvl1(responses)
+		log.Lvl1(responses)
 		dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
 
 	}
@@ -115,11 +115,11 @@ func TestServiceClearAttr(t *testing.T) {
 		t.Fatal("Service could not output the results.")
 	}
 
-	log.LLvl1("Service output:")
+	log.Lvl1("Service output:")
 	var tabVerify [][]int64
 	tabVerify = *grp
 	for i := range tabVerify {
-		log.LLvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
+		log.Lvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
 
 		//convert from slice to tab in order to test the values
 		grpTab := [numberGrpAttr]int64{}
@@ -136,7 +136,7 @@ func TestServiceClearAttr(t *testing.T) {
 //______________________________________________________________________________________________________________________
 /// Only encrypted where and clear group by attributes
 func TestServiceClearGrpEncWhereAttr(t *testing.T) {
-	log.LLvl1("***************************************************************************************************")
+	log.Lvl1("***************************************************************************************************")
 	os.Remove("pre_compute_multiplications.gob")
 	log.SetDebugVisible(2)
 	local := onet.NewLocalTest()
@@ -168,7 +168,7 @@ func TestServiceClearGrpEncWhereAttr(t *testing.T) {
 
 	//save values in a map to verify them at the end
 	expectedResults := make(map[[numberGrpAttr]int64][]int64)
-	log.LLvl1("Sending response data... ")
+	log.Lvl1("Sending response data... ")
 	dataHolder := make([]*serviceDefault.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
 		dataHolder[i] = serviceDefault.NewUnLynxClient(el.List[i%5], strconv.Itoa(i+1))
@@ -214,11 +214,11 @@ func TestServiceClearGrpEncWhereAttr(t *testing.T) {
 		t.Fatal("Service could not output the results.")
 	}
 
-	log.LLvl1("Service output:")
+	log.Lvl1("Service output:")
 	var tabVerify [][]int64
 	tabVerify = *grp
 	for i := range tabVerify {
-		log.LLvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
+		log.Lvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
 
 		//convert from slice to tab in order to test the values
 		grpTab := [numberGrpAttr]int64{}
@@ -235,7 +235,7 @@ func TestServiceClearGrpEncWhereAttr(t *testing.T) {
 //______________________________________________________________________________________________________________________
 /// Only clear where and encrypted group by attributes
 func TestServiceEncGrpClearWhereAttr(t *testing.T) {
-	log.LLvl1("***************************************************************************************************")
+	log.Lvl1("***************************************************************************************************")
 	os.Remove("pre_compute_multiplications.gob")
 	log.SetDebugVisible(2)
 	local := onet.NewLocalTest()
@@ -267,7 +267,7 @@ func TestServiceEncGrpClearWhereAttr(t *testing.T) {
 
 	//save values in a map to verify them at the end
 	expectedResults := make(map[[numberGrpAttr]int64][]int64)
-	log.LLvl1("Sending response data... ")
+	log.Lvl1("Sending response data... ")
 	dataHolder := make([]*serviceDefault.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
 		dataHolder[i] = serviceDefault.NewUnLynxClient(el.List[i%5], strconv.Itoa(i+1))
@@ -314,11 +314,11 @@ func TestServiceEncGrpClearWhereAttr(t *testing.T) {
 		t.Fatal("Service could not output the results.")
 	}
 
-	log.LLvl1("Service output:")
+	log.Lvl1("Service output:")
 	var tabVerify [][]int64
 	tabVerify = *grp
 	for i := range tabVerify {
-		log.LLvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
+		log.Lvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
 
 		//convert from slice to tab in order to test the values
 		grpTab := [numberGrpAttr]int64{}
@@ -335,7 +335,7 @@ func TestServiceEncGrpClearWhereAttr(t *testing.T) {
 //______________________________________________________________________________________________________________________
 /// Only encrypted attributes
 func TestServiceEncGrpAndWhereAttr(t *testing.T) {
-	log.LLvl1("***************************************************************************************************")
+	log.Lvl1("***************************************************************************************************")
 	os.Remove("pre_compute_multiplications.gob")
 	log.SetDebugVisible(2)
 	local := onet.NewLocalTest()
@@ -367,7 +367,7 @@ func TestServiceEncGrpAndWhereAttr(t *testing.T) {
 
 	//save values in a map to verify them at the end
 	expectedResults := make(map[[numberGrpAttr]int64][]int64)
-	log.LLvl1("Sending response data... ")
+	log.Lvl1("Sending response data... ")
 	dataHolder := make([]*serviceDefault.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
 		dataHolder[i] = serviceDefault.NewUnLynxClient(el.List[i%5], strconv.Itoa(i+1))
@@ -417,11 +417,11 @@ func TestServiceEncGrpAndWhereAttr(t *testing.T) {
 		t.Fatal("Service could not output the results.")
 	}
 
-	log.LLvl1("Service output:")
+	log.Lvl1("Service output:")
 	var tabVerify [][]int64
 	tabVerify = *grp
 	for i := range tabVerify {
-		log.LLvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
+		log.Lvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
 
 		//convert from slice to tab in order to test the values
 		grpTab := [numberGrpAttr]int64{}
@@ -438,7 +438,7 @@ func TestServiceEncGrpAndWhereAttr(t *testing.T) {
 //______________________________________________________________________________________________________________________
 /// Only encrypted attributes
 func TestServiceEverything(t *testing.T) {
-	log.LLvl1("***************************************************************************************************")
+	log.Lvl1("***************************************************************************************************")
 	os.Remove("pre_compute_multiplications.gob")
 	log.SetDebugVisible(2)
 	local := onet.NewLocalTest()
@@ -470,7 +470,7 @@ func TestServiceEverything(t *testing.T) {
 
 	//save values in a map to verify them at the end
 	expectedResults := make(map[[numberGrpAttr]int64][]int64)
-	log.LLvl1("Sending response data... ")
+	log.Lvl1("Sending response data... ")
 	dataHolder := make([]*serviceDefault.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
 		dataHolder[i] = serviceDefault.NewUnLynxClient(el.List[i%5], strconv.Itoa(i+1))
@@ -516,11 +516,11 @@ func TestServiceEverything(t *testing.T) {
 		t.Fatal("Service could not output the results.")
 	}
 
-	log.LLvl1("Service output:")
+	log.Lvl1("Service output:")
 	var tabVerify [][]int64
 	tabVerify = *grp
 	for i := range tabVerify {
-		log.LLvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
+		log.Lvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
 
 		//convert from slice to tab in order to test the values
 		grpTab := [numberGrpAttr]int64{}
@@ -537,7 +537,7 @@ func TestServiceEverything(t *testing.T) {
 //______________________________________________________________________________________________________________________
 // Only encrypted attributes with count
 func TestServiceEncGrpAndWhereAttrWithCount(t *testing.T) {
-	log.LLvl1("***************************************************************************************************")
+	log.Lvl1("***************************************************************************************************")
 	os.Remove("pre_compute_multiplications.gob")
 	log.SetDebugVisible(2)
 	local := onet.NewLocalTest()
@@ -569,7 +569,7 @@ func TestServiceEncGrpAndWhereAttrWithCount(t *testing.T) {
 
 	//save values in a map to verify them at the end
 	expectedResults := make(map[[numberGrpAttr]int64][]int64)
-	log.LLvl1("Sending response data... ")
+	log.Lvl1("Sending response data... ")
 	dataHolder := make([]*serviceDefault.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
 		dataHolder[i] = serviceDefault.NewUnLynxClient(el.List[i%5], strconv.Itoa(i+1))
@@ -615,11 +615,11 @@ func TestServiceEncGrpAndWhereAttrWithCount(t *testing.T) {
 		t.Fatal("Service could not output the results.")
 	}
 
-	log.LLvl1("Service output:")
+	log.Lvl1("Service output:")
 	var tabVerify [][]int64
 	tabVerify = *grp
 	for i := range tabVerify {
-		log.LLvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
+		log.Lvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
 
 		//convert from slice to tab in order to test the values
 		grpTab := [numberGrpAttr]int64{}
@@ -639,7 +639,7 @@ func TestServiceEncGrpAndWhereAttrWithCount(t *testing.T) {
 //______________________________________________________________________________________________________________________
 // Servers with no DPs
 func TestAllServersNoDPs(t *testing.T) {
-	log.LLvl1("***************************************************************************************************")
+	log.Lvl1("***************************************************************************************************")
 	os.Remove("pre_compute_multiplications.gob")
 	log.SetDebugVisible(2)
 	local := onet.NewLocalTest()
@@ -675,7 +675,7 @@ func TestAllServersNoDPs(t *testing.T) {
 
 	//save values in a map to verify them at the end
 	expectedResults := make(map[[numberGrpAttr]int64][]int64)
-	log.LLvl1("Sending response data... ")
+	log.Lvl1("Sending response data... ")
 	dataHolder := make([]*serviceDefault.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
 		dataHolder[i] = serviceDefault.NewUnLynxClient(el.List[i%2], strconv.Itoa(i+1))
@@ -721,11 +721,11 @@ func TestAllServersNoDPs(t *testing.T) {
 		t.Fatal("Service could not output the results.")
 	}
 
-	log.LLvl1("Service output:")
+	log.Lvl1("Service output:")
 	var tabVerify [][]int64
 	tabVerify = *grp
 	for i := range tabVerify {
-		log.LLvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
+		log.Lvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
 
 		//convert from slice to tab in order to test the values
 		grpTab := [numberGrpAttr]int64{}
@@ -742,7 +742,7 @@ func TestAllServersNoDPs(t *testing.T) {
 //______________________________________________________________________________________________________________________
 // Servers with a different number of DPs
 func TestAllServersRandomDPs(t *testing.T) {
-	log.LLvl1("***************************************************************************************************")
+	log.Lvl1("***************************************************************************************************")
 	os.Remove("pre_compute_multiplications.gob")
 	log.SetDebugVisible(2)
 	local := onet.NewLocalTest()
@@ -776,7 +776,7 @@ func TestAllServersRandomDPs(t *testing.T) {
 
 	//save values in a map to verify them at the end
 	expectedResults := make(map[[numberGrpAttr]int64][]int64)
-	log.LLvl1("Sending response data... ")
+	log.Lvl1("Sending response data... ")
 	dataHolder := make([]*serviceDefault.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
 		if i < 2 {
@@ -830,11 +830,11 @@ func TestAllServersRandomDPs(t *testing.T) {
 		t.Fatal("Service could not output the results.")
 	}
 
-	log.LLvl1("Service output:")
+	log.Lvl1("Service output:")
 	var tabVerify [][]int64
 	tabVerify = *grp
 	for i := range tabVerify {
-		log.LLvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
+		log.Lvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
 
 		//convert from slice to tab in order to test the values
 		grpTab := [numberGrpAttr]int64{}
@@ -855,7 +855,7 @@ func TestAllServersRandomDPs(t *testing.T) {
 //______________________________________________________________________________________________________________________
 // Test multiple requests at the same time
 func TestConcurrentSurveys(t *testing.T) {
-	log.LLvl1("***************************************************************************************************")
+	log.Lvl1("***************************************************************************************************")
 	os.Remove("pre_compute_multiplications.gob")
 	log.SetDebugVisible(2)
 	local := onet.NewLocalTest()
@@ -896,7 +896,7 @@ func TestConcurrentSurveys(t *testing.T) {
 
 			//save values in a map to verify them at the end
 			expectedResults := make(map[[numberGrpAttr]int64][]int64)
-			log.LLvl1("Sending response data... ")
+			log.Lvl1("Sending response data... ")
 			dataHolder := make([]*serviceDefault.API, 10)
 			for i := 0; i < len(dataHolder); i++ {
 				if i < 2 {
@@ -950,11 +950,11 @@ func TestConcurrentSurveys(t *testing.T) {
 				t.Fatal("Service could not output the results.")
 			}
 
-			log.LLvl1("Service output:")
+			log.Lvl1("Service output:")
 			var tabVerify [][]int64
 			tabVerify = *grp
 			for i := range tabVerify {
-				log.LLvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
+				log.Lvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
 
 				//convert from slice to tab in order to test the values
 				grpTab := [numberGrpAttr]int64{}
@@ -975,8 +975,8 @@ func TestFilteringFunc(t *testing.T) {
 	predicate := "(v0 == v1 && v2 == v3) && v4 == v5"
 	whereQueryValues := []lib.WhereQueryAttributeTagged{{Name: "age", Value: lib.GroupingKey("1")}, {Name: "salary", Value: lib.GroupingKey("1")}, {Name: "joao", Value: lib.GroupingKey("1")}}
 	responsesToFilter := []lib.ProcessResponseDet{{DetTagWhere: []lib.GroupingKey{lib.GroupingKey("1"), lib.GroupingKey("1"), lib.GroupingKey("1")}}, {DetTagWhere: []lib.GroupingKey{lib.GroupingKey("1"), lib.GroupingKey("1"), lib.GroupingKey("2")}}}
-	log.LLvl1(predicate)
-	log.LLvl1(responsesToFilter)
-	log.LLvl1(whereQueryValues)
-	log.LLvl1(services.FilterResponses(predicate, whereQueryValues, responsesToFilter))
+	log.Lvl1(predicate)
+	log.Lvl1(responsesToFilter)
+	log.Lvl1(whereQueryValues)
+	log.Lvl1(services.FilterResponses(predicate, whereQueryValues, responsesToFilter))
 }

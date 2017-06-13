@@ -60,7 +60,7 @@ func TestDeterministicTagging(t *testing.T) {
 	mapi[2] = processResponse3
 	mapi[3] = processResponse1
 
-	log.LLvl1("Data to be Tagged ", mapi)
+	log.Lvl1("Data to be Tagged ", mapi)
 
 	protocol.TargetOfSwitch = &mapi
 	feedback := protocol.FeedbackChannel
@@ -96,7 +96,7 @@ func TestDeterministicTagging(t *testing.T) {
 		assert.True(t, threeSame == 6)
 		assert.True(t, threeSame1 == 6)
 		for _, v := range encryptedResult {
-			log.LLvl1(v)
+			log.Lvl1(v)
 		}
 
 	case <-time.After(timeout):

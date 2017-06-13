@@ -50,7 +50,7 @@ var finalResultAddrm = make(chan []lib.DpResponse)
 // Start is called at the root to start the execution of the Add/Rm protocol.
 func (p *AddRmServerProtocol) Start() error {
 
-	log.LLvl1(p.Name(), "starts a server adding/removing Protocol")
+	log.Lvl1(p.Name(), "starts a server adding/removing Protocol")
 	roundComput := lib.StartTimer(p.Name() + "_AddRmServer(PROTOCOL)")
 
 	result := make([]lib.DpResponse, len(p.TargetOfTransformation))

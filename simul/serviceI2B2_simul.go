@@ -57,7 +57,7 @@ func (sim *SimulationUnLynxI2B2) Setup(dir string, hosts []string) (*onet.Simula
 		return nil, err
 	}
 
-	log.LLvl1("Setup done")
+	log.Lvl1("Setup done")
 
 	return sc, nil
 }
@@ -66,7 +66,7 @@ func (sim *SimulationUnLynxI2B2) Setup(dir string, hosts []string) (*onet.Simula
 func (sim *SimulationUnLynxI2B2) Run(config *onet.SimulationConfig) error {
 	// Setup Simulation
 	nbrHosts := config.Tree.Size()
-	log.LLvl1("Size:", nbrHosts, ", Rounds:", sim.Rounds)
+	log.Lvl1("Size:", nbrHosts, ", Rounds:", sim.Rounds)
 
 	// Does not make sense to have more servers than clients!!
 	if nbrHosts > sim.NbrDPs {
@@ -80,7 +80,7 @@ func (sim *SimulationUnLynxI2B2) Run(config *onet.SimulationConfig) error {
 	pubKey := network.Suite.Point().Mul(network.Suite.Point().Base(), secKey)
 
 	for round := 0; round < sim.Rounds; round++ {
-		log.LLvl1("Starting round", round, el)
+		log.Lvl1("Starting round", round, el)
 
 		nbrDPs := make(map[string]int64)
 		clients := make([]*serviceI2B2.API, 0)
@@ -125,7 +125,7 @@ func (sim *SimulationUnLynxI2B2) Run(config *onet.SimulationConfig) error {
 		testData := data.GenerateData(int64(sim.NbrDPs), sim.NbrResponsesTot, sim.NbrResponsesFiltered, int64(0), int64(0),
 			sim.NbrWhereClear, sim.NbrWhereEncrypted, sim.NbrAggrClear, sim.NbrAggrEncrypted, []int64{}, true)
 
-		/*log.LLvl1("Saving test data...")
+		/*log.Lvl1("Saving test data...")
 		data.WriteDataToFile("unlynx_test_data.txt", testData)*/
 
 		finalResult := make([]int64, 0)
@@ -158,7 +158,7 @@ func (sim *SimulationUnLynxI2B2) Run(config *onet.SimulationConfig) error {
 		// END SERVICE PROTOCOL
 
 		// Print Output
-		log.LLvl1(finalResult)
+		log.Lvl1(finalResult)
 
 		// Test Service I2B2 Simulation
 		finalExpectedResult := make([]int64, 0)
@@ -207,9 +207,9 @@ func (sim *SimulationUnLynxI2B2) Run(config *onet.SimulationConfig) error {
 		}
 
 		if !check {
-			log.LLvl1("Result is wrong! :(")
+			log.Lvl1("Result is wrong! :(")
 		} else {
-			log.LLvl1("Result is right! :)")
+			log.Lvl1("Result is right! :)")
 		}
 	}
 	return nil

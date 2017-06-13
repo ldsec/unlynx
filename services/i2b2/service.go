@@ -198,7 +198,7 @@ func (s *Service) HandleSurveyGenerated(recq *SurveyGenerated) (network.Message,
 
 // HandleSurveyDpQuery handles the reception of a survey creation query by instantiating the corresponding survey and it will directly request the results
 func (s *Service) HandleSurveyDpQuery(sdq *SurveyDpQuery) (network.Message, onet.ClientError) {
-	log.LLvl1(s.ServerIdentity().String(), " received a Survey Dp Query", sdq.SurveyID)
+	log.Lvl1(s.ServerIdentity().String(), " received a Survey Dp Query", sdq.SurveyID)
 
 	surveySecret := network.Suite.Scalar().Pick(random.Stream)
 
@@ -210,7 +210,7 @@ func (s *Service) HandleSurveyDpQuery(sdq *SurveyDpQuery) (network.Message, onet
 
 		newID := SurveyID(uuid.NewV4().String())
 		sdq.SurveyID = newID
-		log.LLvl1(s.ServerIdentity().String(), " handles this new survey", sdq.SurveyID, "from the general survey", sdq.SurveyGenID)
+		log.Lvl1(s.ServerIdentity().String(), " handles this new survey", sdq.SurveyID, "from the general survey", sdq.SurveyGenID)
 
 		// no need for the remaining channels (only when handling the general survey)
 		s.Survey.Put((string)(sdq.SurveyID), Survey{
@@ -274,7 +274,7 @@ func (s *Service) HandleSurveyDpQuery(sdq *SurveyDpQuery) (network.Message, onet
 			survey = aux.(Survey)
 		}
 		survey.IntermediateResults[ResultID{ServerID: s.ServerIdentity().ID, SurveyID: sdq.SurveyID}] = r1[0]
-		log.LLvl1(s.ServerIdentity(), " now has ", len(survey.IntermediateResults), " surveys with response(s)")
+		log.Lvl1(s.ServerIdentity(), " now has ", len(survey.IntermediateResults), " surveys with response(s)")
 
 		s.Survey.Put((string)(sdq.SurveyGenID), survey)
 
@@ -290,7 +290,7 @@ func (s *Service) HandleSurveyDpQuery(sdq *SurveyDpQuery) (network.Message, onet
 
 		<-castToSurvey(s.Survey.Get((string)(sdq.SurveyGenID))).IntermediateChannel
 
-		log.LLvl1(s.ServerIdentity(), " END ROUND 1")
+		log.Lvl1(s.ServerIdentity(), " END ROUND 1")
 
 		localCheck := false
 		s.Mutex.Lock()
@@ -362,7 +362,7 @@ func (s *Service) HandleSurveyDpQuery(sdq *SurveyDpQuery) (network.Message, onet
 				return &ServiceResult{Results: v}, nil
 			}
 		}
-		log.LLvl1(s.ServerIdentity(), " END ROUND 2")
+		log.Lvl1(s.ServerIdentity(), " END ROUND 2")
 
 		ret := &ServiceResult{Results: survey.FinalResults[ResultID{ServerID: s.ServerIdentity().ID, SurveyID: sdq.SurveyID}]}
 		return ret, nil
@@ -409,8 +409,8 @@ func (s *Service) HandleSurveyResultsSharing(resp *SurveyResultSharing) (network
 
 	survey = castToSurvey(s.Survey.Get((string)(resp.SurveyGenID)))
 
-	log.LLvl1(s.ServerIdentity(), " gets a survey response for ", resp.SurveyGenID, " from ", resp.ID.ServerID)
-	log.LLvl1(s.ServerIdentity(), " now has ", len(survey.IntermediateResults), " surveys with response(s)")
+	log.Lvl1(s.ServerIdentity(), " gets a survey response for ", resp.SurveyGenID, " from ", resp.ID.ServerID)
+	log.Lvl1(s.ServerIdentity(), " now has ", len(survey.IntermediateResults), " surveys with response(s)")
 
 	//if it is the last survey result needed then unblock the channel
 	size := len(survey.IntermediateResults)
@@ -437,7 +437,7 @@ func (s *Service) HandleSurveyFinalResultsSharing(respArr *SurveyFinalResultsSha
 	}
 
 	// this is received only once and then the channel is unblocked to proceed to last step
-	log.LLvl1(s.ServerIdentity(), " gets a final survey result for from ", s.ServerIdentity().String())
+	log.Lvl1(s.ServerIdentity(), " gets a final survey result for from ", s.ServerIdentity().String())
 
 	survey := castToSurvey(s.Survey.Get((string)(resp.SurveyGenID)))
 	survey.FinalResults = resp.Results
@@ -583,7 +583,7 @@ func (s *Service) StartProtocol(name string, targetSurvey SurveyID) (onet.Protoc
 // StartServicePartOne starts the first part of the service (with all its different steps/protocols)
 func (s *Service) StartServicePartOne(targetSurvey SurveyID) error {
 
-	log.LLvl1(s.ServerIdentity(), " starts a UnLynx Protocol (Round 1) for survey", targetSurvey)
+	log.Lvl1(s.ServerIdentity(), " starts a UnLynx Protocol (Round 1) for survey", targetSurvey)
 
 	// Tagging Phase
 	start := lib.StartTimer(s.ServerIdentity().String() + "_TaggingPhase1")
@@ -610,7 +610,7 @@ func (s *Service) StartServicePartOne(targetSurvey SurveyID) error {
 // StartServicePartTwo starts the second part of the service (with all its different steps/protocols)
 func (s *Service) StartServicePartTwo(targetSurvey SurveyID, aggr bool) error {
 
-	log.LLvl1(s.ServerIdentity(), " starts a UnLynx Protocol (Round 2) for survey", targetSurvey)
+	log.Lvl1(s.ServerIdentity(), " starts a UnLynx Protocol (Round 2) for survey", targetSurvey)
 
 	// Tagging Phase
 	start := lib.StartTimer(s.ServerIdentity().String() + "_TaggingPhase2")
@@ -699,7 +699,7 @@ func (s *Service) TaggingPhase(targetSurvey SurveyID) error {
 	survey := castToSurvey(s.Survey.Get((string)(targetSurvey)))
 
 	if len(survey.ShuffledProcessResponses) == 0 {
-		log.LLvl1(s.ServerIdentity(), " for survey", targetSurvey, "has no data to det tag")
+		log.Lvl1(s.ServerIdentity(), " for survey", targetSurvey, "has no data to det tag")
 		return nil
 	}
 

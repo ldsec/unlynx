@@ -46,7 +46,7 @@ func (sim *DeterministicTaggingSimulation) Setup(dir string, hosts []string) (*o
 		return nil, err
 	}
 
-	log.LLvl1("Setup done")
+	log.Lvl1("Setup done")
 
 	return sc, nil
 }
@@ -64,7 +64,7 @@ func (sim *DeterministicTaggingSimulation) Node(config *onet.SimulationConfig) e
 // Run starts the simulation.
 func (sim *DeterministicTaggingSimulation) Run(config *onet.SimulationConfig) error {
 	for round := 0; round < sim.Rounds; round++ {
-		log.LLvl1("Starting round", round)
+		log.Lvl1("Starting round", round)
 		rooti, err := config.Overlay.CreateProtocol("DeterministicTaggingSimul", config.Tree, onet.NilServiceID)
 
 		if err != nil {

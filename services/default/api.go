@@ -37,7 +37,7 @@ func NewUnLynxClient(entryPoint *network.ServerIdentity, clientID string) *API {
 
 // SendSurveyCreationQuery creates a survey based on a set of entities (servers) and a survey description.
 func (c *API) SendSurveyCreationQuery(entities *onet.Roster, surveyID SurveyID, clientPubKey abstract.Point, nbrDPs map[string]int64, proofs, appFlag bool, sum []string, count bool, where []lib.WhereQueryAttribute, predicate string, groupBy []string) (*SurveyID, error) {
-	log.LLvl1(c, "is creating a survey with id: ", surveyID)
+	log.Lvl1(c, "is creating a survey with id: ", surveyID)
 
 	var newSurveyID SurveyID
 
@@ -61,7 +61,7 @@ func (c *API) SendSurveyCreationQuery(entities *onet.Roster, surveyID SurveyID, 
 	if err != nil {
 		return nil, err
 	}
-	log.LLvl1(c, " successfully created the survey with ID ", resp.SurveyID)
+	log.Lvl1(c, " successfully created the survey with ID ", resp.SurveyID)
 	newSurveyID = resp.SurveyID
 
 	return &newSurveyID, nil
@@ -69,7 +69,7 @@ func (c *API) SendSurveyCreationQuery(entities *onet.Roster, surveyID SurveyID, 
 
 // SendSurveyResponseQuery handles the encryption and sending of DP responses
 func (c *API) SendSurveyResponseQuery(surveyID SurveyID, clearClientResponses []lib.DpClearResponse, groupKey abstract.Point, dataRepetitions int, count bool) error {
-	log.LLvl1(c, " sends a result for survey ", surveyID)
+	log.Lvl1(c, " sends a result for survey ", surveyID)
 	var err error
 
 	s := EncryptDataToSurvey(c.String(), surveyID, clearClientResponses, groupKey, dataRepetitions, count)
@@ -87,14 +87,14 @@ func (c *API) SendSurveyResponseQuery(surveyID SurveyID, clearClientResponses []
 
 // SendSurveyResultsQuery to get the result from associated server and decrypt the response using its private key.
 func (c *API) SendSurveyResultsQuery(surveyID SurveyID) (*[][]int64, *[][]int64, error) {
-	log.LLvl1(c, " asks for the results of the survey ", surveyID)
+	log.Lvl1(c, " asks for the results of the survey ", surveyID)
 	resp := ServiceResult{}
 	err := c.SendProtobuf(c.entryPoint, &SurveyResultsQuery{false, surveyID, c.public}, &resp)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	log.LLvl1(c, " got the survey result from ", c.entryPoint)
+	log.Lvl1(c, " got the survey result from ", c.entryPoint)
 
 	//grpClear := make([][]int64, len(resp.Results))
 	grp := make([][]int64, len(resp.Results))
@@ -113,7 +113,7 @@ func (c *API) SendSurveyResultsQuery(surveyID SurveyID) (*[][]int64, *[][]int64,
 func EncryptDataToSurvey(name string, surveyID SurveyID, dpClearResponses []lib.DpClearResponse, groupKey abstract.Point, dataRepetitions int, count bool) *SurveyResponseQuery {
 	nbrResponses := len(dpClearResponses)
 
-	log.LLvl1(name, " responds with ", nbrResponses, " response(s)")
+	log.Lvl1(name, " responds with ", nbrResponses, " response(s)")
 
 	var dpResponses []lib.DpResponseToSend
 	dpResponses = make([]lib.DpResponseToSend, nbrResponses*dataRepetitions)

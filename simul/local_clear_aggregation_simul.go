@@ -47,7 +47,7 @@ func (sim *LocalClearAggregationSimulation) Setup(dir string, hosts []string) (*
 		return nil, err
 	}
 
-	log.LLvl1("Setup done")
+	log.Lvl1("Setup done")
 
 	return sc, nil
 }
@@ -55,7 +55,7 @@ func (sim *LocalClearAggregationSimulation) Setup(dir string, hosts []string) (*
 // Run starts the simulation.
 func (sim *LocalClearAggregationSimulation) Run(config *onet.SimulationConfig) error {
 	for round := 0; round < sim.Rounds; round++ {
-		log.LLvl1("Starting round", round)
+		log.Lvl1("Starting round", round)
 		rooti, err := config.Overlay.CreateProtocol("LocalClearAggregation", config.Tree, onet.NilServiceID)
 		if err != nil {
 			return err
@@ -72,7 +72,7 @@ func (sim *LocalClearAggregationSimulation) Run(config *onet.SimulationConfig) e
 		testData := data.GenerateData(1, int64(sim.NbrResponses), int64(sim.NbrResponses), int64(sim.NbrGroupAttributes), 0,
 			int64(sim.NbrWhereAttributes), 0, int64(sim.NbrAggrAttributes), 0, types, true)
 
-		log.LLvl1("starting protocol with ", len(testData), " responses")
+		log.Lvl1("starting protocol with ", len(testData), " responses")
 
 		//protocol
 		root.ProtocolInstance().(*protocols.LocalClearAggregationProtocol).TargetOfAggregation = testData["0"]
@@ -80,13 +80,13 @@ func (sim *LocalClearAggregationSimulation) Run(config *onet.SimulationConfig) e
 		round := monitor.NewTimeMeasure("LocalClearAggregation(SIMULATION)")
 		root.Start()
 		results := <-root.ProtocolInstance().(*protocols.LocalClearAggregationProtocol).FeedbackChannel
-		log.LLvl1("Number of aggregated lines (groups): ", len(results))
+		log.Lvl1("Number of aggregated lines (groups): ", len(results))
 
 		// Test Simulation
 		if data.CompareClearResponses(data.ComputeExpectedResult(testData, 1, false), results) {
-			log.LLvl1("Result is right! :)")
+			log.Lvl1("Result is right! :)")
 		} else {
-			log.LLvl1("Result is wrong! :(")
+			log.Lvl1("Result is wrong! :(")
 		}
 		round.Record()
 	}

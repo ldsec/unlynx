@@ -38,7 +38,7 @@ func TestShuffleSequence(t *testing.T) {
 	//with proof
 	shuffleProof := lib.ShufflingProofCreation(inputList, outputlist, nil, collectivePubKey, beta, pi)
 	//shuffleProof = lib.ShufflingProofCreation(inputList, inputList, nil, collectivePubKey, beta, pi)
-	log.LLvl1(lib.ShufflingProofVerification(shuffleProof, collectivePubKey))
+	log.Lvl1(lib.ShufflingProofVerification(shuffleProof, collectivePubKey))
 
 	piinv := make([]int, k)
 	for i := 0; i < k; i++ {
