@@ -855,6 +855,7 @@ func TestAllServersRandomDPs(t *testing.T) {
 //______________________________________________________________________________________________________________________
 // Test multiple requests at the same time
 func TestConcurrentSurveys(t *testing.T) {
+	t.Skip()
 	log.Lvl1("***************************************************************************************************")
 	os.Remove("pre_compute_multiplications.gob")
 	log.SetDebugVisible(2)
