@@ -19,8 +19,8 @@ To use the code of this repository you need to:
 - [Recommended] Install [IntelliJ IDEA](https://www.jetbrains.com/idea/) and the GO plugin
 - Set [`$GOPATH`](https://golang.org/doc/code.html#GOPATH) to point to your workspace directory
 - Add `$GOPATH/bin` to `$PATH`
-- Git clone this repo to `$GOPATH/src > git clone https://github.com/lca1/unlynx.git` or:
-- Go get repo: > `go get github.com/lca1/unlynx`
+- Git clone this repo to $GOPATH/src `git clone https://github.com/lca1/unlynx.git` or:
+- Go get repo: `go get github.com/lca1/unlynx`
 
 ## Version
 
