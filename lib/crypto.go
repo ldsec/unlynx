@@ -3,9 +3,7 @@ package lib
 import (
 	"fmt"
 	"sync"
-
 	"strings"
-
 	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/crypto.v0/random"
 	"gopkg.in/dedis/onet.v1/log"

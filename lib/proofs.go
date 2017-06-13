@@ -3,7 +3,6 @@ package lib
 import (
 	"reflect"
 	"sync"
-
 	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/crypto.v0/proof"
 	"gopkg.in/dedis/crypto.v0/shuffle"
