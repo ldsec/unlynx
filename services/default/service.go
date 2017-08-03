@@ -345,7 +345,6 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 		aux := survey.SurveySecretKey
 		hashCreation.SurveySecretKey = &aux
 		hashCreation.Proofs = survey.Query.Proofs
-		hashCreation.NbrQueryAttributes = len(survey.Query.Where)
 		if tn.IsRoot() {
 			shuffledClientResponses := survey.PullShuffledProcessResponses()
 			s.Survey.Put(string(target), survey)

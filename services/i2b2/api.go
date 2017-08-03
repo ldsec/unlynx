@@ -7,6 +7,7 @@ import (
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"
+	"time"
 )
 
 // API represents a client with the server to which he is connected and its public/private key pair.
@@ -36,7 +37,7 @@ func NewUnLynxClient(entryPoint *network.ServerIdentity, clientID string) *API {
 //______________________________________________________________________________________________________________________
 
 // SendSurveyDpQuery creates a survey based on a set of entities (servers) and a survey description.
-func (c *API) SendSurveyDpQuery(entities *onet.Roster, surveyGenID, surveyID SurveyID, clientPubKey abstract.Point, nbrDPs map[string]int64, proofs, appFlag bool, sum []string, count bool, where []lib.WhereQueryAttribute, predicate string, groupBy []string, data []lib.ProcessResponse, mode int64) (*SurveyID, lib.FilteredResponse, error) {
+func (c *API) SendSurveyDpQuery(entities *onet.Roster, surveyGenID, surveyID SurveyID, clientPubKey abstract.Point, nbrDPs map[string]int64, proofs, appFlag bool, sum []string, count bool, where []lib.WhereQueryAttribute, predicate string, groupBy []string, data []lib.ProcessResponse, mode int64, sendingTime time.Time) (*SurveyID, lib.FilteredResponse, TimeResults,  error) {
 	log.Lvl1("Client", c.ClientID, "is creating a survey with General ID:", surveyGenID)
 
 	var newSurveyID SurveyID
@@ -58,13 +59,16 @@ func (c *API) SendSurveyDpQuery(entities *onet.Roster, surveyGenID, surveyID Sur
 		Predicate: predicate,
 		GroupBy:   groupBy,
 		DpData:    data,
+
+		// for simulations
+		SendingTime: sendingTime,
 	}
 
 	resp := ServiceResult{}
 	err := c.SendProtobuf(c.entryPoint, &sdq, &resp)
 	if err != nil {
-		return nil, resp.Results, err
+		return nil, resp.Results, TimeResults{}, err
 	}
 
-	return &newSurveyID, resp.Results, nil
+	return &newSurveyID, resp.Results, resp.TR, nil
 }

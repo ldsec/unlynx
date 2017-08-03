@@ -15,6 +15,7 @@ import (
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"
 	"sync"
+	"time"
 )
 
 // ShufflingProtocolName is the registered name for the neff shuffle protocol.
@@ -82,6 +83,9 @@ type ShufflingProtocol struct {
 	LengthNodeChannel         chan sbLengthStruct
 	PreviousNodeInPathChannel chan shufflingBytesStruct
 
+	ExecTimeStart     time.Duration
+	ExecTime          time.Duration
+
 	// Protocol state data
 	nextNodeInCircuit *onet.TreeNode
 	TargetOfShuffle   *[]lib.ProcessResponse
@@ -127,6 +131,10 @@ func (p *ShufflingProtocol) Start() error {
 		return errors.New("No map given as shuffling target")
 	}
 
+	p.ExecTimeStart=0
+	p.ExecTime=0
+	startT := time.Now()
+
 	nbrProcessResponses := len(*p.TargetOfShuffle)
 	log.Lvl1("["+p.Name()+"]", " started a Shuffling Protocol (", nbrProcessResponses, " responses)")
 
@@ -168,6 +176,7 @@ func (p *ShufflingProtocol) Start() error {
 	lib.EndTimer(roundShufflingStartProof)
 	lib.EndTimer(roundTotalStart)
 
+	p.ExecTimeStart+= time.Since(startT);
 	//sendingStart := lib.StartTimer(p.Name() + "_Sending")
 
 	message := ShufflingBytesMessage{}
@@ -198,6 +207,7 @@ func (p *ShufflingProtocol) Dispatch() error {
 	sm.FromBytes(tmp.Data, shufflingLength.GacbLength, shufflingLength.AabLength, shufflingLength.PgaebLength)
 	shufflingTarget := sm.Data
 
+	startT := time.Now()
 	roundTotalComputation := lib.StartTimer(p.Name() + "_Shuffling(DISPATCH)")
 
 	collectiveKey := p.Roster().Aggregate //shuffling is by default done with collective authority key
@@ -244,6 +254,7 @@ func (p *ShufflingProtocol) Dispatch() error {
 
 	// If this tree node is the root, then protocol reached the end.
 	if p.IsRoot() {
+		p.ExecTime+= time.Since(startT);
 		p.FeedbackChannel <- shufflingTarget
 	} else {
 		// Forward switched message.

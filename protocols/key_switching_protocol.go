@@ -18,6 +18,7 @@ import (
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"
 	"sync"
+	"time"
 )
 
 // KeySwitchingProtocolName is the registered name for the key switching protocol.
@@ -95,6 +96,8 @@ type KeySwitchingProtocol struct {
 	PreviousNodeInPathChannel chan keySwitchedCipherBytesStruct
 	LengthNodeChannel         chan kscbLengthStruct
 
+	ExecTime          time.Duration
+
 	// Protocol state data
 	nextNodeInCircuit *onet.TreeNode
 	TargetOfSwitch    *[]lib.FilteredResponse
@@ -142,6 +145,8 @@ func (p *KeySwitchingProtocol) Start() error {
 	if p.TargetPublicKey == nil {
 		return errors.New("No new public key to be switched on provided")
 	}
+
+	p.ExecTime=0
 
 	log.Lvl1(p.ServerIdentity(), " started a Key Switching Protocol")
 
@@ -202,6 +207,7 @@ func (p *KeySwitchingProtocol) Dispatch() error {
 	keySwitchingTarget := &KeySwitchedCipherMessage{}
 	(*keySwitchingTarget).FromBytes(keySwitchingTargetBytes, length.L1, length.L2, length.L4, length.L5, length.L6)
 	round := lib.StartTimer(p.Name() + "_KeySwitching(DISPATCH)")
+	startT := time.Now()
 
 	wg := lib.StartParallelize(len(keySwitchingTarget.DataKey))
 
@@ -230,6 +236,7 @@ func (p *KeySwitchingProtocol) Dispatch() error {
 		for i, v := range keySwitchingTarget.DataKey {
 			result[i] = v.Response
 		}
+		p.ExecTime+= time.Since(startT);
 		p.FeedbackChannel <- result
 	} else {
 		log.Lvl1(p.ServerIdentity(), " carried on key switching on ", len(keySwitchingTarget.DataKey), " .")

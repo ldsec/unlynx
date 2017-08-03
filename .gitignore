@@ -47,3 +47,5 @@ app/default/service_storage
 unlynx
 skipchain
 server_list
+
+pre_compute_multiplications.gob

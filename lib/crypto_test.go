@@ -34,6 +34,17 @@ func TestNullCipherText(t *testing.T) {
 
 }
 
+// TestEncryption tests a relatively high number of encryptions.
+func TestEncryption(t *testing.T) {
+
+	_, pubKey := lib.GenKey()
+
+	nbrEncryptions :=  2
+	for i:=0; i<nbrEncryptions ; i++{
+		lib.EncryptInt(pubKey, 0)
+	}
+}
+
 // TestNullCipherText verifies encryption, decryption and behavior of null cipherVectors.
 func TestNullCipherVector(t *testing.T) {
 	secKey, pubKey := lib.GenKey()
@@ -89,7 +100,7 @@ func TestCryptoTagging(t *testing.T) {
 	groupKey, private, _ := lib.GenKeys(N)
 	_, secretPrivate, _ := lib.GenKeys(N)
 
-	target := []int64{0, 0, 2, 3, 2, 5}
+	target := []int64{-8358645081376817152, -8358645081376817152, 2, 3, 2, 5}
 	cv := *lib.EncryptIntVector(groupKey, target)
 	for n := 0; n < N; n++ {
 		tmp := lib.NewCipherVector(len(cv))
@@ -222,5 +233,26 @@ func TestIntArrayToCipherVector(t *testing.T) {
 		assert.Equal(t, v.C, M)
 		assert.Equal(t, v.K, N)
 	}
+}
 
+func TestB64Serialization(t *testing.T) {
+	secKey, pubKey := lib.GenKey()
+	target := []int64{0, 1, 3, 103, 103}
+	cv := lib.EncryptIntVector(pubKey, target)
+
+	for i, ct := range *cv {
+		ctSerialized := ct.Serialize()
+
+		// with newciphertext
+		ctDeserialized := lib.NewCipherTextFromBase64(ctSerialized)
+		decVal := lib.DecryptInt(secKey, *ctDeserialized)
+		assert.Equal(t, target[i], decVal)
+
+		// with deserialize
+		ctDeserializedBis := lib.NewCipherText()
+		ctDeserializedBis.Deserialize(ctSerialized)
+		decValBis := lib.DecryptInt(secKey, *ctDeserializedBis)
+		assert.Equal(t, target[i], decValBis)
+		assert.Equal(t, decVal, decValBis)
+	}
 }
