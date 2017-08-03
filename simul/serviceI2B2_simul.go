@@ -12,6 +12,7 @@ import (
 	"gopkg.in/dedis/onet.v1/network"
 	"strconv"
 	"sync"
+	"time"
 )
 
 //Defines the simulation for the service-medCo to be run with cothority/simul.
@@ -143,7 +144,7 @@ func (sim *SimulationUnLynxI2B2) Run(config *onet.SimulationConfig) error {
 				for _, elem := range clientData {
 					processData = append(processData, elem.FromDpClearResponseToProcess(aggregate))
 				}
-				_, result, _ := dp.SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, false, sum, count, whereQueryValues, predicate, []string{}, processData, sim.QueryMode)
+				_, result, _, _ := dp.SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, false, sum, count, whereQueryValues, predicate, []string{}, processData, sim.QueryMode, time.Now())
 
 				mutex.Lock()
 				resultClear := lib.DecryptIntVector(secKey, &result.AggregatingAttributes)
