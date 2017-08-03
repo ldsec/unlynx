@@ -31,10 +31,10 @@ test_verbose:
 	go test -v -race -p=1 ./...;
 
 test_playground:
-    cd protocols; \
-    for a in $$( seq 10 ); do \
-      go test -v -race -p=1 || exit 1 ; \
-    done;
+	cd protocols; \
+	for a in $$( seq 10 ); do \
+	  go test -v -race -p=1 || exit 1 ; \
+	done;
 
 # use test_verbose instead if you want to use this Makefile locally
 test_go:

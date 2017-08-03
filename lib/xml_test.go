@@ -5,8 +5,8 @@ import (
 
 	"github.com/lca1/unlynx/lib"
 
-	"github.com/stretchr/testify/assert"
 	"encoding/xml"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestQueryXML(t *testing.T) {
@@ -61,13 +61,12 @@ func TestQueryResultXML(t *testing.T) {
 	parsed_xml := lib.XMLMedCoQueryResult{}
 	err := xml.Unmarshal([]byte(xmlString), &parsed_xml)
 	assert.Equal(t, err, nil)
-	assert.Equal(t, parsed_xml.QueryId, "query ID")
+	assert.Equal(t, parsed_xml.QueryID, "query ID")
 	assert.Equal(t, parsed_xml.EncResult, "encrypted result")
 	assert.Equal(t, parsed_xml.ResultMode, " result mode (0 or 1)")
 	assert.Equal(t, parsed_xml.Error, `a message error (only if error, the enc_result will be empty)
 `)
 }
-
 
 func TestQueryResultXMLNoError(t *testing.T) {
 
@@ -80,7 +79,7 @@ func TestQueryResultXMLNoError(t *testing.T) {
 	parsed_xml := lib.XMLMedCoQueryResult{}
 	err := xml.Unmarshal([]byte(xmlString), &parsed_xml)
 	assert.Equal(t, err, nil)
-	assert.Equal(t, parsed_xml.QueryId, "query ID")
+	assert.Equal(t, parsed_xml.QueryID, "query ID")
 	assert.Equal(t, parsed_xml.EncResult, "encrypted result")
 	assert.Equal(t, parsed_xml.ResultMode, " result mode (0 or 1)")
 	assert.Equal(t, parsed_xml.Error, "")

@@ -83,8 +83,8 @@ type ShufflingProtocol struct {
 	LengthNodeChannel         chan sbLengthStruct
 	PreviousNodeInPathChannel chan shufflingBytesStruct
 
-	ExecTimeStart     time.Duration
-	ExecTime          time.Duration
+	ExecTimeStart time.Duration
+	ExecTime      time.Duration
 
 	// Protocol state data
 	nextNodeInCircuit *onet.TreeNode
@@ -131,8 +131,8 @@ func (p *ShufflingProtocol) Start() error {
 		return errors.New("No map given as shuffling target")
 	}
 
-	p.ExecTimeStart=0
-	p.ExecTime=0
+	p.ExecTimeStart = 0
+	p.ExecTime = 0
 	startT := time.Now()
 
 	nbrProcessResponses := len(*p.TargetOfShuffle)
@@ -176,7 +176,7 @@ func (p *ShufflingProtocol) Start() error {
 	lib.EndTimer(roundShufflingStartProof)
 	lib.EndTimer(roundTotalStart)
 
-	p.ExecTimeStart+= time.Since(startT);
+	p.ExecTimeStart += time.Since(startT)
 	//sendingStart := lib.StartTimer(p.Name() + "_Sending")
 
 	message := ShufflingBytesMessage{}
@@ -254,7 +254,7 @@ func (p *ShufflingProtocol) Dispatch() error {
 
 	// If this tree node is the root, then protocol reached the end.
 	if p.IsRoot() {
-		p.ExecTime+= time.Since(startT);
+		p.ExecTime += time.Since(startT)
 		p.FeedbackChannel <- shufflingTarget
 	} else {
 		// Forward switched message.

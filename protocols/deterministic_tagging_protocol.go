@@ -16,10 +16,10 @@ import (
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"
-	"sync"
 	"reflect"
-	"unsafe"
+	"sync"
 	"time"
+	"unsafe"
 )
 
 // DeterministicTaggingProtocolName is the registered name for the deterministic tagging protocol.
@@ -92,7 +92,7 @@ type DeterministicTaggingProtocol struct {
 	SurveySecretKey   *abstract.Scalar
 	Proofs            bool
 
-	ExecTime					time.Duration
+	ExecTime time.Duration
 }
 
 // NewDeterministicTaggingProtocol constructs tagging switching protocol instances.
@@ -134,7 +134,7 @@ func (p *DeterministicTaggingProtocol) Start() error {
 		return errors.New("No survey secret key given")
 	}
 
-	p.ExecTime = 0;
+	p.ExecTime = 0
 
 	nbrProcessResponses := len(*p.TargetOfSwitch)
 
@@ -196,7 +196,7 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 	log.Lvl1(p.ServerIdentity(), " preparation round for deterministic tagging")
 
 	if p.IsRoot() {
-		p.ExecTime+= time.Since(startT);
+		p.ExecTime += time.Since(startT)
 	}
 	sendingDet(*p, deterministicTaggingTargetBef)
 
@@ -253,7 +253,7 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 	lib.EndTimer(roundTotalComputation)
 
 	if p.IsRoot() {
-		p.ExecTime+= time.Since(startT);
+		p.ExecTime += time.Since(startT)
 	}
 
 	// If this tree node is the root, then protocol reached the end.
@@ -306,16 +306,20 @@ func deterministicTagFormat(i int, v GroupingAttributes, targetofSwitch *[]lib.P
 
 // cast using reflect []int <-> []byte
 // from http://stackoverflow.com/questions/17539001/converting-int32-to-byte-array-in-go
-const INT_BYTE_SIZE = int(unsafe.Sizeof(int(0)))
 
+// IntByteSize is the byte size of an int in memory
+const IntByteSize = int(unsafe.Sizeof(int(0)))
+
+// UnsafeCastIntsToBytes casts a slice of ints to a slice of bytes
 func UnsafeCastIntsToBytes(ints []int) []byte {
-	length := len(ints) * INT_BYTE_SIZE
+	length := len(ints) * IntByteSize
 	hdr := reflect.SliceHeader{Data: uintptr(unsafe.Pointer(&ints[0])), Len: length, Cap: length}
 	return *(*[]byte)(unsafe.Pointer(&hdr))
 }
 
+// UnsafeCastBytesToInts casts a slice of bytes to a slice of ints
 func UnsafeCastBytesToInts(bytes []byte) []int {
-	length := len(bytes) / INT_BYTE_SIZE
+	length := len(bytes) / IntByteSize
 	hdr := reflect.SliceHeader{Data: uintptr(unsafe.Pointer(&bytes[0])), Len: length, Cap: length}
 	return *(*[]int)(unsafe.Pointer(&hdr))
 }
@@ -363,11 +367,11 @@ func (dtm *DeterministicTaggingMessage) FromBytes(data []byte, cvLengthsByte []b
 
 	// iter over each value in the flatten data byte array
 	bytePos := 0
-	for i := 0 ; i < len(cvLengths) ; i++ {
-		nextBytePos := bytePos + cvLengths[i] * 64 //TODO: hardcoded 64 (size of el-gamal element C,K)
+	for i := 0; i < len(cvLengths); i++ {
+		nextBytePos := bytePos + cvLengths[i]*64 //TODO: hardcoded 64 (size of el-gamal element C,K)
 
 		cv := make(lib.CipherVector, cvLengths[i])
-		v := data[bytePos : nextBytePos]
+		v := data[bytePos:nextBytePos]
 
 		if lib.PARALLELIZE {
 			go func(v []byte, i int) {

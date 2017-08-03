@@ -39,8 +39,8 @@ func TestEncryption(t *testing.T) {
 
 	_, pubKey := lib.GenKey()
 
-	nbrEncryptions :=  2
-	for i:=0; i<nbrEncryptions ; i++{
+	nbrEncryptions := 2
+	for i := 0; i < nbrEncryptions; i++ {
 		lib.EncryptInt(pubKey, 0)
 	}
 }

@@ -1,13 +1,13 @@
 package main
 
 import (
-	"gopkg.in/dedis/onet.v1/log"
+	"errors"
 	"github.com/lca1/unlynx/lib"
-	"os"
-	"strconv"
+	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/urfave/cli.v1"
 	"io"
-	"errors"
+	"os"
+	"strconv"
 )
 
 func decryptIntFromApp(c *cli.Context) error {
@@ -21,7 +21,7 @@ func decryptIntFromApp(c *cli.Context) error {
 	}
 
 	if c.NArg() != 1 {
-		err := errors.New("Wrong number of arguments (only 1 allowed, except for the flags).")
+		err := errors.New("Wrong number of arguments (only 1 allowed, except for the flags)")
 		log.Error(err)
 		return cli.NewExitError(err, 3)
 	}
@@ -43,4 +43,3 @@ func decryptIntFromApp(c *cli.Context) error {
 
 	return nil
 }
-

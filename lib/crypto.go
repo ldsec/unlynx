@@ -1,6 +1,8 @@
 package lib
 
 import (
+	"encoding"
+	"encoding/base64"
 	"fmt"
 	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/crypto.v0/random"
@@ -8,8 +10,6 @@ import (
 	"gopkg.in/dedis/onet.v1/network"
 	"strings"
 	"sync"
-	"encoding/base64"
-	"encoding"
 )
 
 // MaxHomomorphicInt is upper bound for integers used in messages, a failed decryption will return this value.
@@ -45,7 +45,7 @@ func NewCipherText() *CipherText {
 	return &CipherText{K: suite.Point().Null(), C: suite.Point().Null()}
 }
 
-// NewCipherText creates a ciphertext of null elements.
+// NewCipherTextFromBase64 creates a ciphertext of null elements.
 func NewCipherTextFromBase64(b64Encoded string) *CipherText {
 	cipherText := &CipherText{K: suite.Point().Null(), C: suite.Point().Null()}
 	(*cipherText).Deserialize(b64Encoded)
@@ -544,7 +544,7 @@ func (c *CipherText) Deserialize(b64Encoded string) error {
 	return nil
 }
 
-// Serialize a BinaryMarshaller-compatible element using base64 encoding (e.g. abstract.Point or abstract.Scalar)
+// SerializeElement serializes a BinaryMarshaller-compatible element using base64 encoding (e.g. abstract.Point or abstract.Scalar)
 func SerializeElement(el encoding.BinaryMarshaler) (string, error) {
 	bytes, err := el.MarshalBinary()
 	if err != nil {
@@ -554,45 +554,47 @@ func SerializeElement(el encoding.BinaryMarshaler) (string, error) {
 	return base64.StdEncoding.EncodeToString(bytes), nil
 }
 
+// SerializePoint serializes a point
 func SerializePoint(point abstract.Point) (string, error) {
 	return SerializeElement(point)
 }
 
+// SerializeScalar serializes a scalar
 func SerializeScalar(scalar encoding.BinaryMarshaler) (string, error) {
 	return SerializeElement(scalar)
 }
 
-// Deserialize a point using base64 encoding
+// DeserializePoint deserializes a point using base64 encoding
 func DeserializePoint(encodedPoint string) (abstract.Point, error) {
-	decoded, err_d := base64.StdEncoding.DecodeString(encodedPoint)
-	if err_d != nil {
-		log.Error("Error decoding point.", err_d)
-		return nil, err_d
+	decoded, errD := base64.StdEncoding.DecodeString(encodedPoint)
+	if errD != nil {
+		log.Error("Error decoding point.", errD)
+		return nil, errD
 	}
 
 	point := network.Suite.Point()
-	err_m := point.UnmarshalBinary(decoded)
-	if err_m != nil {
-		log.Error("Error unmarshalling point.", err_m)
-		return nil, err_m
+	errM := point.UnmarshalBinary(decoded)
+	if errM != nil {
+		log.Error("Error unmarshalling point.", errM)
+		return nil, errM
 	}
 
 	return point, nil
 }
 
-// Deserialize a scalar using base64 encoding
+// DeserializeScalar deserializes a scalar using base64 encoding
 func DeserializeScalar(encodedScalar string) (abstract.Scalar, error) {
-	decoded, err_d := base64.StdEncoding.DecodeString(encodedScalar)
-	if err_d != nil {
-		log.Error("Error decoding scalar.", err_d)
-		return nil, err_d
+	decoded, errD := base64.StdEncoding.DecodeString(encodedScalar)
+	if errD != nil {
+		log.Error("Error decoding scalar.", errD)
+		return nil, errD
 	}
 
 	scalar := network.Suite.Scalar()
-	err_m := scalar.UnmarshalBinary(decoded)
-	if err_m != nil {
-		log.Error("Error unmarshalling scalar.", err_m)
-		return nil, err_m
+	errM := scalar.UnmarshalBinary(decoded)
+	if errM != nil {
+		log.Error("Error unmarshalling scalar.", errM)
+		return nil, errM
 	}
 
 	return scalar, nil

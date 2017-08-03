@@ -88,7 +88,7 @@ func ReadPrecomputedFile(fileName string) []lib.CipherVectorScalar {
 	return precomputeShuffle
 }
 
-// FilterResponses evaluates the predicate and keeps the entries that satisfy the conditions
+// FilterResponsesI2b2 evaluates the predicate and keeps the entries that satisfy the conditions
 // arguments examples
 // pred: (exists(v1, r)) && (exists(v2, r) || exists(v3, r))
 // whereQueryValues: [v1_enc_value, v2_enc_value, v3_enc_value]
@@ -98,20 +98,20 @@ func FilterResponsesI2b2(pred string, whereQueryValues []lib.WhereQueryAttribute
 	result := []lib.FilteredResponseDet{}
 
 	// declare "exists" function to use within govaluate expressions
-	govaluateFunctions := map[string]govaluate.ExpressionFunction {
+	govaluateFunctions := map[string]govaluate.ExpressionFunction{
 
 		/*
-		args[0]: string, encrypted value to search
-		args[1]: int, id of the response to look into
-		 */
+			args[0]: string, encrypted value to search
+			args[1]: int, id of the response to look into
+		*/
 		"exists": func(args ...interface{}) (interface{}, error) {
 			toSearch := args[0].(string)
-			responseId, err := strconv.Atoi(args[1].(string))
+			responseID, err := strconv.Atoi(args[1].(string))
 
 			// linear search and no sorting done: values to search in are supposed few,
 			// but the search operation is done many times => probably not worth it to sort it every time
 			// XXX if perf bottleneck: if we can assume it comes sorted already, can become better
-			for _, setValue := range responsesToFilter[responseId].DetTagWhere {
+			for _, setValue := range responsesToFilter[responseID].DetTagWhere {
 				if string(setValue) == toSearch {
 					return true, err
 				}
@@ -129,13 +129,13 @@ func FilterResponsesI2b2(pred string, whereQueryValues []lib.WhereQueryAttribute
 
 	// evaluate on each response the predicate
 	// e.g.: 1 row = [ [ ] [E(cancer), E(dead), ...] [1] ] = per patient
-	for responseId := 0; responseId < len(responsesToFilter); responseId++ {
+	for responseID := 0; responseID < len(responsesToFilter); responseID++ {
 
 		// generate parameters for govaluate
-		parameters := make(map[string]interface{}, 1 + len(whereQueryValues))
-		parameters["r"] = strconv.Itoa(responseId)
+		parameters := make(map[string]interface{}, 1+len(whereQueryValues))
+		parameters["r"] = strconv.Itoa(responseID)
 		for i := 0; i < len(whereQueryValues); i++ {
-			parameters["v" + strconv.Itoa(i)] = string(whereQueryValues[i].Value)
+			parameters["v"+strconv.Itoa(i)] = string(whereQueryValues[i].Value)
 		}
 
 		keep, err := expression.Evaluate(parameters)
@@ -147,21 +147,21 @@ func FilterResponsesI2b2(pred string, whereQueryValues []lib.WhereQueryAttribute
 
 		if keep.(bool) {
 			result = append(result, lib.FilteredResponseDet{
-				DetTagGroupBy: responsesToFilter[responseId].DetTagGroupBy,
+				DetTagGroupBy: responsesToFilter[responseID].DetTagGroupBy,
 				Fr: lib.FilteredResponse{
-					GroupByEnc: responsesToFilter[responseId].PR.GroupByEnc,
-					AggregatingAttributes: responsesToFilter[responseId].PR.AggregatingAttributes}})
+					GroupByEnc:            responsesToFilter[responseID].PR.GroupByEnc,
+					AggregatingAttributes: responsesToFilter[responseID].PR.AggregatingAttributes}})
 		}
 	}
 
 	if len(result) == 0 {
-		zeroAnswer := make(lib.CipherVector,0)
-		zeroAnswer = append(zeroAnswer, *lib.EncryptInt(pubKey,0))
+		zeroAnswer := make(lib.CipherVector, 0)
+		zeroAnswer = append(zeroAnswer, *lib.EncryptInt(pubKey, 0))
 
 		result = append(result, lib.FilteredResponseDet{
 			DetTagGroupBy: lib.GroupingKey(""),
 			Fr: lib.FilteredResponse{
-				GroupByEnc: make(lib.CipherVector,0),
+				GroupByEnc:            make(lib.CipherVector, 0),
 				AggregatingAttributes: zeroAnswer}})
 	}
 

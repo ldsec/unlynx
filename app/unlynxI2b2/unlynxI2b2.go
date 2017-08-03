@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	// Name of the binary
+	// BinaryName is the name of the binary
 	BinaryName = "unlynxI2b2"
 
 	// Version of the binary
@@ -29,9 +29,8 @@ const (
 
 	optionProofs = "proofs"
 
-	optionDecryptKey = "key"
+	optionDecryptKey      = "key"
 	optionDecryptKeyShort = "k"
-
 )
 
 /*
@@ -39,7 +38,7 @@ Return system error codes signification
 0: success
 1: failed to init client
 2: error in the XML query parsing or during query
- */
+*/
 func main() {
 	cliApp := cli.NewApp()
 	cliApp.Name = "unlynxI2b2"

@@ -1,23 +1,23 @@
 package main
 
 import (
-	"os"
-	"testing"
 	"fmt"
 	"gopkg.in/dedis/onet.v1"
+	"os"
+	"testing"
 
 	"github.com/lca1/unlynx/lib"
 	"gopkg.in/dedis/onet.v1/log"
 
-	"github.com/stretchr/testify/assert"
-	"strings"
-	"io"
-	"github.com/lca1/unlynx/services/i2b2"
-	"strconv"
 	"bytes"
 	"encoding/xml"
+	"github.com/lca1/unlynx/services/i2b2"
+	"github.com/stretchr/testify/assert"
 	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/onet.v1/app"
+	"io"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -166,7 +166,6 @@ func getXMLReader(t *testing.T, variant int) io.Reader {
 	return xmlReader
 }
 
-
 func getXMLReaderV2(t *testing.T) io.Reader {
 
 	// client public key serialization
@@ -184,43 +183,43 @@ func getXMLReaderV2(t *testing.T) io.Reader {
 
 	// enc patients data (encrypted with cothority public key)
 	encDataClearValues := [][]int64{
-		[]int64{2, 0, 4}, //1
-		[]int64{0, 2, 5}, //0
+		[]int64{2, 0, 4},                //1
+		[]int64{0, 2, 5},                //0
 		[]int64{0, 2, 4, 1, 1, 1, 1, 1}, //1
-		[]int64{0, 2, 5},//0
-		[]int64{0, 2, 5},//0
-		[]int64{2, 0, 4},//1
-		[]int64{0, 2, 4, 1, 1, 1, 1, 1},//1
-		[]int64{0, 2, 4, 1, 1, 1, 1, 1},//1
-		[]int64{0, 2, 4, 1, 1, 1, 1, 1},//1
-		[]int64{0, 2, 4, 1, 1, 1, 1, 1},//1
-		[]int64{2, 0, 4},//1
-		[]int64{2, 0, 4},//1
-		[]int64{2, 0, 4},//1
-		[]int64{2, 0, 4},//1
-		[]int64{2, 0, 4},//1
-		[]int64{2, 0, 4},//1
-		[]int64{0, 2, 4, 1, 1, 1, 1, 1},//1
-		[]int64{0, 2, 4, 1, 1, 1, 1, 1},//1
-		[]int64{0, 2, 4, 1, 1, 1, 1, 1},//1
-		[]int64{0, 2, 4, 1, 1, 1, 1, 1},//1
-		[]int64{0, 2, 4, 1, 1, 1, 1, 1},//1
-		[]int64{0, 2, 4, 1, 1, 1, 1, 1},//1
-		[]int64{0, 2, 4, 1, 1, 1, 1, 1},//1
-		[]int64{0, 2, 4, 1, 1, 1, 1, 1},//1
-		[]int64{0, 2, 4, 1, 1, 1, 1, 1},//1
-		[]int64{0, 2, 4, 1, 1, 1, 1, 1},//1
-		[]int64{0, 2, 4, 1, 1, 1, 1, 1},//1
-		[]int64{0, 2, 4, 1, 1, 1, 1, 1},//1
-		[]int64{0, 2, 4, 1, 1, 1, 1, 1},//1
-		[]int64{0, 2, 4, 1, 1, 1, 1, 1},//1
-		[]int64{0, 2, 4, 1, 1, 1, 1, 1},//1
-		[]int64{0, 2, 4, 1, 1, 1, 1, 1},//1
-		[]int64{0, 2, 4, 1, 1, 1, 1, 1},//1
-		[]int64{0, 2, 4, 1, 1, 1, 1, 1},//1
-		[]int64{0, 2, 4, 1, 1, 1, 1, 1},//1
-		[]int64{0, 2, 4, 1, 1, 1, 1, 1},//1
-		[]int64{0, 2, 4, 1, 1, 1, 1, 1},//1
+		[]int64{0, 2, 5},                //0
+		[]int64{0, 2, 5},                //0
+		[]int64{2, 0, 4},                //1
+		[]int64{0, 2, 4, 1, 1, 1, 1, 1}, //1
+		[]int64{0, 2, 4, 1, 1, 1, 1, 1}, //1
+		[]int64{0, 2, 4, 1, 1, 1, 1, 1}, //1
+		[]int64{0, 2, 4, 1, 1, 1, 1, 1}, //1
+		[]int64{2, 0, 4},                //1
+		[]int64{2, 0, 4},                //1
+		[]int64{2, 0, 4},                //1
+		[]int64{2, 0, 4},                //1
+		[]int64{2, 0, 4},                //1
+		[]int64{2, 0, 4},                //1
+		[]int64{0, 2, 4, 1, 1, 1, 1, 1}, //1
+		[]int64{0, 2, 4, 1, 1, 1, 1, 1}, //1
+		[]int64{0, 2, 4, 1, 1, 1, 1, 1}, //1
+		[]int64{0, 2, 4, 1, 1, 1, 1, 1}, //1
+		[]int64{0, 2, 4, 1, 1, 1, 1, 1}, //1
+		[]int64{0, 2, 4, 1, 1, 1, 1, 1}, //1
+		[]int64{0, 2, 4, 1, 1, 1, 1, 1}, //1
+		[]int64{0, 2, 4, 1, 1, 1, 1, 1}, //1
+		[]int64{0, 2, 4, 1, 1, 1, 1, 1}, //1
+		[]int64{0, 2, 4, 1, 1, 1, 1, 1}, //1
+		[]int64{0, 2, 4, 1, 1, 1, 1, 1}, //1
+		[]int64{0, 2, 4, 1, 1, 1, 1, 1}, //1
+		[]int64{0, 2, 4, 1, 1, 1, 1, 1}, //1
+		[]int64{0, 2, 4, 1, 1, 1, 1, 1}, //1
+		[]int64{0, 2, 4, 1, 1, 1, 1, 1}, //1
+		[]int64{0, 2, 4, 1, 1, 1, 1, 1}, //1
+		[]int64{0, 2, 4, 1, 1, 1, 1, 1}, //1
+		[]int64{0, 2, 4, 1, 1, 1, 1, 1}, //1
+		[]int64{0, 2, 4, 1, 1, 1, 1, 1}, //1
+		[]int64{0, 2, 4, 1, 1, 1, 1, 1}, //1
+		[]int64{0, 2, 4, 1, 1, 1, 1, 1}, //1
 	}
 
 	encData := make([][]string, len(encDataClearValues))
@@ -268,7 +267,7 @@ func parseQueryResult(t *testing.T, xmlString string) lib.XMLMedCoQueryResult {
 	err := xml.Unmarshal([]byte(xmlString), &parsed_xml)
 	assert.Equal(t, err, nil)
 
-	return  parsed_xml
+	return parsed_xml
 }
 
 func TestUnlynxQuery(t *testing.T) {
@@ -382,12 +381,11 @@ func TestUnlynxQueryV2(t *testing.T) {
 	testLocalTeardown()
 }
 
-
 // test query, without serialization (xml etc.)
 func TestCallSendSurveyDpQuery(t *testing.T) {
 	testLocalSetup()
 
-	encWhereValues := []lib.WhereQueryAttribute {
+	encWhereValues := []lib.WhereQueryAttribute{
 		{Name: "w0", Value: *lib.EncryptInt(el.Aggregate, int64(0))},
 		{Name: "w1", Value: *lib.EncryptInt(el.Aggregate, int64(1))},
 		{Name: "w2", Value: *lib.EncryptInt(el.Aggregate, int64(2))},
@@ -443,16 +441,16 @@ func TestCallSendSurveyDpQuery(t *testing.T) {
 		_, result1, _, _ = client.SendSurveyDpQuery(
 			el, // entities
 			serviceI2B2.SurveyID("query_ID_XYZ"), // surveyGenId
-			serviceI2B2.SurveyID(""), // surveyID
-			clientPubKey, // clientPubKey
-			map[string]int64{el.List[0].String(): 1, el.List[1].String(): 1,el.List[2].String(): 1}, // number of DPs per server
-			false, // compute proofs
-			false, // appFlag: data is passed with query (not via separate file)
+			serviceI2B2.SurveyID(""),             // surveyID
+			clientPubKey,                         // clientPubKey
+			map[string]int64{el.List[0].String(): 1, el.List[1].String(): 1, el.List[2].String(): 1}, // number of DPs per server
+			false,          // compute proofs
+			false,          // appFlag: data is passed with query (not via separate file)
 			[]string{"s1"}, // aggregating attribute
-			false, // count flag
+			false,          // count flag
 			encWhereValues, // encrypted where query
 			"(exists(v0, r) || exists(v1, r)) && (exists(v2, r) || exists(v3, r)) && exists(v4, r)", // predicate
-			[]string{}, // groupBy
+			[]string{},   // groupBy
 			patientsData, // encrypted patients data
 			0,
 			time.Now()) // mode: 0 (each DP different result) or 1 (everyone same aggregation)
@@ -466,16 +464,16 @@ func TestCallSendSurveyDpQuery(t *testing.T) {
 		_, result2, _, _ = client.SendSurveyDpQuery(
 			el, // entities
 			serviceI2B2.SurveyID("query_ID_XYZ"), // surveyGenId
-			serviceI2B2.SurveyID(""), // surveyID
-			clientPubKey, // clientPubKey
-			map[string]int64{el.List[0].String(): 1, el.List[1].String(): 1,el.List[2].String(): 1}, // number of DPs per server
-			false, // compute proofs
-			false, // appFlag: data is passed with query (not via separate file)
+			serviceI2B2.SurveyID(""),             // surveyID
+			clientPubKey,                         // clientPubKey
+			map[string]int64{el.List[0].String(): 1, el.List[1].String(): 1, el.List[2].String(): 1}, // number of DPs per server
+			false,          // compute proofs
+			false,          // appFlag: data is passed with query (not via separate file)
 			[]string{"s1"}, // aggregating attribute
-			false, // count flag
+			false,          // count flag
 			encWhereValues, // encrypted where query
 			"(exists(v0, r) || exists(v1, r)) && (exists(v2, r) || exists(v3, r)) && exists(v4, r)", // predicate
-			[]string{}, // groupBy
+			[]string{},   // groupBy
 			patientsData, // encrypted patients data
 			0,
 			time.Now()) // mode: 0 (each DP different result) or 1 (everyone same aggregation)
@@ -487,19 +485,19 @@ func TestCallSendSurveyDpQuery(t *testing.T) {
 	_, result, _, err := client.SendSurveyDpQuery(
 		el, // entities
 		serviceI2B2.SurveyID("query_ID_XYZ"), // surveyGenId
-		serviceI2B2.SurveyID(""), // surveyID
-		clientPubKey, // clientPubKey
-		map[string]int64{el.List[0].String(): 1, el.List[1].String(): 1,el.List[2].String(): 1}, // number of DPs per server
-		false, // compute proofs
-		false, // appFlag: data is passed with query (not via separate file)
+		serviceI2B2.SurveyID(""),             // surveyID
+		clientPubKey,                         // clientPubKey
+		map[string]int64{el.List[0].String(): 1, el.List[1].String(): 1, el.List[2].String(): 1}, // number of DPs per server
+		false,          // compute proofs
+		false,          // appFlag: data is passed with query (not via separate file)
 		[]string{"s1"}, // aggregating attribute
-		false, // count flag
+		false,          // count flag
 		encWhereValues, // encrypted where query
 		"(exists(v0, r) || exists(v1, r)) && (exists(v2, r) || exists(v3, r)) && exists(v4, r)", // predicate
-		[]string{}, // groupBy
+		[]string{},   // groupBy
 		patientsData, // encrypted patients data
 		0,
-	        time.Now()) // mode: 0 (each DP different result) or 1 (everyone same aggregation)
+		time.Now()) // mode: 0 (each DP different result) or 1 (everyone same aggregation)
 
 	assert.True(t, err == nil)
 	lib.EndParallelize(wg)

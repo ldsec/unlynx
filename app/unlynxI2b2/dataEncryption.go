@@ -1,14 +1,14 @@
 package main
 
 import (
+	"errors"
+	"github.com/lca1/unlynx/lib"
 	"gopkg.in/dedis/onet.v1/app"
 	"gopkg.in/dedis/onet.v1/log"
-	"github.com/lca1/unlynx/lib"
-	"os"
-	"strconv"
 	"gopkg.in/urfave/cli.v1"
 	"io"
-	"errors"
+	"os"
+	"strconv"
 )
 
 func encryptIntFromApp(c *cli.Context) error {
@@ -17,7 +17,7 @@ func encryptIntFromApp(c *cli.Context) error {
 	groupFilePath := c.String("file")
 
 	if c.NArg() != 1 {
-		err := errors.New("Wrong number of arguments (only 1 allowed, except for the flags).")
+		err := errors.New("Wrong number of arguments (only 1 allowed, except for the flags)")
 		log.Error(err)
 		return cli.NewExitError(err, 3)
 	}
@@ -78,4 +78,3 @@ func encryptIntFromApp(c *cli.Context) error {
 
 	return nil
 }
-

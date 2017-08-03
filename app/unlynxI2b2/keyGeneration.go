@@ -1,18 +1,18 @@
 package main
 
 import (
-	"gopkg.in/dedis/onet.v1/log"
+	"errors"
 	"github.com/lca1/unlynx/lib"
-	"os"
+	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/urfave/cli.v1"
 	"io"
-	"errors"
+	"os"
 )
 
 func keyGenerationFromApp(c *cli.Context) error {
 
 	if c.NArg() != 0 {
-		err := errors.New("Wrong number of arguments (none allowed, except for the flags).")
+		err := errors.New("Wrong number of arguments (none allowed, except for the flags)")
 		log.Error(err)
 		return cli.NewExitError(err, 3)
 	}
@@ -40,4 +40,3 @@ func keyGenerationFromApp(c *cli.Context) error {
 
 	return nil
 }
-

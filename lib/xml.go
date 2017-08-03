@@ -2,12 +2,10 @@
 package lib
 
 import (
-	"gopkg.in/dedis/onet.v1"
 	"encoding/xml"
+	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
-
 )
-
 
 // Input XML definition and methods
 //______________________________________________________________________________________________________________________
@@ -35,25 +33,25 @@ import (
 	<client_public_key>base64 encoded key</client_public_key>
 	<result_mode> result mode (0 or 1)</result_mode>
 </medco_query>
- */
+*/
 
-// Parsed XML definition
+// XMLMedCoQuery is a parsed XML definition
 type XMLMedCoQuery struct {
-	XMLName xml.Name `xml:"medco_query"`
-	QueryId string `xml:"id"`
-	Predicate string `xml:"predicate"`
-	EncWhereValues string `xml:"enc_where_values"`
-	EncPatientsData []XMLEncPatientData `xml:"enc_patients_data>patient"`
-	ClientPublicKeyB64 string `xml:"client_public_key"`
-	ResultMode string `xml:"result_mode"`
+	XMLName            xml.Name            `xml:"medco_query"`
+	QueryID            string              `xml:"id"`
+	Predicate          string              `xml:"predicate"`
+	EncWhereValues     string              `xml:"enc_where_values"`
+	EncPatientsData    []XMLEncPatientData `xml:"enc_patients_data>patient"`
+	ClientPublicKeyB64 string              `xml:"client_public_key"`
+	ResultMode         string              `xml:"result_mode"`
 }
 
-// Parsed patient data in XML
+// XMLEncPatientData is a parsed patient data in XML
 type XMLEncPatientData struct {
-	EncData  []string `xml:"enc_data"`
+	EncData []string `xml:"enc_data"`
 }
 
-// parse and decode the base64-encoded values in the XML, returns slice of patients ready for input to unlynx
+// PatientsDataToUnlynxFormat parses and decodes the base64-encoded values in the XML, returns slice of patients ready for input to unlynx
 func (xml *XMLMedCoQuery) PatientsDataToUnlynxFormat(el *onet.Roster) ([]ProcessResponse, error) {
 
 	// iter over patients
@@ -96,13 +94,13 @@ func (xml *XMLMedCoQuery) PatientsDataToUnlynxFormat(el *onet.Roster) ([]Process
 	<enc_result>encrypted result</enc_result>
 	<error>a message error (only if error, the enc_result will be empty)</error>
 </medco_query_result>
- */
+*/
 
-// Parsed XML definition
+// XMLMedCoQueryResult is a parsed XML definition
 type XMLMedCoQueryResult struct {
-	XMLName xml.Name `xml:"medco_query_result"`
-	QueryId string `xml:"id"`
-	ResultMode string `xml:"result_mode"`
-	EncResult string `xml:"enc_result"`
-	Error string `xml:"error"`
+	XMLName    xml.Name `xml:"medco_query_result"`
+	QueryID    string   `xml:"id"`
+	ResultMode string   `xml:"result_mode"`
+	EncResult  string   `xml:"enc_result"`
+	Error      string   `xml:"error"`
 }

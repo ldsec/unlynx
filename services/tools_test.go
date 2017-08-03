@@ -1,6 +1,7 @@
 package services_test
 
 import (
+	"fmt"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/services"
 	"github.com/stretchr/testify/assert"
@@ -10,7 +11,6 @@ import (
 	"os"
 	"strconv"
 	"testing"
-	"fmt"
 )
 
 func TestPrecomputationWritingForShuffling(t *testing.T) {
@@ -34,7 +34,6 @@ func TestPrecomputationWritingForShuffling(t *testing.T) {
 	assert.Equal(t, len(precompute), lineSize)
 
 }
-
 
 func TestFilterResponsesI2b2(t *testing.T) {
 	// TODO: add case result == 0 (need to set the public key)
@@ -81,13 +80,12 @@ func TestFilterResponsesI2b2(t *testing.T) {
 	whereAttributes = append(whereAttributes, lib.WhereQueryAttributeTagged{Name: "w3", Value: "599"})
 	whereAttributes = append(whereAttributes, lib.WhereQueryAttributeTagged{Name: "w4", Value: "99999"})
 
-
 	// predicate is true
 	whereTrue1 := [4]lib.GroupingKey{lib.GroupingKey("99999"), lib.GroupingKey("27"), lib.GroupingKey("599"), lib.GroupingKey("99999")}
 	whereTrue2 := [4]lib.GroupingKey{lib.GroupingKey("27"), lib.GroupingKey("0"), lib.GroupingKey("99"), lib.GroupingKey("99999")}
 
 	// predicate is false
-	whereFalse1 := [5]lib.GroupingKey{lib.GroupingKey("27"), lib.GroupingKey("6"), lib.GroupingKey("6"),lib.GroupingKey("6"),lib.GroupingKey("0")}
+	whereFalse1 := [5]lib.GroupingKey{lib.GroupingKey("27"), lib.GroupingKey("6"), lib.GroupingKey("6"), lib.GroupingKey("6"), lib.GroupingKey("0")}
 
 	data = make([]lib.ProcessResponseDet, 0)
 	data = append(data, lib.ProcessResponseDet{PR: lib.ProcessResponse{}, DetTagGroupBy: "", DetTagWhere: whereTrue1[:]})

@@ -96,7 +96,7 @@ type KeySwitchingProtocol struct {
 	PreviousNodeInPathChannel chan keySwitchedCipherBytesStruct
 	LengthNodeChannel         chan kscbLengthStruct
 
-	ExecTime          time.Duration
+	ExecTime time.Duration
 
 	// Protocol state data
 	nextNodeInCircuit *onet.TreeNode
@@ -146,7 +146,7 @@ func (p *KeySwitchingProtocol) Start() error {
 		return errors.New("No new public key to be switched on provided")
 	}
 
-	p.ExecTime=0
+	p.ExecTime = 0
 
 	log.Lvl1(p.ServerIdentity(), " started a Key Switching Protocol")
 
@@ -236,7 +236,7 @@ func (p *KeySwitchingProtocol) Dispatch() error {
 		for i, v := range keySwitchingTarget.DataKey {
 			result[i] = v.Response
 		}
-		p.ExecTime+= time.Since(startT);
+		p.ExecTime += time.Since(startT)
 		p.FeedbackChannel <- result
 	} else {
 		log.Lvl1(p.ServerIdentity(), " carried on key switching on ", len(keySwitchingTarget.DataKey), " .")

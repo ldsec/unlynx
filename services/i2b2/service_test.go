@@ -4,6 +4,7 @@ import (
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/services/i2b2"
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/crypto.v0/random"
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
@@ -12,13 +13,11 @@ import (
 	"strconv"
 	"sync"
 	"testing"
-	"gopkg.in/dedis/crypto.v0/abstract"
 	"time"
 )
 
 // TEST BATCH 1 -> normal querying mode
 //______________________________________________________________________________________________________________________
-
 
 func getParam(nbHosts int) (abstract.Scalar, abstract.Point, []string, bool,
 	[]lib.WhereQueryAttribute, string, []string, *onet.Roster, *onet.LocalTest,
@@ -37,7 +36,7 @@ func getParam(nbHosts int) (abstract.Scalar, abstract.Point, []string, bool,
 
 	// Send a request to the service
 	clients := make([]*serviceI2B2.API, nbHosts)
-	for i := 0 ; i < nbHosts ; i++ {
+	for i := 0; i < nbHosts; i++ {
 		clients[i] = serviceI2B2.NewUnLynxClient(el.List[i], strconv.Itoa(i))
 	}
 
@@ -65,7 +64,7 @@ func getParam(nbHosts int) (abstract.Scalar, abstract.Point, []string, bool,
 	return secKey, pubKey, sum, count, whereQueryValues, pred, groupBy, el, local, clients, aggr
 }
 
-func getPatients(el *onet.Roster) ([]lib.CipherVector) {
+func getPatients(el *onet.Roster) []lib.CipherVector {
 	// data patient 1 = 1
 	sliceWhereP1 := make(lib.CipherVector, 0)
 	sliceWhereP1 = append(sliceWhereP1, *lib.EncryptInt(el.Aggregate, int64(2)))
@@ -131,7 +130,7 @@ func TestServiceShuffle(t *testing.T) {
 		data1 = append(data1, lib.ProcessResponse{WhereEnc: patients[2], AggregatingAttributes: aggr})
 		data1 = append(data1, lib.ProcessResponse{WhereEnc: patients[2], AggregatingAttributes: aggr})
 
-		_, result1,_,_ = clients[1].SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, true, sum, count, whereQueryValues, pred, groupBy, data1, 0, time.Now())
+		_, result1, _, _ = clients[1].SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, true, sum, count, whereQueryValues, pred, groupBy, data1, 0, time.Now())
 	}()
 	go func() {
 		defer wg.Done()
@@ -140,9 +139,9 @@ func TestServiceShuffle(t *testing.T) {
 
 		data2 = append(data, data...)
 		data2 = append(data2, data2...)
-		_, result2,_,_ = clients[2].SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, true, sum, count, whereQueryValues, pred, groupBy, data2, 0, time.Now())
+		_, result2, _, _ = clients[2].SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, true, sum, count, whereQueryValues, pred, groupBy, data2, 0, time.Now())
 	}()
-	_, result,_, err := clients[0].SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, true, sum, count, whereQueryValues, pred, groupBy, data, 0, time.Now())
+	_, result, _, err := clients[0].SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, true, sum, count, whereQueryValues, pred, groupBy, data, 0, time.Now())
 
 	if err != nil {
 		t.Fatal("Service did not start.", err)
@@ -216,9 +215,9 @@ func TestServiceNoDPs(t *testing.T) {
 		data1 = append(data1, lib.ProcessResponse{WhereEnc: patients[2], AggregatingAttributes: aggr})
 		data1 = append(data1, lib.ProcessResponse{WhereEnc: patients[2], AggregatingAttributes: aggr})
 
-		_, result1, _,  _ = clients[1].SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, true, sum, count, whereQueryValues, pred, groupBy, data1, 0, time.Now())
+		_, result1, _, _ = clients[1].SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, true, sum, count, whereQueryValues, pred, groupBy, data1, 0, time.Now())
 	}()
-	_, result, _,  err := clients[0].SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, true, sum, count, whereQueryValues, pred, groupBy, data, 0, time.Now())
+	_, result, _, err := clients[0].SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, true, sum, count, whereQueryValues, pred, groupBy, data, 0, time.Now())
 
 	if err != nil {
 		t.Fatal("Service did not start.", err)
@@ -271,7 +270,6 @@ func TestServiceDifferentDPs(t *testing.T) {
 	clients[3] = serviceI2B2.NewUnLynxClient(el.List[1], strconv.Itoa(3))
 	clients[4] = serviceI2B2.NewUnLynxClient(el.List[1], strconv.Itoa(4))
 
-
 	nbrDPs := make(map[string]int64)
 	//how many data providers for each server
 	nbrDPs[el.List[0].String()] = 2
@@ -292,7 +290,6 @@ func TestServiceDifferentDPs(t *testing.T) {
 
 	}
 
-
 	wg := lib.StartParallelize(4)
 
 	result1 := lib.FilteredResponse{}
@@ -306,7 +303,7 @@ func TestServiceDifferentDPs(t *testing.T) {
 		data1 = append(data1, lib.ProcessResponse{WhereEnc: patients[2], AggregatingAttributes: aggr})
 		data1 = append(data1, lib.ProcessResponse{WhereEnc: patients[2], AggregatingAttributes: aggr})
 		data1 = append(data1, lib.ProcessResponse{WhereEnc: patients[2], AggregatingAttributes: aggr})
-		_, result1, _,  _ = clients[1].SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, true, sum, count, whereQueryValues, pred, groupBy, data1, 0, time.Now())
+		_, result1, _, _ = clients[1].SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, true, sum, count, whereQueryValues, pred, groupBy, data1, 0, time.Now())
 	}()
 	go func() {
 		defer wg.Done()
@@ -315,7 +312,7 @@ func TestServiceDifferentDPs(t *testing.T) {
 
 		data2 = append(data, data...)
 		data2 = append(data2, data2...)
-		_, result2, _,  _ = clients[2].SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, true, sum, count, whereQueryValues, pred, groupBy, data2, 0, time.Now())
+		_, result2, _, _ = clients[2].SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, true, sum, count, whereQueryValues, pred, groupBy, data2, 0, time.Now())
 	}()
 	go func() {
 		defer wg.Done()
@@ -377,147 +374,147 @@ func TestServiceDifferentDPs(t *testing.T) {
 // Test a different query and one more node
 /* disabled test: no 2 aggregating attributes
 func TestServiceDifferentQuery(t *testing.T) {
-	secKey, pubKey, _, _, whereQueryValues, _, groupBy, el, local, _, _ := getParam(4)
-	defer local.CloseAll()
+        secKey, pubKey, _, _, whereQueryValues, _, groupBy, el, local, _, _ := getParam(4)
+        defer local.CloseAll()
 
-	clients := make([]*serviceI2B2.API, 6)
-	// Send a request to the service
-	// For the first server
-	clients[0] = serviceI2B2.NewMedcoClient(el.List[0], strconv.Itoa(0))
-	clients[1] = serviceI2B2.NewMedcoClient(el.List[0], strconv.Itoa(1))
+        clients := make([]*serviceI2B2.API, 6)
+        // Send a request to the service
+        // For the first server
+        clients[0] = serviceI2B2.NewMedcoClient(el.List[0], strconv.Itoa(0))
+        clients[1] = serviceI2B2.NewMedcoClient(el.List[0], strconv.Itoa(1))
 
-	//For the second server
-	clients[2] = serviceI2B2.NewMedcoClient(el.List[1], strconv.Itoa(2))
-	clients[3] = serviceI2B2.NewMedcoClient(el.List[1], strconv.Itoa(3))
-	clients[4] = serviceI2B2.NewMedcoClient(el.List[1], strconv.Itoa(4))
+        //For the second server
+        clients[2] = serviceI2B2.NewMedcoClient(el.List[1], strconv.Itoa(2))
+        clients[3] = serviceI2B2.NewMedcoClient(el.List[1], strconv.Itoa(3))
+        clients[4] = serviceI2B2.NewMedcoClient(el.List[1], strconv.Itoa(4))
 
-	//For the fourth server
-	clients[5] = serviceI2B2.NewMedcoClient(el.List[3], strconv.Itoa(4))
+        //For the fourth server
+        clients[5] = serviceI2B2.NewMedcoClient(el.List[3], strconv.Itoa(4))
 
-	sum := []string{"s1", "s2", "count"}
-	count := true
-	pred := "(exists(v0, r) || exists(v1, r)) || (exists(v2, r) || exists(v3, r)) || exists(v4, r)"
-
-
-	nbrDPs := make(map[string]int64)
-	//how many data providers for each server
-	nbrDPs[el.List[0].String()] = 2
-	nbrDPs[el.List[1].String()] = 3
-	nbrDPs[el.List[2].String()] = 0
-	nbrDPs[el.List[3].String()] = 1
-
-	data := []lib.ProcessResponse{}
-
-	nbrAggr := 2
-	aggr := make(lib.CipherVector, nbrAggr)
-	for j := 0; j < nbrAggr; j++ {
-		aggr[j] = *lib.EncryptInt(el.Aggregate, int64(1))
-
-	}
-
-	if count {
-		aggr = append(aggr, *lib.EncryptInt(el.Aggregate, int64(1)))
-	}
-
-	patients := getPatients(el)
-
-	data = append(data, lib.ProcessResponse{WhereEnc: patients[0], AggregatingAttributes: aggr})
-	data = append(data, lib.ProcessResponse{WhereEnc: patients[1], AggregatingAttributes: aggr})
-	data = append(data, lib.ProcessResponse{WhereEnc: patients[2], AggregatingAttributes: aggr})
-
-	wg := lib.StartParallelize(5)
-
-	result1 := lib.FilteredResponse{}
-	result2 := lib.FilteredResponse{}
-	result3 := lib.FilteredResponse{}
-	result4 := lib.FilteredResponse{}
-	result5 := lib.FilteredResponse{}
-	go func() {
-		defer wg.Done()
-		data1 := make([]lib.ProcessResponse, len(data))
-		copy(data1, data)
-		data1 = append(data1, lib.ProcessResponse{WhereEnc: patients[2], AggregatingAttributes: aggr})
-		data1 = append(data1, lib.ProcessResponse{WhereEnc: patients[2], AggregatingAttributes: aggr})
-		data1 = append(data1, lib.ProcessResponse{WhereEnc: patients[2], AggregatingAttributes: aggr})
-		_, result1, _ = clients[1].SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, true, sum, count, whereQueryValues, pred, groupBy, data1, 0)
-	}()
-	go func() {
-		defer wg.Done()
-		data2 := make([]lib.ProcessResponse, len(data))
-		copy(data2, data)
-
-		data2 = append(data, data...)
-		data2 = append(data2, data2...)
-		_, result2, _ = clients[2].SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, true, sum, count, whereQueryValues, pred, groupBy, data2, 0)
-	}()
-	go func() {
-		defer wg.Done()
-		data3 := make([]lib.ProcessResponse, len(data))
-		copy(data3, data)
-
-		data3 = append(data, data...)
-		data3 = append(data3, data3...)
-		_, result3, _ = clients[3].SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, true, sum, count, whereQueryValues, pred, groupBy, data3, 0)
-	}()
-	go func() {
-		defer wg.Done()
-		data4 := make([]lib.ProcessResponse, len(data))
-		copy(data4, data)
-
-		data4 = append(data, data...)
-		data4 = append(data4, data4...)
-		_, result4, _ = clients[4].SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, true, sum, count, whereQueryValues, pred, groupBy, data4, 0)
-	}()
-	go func() {
-		defer wg.Done()
-		data5 := make([]lib.ProcessResponse, len(data))
-		copy(data5, data)
-
-		data5 = append(data, data...)
-		data5 = append(data5, data5...)
-		data5 = append(data5, data5...)
-		_, result5, _ = clients[5].SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, true, sum, count, whereQueryValues, pred, groupBy, data5, 0)
-	}()
-	_, result, err := clients[0].SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, true, sum, count, whereQueryValues, pred, groupBy, data, 0)
+        sum := []string{"s1", "s2", "count"}
+        count := true
+        pred := "(exists(v0, r) || exists(v1, r)) || (exists(v2, r) || exists(v3, r)) || exists(v4, r)"
 
 
+        nbrDPs := make(map[string]int64)
+        //how many data providers for each server
+        nbrDPs[el.List[0].String()] = 2
+        nbrDPs[el.List[1].String()] = 3
+        nbrDPs[el.List[2].String()] = 0
+        nbrDPs[el.List[3].String()] = 1
+
+        data := []lib.ProcessResponse{}
+
+        nbrAggr := 2
+        aggr := make(lib.CipherVector, nbrAggr)
+        for j := 0; j < nbrAggr; j++ {
+                aggr[j] = *lib.EncryptInt(el.Aggregate, int64(1))
+
+        }
+
+        if count {
+                aggr = append(aggr, *lib.EncryptInt(el.Aggregate, int64(1)))
+        }
+
+        patients := getPatients(el)
+
+        data = append(data, lib.ProcessResponse{WhereEnc: patients[0], AggregatingAttributes: aggr})
+        data = append(data, lib.ProcessResponse{WhereEnc: patients[1], AggregatingAttributes: aggr})
+        data = append(data, lib.ProcessResponse{WhereEnc: patients[2], AggregatingAttributes: aggr})
+
+        wg := lib.StartParallelize(5)
+
+        result1 := lib.FilteredResponse{}
+        result2 := lib.FilteredResponse{}
+        result3 := lib.FilteredResponse{}
+        result4 := lib.FilteredResponse{}
+        result5 := lib.FilteredResponse{}
+        go func() {
+                defer wg.Done()
+                data1 := make([]lib.ProcessResponse, len(data))
+                copy(data1, data)
+                data1 = append(data1, lib.ProcessResponse{WhereEnc: patients[2], AggregatingAttributes: aggr})
+                data1 = append(data1, lib.ProcessResponse{WhereEnc: patients[2], AggregatingAttributes: aggr})
+                data1 = append(data1, lib.ProcessResponse{WhereEnc: patients[2], AggregatingAttributes: aggr})
+                _, result1, _ = clients[1].SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, true, sum, count, whereQueryValues, pred, groupBy, data1, 0)
+        }()
+        go func() {
+                defer wg.Done()
+                data2 := make([]lib.ProcessResponse, len(data))
+                copy(data2, data)
+
+                data2 = append(data, data...)
+                data2 = append(data2, data2...)
+                _, result2, _ = clients[2].SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, true, sum, count, whereQueryValues, pred, groupBy, data2, 0)
+        }()
+        go func() {
+                defer wg.Done()
+                data3 := make([]lib.ProcessResponse, len(data))
+                copy(data3, data)
+
+                data3 = append(data, data...)
+                data3 = append(data3, data3...)
+                _, result3, _ = clients[3].SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, true, sum, count, whereQueryValues, pred, groupBy, data3, 0)
+        }()
+        go func() {
+                defer wg.Done()
+                data4 := make([]lib.ProcessResponse, len(data))
+                copy(data4, data)
+
+                data4 = append(data, data...)
+                data4 = append(data4, data4...)
+                _, result4, _ = clients[4].SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, true, sum, count, whereQueryValues, pred, groupBy, data4, 0)
+        }()
+        go func() {
+                defer wg.Done()
+                data5 := make([]lib.ProcessResponse, len(data))
+                copy(data5, data)
+
+                data5 = append(data, data...)
+                data5 = append(data5, data5...)
+                data5 = append(data5, data5...)
+                _, result5, _ = clients[5].SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, true, sum, count, whereQueryValues, pred, groupBy, data5, 0)
+        }()
+        _, result, err := clients[0].SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, true, sum, count, whereQueryValues, pred, groupBy, data, 0)
 
 
-	if err != nil {
-		t.Fatal("Service did not start.", err)
-	}
 
-	lib.EndParallelize(wg)
 
-	finalResult := make([]int64, 0)
-	expectedResult := []int64{2, 2, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 2, 2, 2, 3, 3, 3}
+        if err != nil {
+                t.Fatal("Service did not start.", err)
+        }
 
-	finalResult = append(finalResult, lib.DecryptIntVector(secKey, &result.AggregatingAttributes)...)
-	finalResult = append(finalResult, lib.DecryptIntVector(secKey, &result1.AggregatingAttributes)...)
-	finalResult = append(finalResult, lib.DecryptIntVector(secKey, &result2.AggregatingAttributes)...)
-	finalResult = append(finalResult, lib.DecryptIntVector(secKey, &result3.AggregatingAttributes)...)
-	finalResult = append(finalResult, lib.DecryptIntVector(secKey, &result4.AggregatingAttributes)...)
-	finalResult = append(finalResult, lib.DecryptIntVector(secKey, &result5.AggregatingAttributes)...)
+        lib.EndParallelize(wg)
 
-	assert.Equal(t, len(finalResult), len(expectedResult), "The size of the result is different")
+        finalResult := make([]int64, 0)
+        expectedResult := []int64{2, 2, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 2, 2, 2, 3, 3, 3}
 
-	var check bool
-	for _, ev := range expectedResult {
-		check = false
-		for _, fr := range finalResult {
-			if ev == fr {
-				check = true
-			}
-		}
+        finalResult = append(finalResult, lib.DecryptIntVector(secKey, &result.AggregatingAttributes)...)
+        finalResult = append(finalResult, lib.DecryptIntVector(secKey, &result1.AggregatingAttributes)...)
+        finalResult = append(finalResult, lib.DecryptIntVector(secKey, &result2.AggregatingAttributes)...)
+        finalResult = append(finalResult, lib.DecryptIntVector(secKey, &result3.AggregatingAttributes)...)
+        finalResult = append(finalResult, lib.DecryptIntVector(secKey, &result4.AggregatingAttributes)...)
+        finalResult = append(finalResult, lib.DecryptIntVector(secKey, &result5.AggregatingAttributes)...)
 
-		if !check {
-			break
-		}
-	}
+        assert.Equal(t, len(finalResult), len(expectedResult), "The size of the result is different")
 
-	assert.True(t, check, "Wrong result")
+        var check bool
+        for _, ev := range expectedResult {
+                check = false
+                for _, fr := range finalResult {
+                        if ev == fr {
+                                check = true
+                        }
+                }
 
-	log.LLvl1(finalResult)
+                if !check {
+                        break
+                }
+        }
+
+        assert.True(t, check, "Wrong result")
+
+        log.LLvl1(finalResult)
 }
 */
 
@@ -838,7 +835,6 @@ func TestServiceDifferentDPsAggr(t *testing.T) {
 	clients[3] = serviceI2B2.NewUnLynxClient(el.List[1], strconv.Itoa(3))
 	clients[4] = serviceI2B2.NewUnLynxClient(el.List[1], strconv.Itoa(4))
 
-
 	nbrDPs := make(map[string]int64)
 	//how many data providers for each server
 	nbrDPs[el.List[0].String()] = 2
@@ -858,7 +854,6 @@ func TestServiceDifferentDPsAggr(t *testing.T) {
 		sliceGrp[j] = *lib.EncryptInt(el.Aggregate, int64(1))
 
 	}
-
 
 	wg := lib.StartParallelize(4)
 
@@ -940,131 +935,130 @@ func TestServiceDifferentDPsAggr(t *testing.T) {
 	log.LLvl1(finalResult)
 }
 
-
 //______________________________________________________________________________________________________________________
 // Test a different query and one more node
 /* disabled test: no 2 aggregating attributes
 func TestServiceDifferentQueryAggr(t *testing.T) {
-	log.LLvl1("***************************************************************************************************")
-	os.Remove("pre_compute_multiplications.gob")
-	log.SetDebugVisible(2)
-	local := onet.NewLocalTest()
-	// generate 4 hosts, they don't connect, they process messages, and they
-	// don't register the tree or entitylist
-	_, el, _ := local.GenTree(4, true)
-	defer local.CloseAll()
+        log.LLvl1("***************************************************************************************************")
+        os.Remove("pre_compute_multiplications.gob")
+        log.SetDebugVisible(2)
+        local := onet.NewLocalTest()
+        // generate 4 hosts, they don't connect, they process messages, and they
+        // don't register the tree or entitylist
+        _, el, _ := local.GenTree(4, true)
+        defer local.CloseAll()
 
-	secKey := network.Suite.Scalar().Pick(random.Stream)
-	pubKey := network.Suite.Point().Mul(network.Suite.Point().Base(), secKey)
-	// Send a request to the service
-	// For the first server
-	client := serviceI2B2.NewMedcoClient(el.List[0], strconv.Itoa(0))
-	client1 := serviceI2B2.NewMedcoClient(el.List[0], strconv.Itoa(1))
+        secKey := network.Suite.Scalar().Pick(random.Stream)
+        pubKey := network.Suite.Point().Mul(network.Suite.Point().Base(), secKey)
+        // Send a request to the service
+        // For the first server
+        client := serviceI2B2.NewMedcoClient(el.List[0], strconv.Itoa(0))
+        client1 := serviceI2B2.NewMedcoClient(el.List[0], strconv.Itoa(1))
 
-	//For the second server
-	client2 := serviceI2B2.NewMedcoClient(el.List[1], strconv.Itoa(2))
-	client3 := serviceI2B2.NewMedcoClient(el.List[1], strconv.Itoa(3))
-	client4 := serviceI2B2.NewMedcoClient(el.List[1], strconv.Itoa(4))
+        //For the second server
+        client2 := serviceI2B2.NewMedcoClient(el.List[1], strconv.Itoa(2))
+        client3 := serviceI2B2.NewMedcoClient(el.List[1], strconv.Itoa(3))
+        client4 := serviceI2B2.NewMedcoClient(el.List[1], strconv.Itoa(4))
 
-	//For the fourth server
-	client5 := serviceI2B2.NewMedcoClient(el.List[3], strconv.Itoa(4))
+        //For the fourth server
+        client5 := serviceI2B2.NewMedcoClient(el.List[3], strconv.Itoa(4))
 
-	sum := []string{"s1", "s2", "count"}
-	count := true
-	whereQueryValues := []lib.WhereQueryAttribute{{Name: "w1", Value: *lib.EncryptInt(el.Aggregate, 1)}} // v1
-	pred := "v0 == v1"
-	groupBy := []string{}
+        sum := []string{"s1", "s2", "count"}
+        count := true
+        whereQueryValues := []lib.WhereQueryAttribute{{Name: "w1", Value: *lib.EncryptInt(el.Aggregate, 1)}} // v1
+        pred := "v0 == v1"
+        groupBy := []string{}
 
-	nbrDPs := make(map[string]int64)
-	//how many data providers for each server
-	nbrDPs[el.List[0].String()] = 2
-	nbrDPs[el.List[1].String()] = 3
-	nbrDPs[el.List[2].String()] = 0
-	nbrDPs[el.List[3].String()] = 1
+        nbrDPs := make(map[string]int64)
+        //how many data providers for each server
+        nbrDPs[el.List[0].String()] = 2
+        nbrDPs[el.List[1].String()] = 3
+        nbrDPs[el.List[2].String()] = 0
+        nbrDPs[el.List[3].String()] = 1
 
-	data := []lib.ProcessResponse{}
-	val := int64(1)
+        data := []lib.ProcessResponse{}
+        val := int64(1)
 
-	nbrWhere := 1
-	sliceWhere := make(lib.CipherVector, nbrWhere)
-	for j := 0; j < nbrWhere; j++ {
-		sliceWhere[j] = *lib.EncryptInt(el.Aggregate, val)
+        nbrWhere := 1
+        sliceWhere := make(lib.CipherVector, nbrWhere)
+        for j := 0; j < nbrWhere; j++ {
+                sliceWhere[j] = *lib.EncryptInt(el.Aggregate, val)
 
-	}
+        }
 
-	sliceWhere1 := make(lib.CipherVector, nbrWhere)
-	for j := 0; j < nbrWhere; j++ {
-		sliceWhere1[j] = *lib.EncryptInt(el.Aggregate, 0)
+        sliceWhere1 := make(lib.CipherVector, nbrWhere)
+        for j := 0; j < nbrWhere; j++ {
+                sliceWhere1[j] = *lib.EncryptInt(el.Aggregate, 0)
 
-	}
+        }
 
-	nbrAggr := 2
-	aggr := make(lib.CipherVector, nbrAggr)
-	for j := 0; j < nbrAggr; j++ {
-		aggr[j] = *lib.EncryptInt(el.Aggregate, val)
+        nbrAggr := 2
+        aggr := make(lib.CipherVector, nbrAggr)
+        for j := 0; j < nbrAggr; j++ {
+                aggr[j] = *lib.EncryptInt(el.Aggregate, val)
 
-	}
+        }
 
-	if count {
-		aggr = append(aggr, *lib.EncryptInt(el.Aggregate, val))
-	}
+        if count {
+                aggr = append(aggr, *lib.EncryptInt(el.Aggregate, val))
+        }
 
-	data = append(data, lib.ProcessResponse{WhereEnc: sliceWhere, AggregatingAttributes: aggr}, lib.ProcessResponse{WhereEnc: sliceWhere, AggregatingAttributes: aggr}, lib.ProcessResponse{WhereEnc: sliceWhere1, AggregatingAttributes: aggr})
+        data = append(data, lib.ProcessResponse{WhereEnc: sliceWhere, AggregatingAttributes: aggr}, lib.ProcessResponse{WhereEnc: sliceWhere, AggregatingAttributes: aggr}, lib.ProcessResponse{WhereEnc: sliceWhere1, AggregatingAttributes: aggr})
 
-	wg := lib.StartParallelize(5)
+        wg := lib.StartParallelize(5)
 
-	result1 := lib.FilteredResponse{}
-	result2 := lib.FilteredResponse{}
-	result3 := lib.FilteredResponse{}
-	result4 := lib.FilteredResponse{}
-	result5 := lib.FilteredResponse{}
-	go func() {
-		defer wg.Done()
-		data1 := append(data, lib.ProcessResponse{WhereEnc: sliceWhere, AggregatingAttributes: aggr})
-		_, result1, _ = client1.SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, true, sum, count, whereQueryValues, pred, groupBy, data1, 1)
-	}()
-	go func() {
-		defer wg.Done()
-		data2 := append(data, data...)
-		_, result2, _ = client2.SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, true, sum, count, whereQueryValues, pred, groupBy, data2, 1)
-	}()
-	go func() {
-		defer wg.Done()
-		data3 := append(data, data...)
-		_, result3, _ = client3.SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, true, sum, count, whereQueryValues, pred, groupBy, data3, 1)
-	}()
-	go func() {
-		defer wg.Done()
-		data4 := append(data, data...)
-		_, result4, _ = client4.SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, true, sum, count, whereQueryValues, pred, groupBy, data4, 1)
-	}()
-	go func() {
-		defer wg.Done()
-		data5 := append(data, lib.ProcessResponse{WhereEnc: sliceWhere1, AggregatingAttributes: aggr})
-		_, result5, _ = client5.SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, true, sum, count, whereQueryValues, pred, groupBy, data5, 1)
-	}()
-	_, result, err := client.SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, true, sum, count, whereQueryValues, pred, groupBy, data, 1)
+        result1 := lib.FilteredResponse{}
+        result2 := lib.FilteredResponse{}
+        result3 := lib.FilteredResponse{}
+        result4 := lib.FilteredResponse{}
+        result5 := lib.FilteredResponse{}
+        go func() {
+                defer wg.Done()
+                data1 := append(data, lib.ProcessResponse{WhereEnc: sliceWhere, AggregatingAttributes: aggr})
+                _, result1, _ = client1.SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, true, sum, count, whereQueryValues, pred, groupBy, data1, 1)
+        }()
+        go func() {
+                defer wg.Done()
+                data2 := append(data, data...)
+                _, result2, _ = client2.SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, true, sum, count, whereQueryValues, pred, groupBy, data2, 1)
+        }()
+        go func() {
+                defer wg.Done()
+                data3 := append(data, data...)
+                _, result3, _ = client3.SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, true, sum, count, whereQueryValues, pred, groupBy, data3, 1)
+        }()
+        go func() {
+                defer wg.Done()
+                data4 := append(data, data...)
+                _, result4, _ = client4.SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, true, sum, count, whereQueryValues, pred, groupBy, data4, 1)
+        }()
+        go func() {
+                defer wg.Done()
+                data5 := append(data, lib.ProcessResponse{WhereEnc: sliceWhere1, AggregatingAttributes: aggr})
+                _, result5, _ = client5.SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, true, sum, count, whereQueryValues, pred, groupBy, data5, 1)
+        }()
+        _, result, err := client.SendSurveyDpQuery(el, serviceI2B2.SurveyID("testSurvey"), serviceI2B2.SurveyID(""), pubKey, nbrDPs, false, true, sum, count, whereQueryValues, pred, groupBy, data, 1)
 
-	if err != nil {
-		t.Fatal("Service did not start.", err)
-	}
+        if err != nil {
+                t.Fatal("Service did not start.", err)
+        }
 
-	lib.EndParallelize(wg)
+        lib.EndParallelize(wg)
 
-	finalResult := make([]int64, 0)
-	expectedResult := []int64{19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19}
+        finalResult := make([]int64, 0)
+        expectedResult := []int64{19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19}
 
-	finalResult = append(finalResult, lib.DecryptIntVector(secKey, &result.AggregatingAttributes)...)
-	finalResult = append(finalResult, lib.DecryptIntVector(secKey, &result1.AggregatingAttributes)...)
-	finalResult = append(finalResult, lib.DecryptIntVector(secKey, &result2.AggregatingAttributes)...)
-	finalResult = append(finalResult, lib.DecryptIntVector(secKey, &result3.AggregatingAttributes)...)
-	finalResult = append(finalResult, lib.DecryptIntVector(secKey, &result4.AggregatingAttributes)...)
-	finalResult = append(finalResult, lib.DecryptIntVector(secKey, &result5.AggregatingAttributes)...)
+        finalResult = append(finalResult, lib.DecryptIntVector(secKey, &result.AggregatingAttributes)...)
+        finalResult = append(finalResult, lib.DecryptIntVector(secKey, &result1.AggregatingAttributes)...)
+        finalResult = append(finalResult, lib.DecryptIntVector(secKey, &result2.AggregatingAttributes)...)
+        finalResult = append(finalResult, lib.DecryptIntVector(secKey, &result3.AggregatingAttributes)...)
+        finalResult = append(finalResult, lib.DecryptIntVector(secKey, &result4.AggregatingAttributes)...)
+        finalResult = append(finalResult, lib.DecryptIntVector(secKey, &result5.AggregatingAttributes)...)
 
-	assert.Equal(t, len(finalResult), len(expectedResult), "The size of the result is different")
-	assert.Equal(t, finalResult, expectedResult, "Wrong result")
+        assert.Equal(t, len(finalResult), len(expectedResult), "The size of the result is different")
+        assert.Equal(t, finalResult, expectedResult, "Wrong result")
 
-	log.LLvl1(finalResult)
+        log.LLvl1(finalResult)
 }
 */
 
