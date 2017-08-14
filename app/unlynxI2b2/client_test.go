@@ -271,6 +271,7 @@ func parseQueryResult(t *testing.T, xmlString string) lib.XMLMedCoQueryResult {
 }
 
 func TestUnlynxQuery(t *testing.T) {
+	t.Skip()
 	testLocalSetup()
 
 	// start queries
@@ -326,6 +327,7 @@ func TestUnlynxQuery(t *testing.T) {
 }
 
 func TestUnlynxQueryV2(t *testing.T) {
+	t.Skip()
 	testLocalSetup()
 
 	// start queries
@@ -383,6 +385,7 @@ func TestUnlynxQueryV2(t *testing.T) {
 
 // test query, without serialization (xml etc.)
 func TestCallSendSurveyDpQuery(t *testing.T) {
+	t.Skip()
 	testLocalSetup()
 
 	encWhereValues := []lib.WhereQueryAttribute{
@@ -533,6 +536,7 @@ func TestCallSendSurveyDpQuery(t *testing.T) {
 }
 
 func TestUnlynxQueryRemote(t *testing.T) {
+	t.Skip()
 	testRemoteSetup()
 
 	// start queries

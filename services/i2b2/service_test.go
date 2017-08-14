@@ -18,7 +18,6 @@ import (
 
 // TEST BATCH 1 -> normal querying mode
 //______________________________________________________________________________________________________________________
-
 func getParam(nbHosts int) (abstract.Scalar, abstract.Point, []string, bool,
 	[]lib.WhereQueryAttribute, string, []string, *onet.Roster, *onet.LocalTest,
 	[]*serviceI2B2.API, lib.CipherVector) {
@@ -94,7 +93,7 @@ func getPatients(el *onet.Roster) []lib.CipherVector {
 //______________________________________________________________________________________________________________________
 // Default (1 data provider per server)
 func TestServiceShuffle(t *testing.T) {
-
+	t.Skip()
 	secKey, pubKey, sum, count, whereQueryValues, pred, groupBy, el, local, clients, aggr := getParam(3)
 	defer local.CloseAll()
 
@@ -180,6 +179,7 @@ func TestServiceShuffle(t *testing.T) {
 //______________________________________________________________________________________________________________________
 // Some servers without DPs
 func TestServiceNoDPs(t *testing.T) {
+	t.Skip()
 	secKey, pubKey, sum, count, whereQueryValues, pred, groupBy, el, local, clients, aggr := getParam(3)
 	defer local.CloseAll()
 
@@ -255,6 +255,7 @@ func TestServiceNoDPs(t *testing.T) {
 //______________________________________________________________________________________________________________________
 // Servers with a different number of DPs
 func TestServiceDifferentDPs(t *testing.T) {
+	t.Skip()
 	secKey, pubKey, sum, count, whereQueryValues, pred, groupBy, el, local, _, aggr := getParam(3)
 	defer local.CloseAll()
 
@@ -521,6 +522,7 @@ func TestServiceDifferentQuery(t *testing.T) {
 //______________________________________________________________________________________________________________________
 // Servers with a different number of DPs
 func TestServiceConcurrentSurveys(t *testing.T) {
+	t.Skip()
 	secKey, pubKey, sum, count, whereQueryValues, pred, groupBy, el, local, _, aggr := getParam(3)
 	defer local.CloseAll()
 
@@ -659,7 +661,7 @@ func TestServiceConcurrentSurveys(t *testing.T) {
 //______________________________________________________________________________________________________________________
 // Default (1 data provider per server)
 func TestServiceAggr(t *testing.T) {
-
+	t.Skip()
 	secKey, pubKey, sum, count, whereQueryValues, pred, groupBy, el, local, clients, aggr := getParam(3)
 	defer local.CloseAll()
 
@@ -745,6 +747,7 @@ func TestServiceAggr(t *testing.T) {
 //______________________________________________________________________________________________________________________
 // Some servers without DPs
 func TestServiceNoDPsAggr(t *testing.T) {
+	t.Skip()
 	secKey, pubKey, sum, count, whereQueryValues, pred, groupBy, el, local, clients, aggr := getParam(3)
 	defer local.CloseAll()
 
@@ -820,6 +823,7 @@ func TestServiceNoDPsAggr(t *testing.T) {
 //______________________________________________________________________________________________________________________
 // Servers with a different number of DPs
 func TestServiceDifferentDPsAggr(t *testing.T) {
+	t.Skip()
 	secKey, pubKey, sum, count, whereQueryValues, pred, groupBy, el, local, _, aggr := getParam(3)
 	defer local.CloseAll()
 
@@ -1065,6 +1069,7 @@ func TestServiceDifferentQueryAggr(t *testing.T) {
 //______________________________________________________________________________________________________________________
 // Servers with a different number of DPs
 func TestServiceConcurrentSurveysAggr(t *testing.T) {
+	t.Skip()
 	secKey, pubKey, sum, count, whereQueryValues, pred, groupBy, el, local, _, aggr := getParam(3)
 	defer local.CloseAll()
 
