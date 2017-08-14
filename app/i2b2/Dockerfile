@@ -1,5 +1,5 @@
-# Docker file, deploy unlynxI2b2 using the source code in the parent folder, run with:
-# docker run -v "$(pwd)"/app/unlynxI2b2/test/srv1:/unlynx -p 2010-2011:2000-2001 -it --rm --name unlynxi2b2-dev-srv1 unlynxi2b2
+# Docker file, deploy i2b2 using the source code in the parent folder, run with:
+# docker run -v "$(pwd)"/app/i2b2/test/srv1:/unlynx -p 2010-2011:2000-2001 -it --rm --name unlynxi2b2-dev-srv1 unlynxi2b2
 
 FROM golang:1.8
 
@@ -17,8 +17,8 @@ ENV UNLYNX_PROJECT_PATH "github.com/lca1/unlynx"
 WORKDIR /go/src/$UNLYNX_PROJECT_PATH
 COPY . .
 
-# get remaining dependencies, compile and install unlynxI2b2 binary
-WORKDIR app/unlynxI2b2
+# get remaining dependencies, compile and install i2b2 binary
+WORKDIR app/i2b2
 RUN go get -v -d ./...
 RUN go install -v ./...
 
@@ -26,7 +26,7 @@ RUN go install -v ./...
 EXPOSE 2000
 VOLUME /unlynx
 WORKDIR /unlynx
-ENTRYPOINT ["unlynxI2b2", "-d", "5", "server", "-c", "/unlynx/private.toml"]
+ENTRYPOINT ["i2b2", "-d", "5", "server", "-c", "/unlynx/private.toml"]
 # TODO switch for prod:
 # TODO: remove unlynx volume? (contains private key)
 # TODO: debug option to modify

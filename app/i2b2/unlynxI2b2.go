@@ -10,7 +10,7 @@ import (
 
 const (
 	// BinaryName is the name of the binary
-	BinaryName = "unlynxI2b2"
+	BinaryName = "i2b2"
 
 	// Version of the binary
 	Version = "1.00"
@@ -41,7 +41,7 @@ Return system error codes signification
 */
 func main() {
 	cliApp := cli.NewApp()
-	cliApp.Name = "unlynxI2b2"
+	cliApp.Name = "i2b2"
 	cliApp.Usage = "Query medical information securely and privately"
 	cliApp.Version = Version
 
