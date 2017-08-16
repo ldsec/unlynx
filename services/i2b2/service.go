@@ -17,6 +17,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 )
 
 // ServiceName is the registered name for the unlynx service.
@@ -24,6 +25,13 @@ const ServiceName = "UnLynxI2b2"
 
 // DDTSecretsPath filename
 const DDTSecretsPath = "ddt_secrets_"
+
+type TimeResults struct{
+	ParsingTime time.Duration // Total parsing time (i2b2 -> unlynx client)
+
+	DDTQueryTimeExec   time.Duration // Total DDT (of the query) execution time
+	DDTQueryTimeCommun time.Duration // Total DDT (of the query communication time
+}
 
 // SurveyID unique ID for each survey.
 type SurveyID string
@@ -80,6 +88,7 @@ func init() {
 // ServiceResultDDT will contain final results of the DDT of the query terms.
 type ServiceResultDDT struct {
 	Results []lib.GroupingKey
+	TR      TimeResults // contains all the time measurements
 }
 
 // Service defines a service in unlynx with a survey.
@@ -88,6 +97,7 @@ type Service struct {
 
 	Survey *concurrent.ConcurrentMap
 	Mutex  *sync.Mutex
+	TR     TimeResults // contains all the time measurements
 }
 
 // NewService constructor which registers the needed messages.
@@ -141,6 +151,9 @@ func (s *Service) HandleSurveyDDTQueryTerms(sdq *SurveyDDTQueryTerms) (network.M
 			return &ServiceResultDDT{}, nil
 		}
 
+		// initialize timers
+		s.TR = TimeResults{ DDTQueryTimeExec: 0, DDTQueryTimeCommun: 0}
+
 		s.Survey.Put((string)(sdq.SurveyID),
 			SurveyTag{
 				SurveyID:      sdq.SurveyID,
@@ -170,6 +183,8 @@ func (s *Service) HandleSurveyDDTQueryTerms(sdq *SurveyDDTQueryTerms) (network.M
 
 		deterministicTaggingResult, err := s.TaggingPhase(sdq.SurveyID)
 
+		start := time.Now()
+
 		if err != nil {
 			log.Error("DDT error ", err)
 		}
@@ -183,7 +198,9 @@ func (s *Service) HandleSurveyDDTQueryTerms(sdq *SurveyDDTQueryTerms) (network.M
 
 		s.Survey.Remove((string)(sdq.SurveyID))
 
-		return &ServiceResultDDT{Results: listTaggedTerms}, nil
+		s.TR.DDTQueryTimeExec += time.Since(start)
+
+		return &ServiceResultDDT{Results: listTaggedTerms, TR: s.TR}, nil
 	}
 
 	log.Lvl1(s.ServerIdentity().String(), " is notified of survey:", sdq.SurveyID)
@@ -264,6 +281,8 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 
 // StartProtocol starts a specific protocol (Pipeline, Shuffling, etc.)
 func (s *Service) StartProtocol(name string, targetSurvey SurveyID) (onet.ProtocolInstance, error) {
+	start := time.Now()
+
 	tmp := castToSurvey(s.Survey.Get((string)(targetSurvey)))
 	tree := tmp.Query.Roster.GenerateNaryTreeWithRoot(2, s.ServerIdentity())
 
@@ -274,6 +293,9 @@ func (s *Service) StartProtocol(name string, targetSurvey SurveyID) (onet.Protoc
 	pi, err := s.NewProtocol(tn, &conf)
 
 	s.RegisterProtocolInstance(pi)
+
+	s.TR.DDTQueryTimeExec = time.Since(start)
+
 	go pi.Dispatch()
 	go pi.Start()
 
@@ -285,12 +307,16 @@ func (s *Service) StartProtocol(name string, targetSurvey SurveyID) (onet.Protoc
 
 // TaggingPhase performs the private grouping on the currently collected data.
 func (s *Service) TaggingPhase(targetSurvey SurveyID) ([]lib.ProcessResponseDet, error) {
+	start := time.Now()
 	pi, err := s.StartProtocol(protocols.DeterministicTaggingProtocolName, targetSurvey)
 	if err != nil {
 		return nil, err
 	}
 
 	deterministicTaggingResult := <-pi.(*protocols.DeterministicTaggingProtocol).FeedbackChannel
+
+	s.TR.DDTQueryTimeExec += pi.(*protocols.DeterministicTaggingProtocol).ExecTime
+	s.TR.DDTQueryTimeCommun = time.Since(start) - s.TR.DDTQueryTimeExec
 
 	return deterministicTaggingResult, nil
 }

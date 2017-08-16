@@ -47,7 +47,7 @@ func readQueryXMLFrom(input io.Reader) (*lib.XMLMedCoQuery, error) {
 	return &parsedXML, nil
 }
 
-func unlynxQueryFromApp(c *cli.Context) error {
+func unlynxQueryDDTFromApp(c *cli.Context) error {
 
 	// cli arguments
 	groupFilePath := c.String("file")
@@ -71,7 +71,7 @@ func unlynxQueryFromApp(c *cli.Context) error {
 		return cli.NewExitError(err, 1)
 	}
 
-	err = unlynxQuery(os.Stdin, os.Stdout, el, entryPointIdx, proofs)
+	err = unlynxQueryDDT(os.Stdin, os.Stdout, el, entryPointIdx, proofs)
 	if err != nil {
 		log.Error("Error while querying Unlynx", err)
 		return cli.NewExitError(err, 2)
@@ -83,7 +83,7 @@ func unlynxQueryFromApp(c *cli.Context) error {
 // TODO: no log.Fatal in general (this stops immediately)
 // TODO: handle errors in to/from bytes in crypto.go
 // run unlynx query, all errors will be sent to the output
-func unlynxQuery(input io.Reader, output io.Writer, el *onet.Roster, entryPointIdx int, proofs bool) error {
+func unlynxQueryDDT(input io.Reader, output io.Writer, el *onet.Roster, entryPointIdx int, proofs bool) error {
 	startT := time.Now()
 
 	// get data from input
