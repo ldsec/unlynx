@@ -7,7 +7,6 @@ import (
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"
-	"time"
 )
 
 // API represents a client with the server to which he is connected and its public/private key pair.
@@ -36,39 +35,24 @@ func NewUnLynxClient(entryPoint *network.ServerIdentity, clientID string) *API {
 // Send Query
 //______________________________________________________________________________________________________________________
 
-// SendSurveyDpQuery creates a survey based on a set of entities (servers) and a survey description.
-func (c *API) SendSurveyDpQuery(entities *onet.Roster, surveyGenID, surveyID SurveyID, clientPubKey abstract.Point, nbrDPs map[string]int64, proofs, appFlag bool, sum []string, count bool, where []lib.WhereQueryAttribute, predicate string, groupBy []string, data []lib.ProcessResponse, mode int64, sendingTime time.Time) (*SurveyID, lib.FilteredResponse, TimeResults, error) {
-	log.Lvl1("Client", c.ClientID, "is creating a survey with General ID:", surveyGenID)
+// SendSurveyDDTQueryTerms send the encrypted query terms and DDT tags those terms (the array of terms is ordered).
+func (c *API) SendSurveyDDTQueryTerms(entities *onet.Roster, surveyID SurveyID, terms lib.CipherVector) (*SurveyID, []lib.GroupingKey, error) {
+	log.Lvl1("Client", c.ClientID, "is creating a survey with ID:", surveyID)
 
-	var newSurveyID SurveyID
+	sdq := SurveyDDTQueryTerms{
+		SurveyID: surveyID,
+		Roster:   *entities,
 
-	sdq := SurveyDpQuery{
-		SurveyGenID:  surveyGenID,
-		SurveyID:     surveyID,
-		Roster:       *entities,
-		ClientPubKey: clientPubKey,
-		MapDPs:       nbrDPs,
-		QueryMode:    mode,
-		Proofs:       proofs,
-		AppFlag:      appFlag,
+		// query parameters to DDT
+		Terms: terms,
 
-		// query statement
-		Sum:       sum,
-		Count:     count,
-		Where:     where,
-		Predicate: predicate,
-		GroupBy:   groupBy,
-		DpData:    data,
-
-		// for simulations
-		SendingTime: sendingTime,
+		IntraMessage: false,
 	}
 
-	resp := ServiceResult{}
+	resp := ServiceResultDDT{}
 	err := c.SendProtobuf(c.entryPoint, &sdq, &resp)
 	if err != nil {
-		return nil, resp.Results, TimeResults{}, err
+		return nil, resp.Results, err
 	}
-
-	return &newSurveyID, resp.Results, resp.TR, nil
+	return &surveyID, resp.Results, nil
 }

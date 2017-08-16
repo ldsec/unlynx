@@ -31,6 +31,7 @@ _testmain.go
 .idea/
 
 services/data/*.txt
+services/i2b2/*.txt
 
 simul/test_data/*.csv
 simul/test_data/graphs/*.pdf
@@ -45,7 +46,6 @@ app/default/test
 app/default/service_storage
 
 unlynx
-skipchain
 server_list
 
 pre_compute_multiplications.gob
