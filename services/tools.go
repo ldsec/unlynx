@@ -19,7 +19,7 @@ func SendISMOthers(s *onet.ServiceProcessor, el *onet.Roster, msg interface{}) e
 	var errStrs []string
 	for _, e := range el.List {
 		if !e.ID.Equal(s.ServerIdentity().ID) {
-			log.LLvl3("Sending to", e)
+			log.Lvl3("Sending to", e)
 			err := s.SendRaw(e, msg)
 			if err != nil {
 				errStrs = append(errStrs, err.Error())

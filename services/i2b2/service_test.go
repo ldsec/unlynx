@@ -3,6 +3,7 @@ package serviceI2B2_test
 import (
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/services/i2b2"
+	"github.com/stretchr/testify/assert"
 	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/crypto.v0/random"
 	"gopkg.in/dedis/onet.v1"
@@ -10,13 +11,12 @@ import (
 	"gopkg.in/dedis/onet.v1/network"
 	"strconv"
 	"testing"
-	"github.com/stretchr/testify/assert"
 )
 
 func getParam(nbHosts int, nbQp int) (abstract.Scalar, abstract.Point, *onet.Roster, *onet.LocalTest,
 	[]*serviceI2B2.API, lib.CipherVector) {
 
-	log.SetDebugVisible(2)
+	log.SetDebugVisible(1)
 	local := onet.NewLocalTest()
 	// generate 3 hosts, they don't connect, they process messages, and they
 	// don't register the tree or entitylist
@@ -50,6 +50,8 @@ func TestServiceDDT(t *testing.T) {
 	_, _, el, local, clients, qt := getParam(3, 100)
 	defer local.CloseAll()
 
+	proofs := false
+
 	var result_node1, result_node1_repeated, result_node2, result_node3 []lib.GroupingKey
 
 	wg := lib.StartParallelize(len(el.List))
@@ -59,7 +61,7 @@ func TestServiceDDT(t *testing.T) {
 		defer wg.Done()
 
 		var err error
-		_, result_node1, err = clients[0].SendSurveyDDTQueryTerms(el, serviceI2B2.SurveyID("testSurvey_node1"), qt)
+		_, result_node1, err = clients[0].SendSurveyDDTQueryTerms(el, serviceI2B2.SurveyID("testSurvey_node1"), qt, proofs)
 
 		if err != nil {
 			t.Fatal("Client", clients[0], " service did not start: ", err)
@@ -69,7 +71,7 @@ func TestServiceDDT(t *testing.T) {
 		defer wg.Done()
 
 		var err error
-		_, result_node1_repeated, err = clients[0].SendSurveyDDTQueryTerms(el, serviceI2B2.SurveyID("testSurvey_node1_repeated"), qt)
+		_, result_node1_repeated, err = clients[0].SendSurveyDDTQueryTerms(el, serviceI2B2.SurveyID("testSurvey_node1_repeated"), qt, proofs)
 
 		if err != nil {
 			t.Fatal("Client", clients[0], " service did not start: ", err)
@@ -79,7 +81,7 @@ func TestServiceDDT(t *testing.T) {
 		defer wg.Done()
 
 		var err error
-		_, result_node2, err = clients[1].SendSurveyDDTQueryTerms(el, serviceI2B2.SurveyID("testSurvey_node2"), qt)
+		_, result_node2, err = clients[1].SendSurveyDDTQueryTerms(el, serviceI2B2.SurveyID("testSurvey_node2"), qt, proofs)
 
 		if err != nil {
 			t.Fatal("Client", clients[1], " service did not start: ", err)
@@ -87,7 +89,7 @@ func TestServiceDDT(t *testing.T) {
 	}()
 
 	var err error
-	_, result_node3, err = clients[2].SendSurveyDDTQueryTerms(el, serviceI2B2.SurveyID("testSurvey_node3"), qt)
+	_, result_node3, err = clients[2].SendSurveyDDTQueryTerms(el, serviceI2B2.SurveyID("testSurvey_node3"), qt, proofs)
 
 	if err != nil {
 		t.Fatal("Client", clients[2], " service did not start: ", err)
@@ -95,10 +97,10 @@ func TestServiceDDT(t *testing.T) {
 
 	lib.EndParallelize(wg)
 
-	assert.Equal(t,len(result_node1), len(qt))
-	assert.Equal(t,len(result_node2), len(qt))
-	assert.Equal(t,len(result_node3), len(qt))
+	assert.Equal(t, len(result_node1), len(qt))
+	assert.Equal(t, len(result_node2), len(qt))
+	assert.Equal(t, len(result_node3), len(qt))
 
-	assert.Equal(t,result_node1, result_node1_repeated)
+	assert.Equal(t, result_node1, result_node1_repeated)
 
 }

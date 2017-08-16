@@ -36,12 +36,13 @@ func NewUnLynxClient(entryPoint *network.ServerIdentity, clientID string) *API {
 //______________________________________________________________________________________________________________________
 
 // SendSurveyDDTQueryTerms send the encrypted query terms and DDT tags those terms (the array of terms is ordered).
-func (c *API) SendSurveyDDTQueryTerms(entities *onet.Roster, surveyID SurveyID, terms lib.CipherVector) (*SurveyID, []lib.GroupingKey, error) {
+func (c *API) SendSurveyDDTQueryTerms(entities *onet.Roster, surveyID SurveyID, terms lib.CipherVector, proofs bool) (*SurveyID, []lib.GroupingKey, error) {
 	log.Lvl1("Client", c.ClientID, "is creating a survey with ID:", surveyID)
 
 	sdq := SurveyDDTQueryTerms{
 		SurveyID: surveyID,
 		Roster:   *entities,
+		Proofs:   proofs,
 
 		// query parameters to DDT
 		Terms: terms,

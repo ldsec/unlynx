@@ -1,28 +1,28 @@
 package serviceI2B2
 
 import (
+	"bufio"
+	"fmt"
 	"github.com/btcsuite/goleveldb/leveldb/errors"
 	"github.com/fanliao/go-concurrentMap"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/protocols"
 	"github.com/lca1/unlynx/services"
+	"gopkg.in/dedis/crypto.v0/abstract"
+	"gopkg.in/dedis/crypto.v0/base64"
 	"gopkg.in/dedis/crypto.v0/random"
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"
-	"sync"
-	"gopkg.in/dedis/crypto.v0/abstract"
 	"os"
-	"fmt"
-	"gopkg.in/dedis/crypto.v0/base64"
-	"bufio"
 	"strings"
+	"sync"
 )
 
 // ServiceName is the registered name for the unlynx service.
 const ServiceName = "UnLynxI2b2"
 
-// DDTSecrets filename
+// DDTSecretsPath filename
 const DDTSecretsPath = "ddt_secrets_"
 
 // SurveyID unique ID for each survey.
@@ -32,8 +32,9 @@ type SurveyID string
 type SurveyDDTQueryTerms struct {
 	SurveyID SurveyID
 	Roster   onet.Roster
+	Proofs   bool
 
-	Terms           lib.CipherVector // query terms
+	Terms lib.CipherVector // query terms
 
 	// message handling
 	IntraMessage  bool
@@ -85,8 +86,8 @@ type ServiceResultDDT struct {
 type Service struct {
 	*onet.ServiceProcessor
 
-	Survey 		*concurrent.ConcurrentMap
-	Mutex  		*sync.Mutex
+	Survey *concurrent.ConcurrentMap
+	Mutex  *sync.Mutex
 }
 
 // NewService constructor which registers the needed messages.
@@ -142,18 +143,19 @@ func (s *Service) HandleSurveyDDTQueryTerms(sdq *SurveyDDTQueryTerms) (network.M
 
 		s.Survey.Put((string)(sdq.SurveyID),
 			SurveyTag{
-				SurveyID: sdq.SurveyID,
-				Query: *sdq,
+				SurveyID:      sdq.SurveyID,
+				Query:         *sdq,
 				SurveyChannel: make(chan int, 100),
-	    	})
+			})
 
 		// signal the other nodes that they need to prepare to execute a DDT (no need to send the terms)
 		err := services.SendISMOthers(s.ServiceProcessor, &sdq.Roster,
 			&SurveyDDTQueryTerms{
-				SurveyID: sdq.SurveyID,
+				SurveyID:      sdq.SurveyID,
 				Roster:        sdq.Roster,
 				IntraMessage:  true,
 				MessageSource: s.ServerIdentity(),
+				Proofs:        sdq.Proofs,
 			})
 
 		if err != nil {
@@ -173,9 +175,9 @@ func (s *Service) HandleSurveyDDTQueryTerms(sdq *SurveyDDTQueryTerms) (network.M
 		}
 
 		// convert the result to of the tagging for something close to the XML response of i2b2 (array of tagged terms)
-		listTaggedTerms := make([]lib.GroupingKey,0)
+		listTaggedTerms := make([]lib.GroupingKey, 0)
 
-		for _,el :=range deterministicTaggingResult {
+		for _, el := range deterministicTaggingResult {
 			listTaggedTerms = append(listTaggedTerms, el.DetTagWhere[0])
 		}
 
@@ -189,7 +191,7 @@ func (s *Service) HandleSurveyDDTQueryTerms(sdq *SurveyDDTQueryTerms) (network.M
 	s.Survey.Put((string)(sdq.SurveyID),
 		SurveyTag{
 			SurveyID: sdq.SurveyID,
-			Query: *sdq,
+			Query:    *sdq,
 		})
 
 	// sends a signal to unlock waiting channel
@@ -228,8 +230,8 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 		if tn.IsRoot() {
 			dataToDDT := make([]lib.ProcessResponse, 0)
 
-			for _,el := range survey.Query.Terms {
-				term := make(lib.CipherVector, 0);
+			for _, el := range survey.Query.Terms {
+				term := make(lib.CipherVector, 0)
 				term = append(term, el)
 				dataToDDT = append(dataToDDT, lib.ProcessResponse{WhereEnc: term})
 			}
@@ -251,7 +253,7 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 		s.Mutex.Unlock()
 
 		hashCreation.SurveySecretKey = &aux
-		hashCreation.Proofs = false //for now we have no proofs in the i2b2 version of UnLynx
+		hashCreation.Proofs = survey.Query.Proofs //for now we have no proofs in the i2b2 version of UnLynx
 
 	default:
 		return nil, errors.New("Service attempts to start an unknown protocol: " + tn.ProtocolName() + ".")
@@ -296,13 +298,12 @@ func (s *Service) TaggingPhase(targetSurvey SurveyID) ([]lib.ProcessResponseDet,
 // Support functions
 //______________________________________________________________________________________________________________________
 
-func checkDDTSecrets(path string, id network.Address) (abstract.Scalar, error){
+func checkDDTSecrets(path string, id network.Address) (abstract.Scalar, error) {
 	var fileHandle *os.File
+	var err error
 	defer fileHandle.Close()
 
-	log.LLvl1(path)
-
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+	if _, err = os.Stat(path); os.IsNotExist(err) {
 		fileHandle, err = os.Create(path)
 
 		secret := network.Suite.Scalar().Pick(random.Stream)
@@ -316,53 +317,49 @@ func checkDDTSecrets(path string, id network.Address) (abstract.Scalar, error){
 
 		return secret, nil
 
-	} else {
-		fileHandle, err = os.Open(path)
-
-		if err != nil {
-			return nil, err
-		}
-
-		scanner := bufio.NewScanner(fileHandle)
-		for scanner.Scan() {
-			line := scanner.Text()
-			tokens := strings.Split(line, " ")
-
-			if id.String() == tokens[0] {
-				secret := network.Suite.Scalar()
-
-				b , err := base64.StdEncoding.DecodeString(tokens[1])
-
-				if err != nil {
-					return nil, err
-				}
-
-				err = secret.UnmarshalBinary(b)
-
-				if err != nil {
-					return nil, err
-				}
-
-				return secret, nil
-			}
-		}
-
-		fileHandle.Close()
-
-		secret := network.Suite.Scalar().Pick(random.Stream)
-		b, err := secret.MarshalBinary()
-
-		if err != nil {
-			return nil, err
-		}
-
-		fileHandle, err = os.OpenFile(path, os.O_APPEND|os.O_WRONLY, 0600)
-		fmt.Fprintf(fileHandle, "%s %s\n", id.String(), base64.StdEncoding.EncodeToString(b))
-
-		return secret, nil
 	}
 
-	return nil, nil
+	fileHandle, err = os.Open(path)
 
+	if err != nil {
+		return nil, err
+	}
+
+	scanner := bufio.NewScanner(fileHandle)
+	for scanner.Scan() {
+		line := scanner.Text()
+		tokens := strings.Split(line, " ")
+
+		if id.String() == tokens[0] {
+			secret := network.Suite.Scalar()
+
+			b, err := base64.StdEncoding.DecodeString(tokens[1])
+
+			if err != nil {
+				return nil, err
+			}
+
+			err = secret.UnmarshalBinary(b)
+
+			if err != nil {
+				return nil, err
+			}
+
+			return secret, nil
+		}
+	}
+
+	fileHandle.Close()
+
+	secret := network.Suite.Scalar().Pick(random.Stream)
+	b, err := secret.MarshalBinary()
+
+	if err != nil {
+		return nil, err
+	}
+
+	fileHandle, err = os.OpenFile(path, os.O_APPEND|os.O_WRONLY, 0600)
+	fmt.Fprintf(fileHandle, "%s %s\n", id.String(), base64.StdEncoding.EncodeToString(b))
+
+	return secret, nil
 }
-

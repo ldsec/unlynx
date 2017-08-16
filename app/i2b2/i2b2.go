@@ -27,8 +27,6 @@ const (
 
 	optionEntryPointIdx = "entryPointIdx"
 
-	optionProofs = "proofs"
-
 	optionDecryptKey      = "key"
 	optionDecryptKeyShort = "k"
 )
@@ -78,10 +76,6 @@ func main() {
 			Name:  optionEntryPointIdx,
 			Usage: "Index (relative to the group definition file) of the collective authority server to send the query.",
 		},
-		cli.BoolFlag{
-			Name:  optionProofs,
-			Usage: "With proofs",
-		},
 	}
 
 	serverFlags := []cli.Flag{
@@ -123,9 +117,9 @@ func main() {
 
 		// BEGIN CLIENT: QUERIER ----------
 		{
-			Name:    "run",
+			Name:    "runDDT",
 			Aliases: []string{"r"},
-			Usage:   "Execute a query using Unlynx. Feed the query XML (UTF-8 encoded) to stdin and close it.",
+			Usage:   "Execute the DDT of the query parameters using Unlynx.\nFeed the query parameters XML (UTF-8 encoded) to stdin and close it.",
 			Action:  unlynxQueryFromApp,
 			Flags:   querierFlags,
 		},
