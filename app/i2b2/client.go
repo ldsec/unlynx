@@ -23,8 +23,12 @@ import (
 // Client functions
 //______________________________________________________________________________________________________________________
 
+//----------------------------------------------------------------------------------------------------------------------
+//#----------------------------------------------- QUERY DDT -----------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
+
 // read from a reader an xml (until EOF), and unmarshal it
-func readQueryXMLFrom(input io.Reader) (*lib.XMLMedCoQuery, error) {
+func readQueryDDTXMLFrom(input io.Reader) (*lib.XMLMedCoQueryDTT, error) {
 
 	// read from stdin TODO: limit the amount read
 	dataBytes, errIo := ioutil.ReadAll(input)
@@ -37,7 +41,7 @@ func readQueryXMLFrom(input io.Reader) (*lib.XMLMedCoQuery, error) {
 	log.Info("Correctly read standard input until EOF.")
 
 	// unmarshal xml (assumes bytes are UTF-8 encoded)
-	parsedXML := lib.XMLMedCoQuery{}
+	parsedXML := lib.XMLMedCoQueryDTT{}
 	errXML := xml.Unmarshal(dataBytes, &parsedXML)
 	if errXML != nil {
 		log.Error("Error while unmarshalling xml.", errXML)
@@ -84,35 +88,29 @@ func unlynxQueryDDTFromApp(c *cli.Context) error {
 // TODO: handle errors in to/from bytes in crypto.go
 // run unlynx query, all errors will be sent to the output
 func unlynxQueryDDT(input io.Reader, output io.Writer, el *onet.Roster, entryPointIdx int, proofs bool) error {
-	startT := time.Now()
+	start := time.Now()
 
 	// get data from input
-	xmlQuery, err := readQueryXMLFrom(input)
+	xmlQuery, err := readQueryDDTXMLFrom(input)
 	if err != nil {
 		log.Error("Error parsing XML.", err)
-		writeResultXML(output, nil, -1, nil, serviceI2B2.TimeResults{}, err)
+		writeResultDDTXML(output, nil, -1, nil, serviceI2B2.TimeResults{}, err)
 		return err
 	}
 
 	// parse query
-	encWhereValuesParsed, predicateParsed, resultModeParsed, clientPublicKey, err := parseQuery(xmlQuery)
+	encWhereValuesParsed, predicateParsed, resultModeParsed, clientPublicKey, err := parseQueryDDT(xmlQuery)
 	if err != nil {
-		log.Error("Error parsing query fields.", err)
-		writeResultXML(output, xmlQuery, -1, nil, serviceI2B2.TimeResults{}, err)
+		log.Error("Error parsing query terms fields.", err)
+		writeResultDDTXML(output, xmlQuery, -1, nil, serviceI2B2.TimeResults{}, err)
 		return err
 	}
 
-	// setup number of data providers TODO: hardcoded to 1 DP / server
-	nbrDPs := make(map[string]int64)
-	for _, server := range el.List {
-		nbrDPs[server.String()] = 1
-	}
-
-	// get patients data
-	patientsData, err := xmlQuery.PatientsDataToUnlynxFormat(el)
+	// get formatted data
+	data, err := xmlQuery.DataToUnlynxFormat(el)
 	if err != nil {
 		log.Error("Error extracing patients data.", err)
-		writeResultXML(output, xmlQuery, -1, nil, serviceI2B2.TimeResults{}, err)
+		writeResultDDTXML(output, xmlQuery, -1, nil, serviceI2B2.TimeResults{}, err)
 		return err
 	}
 	parsingTime := time.Since(startT)
@@ -137,7 +135,7 @@ func unlynxQueryDDT(input io.Reader, output io.Writer, el *onet.Roster, entryPoi
 		encWhereValuesParsed,                   // encrypted where query
 		predicateParsed,                        // predicate
 		[]string{},                             // groupBy
-		patientsData,                           // encrypted patients data
+		data,                           // encrypted patients data
 		int64(resultModeParsed),                // mode: 0 (each DP different result) or 1 (everyone same aggregation)
 		start,
 	)
@@ -166,7 +164,7 @@ func unlynxQueryDDT(input io.Reader, output io.Writer, el *onet.Roster, entryPoi
 }
 
 // output result xml on a writer (if result_err != nil, the error is sent)
-func writeResultXML(output io.Writer, xmlQuery *lib.XMLMedCoQuery, resultModeParsed int,
+func writeResultDDTXML(output io.Writer, xmlQuery *lib.XMLMedCoQuery, resultModeParsed int,
 	ctResult *lib.CipherText, tr serviceI2B2.TimeResults, resultErr error) error {
 
 	log.LLvl1("\n\n" +
@@ -284,3 +282,9 @@ func parseQuery(xmlQuery *lib.XMLMedCoQuery) ([]lib.WhereQueryAttribute, string,
 	// TODO: predicate correctness done by the external library at a later stage (should be checked here)
 	return whereFinal, predicate, resultMode, clientPubKey, nil
 }
+
+
+
+//----------------------------------------------------------------------------------------------------------------------
+//#----------------------------------------------- REGULAR QUERY -----------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
