@@ -120,7 +120,7 @@ func main() {
 			Name:    "runDDT",
 			Aliases: []string{"r"},
 			Usage:   "Execute the DDT of the query parameters using Unlynx.\nFeed the query parameters XML (UTF-8 encoded) to stdin and close it.",
-			Action:  unlynxQueryDDTFromApp,
+			Action:  unlynxDDTRequestFromApp,
 			Flags:   querierFlags,
 		},
 		// CLIENT END: QUERIER ----------

@@ -103,6 +103,7 @@ func (xml *XMLMedCoAggRequest) AggRequestToUnlynxFormat() (CipherVector, string,
         <tagged_value>adfw25e457f=</tagged_value>
         <tagged_value>ADfFD5FDads=</tagged_value>
     </tagged_values>
+    <error></error>
 </unlynx_ddt_response>
 */
 
@@ -112,6 +113,7 @@ type XMLMedCoDTTResponse struct {
 	QueryID    	string   	`xml:"id"`
         Times      	string   	`xml:"times"`
 	TaggedValues    []string        `xml:"tagged_values>tagged_value"`
+	Error           string          `xml:"error"`
 }
 
 // example of the input XML format definition for the aggregation response
@@ -120,13 +122,15 @@ type XMLMedCoDTTResponse struct {
     <id>request ID</id>
     <times>{cc: 55}</times>
     <aggregate>f85as4fas57f=</aggregate>
+    <error></error>
 </unlynx_agg_response>
 */
 
 // XMLMedCoAggResponse is a parsed XML definition
 type XMLMedCoAggResponse struct {
-	XMLName    xml.Name `xml:"unlynx_agg_response"`
-	QueryID    string   `xml:"id"`
-	Times      string   `xml:"times"`
-	AggregateV string   `xml:"aggregate"`
+	XMLName    	xml.Name 	`xml:"unlynx_agg_response"`
+	QueryID    	string   	`xml:"id"`
+	Times      	string   	`xml:"times"`
+	AggregateV 	string   	`xml:"aggregate"`
+	Error           string          `xml:"error"`
 }

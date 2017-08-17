@@ -60,6 +60,7 @@ func TestDDTResponseXML(t *testing.T) {
 				<tagged_value>adfw25e457f=</tagged_value>
 				<tagged_value>ADfFD5FDads=</tagged_value>
 		    	</tagged_values>
+		    	 <error></error>
 		      </unlynx_ddt_response>`
 
 	parsed_xml := lib.XMLMedCoDTTResponse{}
@@ -72,6 +73,7 @@ func TestDDTResponseXML(t *testing.T) {
 	assert.Equal(t, parsed_xml.Times, "{xx: 13, etc}")
 	assert.Equal(t, parsed_xml.TaggedValues[0], "adfw25e457f=")
 	assert.Equal(t, parsed_xml.TaggedValues[1], "ADfFD5FDads=")
+	assert.Equal(t, parsed_xml.Error, "")
 }
 
 func TestAggResponseXML(t *testing.T) {
@@ -80,6 +82,7 @@ func TestAggResponseXML(t *testing.T) {
     			<id>request ID</id>
     			<times>{cc: 55}</times>
     			<aggregate>f85as4fas57f=</aggregate>
+    			 <error></error>
 		      </unlynx_agg_response>`
 
 	parsed_xml := lib.XMLMedCoAggResponse{}
@@ -91,4 +94,5 @@ func TestAggResponseXML(t *testing.T) {
 	assert.Equal(t, parsed_xml.QueryID, "request ID")
 	assert.Equal(t, parsed_xml.Times, "{cc: 55}")
 	assert.Equal(t, parsed_xml.AggregateV, "f85as4fas57f=")
+	assert.Equal(t, parsed_xml.Error, "")
 }
