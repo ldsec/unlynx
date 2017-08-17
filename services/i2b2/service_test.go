@@ -61,7 +61,7 @@ func TestServiceDDT(t *testing.T) {
 		defer wg.Done()
 
 		var err error
-		_, result_node1, _, err = clients[0].SendSurveyDDTQueryTerms(el, serviceI2B2.SurveyID("testSurvey_node1"), qt, proofs)
+		_, result_node1, _, err = clients[0].SendSurveyDDTRequestTerms(el, serviceI2B2.SurveyID("testSurvey_node1"), qt, proofs)
 
 		if err != nil {
 			t.Fatal("Client", clients[0], " service did not start: ", err)
@@ -71,7 +71,7 @@ func TestServiceDDT(t *testing.T) {
 		defer wg.Done()
 
 		var err error
-		_, result_node1_repeated, _, err = clients[0].SendSurveyDDTQueryTerms(el, serviceI2B2.SurveyID("testSurvey_node1_repeated"), qt, proofs)
+		_, result_node1_repeated, _, err = clients[0].SendSurveyDDTRequestTerms(el, serviceI2B2.SurveyID("testSurvey_node1_repeated"), qt, proofs)
 
 		if err != nil {
 			t.Fatal("Client", clients[0], " service did not start: ", err)
@@ -81,7 +81,7 @@ func TestServiceDDT(t *testing.T) {
 		defer wg.Done()
 
 		var err error
-		_, result_node2, _, err = clients[1].SendSurveyDDTQueryTerms(el, serviceI2B2.SurveyID("testSurvey_node2"), qt, proofs)
+		_, result_node2, _, err = clients[1].SendSurveyDDTRequestTerms(el, serviceI2B2.SurveyID("testSurvey_node2"), qt, proofs)
 
 		if err != nil {
 			t.Fatal("Client", clients[1], " service did not start: ", err)
@@ -89,7 +89,7 @@ func TestServiceDDT(t *testing.T) {
 	}()
 
 	var err error
-	_, result_node3, _, err = clients[2].SendSurveyDDTQueryTerms(el, serviceI2B2.SurveyID("testSurvey_node3"), qt, proofs)
+	_, result_node3, _, err = clients[2].SendSurveyDDTRequestTerms(el, serviceI2B2.SurveyID("testSurvey_node3"), qt, proofs)
 
 	if err != nil {
 		t.Fatal("Client", clients[2], " service did not start: ", err)

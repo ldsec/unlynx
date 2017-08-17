@@ -22,13 +22,13 @@ import (
 
 // XMLMedCoDTTRequest is a parsed XML definition for the DDT request
 type XMLMedCoDTTRequest struct {
-	XMLName            xml.Name    `xml:"unlynx_ddt_request"`
-	QueryID            string      `xml:"id"`
-	XMLEncQueryTerms   []string    `xml:"enc_values>enc_value"`
+	XMLName          xml.Name `xml:"unlynx_ddt_request"`
+	QueryID          string   `xml:"id"`
+	XMLEncQueryTerms []string `xml:"enc_values>enc_value"`
 }
 
 // DDTRequestToUnlynxFormat parses and decodes the base64-encoded values in the XML, returns a slice of encrypted query terms ready to be inputed in UnLynx
-func (xml *XMLMedCoDTTRequest) DDTRequestToUnlynxFormat() (CipherVector, string,  error) {
+func (xml *XMLMedCoDTTRequest) DDTRequestToUnlynxFormat() (CipherVector, string, error) {
 
 	// iterate over the query paremeters
 	encQueryTerms := make(CipherVector, len(xml.XMLEncQueryTerms))
@@ -63,14 +63,14 @@ func (xml *XMLMedCoDTTRequest) DDTRequestToUnlynxFormat() (CipherVector, string,
 
 // XMLMedCoAggRequest is a parsed XML definition for the aggregation request
 type XMLMedCoAggRequest struct {
-	XMLName            xml.Name    `xml:"unlynx_agg_request"`
-	QueryID            string      `xml:"id"`
-	ClientPubKey       string      `xml:"client_public_key"`
-	XMLEncDummyFlags   []string    `xml:"enc_dummy_flags>enc_dummy_flag"`
+	XMLName          xml.Name `xml:"unlynx_agg_request"`
+	QueryID          string   `xml:"id"`
+	ClientPubKey     string   `xml:"client_public_key"`
+	XMLEncDummyFlags []string `xml:"enc_dummy_flags>enc_dummy_flag"`
 }
 
 // AggRequestToUnlynxFormat parses and decodes the base64-encoded values in the XML, returns a slice of encrypted values to be aggregated by UnLynx
-func (xml *XMLMedCoAggRequest) AggRequestToUnlynxFormat() (CipherVector, string,  error) {
+func (xml *XMLMedCoAggRequest) AggRequestToUnlynxFormat() (CipherVector, string, error) {
 
 	// iterate over the encrypted flag values
 	encDummyFlags := make(CipherVector, len(xml.XMLEncDummyFlags))
@@ -90,7 +90,6 @@ func (xml *XMLMedCoAggRequest) AggRequestToUnlynxFormat() (CipherVector, string,
 	return encDummyFlags, xml.QueryID, nil
 }
 
-
 // Output XML definition and methods
 //______________________________________________________________________________________________________________________
 
@@ -109,11 +108,11 @@ func (xml *XMLMedCoAggRequest) AggRequestToUnlynxFormat() (CipherVector, string,
 
 // XMLMedCoDTTResponse is a parsed XML definition
 type XMLMedCoDTTResponse struct {
-	XMLName    	xml.Name 	`xml:"unlynx_ddt_response"`
-	QueryID    	string   	`xml:"id"`
-        Times      	string   	`xml:"times"`
-	TaggedValues    []string        `xml:"tagged_values>tagged_value"`
-	Error           string          `xml:"error"`
+	XMLName      xml.Name `xml:"unlynx_ddt_response"`
+	QueryID      string   `xml:"id"`
+	Times        string   `xml:"times"`
+	TaggedValues []string `xml:"tagged_values>tagged_value"`
+	Error        string   `xml:"error"`
 }
 
 // example of the input XML format definition for the aggregation response
@@ -128,9 +127,9 @@ type XMLMedCoDTTResponse struct {
 
 // XMLMedCoAggResponse is a parsed XML definition
 type XMLMedCoAggResponse struct {
-	XMLName    	xml.Name 	`xml:"unlynx_agg_response"`
-	QueryID    	string   	`xml:"id"`
-	Times      	string   	`xml:"times"`
-	AggregateV 	string   	`xml:"aggregate"`
-	Error           string          `xml:"error"`
+	XMLName    xml.Name `xml:"unlynx_agg_response"`
+	QueryID    string   `xml:"id"`
+	Times      string   `xml:"times"`
+	AggregateV string   `xml:"aggregate"`
+	Error      string   `xml:"error"`
 }

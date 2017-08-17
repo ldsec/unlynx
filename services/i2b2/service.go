@@ -26,8 +26,9 @@ const ServiceName = "UnLynxI2b2"
 // DDTSecretsPath filename
 const DDTSecretsPath = "ddt_secrets_"
 
-type TimeResults struct{
-	DDTparsingTime        time.Duration // Total parsing time (i2b2 -> unlynx client)
+// TimeResults includes all variables that will store the durations (to collect the execution/communication time)
+type TimeResults struct {
+	DDTparsingTime time.Duration // Total parsing time (i2b2 -> unlynx client)
 
 	DDTRequestTimeExec    time.Duration // Total DDT (of the request) execution time
 	DDTResquestTimeCommun time.Duration // Total DDT (of the request) communication time
@@ -152,12 +153,12 @@ func (s *Service) HandleSurveyDDTRequestTerms(sdq *SurveyDDTRequestTerms) (netwo
 		}
 
 		// initialize timers
-		s.TR = TimeResults{ DDTRequestTimeExec: 0, DDTResquestTimeCommun: 0}
+		s.TR = TimeResults{DDTRequestTimeExec: 0, DDTResquestTimeCommun: 0}
 
 		s.MapSurveyTag.Put((string)(sdq.SurveyID),
 			SurveyTag{
 				SurveyID:      sdq.SurveyID,
-				Request:         *sdq,
+				Request:       *sdq,
 				SurveyChannel: make(chan int, 100),
 			})
 
@@ -208,7 +209,7 @@ func (s *Service) HandleSurveyDDTRequestTerms(sdq *SurveyDDTRequestTerms) (netwo
 	s.MapSurveyTag.Put((string)(sdq.SurveyID),
 		SurveyTag{
 			SurveyID: sdq.SurveyID,
-			Request:    *sdq,
+			Request:  *sdq,
 		})
 
 	// sends a signal to unlock waiting channel

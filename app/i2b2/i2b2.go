@@ -118,9 +118,16 @@ func main() {
 		// BEGIN CLIENT: QUERIER ----------
 		{
 			Name:    "runDDT",
-			Aliases: []string{"r"},
+			Aliases: []string{"rDTT"},
 			Usage:   "Execute the DDT of the query parameters using Unlynx.\nFeed the query parameters XML (UTF-8 encoded) to stdin and close it.",
 			Action:  unlynxDDTRequestFromApp,
+			Flags:   querierFlags,
+		},
+		{
+			Name:    "runAgg",
+			Aliases: []string{"rAgg"},
+			Usage:   "Execute the aggregation of the query results and privately shares these results using Unlynx.\nFeed the query results XML (UTF-8 encoded) to stdin and close it.",
+			Action:  unlynxAggRequestFromApp,
 			Flags:   querierFlags,
 		},
 		// CLIENT END: QUERIER ----------
