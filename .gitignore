@@ -44,6 +44,7 @@ simul/deter.toml
 app/default/*.toml
 app/default/test
 app/default/service_storage
+app/i2b2/*.txt
 
 unlynx
 server_list

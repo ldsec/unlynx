@@ -39,6 +39,7 @@ func readDDTRequestXMLFrom(input io.Reader) (*lib.XMLMedCoDTTRequest, error) {
 
 	// unmarshal xml (assumes bytes are UTF-8 encoded)
 	parsedXML := lib.XMLMedCoDTTRequest{}
+
 	errXML := xml.Unmarshal(dataBytes, &parsedXML)
 	if errXML != nil {
 		log.Error("Error while unmarshalling DDTRequest xml.", errXML)
@@ -89,6 +90,7 @@ func unlynxDDTRequest(input io.Reader, output io.Writer, el *onet.Roster, entryP
 
 	// get data from input
 	xmlQuery, err := readDDTRequestXMLFrom(input)
+
 	if err != nil {
 		log.Error("Error parsing DDTRequest XML.", err)
 		writeDDTResponseXML(output, nil, nil, nil, err)
@@ -133,7 +135,7 @@ func unlynxDDTRequest(input io.Reader, output io.Writer, el *onet.Roster, entryP
 	tr.DDTparsingTime = parsingTime
 	tr.DDTRequestTimeExec += tr.DDTparsingTime
 
-	err = writeDDTResponseXML(output, xmlQuery, result, tr, nil)
+	err = writeDDTResponseXML(output, xmlQuery, result, &tr, nil)
 	if err != nil {
 		log.Error("Error while writing result.", err)
 		writeDDTResponseXML(output, nil, nil, nil, err)
@@ -160,7 +162,7 @@ func writeDDTResponseXML(output io.Writer, xmlQuery *lib.XMLMedCoDTTRequest, res
 	if err == nil && xmlQuery != nil {
 		resultTags := ""
 
-		for tag := range result {
+		for _, tag := range result {
 			resultTags += "<tagged_value>" + string(tag) + "</tagged_value>"
 
 		}

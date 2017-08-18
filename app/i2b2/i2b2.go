@@ -115,6 +115,15 @@ func main() {
 		},
 		// CLIENT END: KEY GENERATION ------------
 
+		// BEGIN CLIENT: DATA LOADER ----------
+		{
+			Name:    "keygen",
+			Aliases: []string{"k"},
+			Usage:   "Generate a pair of public/private keys.",
+			Action:  keyGenerationFromApp,
+		},
+		// CLIENT END: DATA LOADER ------------
+
 		// BEGIN CLIENT: QUERIER ----------
 		{
 			Name:    "runDDT",

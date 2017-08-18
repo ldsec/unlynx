@@ -61,7 +61,7 @@ func TestServiceDDT(t *testing.T) {
 		defer wg.Done()
 
 		var err error
-		_, result_node1, _, err = clients[0].SendSurveyDDTRequestTerms(el, serviceI2B2.SurveyID("testSurvey_node1"), qt, proofs)
+		_, result_node1, _, err = clients[0].SendSurveyDDTRequestTerms(el, serviceI2B2.SurveyID("testSurvey_no"), qt, proofs)
 
 		if err != nil {
 			t.Fatal("Client", clients[0], " service did not start: ", err)

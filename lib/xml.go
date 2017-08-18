@@ -31,7 +31,7 @@ type XMLMedCoDTTRequest struct {
 func (xml *XMLMedCoDTTRequest) DDTRequestToUnlynxFormat() (CipherVector, string, error) {
 
 	// iterate over the query paremeters
-	encQueryTerms := make(CipherVector, len(xml.XMLEncQueryTerms))
+	encQueryTerms := make(CipherVector, 0)
 
 	for _, term := range xml.XMLEncQueryTerms {
 		aux := CipherText{}
@@ -73,7 +73,7 @@ type XMLMedCoAggRequest struct {
 func (xml *XMLMedCoAggRequest) AggRequestToUnlynxFormat() (CipherVector, string, error) {
 
 	// iterate over the encrypted flag values
-	encDummyFlags := make(CipherVector, len(xml.XMLEncDummyFlags))
+	encDummyFlags := make(CipherVector, 0)
 
 	for _, encFlag := range xml.XMLEncDummyFlags {
 		aux := CipherText{}
