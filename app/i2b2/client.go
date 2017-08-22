@@ -4,6 +4,7 @@ package main
 
 import (
 	"encoding/xml"
+	"github.com/lca1/unlynx/app/i2b2/loader"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/services/i2b2"
 	"gopkg.in/dedis/onet.v1"
@@ -16,6 +17,54 @@ import (
 	"strconv"
 	"time"
 )
+
+// Loader functions
+//______________________________________________________________________________________________________________________
+
+//----------------------------------------------------------------------------------------------------------------------
+//#----------------------------------------------- LOAD DATA -----------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
+
+func loadData(c *cli.Context) error {
+
+	// data set file paths
+	clinicalFilePath := c.String("clinical")
+	genomicFilePath := c.String("genomic")
+	groupFilePath := c.String("file")
+
+	// generate el with group file
+	f, err := os.Open(groupFilePath)
+	if err != nil {
+		log.Error("Error while opening group file", err)
+		return cli.NewExitError(err, 1)
+	}
+	el, err := app.ReadGroupToml(f)
+	if err != nil {
+		log.Error("Error while reading group file", err)
+		return cli.NewExitError(err, 1)
+	}
+	if len(el.List) <= 0 {
+		log.Error("Empty or invalid group file", err)
+		return cli.NewExitError(err, 1)
+	}
+
+	fClinical, err := os.Open(clinicalFilePath)
+	if err != nil {
+		log.Error("Error while opening the clinical file", err)
+		return cli.NewExitError(err, 1)
+	}
+
+	fGenomic, err := os.Open(genomicFilePath)
+	if err != nil {
+		log.Error("Error while opening the genomic file", err)
+		return cli.NewExitError(err, 1)
+	}
+
+	loader.LoadClient(el, fClinical, fGenomic)
+
+	return nil
+}
+
 
 // Client functions
 //______________________________________________________________________________________________________________________

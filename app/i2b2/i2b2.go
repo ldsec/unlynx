@@ -10,14 +10,16 @@ import (
 
 const (
 	// BinaryName is the name of the binary
-	BinaryName = "i2b2"
+	BinaryName = "unlynxI2B2"
 
 	// Version of the binary
 	Version = "1.00"
 
-	// DefaultGroupFile is the name of the default file to lookup for group
-	// definition
+	// DefaultGroupFile is the name of the default file to lookup for group definition
 	DefaultGroupFile = "public.toml"
+
+	DefaultClinicalFile = ""
+	DefaultGenomicFile = ""
 
 	optionConfig      = "config"
 	optionConfigShort = "c"
@@ -29,6 +31,12 @@ const (
 
 	optionDecryptKey      = "key"
 	optionDecryptKeyShort = "k"
+
+	optionClinicalFile    = "clinical"
+	optionClinicalFileShort = "cl"
+
+	optionGenomicFile = "genomic"
+	optionGenomicFileShort = "g"
 )
 
 /*
@@ -39,7 +47,7 @@ Return system error codes signification
 */
 func main() {
 	cliApp := cli.NewApp()
-	cliApp.Name = "i2b2"
+	cliApp.Name = "unlynxI2B2"
 	cliApp.Usage = "Query medical information securely and privately"
 	cliApp.Version = Version
 
@@ -63,6 +71,19 @@ func main() {
 		cli.StringFlag{
 			Name:  optionDecryptKey + ", " + optionDecryptKeyShort,
 			Usage: "Base64-encoded key to decrypt a value",
+		},
+	}
+
+	loaderFlags := []cli.Flag{
+		cli.StringFlag{
+			Name:  optionClinicalFile + ", " + optionClinicalFileShort,
+			Value: DefaultClinicalFile,
+			Usage: "Clinical file to load",
+		},
+		cli.StringFlag{
+			Name:  optionGenomicFile + ", " + optionGenomicFileShort,
+			Value: DefaultGenomicFile,
+			Usage: "Genomic file to load",
 		},
 	}
 
@@ -119,8 +140,9 @@ func main() {
 		{
 			Name:    "loader",
 			Aliases: []string{"l"},
-			Usage:   "Generate a pair of public/private keys.",
-			Action:  keyGenerationFromApp,
+			Usage:   "Load data from clinical and genomic files.",
+			Action:  loadData,
+			Flags:   loaderFlags,
 		},
 		// CLIENT END: DATA LOADER ------------
 

@@ -45,8 +45,10 @@ app/default/*.toml
 app/default/test
 app/default/service_storage
 app/i2b2/*.txt
+app/i2b2/loader/files/*.sql
 
 unlynx
+unlynxI2B2
 server_list
 
 pre_compute_multiplications.gob
