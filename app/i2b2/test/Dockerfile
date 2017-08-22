@@ -1,7 +1,8 @@
-# Docker file, deploy i2b2 using the source code in the parent folder, run with:
-# docker run -v "$(pwd)"/app/i2b2/test/srv1:/unlynx -p 2010-2011:2000-2001 -it --rm --name unlynxi2b2-dev-srv1 unlynxi2b2
-
 FROM golang:1.8
+
+# environment variables
+ENV UNLYNX_REPO="github.com/lca1/unlynx" \
+    UNLYNX_REPO_BRANCH="newI2B2"
 
 # get maximum of dependencies and cache them
 RUN go get -v -d gopkg.in/dedis/onet.v1/... && \
@@ -12,23 +13,20 @@ RUN go get -v -d gopkg.in/dedis/onet.v1/... && \
     go get -v -d github.com/r0fls/gostats/... && \
     go get -v -d github.com/fanliao/go-concurrentMap/...
 
-# copy unlynx sources
-ENV UNLYNX_PROJECT_PATH "github.com/lca1/unlynx"
-WORKDIR /go/src/$UNLYNX_PROJECT_PATH
-COPY . .
+# get sources and switch branch
+WORKDIR /go/src/$UNLYNX_REPO
+RUN git clone https://$UNLYNX_REPO.git . && \
+    git checkout $UNLYNX_REPO_BRANCH
 
-# get remaining dependencies, compile and install i2b2 binary
+# get remaining dependencies, compile and install unlynxI2B2 binary, and make it available in the shared folder
 WORKDIR app/i2b2
-RUN go get -v -d ./...
-RUN go install -v ./...
+RUN go get -d ./... && \
+    go build -i -o unlynxI2B2 ./...
 
 # conf and run
-EXPOSE 2000
-VOLUME /unlynx
-WORKDIR /unlynx
-ENTRYPOINT ["i2b2", "-d", "5", "server", "-c", "/unlynx/private.toml"]
+VOLUME /opt/configuration
+ENTRYPOINT ["sh", "-c", "./unlynxI2B2 -d 1 server -c /opt/configuration/private.toml"]
 # TODO switch for prod:
-# TODO: remove unlynx volume? (contains private key)
 # TODO: debug option to modify
 # TODO: logs to put in unlynx folder (now: stdin)
 # TODO: key generation handling (docker exec? or get the unlynx volume?)

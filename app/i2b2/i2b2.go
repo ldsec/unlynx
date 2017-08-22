@@ -117,8 +117,8 @@ func main() {
 
 		// BEGIN CLIENT: DATA LOADER ----------
 		{
-			Name:    "keygen",
-			Aliases: []string{"k"},
+			Name:    "loader",
+			Aliases: []string{"l"},
 			Usage:   "Generate a pair of public/private keys.",
 			Action:  keyGenerationFromApp,
 		},
@@ -126,17 +126,10 @@ func main() {
 
 		// BEGIN CLIENT: QUERIER ----------
 		{
-			Name:    "runDDT",
-			Aliases: []string{"rDTT"},
-			Usage:   "Execute the DDT of the query parameters using Unlynx.\nFeed the query parameters XML (UTF-8 encoded) to stdin and close it.",
-			Action:  unlynxDDTRequestFromApp,
-			Flags:   querierFlags,
-		},
-		{
-			Name:    "runAgg",
-			Aliases: []string{"rAgg"},
-			Usage:   "Execute the aggregation of the query results and privately shares these results using Unlynx.\nFeed the query results XML (UTF-8 encoded) to stdin and close it.",
-			Action:  unlynxAggRequestFromApp,
+			Name:    "run",
+			Aliases: []string{"r"},
+			Usage:   "Execute a query using Unlynx. Feed the query XML (UTF-8 encoded) to stdin and close it.",
+			Action:  unlynxRequestFromApp,
 			Flags:   querierFlags,
 		},
 		// CLIENT END: QUERIER ----------

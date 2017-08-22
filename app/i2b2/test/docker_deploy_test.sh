@@ -13,14 +13,14 @@ dockerStop(){
     docker stop "unlynxi2b2-dev-srv${1}"
 }
 
-PROJECT_DIR="$GOPATH/src/github.com/lca1/unlynx"
+PROJECT_DIR="$GOPATH/src/github.com/lca1/unlynx/app/i2b2"
 cd "$PROJECT_DIR"
 docker build -t unlynxi2b2 .
-*
+
 dockerStop "1"
 dockerStop "3"
 dockerStop "5"
 
-dockerRun "1"
-dockerRun "3"
-dockerRun "5"
+#dockerRun "1"
+#dockerRun "3"
+#dockerRun "5"

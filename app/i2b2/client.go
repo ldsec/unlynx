@@ -42,14 +42,13 @@ func readDDTRequestXMLFrom(input io.Reader) (*lib.XMLMedCoDTTRequest, error) {
 
 	errXML := xml.Unmarshal(dataBytes, &parsedXML)
 	if errXML != nil {
-		log.Error("Error while unmarshalling DDTRequest xml.", errXML)
 		return nil, errXML
 	}
 
 	return &parsedXML, nil
 }
 
-func unlynxDDTRequestFromApp(c *cli.Context) error {
+func unlynxRequestFromApp(c *cli.Context) error {
 
 	// cli arguments
 	groupFilePath := c.String("file")
@@ -73,13 +72,23 @@ func unlynxDDTRequestFromApp(c *cli.Context) error {
 		return cli.NewExitError(err, 1)
 	}
 
-	err = unlynxDDTRequest(os.Stdin, os.Stdout, el, entryPointIdx, proofs)
-	if err != nil {
-		log.Error("Error while querying Unlynx", err)
-		return cli.NewExitError(err, 2)
+	// check which message we have: a DDTRequest or a AggRequest
+	_, err = readDDTRequestXMLFrom(os.Stdin)
+	if err == nil {
+
+		err = unlynxDDTRequest(os.Stdin, os.Stdout, el, entryPointIdx, proofs)
+		if err != nil {
+			log.Error("Error while querying Unlynx", err)
+			return cli.NewExitError(err, 2)
+		}
+
+		return nil
 	}
 
-	return nil
+	// TODO: need to do the agg request parser
+
+	log.Error("Error while unmarshalling xml.", err)
+	return err
 }
 
 // TODO: no log.Fatal in general (this stops immediately)

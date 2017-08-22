@@ -1,0 +1,20 @@
+version: '3.3'
+services:
+  unlynx-srv3:
+    build:
+      context: ..
+    ports:
+      - "2003:2003"
+      - "2004:2004"
+    volumes:
+      - ../srv3:/opt/configuration
+    networks:
+      cothority-network:
+        aliases:
+          - unlynx-srv3
+        ipv4_address: 172.16.205.11
+
+networks:
+  cothority-network:
+    external:
+      name: srv1_cothority-network
