@@ -63,7 +63,7 @@ const (
 )
 
 // TypeFlagGenomicVariant encodes the type of id.
-const TypeFlagGenomicVariant = int64(0) ^ 0
+const TypeFlagGenomicVariant = int64(0)
 
 /*
  Possible range of positions values (position in 1-based coordinate system, minimum is 1).
@@ -80,13 +80,13 @@ const (
 // AlleleMaping encodes alleles.
 func AlleleMaping(allele string) (int64, error) {
 	switch allele {
-	case 'A':
+	case "A":
 		return int64(0), nil
-	case 'T':
+	case "T":
 		return int64(1), nil
-	case 'G':
+	case "G":
 		return int64(2), nil
-	case 'C':
+	case "C":
 		return int64(3), nil
 	default:
 		return int64(-1), errors.New("Wrong allele format")
@@ -114,7 +114,7 @@ func GetVariantID(chromosomeID string, startPosition int64, refAlleles, altAllel
 		checkRegex(refAlleles, AllelesRegex, "Invalid reference allele") != nil || checkRegex(altAlleles, AllelesRegex, "Invalid alternate allele") != nil ||
 		startPosition < PositionMin || startPosition > PositionMax || TypeFlagBitSize+ChrBitSize+PosBitSize+2*(AllelesBaseLengthBitSize+AllelesBitSize) != IDBitSize {
 
-		return errors.New("Invalid input: chr=" + chromosomeID + ", pos=" + strconv.FormatUint(startPosition, 10) + ", ref=" + refAlleles + ", alt=" + altAlleles)
+		return int64(-1), errors.New("Invalid input: chr=" + chromosomeID + ", pos=" + strconv.FormatInt(startPosition, 10) + ", ref=" + refAlleles + ", alt=" + altAlleles)
 	}
 
 	// interpret chromosome id (content validated by regex)
@@ -159,16 +159,14 @@ func GetVariantID(chromosomeID string, startPosition int64, refAlleles, altAllel
 	id = PushBitsFromRight(id, AllelesBaseLengthBitSize, altAllelesBaseLength)
 	id = PushBitsFromRight(id, AllelesBitSize, EncodeAlleles(altAlleles))
 
-	return id
-
+	return id, nil
 }
 
 // EncodeAlleles encodes a string containing alleles.
-func EncodeAlleles(alleles string) (int64, error) {
-	encodedAlleles := int64(0) ^ 0
+func EncodeAlleles(alleles string) int64 {
+	encodedAlleles := int64(0)
 
-	for i := 0; i < len(alleles)-1; i++ {
-
+	for i := 0; i < len(alleles); i++ {
 		mapV, err := AlleleMaping(alleles[i : i+1])
 		if err != nil {
 			log.Fatal(err)
@@ -186,7 +184,7 @@ func EncodeAlleles(alleles string) (int64, error) {
 
 // PushBitsFromRight takes the nbBits rightmost bits of bitsToPush, and push them to the right of origBits.
 func PushBitsFromRight(origBits int64, nbBits int, bitsToPush int64) int64 {
-	newBits := origBits << nbBits
+	newBits := origBits << uint(nbBits)
 
 	// generate mask
 	mask := GetMask(nbBits)
@@ -198,11 +196,11 @@ func PushBitsFromRight(origBits int64, nbBits int, bitsToPush int64) int64 {
 
 // GetMask generates a bit mask (support pushing bits)
 func GetMask(nbBits int) int64 {
-	mask := int64(0) ^ 0
+	mask := int64(0)
 
 	for i := 0; i < nbBits; i++ {
 		mask <<= 1
-		mask |= int64(1) ^ 1
+		mask |= int64(1)
 	}
 
 	return mask
