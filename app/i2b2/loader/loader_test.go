@@ -1,16 +1,16 @@
 package loader_test
 
 import (
-	"testing"
-	"os"
-	"gopkg.in/dedis/onet.v1/log"
 	"github.com/lca1/unlynx/app/i2b2/loader"
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/dedis/onet.v1/log"
+	"os"
+	"testing"
 )
 
 const (
 	CLINICAL_FILE = "files/data_clinical_skcm_broad.csv"
-	GENOMIC_FILE = "files/data_mutations_extended_skcm_broad.csv"
+	GENOMIC_FILE  = "files/data_mutations_extended_skcm_broad.csv"
 )
 
 func TestLoadDataFiles(t *testing.T) {
@@ -28,9 +28,8 @@ func TestLoadDataFiles(t *testing.T) {
 	err = loader.InitFiles()
 	assert.True(t, err == nil)
 
-	err = loader.LoadDataFiles(fClinical,fGenomic)
+	err = loader.LoadDataFiles(fClinical, fGenomic)
 	assert.True(t, err == nil, err)
-
 
 	loader.CloseFiles()
 }

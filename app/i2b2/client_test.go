@@ -1,19 +1,19 @@
 package main
 
 import (
-	"gopkg.in/dedis/onet.v1"
-	"os"
-	"testing"
-	"github.com/lca1/unlynx/lib"
-	"gopkg.in/dedis/onet.v1/log"
 	"bytes"
 	"encoding/xml"
+	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/dedis/crypto.v0/abstract"
+	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/app"
+	"gopkg.in/dedis/onet.v1/log"
 	"io"
-	"strings"
+	"os"
 	"strconv"
+	"strings"
+	"testing"
 )
 
 var clientSecKey abstract.Scalar
@@ -23,7 +23,6 @@ var el *onet.Roster
 
 var nbrTerms = 50
 var nbrFlags = 50
-
 
 // SETUP / TEARDOWN FUNCTIONS
 // ----------------------------------------------------------
@@ -71,35 +70,35 @@ func testLocalTeardown() {
 
 // UTILITY FUNCTIONS
 // ----------------------------------------------------------
-func getXMLReaderDDTRequest(t *testing.T,  variant int) io.Reader {
+func getXMLReaderDDTRequest(t *testing.T, variant int) io.Reader {
 
 	/*
-	<unlynx_ddt_request>
-	    <id>request ID</id>
-	    <enc_values>
-		<enc_value>adfw25e4f85as4fas57f=</enc_value>
-		<enc_value>ADA5D4D45ESAFD5FDads=</enc_value>
-	    </enc_values>
-	</unlynx_ddt_request>
+		<unlynx_ddt_request>
+		    <id>request ID</id>
+		    <enc_values>
+			<enc_value>adfw25e4f85as4fas57f=</enc_value>
+			<enc_value>ADA5D4D45ESAFD5FDads=</enc_value>
+		    </enc_values>
+		</unlynx_ddt_request>
 	*/
 
 	// enc query terms (encrypted with client public key)
 	encDDTTermsSlice := make([]string, 0)
 	encDDTTermsXML := ""
 
-	for i:=0; i< nbrTerms; i++ {
+	for i := 0; i < nbrTerms; i++ {
 		val := (*lib.EncryptInt(el.Aggregate, int64(i))).Serialize()
-		encDDTTermsSlice = append(encDDTTermsSlice,val)
+		encDDTTermsSlice = append(encDDTTermsSlice, val)
 		encDDTTermsXML += "<enc_value>" + val + "</enc_value>"
 	}
 
-	queryID := "query_ID_XYZf"+strconv.Itoa(variant)
+	queryID := "query_ID_XYZf" + strconv.Itoa(variant)
 
 	xmlReader := strings.NewReader(`<unlynx_ddt_request>
 						<id>` + queryID + `</id>
 						<enc_values>` +
-							encDDTTermsXML +
-						`</enc_values>
+		encDDTTermsXML +
+		`</enc_values>
 					</unlynx_ddt_request>`)
 
 	log.LLvl1("Generated DDTRequest XML:", xmlReader)
@@ -107,29 +106,29 @@ func getXMLReaderDDTRequest(t *testing.T,  variant int) io.Reader {
 	return xmlReader
 }
 
-func getXMLReaderDDTRequestV2(t *testing.T,  variant int) io.Reader {
+func getXMLReaderDDTRequestV2(t *testing.T, variant int) io.Reader {
 
 	/*
-	<unlynx_ddt_request>
-	    <id>request ID</id>
-	    <enc_values>
-		<enc_value>adfw25e4f85as4fas57f=</enc_value>
-		<enc_value>ADA5D4D45ESAFD5FDads=</enc_value>
-	    </enc_values>
-	</unlynx_ddt_request>
+		<unlynx_ddt_request>
+		    <id>request ID</id>
+		    <enc_values>
+			<enc_value>adfw25e4f85as4fas57f=</enc_value>
+			<enc_value>ADA5D4D45ESAFD5FDads=</enc_value>
+		    </enc_values>
+		</unlynx_ddt_request>
 	*/
 
 	// enc query terms (encrypted with client public key)
 	encDDTTermsSlice := make([]string, 0)
 	encDDTTermsXML := ""
 
-	for i:=0; i< nbrTerms; i++ {
+	for i := 0; i < nbrTerms; i++ {
 		val := (*lib.EncryptInt(el.Aggregate, int64(i))).Serialize()
-		encDDTTermsSlice = append(encDDTTermsSlice,val)
+		encDDTTermsSlice = append(encDDTTermsSlice, val)
 		encDDTTermsXML += "<enc_value>" + val + "</enc_value>"
 	}
 
-	queryID := "query_ID_XYZf"+strconv.Itoa(variant)
+	queryID := "query_ID_XYZf" + strconv.Itoa(variant)
 
 	var stringBuf bytes.Buffer
 
@@ -145,15 +144,15 @@ func getXMLReaderDDTRequestV2(t *testing.T,  variant int) io.Reader {
 func getXMLReaderAggRequest(t *testing.T, variant int) io.Reader {
 
 	/*
-	<unlynx_agg_request>
-	    <id>request ID</id>
-	    <client_public_key>5D4D45ESAFD5FDads==</client_public_key>
+		<unlynx_agg_request>
+		    <id>request ID</id>
+		    <client_public_key>5D4D45ESAFD5FDads==</client_public_key>
 
-	    <enc_dummy_flags>
-		<enc_dummy_flag>adfw25e4f85as4fas57f=</enc_dummy_flag>
-		<enc_dummy_flag>ADA5D4D45ESAFD5FDads=</enc_dummy_flag>
-	    </enc_dummy_flags>
-	</unlynx_agg_request>
+		    <enc_dummy_flags>
+			<enc_dummy_flag>adfw25e4f85as4fas57f=</enc_dummy_flag>
+			<enc_dummy_flag>ADA5D4D45ESAFD5FDads=</enc_dummy_flag>
+		    </enc_dummy_flags>
+		</unlynx_agg_request>
 	*/
 
 	// client public key serialization
@@ -164,20 +163,20 @@ func getXMLReaderAggRequest(t *testing.T, variant int) io.Reader {
 	encFlagsSlice := make([]string, 0)
 	encFlagsXML := ""
 
-	for i:=0; i< nbrFlags; i++ {
+	for i := 0; i < nbrFlags; i++ {
 		val := (*lib.EncryptInt(el.Aggregate, int64(1))).Serialize()
-		encFlagsSlice = append(encFlagsSlice,val)
+		encFlagsSlice = append(encFlagsSlice, val)
 		encFlagsXML += "<enc_dummy_flag>" + val + "</enc_dummy_flag>"
 	}
 
-	queryID := "query_ID_XYZf"+strconv.Itoa(variant)
+	queryID := "query_ID_XYZf" + strconv.Itoa(variant)
 
 	xmlReader := strings.NewReader(`<unlynx_agg_request>
 						<id>` + queryID + `</id>
 						<client_public_key>` + clientPubKeyB64 + `</client_public_key>
 						<enc_dummy_flags>` +
-							encFlagsXML +
-						`</enc_dummy_flags>
+		encFlagsXML +
+		`</enc_dummy_flags>
 					</unlynx_agg_request>`)
 
 	log.LLvl1("Generated AggRequest XML:", xmlReader)
@@ -185,18 +184,18 @@ func getXMLReaderAggRequest(t *testing.T, variant int) io.Reader {
 	return xmlReader
 }
 
-func getXMLReaderAggRequestV2(t *testing.T,  variant int) io.Reader {
+func getXMLReaderAggRequestV2(t *testing.T, variant int) io.Reader {
 
 	/*
-	<unlynx_agg_request>
-	    <id>request ID</id>
-	    <client_public_key>5D4D45ESAFD5FDads==</client_public_key>
+		<unlynx_agg_request>
+		    <id>request ID</id>
+		    <client_public_key>5D4D45ESAFD5FDads==</client_public_key>
 
-	    <enc_dummy_flags>
-		<enc_dummy_flag>adfw25e4f85as4fas57f=</enc_dummy_flag>
-		<enc_dummy_flag>ADA5D4D45ESAFD5FDads=</enc_dummy_flag>
-	    </enc_dummy_flags>
-	</unlynx_agg_request>
+		    <enc_dummy_flags>
+			<enc_dummy_flag>adfw25e4f85as4fas57f=</enc_dummy_flag>
+			<enc_dummy_flag>ADA5D4D45ESAFD5FDads=</enc_dummy_flag>
+		    </enc_dummy_flags>
+		</unlynx_agg_request>
 	*/
 
 	// client public key serialization
@@ -207,13 +206,13 @@ func getXMLReaderAggRequestV2(t *testing.T,  variant int) io.Reader {
 	encFlagsSlice := make([]string, 0)
 	encFlagsXML := ""
 
-	for i:=0; i< nbrFlags; i++ {
+	for i := 0; i < nbrFlags; i++ {
 		val := (*lib.EncryptInt(el.Aggregate, int64(1))).Serialize()
-		encFlagsSlice = append(encFlagsSlice,val)
+		encFlagsSlice = append(encFlagsSlice, val)
 		encFlagsXML += "<enc_dummy_flag>" + val + "</enc_dummy_flag>"
 	}
 
-	queryID := "query_ID_XYZf"+strconv.Itoa(variant)
+	queryID := "query_ID_XYZf" + strconv.Itoa(variant)
 
 	var stringBuf bytes.Buffer
 
@@ -268,7 +267,7 @@ func TestMedcoDDTRequest(t *testing.T) {
 	lib.EndParallelize(wg)
 
 	// Check results
-	finalResponses :=  make([]lib.XMLMedCoDTTResponse,0)
+	finalResponses := make([]lib.XMLMedCoDTTResponse, 0)
 
 	finalResponses = append(finalResponses, parseDTTResponse(t, writer.String()))
 	finalResponses = append(finalResponses, parseDTTResponse(t, writer1.String()))
@@ -276,11 +275,11 @@ func TestMedcoDDTRequest(t *testing.T) {
 
 	for i, response := range finalResponses {
 		assert.True(t, response.Error == "")
-		assert.Equal(t, len(response.TaggedValues),  nbrTerms, "(" + string(i) + ") The number of tags is different from the number of initial terms")
+		assert.Equal(t, len(response.TaggedValues), nbrTerms, "("+string(i)+") The number of tags is different from the number of initial terms")
 
 		for _, el := range response.TaggedValues {
 
-			for j:=i+1; j<len(finalResponses); j++ {
+			for j := i + 1; j < len(finalResponses); j++ {
 				assert.NotContains(t, finalResponses[j].TaggedValues, el, "There are tags that are the same among nodes")
 			}
 		}
@@ -312,7 +311,7 @@ func TestMedCoDDTRequestV2(t *testing.T) {
 	lib.EndParallelize(wg)
 
 	// Check results
-	finalResponses :=  make([]lib.XMLMedCoDTTResponse,0)
+	finalResponses := make([]lib.XMLMedCoDTTResponse, 0)
 
 	finalResponses = append(finalResponses, parseDTTResponse(t, writer.String()))
 	finalResponses = append(finalResponses, parseDTTResponse(t, writer1.String()))
@@ -320,11 +319,11 @@ func TestMedCoDDTRequestV2(t *testing.T) {
 
 	for i, response := range finalResponses {
 		assert.True(t, response.Error == "")
-		assert.Equal(t, len(response.TaggedValues),  nbrTerms, "(" + string(i) + ") The number of tags is different from the number of initial terms")
+		assert.Equal(t, len(response.TaggedValues), nbrTerms, "("+string(i)+") The number of tags is different from the number of initial terms")
 
 		for _, el := range response.TaggedValues {
 
-			for j:=i+1; j<len(finalResponses); j++ {
+			for j := i + 1; j < len(finalResponses); j++ {
 				assert.NotContains(t, finalResponses[j].TaggedValues, el, "There are tags that are the same among nodes")
 			}
 		}
@@ -356,7 +355,7 @@ func TestUnlynxQueryRemote(t *testing.T) {
 	lib.EndParallelize(wg)
 
 	// Check results
-	finalResponses :=  make([]lib.XMLMedCoDTTResponse,0)
+	finalResponses := make([]lib.XMLMedCoDTTResponse, 0)
 
 	finalResponses = append(finalResponses, parseDTTResponse(t, writer.String()))
 	finalResponses = append(finalResponses, parseDTTResponse(t, writer1.String()))
@@ -364,14 +363,13 @@ func TestUnlynxQueryRemote(t *testing.T) {
 
 	for i, response := range finalResponses {
 		assert.True(t, response.Error == "")
-		assert.Equal(t, len(response.TaggedValues),  nbrTerms, "(" + string(i) + ") The number of tags is different from the number of initial terms")
+		assert.Equal(t, len(response.TaggedValues), nbrTerms, "("+string(i)+") The number of tags is different from the number of initial terms")
 
 		for _, el := range response.TaggedValues {
 
-			for j:=i+1; j<len(finalResponses); j++ {
+			for j := i + 1; j < len(finalResponses); j++ {
 				assert.Contains(t, finalResponses[j].TaggedValues, el, "There are tags that are the same among nodes")
 			}
-
 
 		}
 

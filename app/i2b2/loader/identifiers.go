@@ -3,8 +3,8 @@ package loader
 import (
 	"errors"
 	"gopkg.in/dedis/onet.v1/log"
-	"strconv"
 	"regexp"
+	"strconv"
 )
 
 /*
@@ -22,46 +22,48 @@ import (
    	12 bits (4'096): alternative allele (6 bases)
 */
 
-// Size in bits of the identifier.
-const ID_BIT_SIZE = 64
+// IDBitSize size in bits of the identifier.
+const IDBitSize = 64
 
 // Breakdown of the size in bits.
 const (
-	TYPE_FLAG_BIT_SIZE = 1
-	CHR_BIT_SIZE = 5
-	POS_BIT_SIZE = 28
-	ALLELES_BASE_LENGTH_BIT_SIZE = 3
-	ALLELES_BIT_SIZE = 12
+	TypeFlagBitSize          = 1
+	ChrBitSize               = 5
+	PosBitSize               = 28
+	AllelesBaseLengthBitSize = 3
+	AllelesBitSize           = 12
 )
 
-/*
-    Valid values for the chromosome id:
-    Number from 1 to 23 inclusive, or
-    X, Y, or M
+// Regex expressions
+const (
+	/*
+	 Valid values for the chromosome id:
+	 Number from 1 to 23 inclusive, or
+	 X, Y, or M
 
-    -> Range from 1 to 26 inclusive, 2^5 = 32 ==> 5 bits storage
-*/
-const CHROMOSOME_ID_REGEX = "^[XYM]|[1-9]|(1[0-9])|(2[0-3])$"
+	 -> Range from 1 to 26 inclusive, 2^5 = 32 ==> 5 bits storage
+	*/
+	ChromosomeIDRegex = "^[XYM]|[1-9]|(1[0-9])|(2[0-3])$"
+
+	/*
+	 Valid values for the alleles.
+	 Either nothing ("-") or a certain number of bases ({A, T, G, C}).
+	 Each [A, T, G, C] base is encoded on 2 bits.
+
+	 The maximum number of bases supported is  6 -> 12bits and an additional 3 bits are used to encode the length.
+	*/
+	AllelesRegex = "^([ATCG]{1,6}|-)$"
+)
 
 // Mapping to encode non-numeric chromosome ids.
 const (
-	CHROMOSOME_X_INT_ID = int64(24)
-	CHROMOSOME_Y_INT_ID = int64(25)
-	CHROMOSOME_M_INT_ID = int64(26)
+	ChromosomeXintID = int64(24)
+	ChromosomeYintID = int64(25)
+	ChromosomeMintID = int64(26)
 )
 
-// Mapping to encode type of id.
-const TYPE_FLAG_GENOMIC_VARIANT = int64(0)^0
-
-
-/*
- Valid values for the alleles.
- Either nothing ("-") or a certain number of bases ({A, T, G, C}).
- Each [A, T, G, C] base is encoded on 2 bits.
-
- The maximum number of bases supported is  6 -> 12bits and an additional 3 bits are used to encode the length.
-*/
-const ALLELES_REGEX = "^([ATCG]{1,6}|-)$";
+// TypeFlagGenomicVariant encodes the type of id.
+const TypeFlagGenomicVariant = int64(0) ^ 0
 
 /*
  Possible range of positions values (position in 1-based coordinate system, minimum is 1).
@@ -71,13 +73,13 @@ const ALLELES_REGEX = "^([ATCG]{1,6}|-)$";
  ==> 28 bits storage
 */
 const (
-	POSITION_MIN = int64(1)
-	POSITION_MAX = int64(1) << POS_BIT_SIZE
+	PositionMin = int64(1)
+	PositionMax = int64(1) << PosBitSize
 )
 
-// Mapping to encode alleles.
+// AlleleMaping encodes alleles.
 func AlleleMaping(allele string) (int64, error) {
-	switch allele{
+	switch allele {
 	case 'A':
 		return int64(0), nil
 	case 'T':
@@ -87,11 +89,11 @@ func AlleleMaping(allele string) (int64, error) {
 	case 'C':
 		return int64(3), nil
 	default:
- 		return int64(-1), errors.New("Wrong allele format")
+		return int64(-1), errors.New("Wrong allele format")
 	}
 }
 
-func checkRegex(input, expression, errorMessage string) error{
+func checkRegex(input, expression, errorMessage string) error {
 	var aux = regexp.MustCompile(expression)
 
 	correct := aux.MatchString(input)
@@ -104,31 +106,31 @@ func checkRegex(input, expression, errorMessage string) error{
 	return nil
 }
 
-// GetVariantId encodes a genomic variant ID to be encrypted, according to the specifications.
-func GetVariantId(chromosomeId string, startPosition int64, refAlleles, altAlleles string) (int64, error) {
+// GetVariantID encodes a genomic variant ID to be encrypted, according to the specifications.
+func GetVariantID(chromosomeID string, startPosition int64, refAlleles, altAlleles string) (int64, error) {
 
 	// validate input
-	if checkRegex(chromosomeId,CHROMOSOME_ID_REGEX, "Invalid Chromosome ID") != nil ||
-		checkRegex(refAlleles, ALLELES_REGEX, "Invalid reference allele") != nil || checkRegex(altAlleles, ALLELES_REGEX, "Invalid alternate allele") != nil ||
-		startPosition < POSITION_MIN || startPosition > POSITION_MAX || TYPE_FLAG_BIT_SIZE + CHR_BIT_SIZE + POS_BIT_SIZE + 2 * (ALLELES_BASE_LENGTH_BIT_SIZE + ALLELES_BIT_SIZE) != ID_BIT_SIZE {
+	if checkRegex(chromosomeID, ChromosomeIDRegex, "Invalid Chromosome ID") != nil ||
+		checkRegex(refAlleles, AllelesRegex, "Invalid reference allele") != nil || checkRegex(altAlleles, AllelesRegex, "Invalid alternate allele") != nil ||
+		startPosition < PositionMin || startPosition > PositionMax || TypeFlagBitSize+ChrBitSize+PosBitSize+2*(AllelesBaseLengthBitSize+AllelesBitSize) != IDBitSize {
 
-		return errors.New("Invalid input: chr=" + chromosomeId + ", pos=" + strconv.FormatUint(startPosition, 10) + ", ref=" + refAlleles + ", alt=" + altAlleles)
+		return errors.New("Invalid input: chr=" + chromosomeID + ", pos=" + strconv.FormatUint(startPosition, 10) + ", ref=" + refAlleles + ", alt=" + altAlleles)
 	}
 
 	// interpret chromosome id (content validated by regex)
-	chromosomeIntId, err := strconv.ParseInt(chromosomeId, 10, 64)
+	chromosomeIntID, err := strconv.ParseInt(chromosomeID, 10, 64)
 
 	if err != nil {
-		switch chromosomeId {
+		switch chromosomeID {
 		case "X":
-			chromosomeIntId = CHROMOSOME_X_INT_ID;
-			break;
+			chromosomeIntID = ChromosomeXintID
+			break
 		case "Y":
-			chromosomeIntId = CHROMOSOME_Y_INT_ID;
-			break;
+			chromosomeIntID = ChromosomeYintID
+			break
 		case "M":
-			chromosomeIntId = CHROMOSOME_M_INT_ID;
-			break;
+			chromosomeIntID = ChromosomeMintID
+			break
 		default:
 			log.Fatal("Invalid Chromosome ID")
 			return int64(-1), err
@@ -137,37 +139,37 @@ func GetVariantId(chromosomeId string, startPosition int64, refAlleles, altAllel
 
 	// alleles
 	if refAlleles == "-" {
-		refAlleles = "";
+		refAlleles = ""
 	}
 
 	if altAlleles == "-" {
-		altAlleles = "";
+		altAlleles = ""
 	}
 
 	refAllelesBaseLength := int64(len(refAlleles))
 	altAllelesBaseLength := int64(len(altAlleles))
 
 	// generate the variant
-	id := int64(0);
-	id = PushBitsFromRight(id, TYPE_FLAG_BIT_SIZE, TYPE_FLAG_GENOMIC_VARIANT);
-	id = PushBitsFromRight(id, CHR_BIT_SIZE, chromosomeIntId);
-	id = PushBitsFromRight(id, POS_BIT_SIZE, startPosition);
-	id = PushBitsFromRight(id, ALLELES_BASE_LENGTH_BIT_SIZE, refAllelesBaseLength);
-	id = PushBitsFromRight(id, ALLELES_BIT_SIZE, EncodeAlleles(refAlleles));
-	id = PushBitsFromRight(id, ALLELES_BASE_LENGTH_BIT_SIZE, altAllelesBaseLength);
-	id = PushBitsFromRight(id, ALLELES_BIT_SIZE, EncodeAlleles(altAlleles));
+	id := int64(0)
+	id = PushBitsFromRight(id, TypeFlagBitSize, TypeFlagGenomicVariant)
+	id = PushBitsFromRight(id, ChrBitSize, chromosomeIntID)
+	id = PushBitsFromRight(id, PosBitSize, startPosition)
+	id = PushBitsFromRight(id, AllelesBaseLengthBitSize, refAllelesBaseLength)
+	id = PushBitsFromRight(id, AllelesBitSize, EncodeAlleles(refAlleles))
+	id = PushBitsFromRight(id, AllelesBaseLengthBitSize, altAllelesBaseLength)
+	id = PushBitsFromRight(id, AllelesBitSize, EncodeAlleles(altAlleles))
 
-	return id;
+	return id
 
 }
 
 // EncodeAlleles encodes a string containing alleles.
-func EncodeAlleles(alleles string) (int64, error){
-	encodedAlleles := int64(0)^0
+func EncodeAlleles(alleles string) (int64, error) {
+	encodedAlleles := int64(0) ^ 0
 
-	for i:=0; i<len(alleles)-1; i++{
+	for i := 0; i < len(alleles)-1; i++ {
 
-		mapV, err := AlleleMaping(alleles[i:i+1])
+		mapV, err := AlleleMaping(alleles[i : i+1])
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -177,29 +179,30 @@ func EncodeAlleles(alleles string) (int64, error){
 	}
 
 	//padding
-	encodedAlleles = PushBitsFromRight(encodedAlleles, ALLELES_BIT_SIZE - len(alleles) * 2, int64(0))
+	encodedAlleles = PushBitsFromRight(encodedAlleles, AllelesBitSize-len(alleles)*2, int64(0))
 
 	return encodedAlleles
 }
 
 // PushBitsFromRight takes the nbBits rightmost bits of bitsToPush, and push them to the right of origBits.
-func PushBitsFromRight(origBits int64, nbBits int, bitsToPush int64) int64{
-	newBits :=  origBits << nbBits;
+func PushBitsFromRight(origBits int64, nbBits int, bitsToPush int64) int64 {
+	newBits := origBits << nbBits
 
 	// generate mask
-	mask := GetMask(nbBits);
+	mask := GetMask(nbBits)
 
 	// get final value
 	newBits |= (mask & bitsToPush)
 	return newBits
 }
 
-func GetMask(nbBits int) int64{
-	mask := int64(0)^0
+// GetMask generates a bit mask (support pushing bits)
+func GetMask(nbBits int) int64 {
+	mask := int64(0) ^ 0
 
-	for i:=0; i<nbBits; i++ {
+	for i := 0; i < nbBits; i++ {
 		mask <<= 1
-		mask |= int64(1)^1
+		mask |= int64(1) ^ 1
 	}
 
 	return mask

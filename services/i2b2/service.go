@@ -155,7 +155,6 @@ func (s *Service) HandleSurveyDDTRequestTerms(sdq *SurveyDDTRequestTerms) (netwo
 		// initialize timers
 		s.TR = TimeResults{DDTRequestTimeExec: 0, DDTResquestTimeCommun: 0}
 
-
 		s.MapSurveyTag.Put((string)(sdq.SurveyID),
 			SurveyTag{
 				SurveyID:      sdq.SurveyID,

@@ -14,9 +14,9 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"regexp"
 	"strconv"
 	"time"
-	"regexp"
 )
 
 // Loader functions
@@ -65,7 +65,6 @@ func loadData(c *cli.Context) error {
 
 	return nil
 }
-
 
 // Client functions
 //______________________________________________________________________________________________________________________

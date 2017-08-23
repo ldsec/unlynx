@@ -18,7 +18,9 @@ const (
 	// DefaultGroupFile is the name of the default file to lookup for group definition
 	DefaultGroupFile = "public.toml"
 
+	// DefaultClinicalFile is the name of the default clinical file (dataset)
 	DefaultClinicalFile = ""
+	// DefaultGenomicFile is the name of the default genomic file (dataset)
 	DefaultGenomicFile = ""
 
 	optionConfig      = "config"
@@ -32,10 +34,10 @@ const (
 	optionDecryptKey      = "key"
 	optionDecryptKeyShort = "k"
 
-	optionClinicalFile    = "clinical"
+	optionClinicalFile      = "clinical"
 	optionClinicalFileShort = "cl"
 
-	optionGenomicFile = "genomic"
+	optionGenomicFile      = "genomic"
 	optionGenomicFileShort = "g"
 )
 
