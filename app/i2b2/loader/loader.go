@@ -45,8 +45,9 @@ var (
 	DB_I2B2METADATA_PROVIDER_DIMENSION *os.File
 	DB_I2B2METADATA_OBSERVATION_FACT *os.File
 
-	ENC_ID int
-	ONT_ENC_VALUES map[string][]string
+	ENC_ID int64
+	CLEAR_ID int64
+	ONT_VALUES map[string][]string
 )
 
 // ClinicalData stores the clinical data.
@@ -172,8 +173,9 @@ func InitFiles() error{
 		return err
 	}
 
-	ENC_ID = 1
-	ONT_ENC_VALUES = make(map[string][]string)
+	ENC_ID = int64(1)
+	CLEAR_ID = int64(1)
+	ONT_VALUES = make(map[string][]string)
 
 	return nil
 }
@@ -216,16 +218,32 @@ func LoadDataFiles(fClinical *os.File, fGenomic *os.File) error {
 
 			// the HEADER
 			if first == true {
-				for _, el := range record {
+				for i:=2; i<len(record); i++ {
+					writeShrineOntologyEnc(record[i])
+					writeShrineOntologyClear(record[i])
 
-					// add headers to shrine_ont.clinical_sensitive
-					writeShrineOntology(el)
-					headerClinical = append(headerClinical, el)
+					writeMetadataOntologyClear(record[i])
+
+					headerClinical = append(headerClinical, record[i])
+
 				}
 				first = false
 			} else {
-				for i, el := range record {
-					writeShrineOntologyLeaf(headerClinical[i],el)
+				for i, j := 2, 0; i<len(record); i, j = i+1, j+1  {
+
+					if record[i] == "" {
+						record[i] = "<empty>"
+					}
+
+					if contains(ONT_VALUES[headerClinical[j]], record[i]) == false {
+						// add headers to shrine_ont.clinical_sensitive
+						writeShrineOntologyLeafEnc(headerClinical[j], record[i])
+						writeShrineOntologyLeafClear(headerClinical[j], record[i])
+
+						writeMetadataOntologyLeafClear(headerClinical[j], record[i])
+
+						ONT_VALUES[headerClinical[j]] = append(ONT_VALUES[headerClinical[j]], record[i])
+					}
 				}
 			}
 
@@ -280,7 +298,7 @@ func LoadDataFiles(fClinical *os.File, fGenomic *os.File) error {
 	return nil
 }
 
-func writeShrineOntology(el string) error {
+func writeShrineOntologyEnc(el string) error {
 
 	clinicalSensitive := `INSERT INTO shrine_ont.clinical_sensitive VALUES (3, '\\medco\\clinical\\sensitive\\` + el + `\\', '` + el + `', 'N', 'CA', NULL, NULL, NULL, 'concept_cd', 'concept_dimension', 'concept_path', 'T', 'LIKE',
 				  '\\medco\\clinical\\sensitive\\` + el + `\\', 'Sensitive field encrypted by Unlynx', '\\medco\\clinical\\sensitive\\` + el + `\\',
@@ -289,35 +307,91 @@ func writeShrineOntology(el string) error {
 	_, err := DB_SHRINE_ONT_CLINICAL_SENSITIVE.WriteString(clinicalSensitive)
 
 	if err != nil {
-		log.Fatal("Error in the writeShrineOntology():", err)
+		log.Fatal("Error in the writeShrineOntologyEnc():", err)
 		return err
 	}
 
 	return nil
 }
 
-func writeShrineOntologyLeaf(field, el string) error {
+func writeShrineOntologyLeafEnc(field, el string) error {
 
-	if el == "" {
-		el = "<empty>"
+	clinicalSensitive := `INSERT INTO shrine_ont.clinical_sensitive VALUES (4, '\\medco\\clinical\\sensitive\\` + field + `\\` + el + `\\', '` + el + `', 'N', 'LA', NULL, 'ENC_ID:` + strconv.Itoa(ENC_ID) + `', NULL, 'concept_cd', 'concept_dimension', 'concept_path', 'T', 'LIKE',
+			  '\\medco\\clinical\\sensitive\\` + field + `\\` + el + `\\', 'Sensitive value encrypted by Unlynx',  '\\medco\\clinical\\sensitive\\` + field + `\\` + el + `\\',
+			   'NOW()', NULL, NULL, NULL, 'ENC_ID', '@', NULL, NULL, NULL, NULL);`+"\n"
+
+
+	_, err := DB_SHRINE_ONT_CLINICAL_SENSITIVE.WriteString(clinicalSensitive)
+	ENC_ID++
+
+	if err != nil {
+		log.Fatal("Error in the writeShrineOntologyLeafEnc():", err)
+		return err
 	}
 
-	if contains(ONT_ENC_VALUES[field], el) == false {
-		ONT_ENC_VALUES[field] = append(ONT_ENC_VALUES[field], el)
+	return nil
+}
 
-		clinicalSensitive := `INSERT INTO shrine_ont.clinical_sensitive VALUES (4, '\\medco\\clinical\\sensitive\\` + field + `\\` + el + `\\', '` + el + `', 'N', 'LA', NULL, 'ENC_ID:` + strconv.Itoa(ENC_ID) + `', NULL, 'concept_cd', 'concept_dimension', 'concept_path', 'T', 'LIKE',
-				  '\\medco\\clinical\\sensitive\\` + field + `\\` + el + `\\', 'Sensitive field encrypted by Unlynx',  '\\medco\\clinical\\sensitive\\` + field + `\\` + el + `\\',
-				   'NOW()', NULL, NULL, NULL, 'ENC_ID', '@', NULL, NULL, NULL, NULL);`+"\n"
+func writeShrineOntologyClear(el string) error {
+
+	clinical := `INSERT INTO shrine_ont.clinical_non_sensitive VALUES (3, '\\medco\\clinical\\nonsensitive\\` + el + `\\', '` + el + `', 'N', 'CA', NULL, NULL, NULL, 'concept_cd', 'concept_dimension', 'concept_path', 'T', 'LIKE',
+				  '\\medco\\clinical\\nonsensitive\\` + el + `\\', 'Non-sensitive field', '\\medco\\clinical\\nonsensitive\\` + el + `\\',
+				   'NOW()', NULL, NULL, NULL, 'CLEAR', '@', NULL, NULL, NULL, NULL);`+"\n"
+
+	_, err := DB_SHRINE_ONT_CLINICAL_NON_SENSITIVE.WriteString(clinical)
+
+	if err != nil {
+		log.Fatal("Error in the writeShrineOntologyClear():", err)
+		return err
+	}
+
+	return nil
+}
+
+func writeShrineOntologyLeafClear(field, el string) error {
+	clinical := `INSERT INTO shrine_ont.clinical_non_sensitive VALUES (4, '\\medco\\clinical\\nonsensitive\\` + field + `\\` + el + `\\', '` + el + `', 'N', 'LA', NULL, 'CLEAR:` + strconv.Itoa(CLEAR_ID) + `', NULL, 'concept_cd', 'concept_dimension', 'concept_path', 'T', 'LIKE',
+			  '\\medco\\clinical\\nonsensitive\\` + field + `\\` + el + `\\', 'Non-sensitive value',  '\\medco\\clinical\\sensitive\\` + field + `\\` + el + `\\',
+			   'NOW()', NULL, NULL, NULL, 'CLEAR', '@', NULL, NULL, NULL, NULL);`+"\n"
 
 
-		_, err := DB_SHRINE_ONT_CLINICAL_SENSITIVE.WriteString(clinicalSensitive)
-		ENC_ID++
+	_, err := DB_SHRINE_ONT_CLINICAL_NON_SENSITIVE.WriteString(clinical)
 
-		if err != nil {
-			log.Fatal("Error in the writeShrineOntologyLeaf():", err)
-			return err
-		}
+	if err != nil {
+		log.Fatal("Error in the writeShrineOntologyLeafClear():", err)
+		return err
+	}
 
+	return nil
+}
+
+func writeMetadataOntologyClear(el string) error {
+
+	clinical := `INSERT INTO i2b2metadata.clinical_non_sensitive VALUES (3, '\\medco\\clinical\\nonsensitive\\` + el + `\\', '` + el + `', 'N', 'CA', NULL, NULL, NULL, 'concept_cd', 'concept_dimension', 'concept_path', 'T', 'LIKE',
+				  '\\medco\\clinical\\nonsensitive\\` + el + `\\', 'Non-sensitive field', '\\medco\\clinical\\nonsensitive\\` + el + `\\',
+				   'NOW()', NULL, NULL, NULL, 'CLEAR', '@', NULL, NULL, NULL, NULL);`+"\n"
+
+	_, err := DB_I2B2METADATA_CLINICAL_NON_SENSITIVE.WriteString(clinical)
+
+	if err != nil {
+		log.Fatal("Error in the writeMetadataOntologyClear():", err)
+		return err
+	}
+
+	return nil
+}
+
+func writeMetadataOntologyLeafClear(field, el string) error {
+	clinical := `INSERT INTO i2b2metadata.clinical_non_sensitive VALUES (4, '\\medco\\clinical\\nonsensitive\\` + field + `\\` + el + `\\', '` + el + `', 'N', 'LA', NULL, 'CLEAR:` + strconv.Itoa(CLEAR_ID) + `', NULL, 'concept_cd', 'concept_dimension', 'concept_path', 'T', 'LIKE',
+			  '\\medco\\clinical\\nonsensitive\\` + field + `\\` + el + `\\', 'Non-sensitive value',  '\\medco\\clinical\\sensitive\\` + field + `\\` + el + `\\',
+			   'NOW()', NULL, NULL, NULL, 'CLEAR', '@', NULL, NULL, NULL, NULL);`+"\n"
+
+
+	_, err := DB_I2B2METADATA_CLINICAL_NON_SENSITIVE.WriteString(clinical)
+	CLEAR_ID++
+
+	if err != nil {
+		log.Fatal("Error in the writeMetadataOntologyLeafClear():", err)
+		return err
 	}
 
 	return nil

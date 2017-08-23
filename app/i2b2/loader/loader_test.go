@@ -29,7 +29,7 @@ func TestLoadDataFiles(t *testing.T) {
 	assert.True(t, err == nil)
 
 	err = loader.LoadDataFiles(fClinical,fGenomic)
-	assert.True(t, err == nil)
+	assert.True(t, err == nil, err)
 
 
 	loader.CloseFiles()

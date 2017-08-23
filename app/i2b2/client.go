@@ -16,6 +16,7 @@ import (
 	"os"
 	"strconv"
 	"time"
+	"regexp"
 )
 
 // Loader functions
@@ -375,22 +376,3 @@ func unlynxAggRequestFromApp(c *cli.Context) error {
 	}
 	return nil
 }*/
-
-/*
-b64StdAlphabet := "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
-whereRegex := "{(w[0-9]+(,\\s*[" + b64StdAlphabet + "]+))*(,\\s*w[0-9]+(,\\s*[" + b64StdAlphabet + "]+))*}"
-checkRegex(term, termsRegex, "Error parsing a query term")
-
-func checkRegex(input, expression, errorMessage string) error{
-	var aux = regexp.MustCompile(expression)
-
-	correct := aux.MatchString(input)
-
-	if !correct {
-		log.Error(errorMessage)
-		return errors.New(errorMessage)
-	}
-
-	return nil
-}
-*/
