@@ -57,29 +57,38 @@ var (
 	DBi2b2DemodataObservationFact      *os.File
 )
 
-// PatientVisitLink contains both the link between the patient and the visit/encounter (patient ID and sample ID)
+// PatientVisitLink contains the link between the patient and the visit/encounter (patient ID and sample ID)
 type PatientVisitLink struct {
 	PatientID   int64
 	EncounterID int64
 }
 
-// ConceptPath defines the end of the concept path tree and we use it in a map so that we do not repeat values
+// ConceptPath defines the end of the concept path tree and we use it in a map so that we do not repeat concepts
 type ConceptPath struct {
 	Field  string
-	Record string
+	Record string //leaf
 }
 
 // Support global variables
 var (
-	EncID           int64
-	ClearID         int64
-	PatientID       int64
-	EncounterID     int64
-	AllSensitiveIDs []int64
+	EncID            int64   		// clinical sensitive IDs
+	ClearID          int64   		// clinical non-sensitive IDs
+	AllSensitiveIDs  []int64 		// stores the EncID(s) and the genomic IDs
+	EncounterMapping map[string]int64	// map a sample ID to a numeric ID
+	PatientMapping   map[string]int64       // map a patient ID to a numeric ID
 )
+
+// ReplayDataset replays the dataset x number of times
+func ReplayDataset(x int) {
+
+}
 
 // LoadClient initiates the loading process
 func LoadClient(el *onet.Roster, entryPointIdx int, fClinical *os.File, fGenomic *os.File, listSensitive []string, replay int) error {
+	if replay > 1 {
+		ReplayDataset(replay)
+	}
+
 	db, err := connectDB()
 	if err != nil {
 		return err
@@ -91,7 +100,7 @@ func LoadClient(el *onet.Roster, entryPointIdx int, fClinical *os.File, fGenomic
 		return err
 	}
 
-	err = LoadDataFiles(el, entryPointIdx, fClinical, fGenomic, listSensitive, replay)
+	err = LoadDataFiles(el, entryPointIdx, fClinical, fGenomic, listSensitive)
 	if err != nil {
 		log.Fatal("Error while generating the sql files", err)
 		return err
@@ -180,8 +189,8 @@ func InitFiles() error {
 
 	EncID = int64(1)
 	ClearID = int64(1)
-	PatientID = int64(1)
-	EncounterID = int64(1)
+	EncounterMapping = make(map[string]int64)
+	PatientMapping = make(map[string]int64)
 	AllSensitiveIDs = make([]int64, 0)
 
 	return nil
@@ -203,23 +212,20 @@ func CloseFiles() {
 	DBi2b2DemodataObservationFact.Close()
 }
 
-// Replays the Dataset x number of times
-func ReplayDataset(x int){
-
-}
-
 // LoadDataFiles loads the data from the dataset and populates the .sql scripts
-func LoadDataFiles(group *onet.Roster, entryPointIdx int, fClinical *os.File, fGenomic *os.File, listSensitive []string, replay int) error {
-	if replay>1{
-		ReplayDataset(replay)
+func LoadDataFiles(group *onet.Roster, entryPointIdx int, fClinical *os.File, fGenomic *os.File, listSensitive []string) error {
+	// patient_id counter
+	pid := int64(1)
+	// encounter_id counter
+	eid := int64(1)
+
+	if err := writeDemodataProviderDimension(); err != nil {
+		return err
 	}
 
-	if err := writeDemodataProviderDimension(); err != nil {return err}
-
-	ontValues := make(map[ConceptPath]int64)
-	patientVisitLinkList := make([]PatientVisitLink, 0)
-	// maps encounters/sample ID to Patient and Encounter numbers
-	patientVisitMap := make(map[string]PatientVisitLink)
+	ontValues := make(map[ConceptPath]int64)             // stores the concepth path and the correspondent clinical ID (ENC_ID or CLEAR_ID)
+	patientVisitLinkList := make([]PatientVisitLink, 0)  // stores the corresponding patient and encounter IDs of the encrypted fields
+	patientVisitMap := make(map[string]PatientVisitLink) // maps between the Sample ID (Tumor_barcode) and a combination of patient and encounter IDs
 
 	// load clinical
 	reader := csv.NewReader(fClinical)
@@ -242,28 +248,56 @@ func LoadDataFiles(group *onet.Roster, entryPointIdx int, fClinical *os.File, fG
 
 			// the HEADER
 			if first == true {
+
+				// skip SampleID and PatientID
 				for i := 2; i < len(record); i++ {
 
 					// sensitive
 					if containsArrayString(listSensitive, record[i]) == true || (len(listSensitive) == 1 && listSensitive[0] == "all") {
-						if err := writeShrineOntologyEnc(record[i]); err != nil {return err}
+						if err := writeShrineOntologyEnc(record[i]); err != nil {
+							return err
+						}
 						// we don't generate the MetadataOntologyEnc because we will do this afterwards (so that we only perform 1 DDT with all sensitive elements)
 					} else {
-						if err := writeShrineOntologyClear(record[i]); err != nil {return err}
-						if err := writeMetadataOntologyClear(record[i]); err != nil {return err}
+						if err := writeShrineOntologyClear(record[i]); err != nil {
+							return err
+						}
+						if err := writeMetadataOntologyClear(record[i]); err != nil {
+							return err
+						}
 					}
 					headerClinical = append(headerClinical, record[i])
 
 				}
 				first = false
 			} else {
-				if err := writeDemodataPatientMapping(record[1]); err != nil {return err}
-				if err := writeDemodataPatientDimension(group); err != nil {return err}
+				// patient not yet exists
+				if _, ok := PatientMapping[record[1]]; ok == false {
 
-				if err := writeDemodataEncounterMapping(record[0], record[1]); err != nil {return err}
-				if err := writeDemodataVisitDimension(); err != nil {return err}
+					PatientMapping[record[1]] = pid
 
-				patientVisitMap[record[0]] = PatientVisitLink{PatientID: PatientID, EncounterID: EncounterID}
+					if err := writeDemodataPatientMapping(record[1]); err != nil {
+						return err
+					}
+					if err := writeDemodataPatientDimension(group, record[1]); err != nil {
+						return err
+					}
+
+					pid++
+				}
+
+				EncounterMapping[record[0]] = eid
+
+				if err := writeDemodataEncounterMapping(record[0], record[1]); err != nil {
+					return err
+				}
+				if err := writeDemodataVisitDimension(record[0], record[1]); err != nil {
+					return err
+				}
+
+				eid++
+
+				patientVisitMap[record[0]] = PatientVisitLink{PatientID: PatientMapping[record[1]], EncounterID: EncounterMapping[record[0]]}
 
 				for i, j := 2, 0; i < len(record); i, j = i+1, j+1 {
 
@@ -276,34 +310,42 @@ func LoadDataFiles(group *onet.Roster, entryPointIdx int, fClinical *os.File, fG
 
 						// if concept path does not exist
 						if _, ok := ontValues[ConceptPath{Field: headerClinical[j], Record: record[i]}]; ok == false {
-							if err := writeShrineOntologyLeafEnc(headerClinical[j], record[i]); err != nil {return err}
+							if err := writeShrineOntologyLeafEnc(headerClinical[j], record[i]); err != nil {
+								return err
+							}
 							// we don't generate the MetadataOntologyLeafEnc because we will do this afterwards (so that we only perform 1 DDT with all sensitive elements)
 
 							ontValues[ConceptPath{Field: headerClinical[j], Record: record[i]}] = EncID
 							EncID++
 						}
 
-						patientVisitLinkList = append(patientVisitLinkList, PatientVisitLink{PatientID: PatientID, EncounterID: EncounterID})
+						patientVisitLinkList = append(patientVisitLinkList, PatientVisitLink{PatientID: PatientMapping[record[1]], EncounterID: EncounterMapping[record[0]]})
 						AllSensitiveIDs = append(AllSensitiveIDs, ontValues[ConceptPath{Field: headerClinical[j], Record: record[i]}])
 					} else {
 
 						// if concept path does not exist
 						if _, ok := ontValues[ConceptPath{Field: headerClinical[j], Record: record[i]}]; ok == false {
-							if err := writeShrineOntologyLeafClear(headerClinical[j], record[i]); err != nil {return err}
-							if err := writeMetadataOntologyLeafClear(headerClinical[j], record[i]); err != nil {return err}
-							if err := writeDemodataConceptDimensionCleartextConcepts(headerClinical[j], record[i]); err != nil {return err}
+							if err := writeShrineOntologyLeafClear(headerClinical[j], record[i]); err != nil {
+								return err
+							}
+							if err := writeMetadataOntologyLeafClear(headerClinical[j], record[i]); err != nil {
+								return err
+							}
+							if err := writeDemodataConceptDimensionCleartextConcepts(headerClinical[j], record[i]); err != nil {
+								return err
+							}
 
 							ontValues[ConceptPath{Field: headerClinical[j], Record: record[i]}] = ClearID
 							ClearID++
 						}
 
-						if err := writeDemodataObservationFactClear(ontValues[ConceptPath{Field: headerClinical[j], Record: record[i]}]); err != nil {return err}
+						if err := writeDemodataObservationFactClear(ontValues[ConceptPath{Field: headerClinical[j], Record: record[i]}], record[0], record[1]); err != nil {
+							return err
+						}
 					}
 
 				}
 
-				PatientID++
-				EncounterID++
 			}
 		}
 	}
@@ -347,9 +389,9 @@ func LoadDataFiles(group *onet.Roster, entryPointIdx int, fClinical *os.File, fG
 			} else {
 				genomicID, err := writeShrineOntologyGenomicAnnotations(headerGenomic, indexGenVariant, record)
 
-				if err == nil{
-					patientVisitLinkList = append(patientVisitLinkList, PatientVisitLink{PatientID: patientVisitMap[headerGenomic[indexGenVariant["Tumor_Sample_Barcode"]]].PatientID,
-						EncounterID: patientVisitMap[headerGenomic[indexGenVariant["Tumor_Sample_Barcode"]]].EncounterID})
+				if err == nil {
+					patientVisitLinkList = append(patientVisitLinkList, PatientVisitLink{PatientID: patientVisitMap[record[indexGenVariant["Tumor_Sample_Barcode"]]].PatientID,
+						EncounterID: patientVisitMap[record[indexGenVariant["Tumor_Sample_Barcode"]]].EncounterID})
 					AllSensitiveIDs = append(AllSensitiveIDs, genomicID)
 				} else if err != nil && genomicID == int64(-1) { // if it is a fatal error
 					return err
@@ -368,7 +410,9 @@ func LoadDataFiles(group *onet.Roster, entryPointIdx int, fClinical *os.File, fG
 	if err != nil {
 		return err
 	}
-	if err := writeMetadataSensitiveTagged(taggedValues, patientVisitLinkList); err != nil {return err}
+	if err := writeMetadataSensitiveTagged(taggedValues, patientVisitLinkList); err != nil {
+		return err
+	}
 
 	log.LLvl1("The End.")
 
@@ -465,7 +509,7 @@ func writeShrineOntologyGenomicAnnotations(fields []string, indexGenVariant map[
 
 	otherFields := ""
 	for i, el := range record {
-		if _, ok := indexGenVariant[el]; ok == false{
+		if _, ok := indexGenVariant[el]; ok == false {
 			otherFields += fields[i] + ":" + strings.Replace(el, "'", "''", -1) + ", "
 		}
 	}
@@ -575,11 +619,15 @@ func writeMetadataSensitiveTagged(list []lib.GroupingKey, patientVisitLinkList [
 				return err
 			}
 
-			if err := writeDemodataConceptDimensionTaggedConcepts(string(el), strconv.FormatUint(uint64(tagValues[string(el)]), 10)); err != nil {return err}
+			if err := writeDemodataConceptDimensionTaggedConcepts(string(el), strconv.FormatUint(uint64(tagValues[string(el)]), 10)); err != nil {
+				return err
+			}
 
 		}
 
-		if err := writeDemodataObservationFactEnc(strconv.FormatUint(uint64(tagValues[string(el)]), 10), patientVisitLinkList[i]); err != nil {return err}
+		if err := writeDemodataObservationFactEnc(strconv.FormatUint(uint64(tagValues[string(el)]), 10), patientVisitLinkList[i]); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -647,7 +695,7 @@ func writeDemodataConceptDimensionTaggedConcepts(el string, id string) error {
 
 func writeDemodataPatientMapping(el string) error {
 
-	chuv := `INSERT INTO i2b2demodata.patient_mapping VALUES ('` + el + `', 'chuv', ` + strconv.FormatInt(PatientID, 10) + `, NULL, 'Demo', NULL, NULL, NULL, 'NOW()', NULL, 1);` + "\n"
+	chuv := `INSERT INTO i2b2demodata.patient_mapping VALUES ('` + el + `', 'chuv', ` + strconv.FormatInt(PatientMapping[el], 10) + `, NULL, 'Demo', NULL, NULL, NULL, 'NOW()', NULL, 1);` + "\n"
 
 	_, err := DBi2b2DemodataPatientMapping.WriteString(chuv)
 
@@ -656,7 +704,7 @@ func writeDemodataPatientMapping(el string) error {
 		return err
 	}
 
-	hive := `INSERT INTO i2b2demodata.patient_mapping VALUES ('` + strconv.FormatInt(PatientID, 10) + `', 'HIVE', ` + strconv.FormatInt(PatientID, 10) + `, 'A', 'HIVE', NULL, 'NOW()', 'NOW()', 'NOW()', 'edu.harvard.i2b2.crc', 1);` + "\n"
+	hive := `INSERT INTO i2b2demodata.patient_mapping VALUES ('` + strconv.FormatInt(PatientMapping[el], 10) + `', 'HIVE', ` + strconv.FormatInt(PatientMapping[el], 10) + `, 'A', 'HIVE', NULL, 'NOW()', 'NOW()', 'NOW()', 'edu.harvard.i2b2.crc', 1);` + "\n"
 
 	_, err = DBi2b2DemodataPatientMapping.WriteString(hive)
 
@@ -670,12 +718,12 @@ func writeDemodataPatientMapping(el string) error {
 }
 
 // TODO: No dummy data. Basically all flags are
-func writeDemodataPatientDimension(group *onet.Roster) error {
+func writeDemodataPatientDimension(group *onet.Roster, patientID string) error {
 
 	encryptedFlag := lib.EncryptInt(group.Aggregate, 1)
 	b := encryptedFlag.ToBytes()
 
-	patientDimension := `INSERT INTO i2b2demodata.patient_dimension VALUES(` + strconv.FormatInt(PatientID, 10) + `, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'NOW()', NULL, 1, "` + base64.StdEncoding.EncodeToString(b) + `");` + "\n"
+	patientDimension := `INSERT INTO i2b2demodata.patient_dimension VALUES(` + strconv.FormatInt(PatientMapping[patientID], 10) + `, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'NOW()', NULL, 1, "` + base64.StdEncoding.EncodeToString(b) + `");` + "\n"
 
 	_, err := DBi2b2DemodataPatientDimension.WriteString(patientDimension)
 
@@ -689,7 +737,7 @@ func writeDemodataPatientDimension(group *onet.Roster) error {
 
 func writeDemodataEncounterMapping(sampleID, patientID string) error {
 
-	encounterChuv := `INSERT INTO i2b2demodata.encounter_mapping VALUES ('` + sampleID + `', 'chuv', 'Demo', ` + strconv.FormatInt(EncounterID, 10) + `, '` + patientID + `', 'chuv', NULL, NULL, NULL, NULL, 'NOW()', NULL, 1);` + "\n"
+	encounterChuv := `INSERT INTO i2b2demodata.encounter_mapping VALUES ('` + sampleID + `', 'chuv', 'Demo', ` + strconv.FormatInt(EncounterMapping[sampleID], 10) + `, '` + patientID + `', 'chuv', NULL, NULL, NULL, NULL, 'NOW()', NULL, 1);` + "\n"
 
 	_, err := DBi2b2DemodataEncounterMapping.WriteString(encounterChuv)
 
@@ -698,7 +746,7 @@ func writeDemodataEncounterMapping(sampleID, patientID string) error {
 		return err
 	}
 
-	encounterHive := `INSERT INTO i2b2demodata.encounter_mapping VALUES ('` + strconv.FormatInt(EncounterID, 10) + `', 'HIVE', 'HIVE', ` + strconv.FormatInt(EncounterID, 10) + `, '` + sampleID + `', 'chuv', 'A', NULL, 'NOW()', 'NOW()', 'NOW()', 'edu.harvard.i2b2.crc', 1);` + "\n"
+	encounterHive := `INSERT INTO i2b2demodata.encounter_mapping VALUES ('` + strconv.FormatInt(EncounterMapping[sampleID], 10) + `', 'HIVE', 'HIVE', ` + strconv.FormatInt(EncounterMapping[sampleID], 10) + `, '` + sampleID + `', 'chuv', 'A', NULL, 'NOW()', 'NOW()', 'NOW()', 'edu.harvard.i2b2.crc', 1);` + "\n"
 
 	_, err = DBi2b2DemodataEncounterMapping.WriteString(encounterHive)
 
@@ -710,9 +758,9 @@ func writeDemodataEncounterMapping(sampleID, patientID string) error {
 	return nil
 }
 
-func writeDemodataVisitDimension() error {
+func writeDemodataVisitDimension(sampleID, patientID string) error {
 
-	visit := `INSERT INTO i2b2demodata.visit_dimension VALUES (` + strconv.FormatInt(EncounterID, 10) + `, ` + strconv.FormatInt(PatientID, 10) + `, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'NOW()', 'chuv', 1);` + "\n"
+	visit := `INSERT INTO i2b2demodata.visit_dimension VALUES (` + strconv.FormatInt(EncounterMapping[sampleID], 10) + `, ` + strconv.FormatInt(PatientMapping[patientID], 10) + `, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'NOW()', 'chuv', 1);` + "\n"
 
 	_, err := DBi2b2DemodataVisitDimension.WriteString(visit)
 
@@ -738,9 +786,9 @@ func writeDemodataProviderDimension() error {
 	return nil
 }
 
-func writeDemodataObservationFactClear(el int64) error {
+func writeDemodataObservationFactClear(el int64, sampleID, patientID string) error {
 
-	clear := `INSERT INTO i2b2demodata.observation_fact VALUES(` + strconv.FormatInt(PatientID, 10) + `, ` + strconv.FormatInt(EncounterID, 10) + `,
+	clear := `INSERT INTO i2b2demodata.observation_fact VALUES(` + strconv.FormatInt(PatientMapping[patientID], 10) + `, ` + strconv.FormatInt(EncounterMapping[sampleID], 10) + `,
 			'CLEAR:` + strconv.FormatInt(el, 10) + `', 'chuv', 'NOW()', '@', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
 			'chuv', NULL, NULL, NULL, NULL, 'NOW()', NULL, 1, 1);` + "\n"
 

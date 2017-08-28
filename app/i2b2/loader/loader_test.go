@@ -37,7 +37,7 @@ func TestLoadDataFiles(t *testing.T) {
 	listSensitive = append(listSensitive, "PRIMARY_TUMOR_LOCALIZATION_TYPE")
 	listSensitive = append(listSensitive, "CANCER_TYPE_DETAILED")
 
-	err = loader.LoadDataFiles(el, 0, fClinical, fGenomic, listSensitive, 1)
+	err = loader.LoadDataFiles(el, 0, fClinical, fGenomic, listSensitive)
 	assert.True(t, err == nil, err)
 
 	loader.CloseFiles()
