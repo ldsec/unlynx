@@ -22,6 +22,8 @@ const (
 	DefaultClinicalFile = ""
 	// DefaultGenomicFile is the name of the default genomic file (dataset)
 	DefaultGenomicFile = ""
+	// DefaultSizeFile is the size of the data that we are going to consider (1 - original)
+	DefaultSizeFile = 1
 
 	optionConfig      = "config"
 	optionConfigShort = "c"
@@ -34,11 +36,17 @@ const (
 	optionDecryptKey      = "key"
 	optionDecryptKeyShort = "k"
 
+	optionSizeFile      = "replay"
+	optionSizeFileShort = "r"
+
 	optionClinicalFile      = "clinical"
 	optionClinicalFileShort = "cl"
 
 	optionGenomicFile      = "genomic"
 	optionGenomicFileShort = "g"
+
+	optionListSensitive      = "sensitive"
+	optionListSensitiveShort = "s"
 )
 
 /*
@@ -78,6 +86,20 @@ func main() {
 
 	loaderFlags := []cli.Flag{
 		cli.StringFlag{
+			Name:  optionGroupFile + ", " + optionGroupFileShort,
+			Value: DefaultGroupFile,
+			Usage: "Unlynx group definition file",
+		},
+		cli.IntFlag{
+			Name:  optionEntryPointIdx,
+			Usage: "Index (relative to the group definition file) of the collective authority server to load the data.",
+		},
+		cli.IntFlag{
+			Name:  optionSizeFile + ", " + optionSizeFileShort,
+			Value: DefaultSizeFile,
+			Usage: "Replay dataset (default: 1 - original, 2 - two times more entries, etc.)",
+		},
+		cli.StringFlag{
 			Name:  optionClinicalFile + ", " + optionClinicalFileShort,
 			Value: DefaultClinicalFile,
 			Usage: "Clinical file to load",
@@ -86,6 +108,11 @@ func main() {
 			Name:  optionGenomicFile + ", " + optionGenomicFileShort,
 			Value: DefaultGenomicFile,
 			Usage: "Genomic file to load",
+		},
+		cli.StringSliceFlag{
+			Name:  optionListSensitive + ", " + optionListSensitiveShort,
+			Value: "",
+			Usage: "Fields listed as sensitive (\"all\" means all clinical fields are considered sensitive)",
 		},
 	}
 

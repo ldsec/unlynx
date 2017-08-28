@@ -47,6 +47,7 @@ app/default/service_storage
 app/i2b2/*.txt
 app/i2b2/loader/files/*.sql
 app/i2b2/loader/files/*.csv
+app/i2b2/loader/*.txt
 
 unlynx
 unlynxI2B2

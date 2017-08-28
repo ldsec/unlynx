@@ -32,6 +32,9 @@ func loadData(c *cli.Context) error {
 	clinicalFilePath := c.String("clinical")
 	genomicFilePath := c.String("genomic")
 	groupFilePath := c.String("file")
+	entryPointIdx := c.Int("entryPointIdx")
+	listSensitive := c.StringSlice("sensitive")
+	replaySize := c.Int("size")
 
 	// generate el with group file
 	f, err := os.Open(groupFilePath)
@@ -61,7 +64,17 @@ func loadData(c *cli.Context) error {
 		return cli.NewExitError(err, 1)
 	}
 
-	loader.LoadClient(el, fClinical, fGenomic)
+	if listSensitive == nil {
+		log.Error("Error while parsing list of sensitive files", err)
+		return cli.NewExitError(err, 1)
+	}
+
+	if replaySize < 1 {
+		log.Error("Wrong file size value (1>)", err)
+		return cli.NewExitError(err, 1)
+	}
+
+	loader.LoadClient(el, entryPointIdx, fClinical, fGenomic, listSensitive, replaySize)
 
 	return nil
 }

@@ -3,6 +3,7 @@ package loader_test
 import (
 	"github.com/lca1/unlynx/app/i2b2/loader"
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
 	"os"
 	"testing"
@@ -14,6 +15,10 @@ const (
 )
 
 func TestLoadDataFiles(t *testing.T) {
+	log.SetDebugVisible(1)
+	local := onet.NewLocalTest()
+	_, el, _ := local.GenTree(3, true)
+	defer local.CloseAll()
 
 	fClinical, err := os.Open(CLINICAL_FILE)
 	if err != nil {
@@ -28,8 +33,16 @@ func TestLoadDataFiles(t *testing.T) {
 	err = loader.InitFiles()
 	assert.True(t, err == nil)
 
-	err = loader.LoadDataFiles(fClinical, fGenomic)
+	listSensitive := make([]string, 0)
+	listSensitive = append(listSensitive, "PRIMARY_TUMOR_LOCALIZATION_TYPE")
+	listSensitive = append(listSensitive, "CANCER_TYPE_DETAILED")
+
+	err = loader.LoadDataFiles(el, 0, fClinical, fGenomic, listSensitive, 1)
 	assert.True(t, err == nil, err)
 
 	loader.CloseFiles()
+}
+
+func TestReplayDataset(t *testing.T) {
+
 }
