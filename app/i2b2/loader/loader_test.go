@@ -44,5 +44,7 @@ func TestLoadDataFiles(t *testing.T) {
 }
 
 func TestReplayDataset(t *testing.T) {
-
+	t.Skip()
+	err := loader.ReplayDataset(GENOMIC_FILE, 2)
+	assert.True(t, err == nil)
 }

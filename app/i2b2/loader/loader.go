@@ -79,16 +79,73 @@ var (
 )
 
 // ReplayDataset replays the dataset x number of times
-func ReplayDataset(x int) {
+func ReplayDataset(filename string, x int) error{
+	log.LLvl1("Replaying dataset", x, "times...")
+
+	// open file to read
+	fGenomic, err := os.Open(filename)
+	if err != nil {
+		log.Fatal("Cannot open file to read:", err)
+		return err
+	}
+
+	reader := csv.NewReader(fGenomic)
+	reader.Comma = '\t'
+
+	// read all genomic file
+	record, err := reader.ReadAll()
+	if err != nil {
+		log.Fatal("Error in the ReplayDataset() - reading:", err)
+		return err
+	}
+
+	finalResult := record[:]
+
+	header := true
+	// replay x times
+	for t:=0; t<x-1; t++ {
+		for _, el := range record {
+			// not a comment or blank line
+			if string(el[0]) == "" || string(el[0][0:1]) == "#" {
+				continue
+			}
+
+			// HEADER time...
+			if header == true {
+				header = false
+				continue
+			}
+
+			finalResult = append(finalResult, el)
+		}
+	}
+
+	fGenomic.Close()
+
+	// open file to write
+	fGenomic, err = os.Create(filename)
+	if err != nil {
+		log.Fatal("Cannot open file to write:", err)
+		return err
+	}
+
+	writer := csv.NewWriter(fGenomic)
+	writer.Comma = '\t'
+
+	err = writer.WriteAll(finalResult)
+	if err != nil {
+		log.Fatal("Error in the ReplayDataset() - writing:", err)
+		return err
+	}
+
+	fGenomic.Close()
+
+	return nil
 
 }
 
 // LoadClient initiates the loading process
-func LoadClient(el *onet.Roster, entryPointIdx int, fClinical *os.File, fGenomic *os.File, listSensitive []string, replay int) error {
-	if replay > 1 {
-		ReplayDataset(replay)
-	}
-
+func LoadClient(el *onet.Roster, entryPointIdx int, fClinical *os.File, fGenomic *os.File, listSensitive []string) error {
 	db, err := connectDB()
 	if err != nil {
 		return err
@@ -244,7 +301,7 @@ func LoadDataFiles(group *onet.Roster, entryPointIdx int, fClinical *os.File, fG
 		}
 
 		// if it is not a commented line
-		if string(record[0]) == "" || string(record[0][0:1]) != "#" {
+		if string(record[0]) != "" || string(record[0][0:1]) != "#" {
 
 			// the HEADER
 			if first == true {
@@ -374,7 +431,7 @@ func LoadDataFiles(group *onet.Roster, entryPointIdx int, fClinical *os.File, fG
 		}
 
 		// if it is not a commented line
-		if string(record[0]) == "" || string(record[0][0:1]) != "#" {
+		if string(record[0]) != "" || string(record[0][0:1]) != "#" {
 
 			// the HEADER
 			if first == true {
