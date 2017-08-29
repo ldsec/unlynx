@@ -723,7 +723,7 @@ func writeDemodataPatientDimension(group *onet.Roster, patientID string) error {
 	encryptedFlag := lib.EncryptInt(group.Aggregate, 1)
 	b := encryptedFlag.ToBytes()
 
-	patientDimension := `INSERT INTO i2b2demodata.patient_dimension VALUES(` + strconv.FormatInt(PatientMapping[patientID], 10) + `, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'NOW()', NULL, 1, "` + base64.StdEncoding.EncodeToString(b) + `");` + "\n"
+	patientDimension := `INSERT INTO i2b2demodata.patient_dimension VALUES(` + strconv.FormatInt(PatientMapping[patientID], 10) + `, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'NOW()', NULL, 1, '` + base64.StdEncoding.EncodeToString(b) + `');` + "\n"
 
 	_, err := DBi2b2DemodataPatientDimension.WriteString(patientDimension)
 
