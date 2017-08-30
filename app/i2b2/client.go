@@ -14,7 +14,6 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"regexp"
 	"strconv"
 	"time"
 )
@@ -72,9 +71,18 @@ func loadData(c *cli.Context) error {
 	if replaySize < 1 {
 		log.Error("Wrong file size value (1>)", err)
 		return cli.NewExitError(err, 1)
+	} else {
+		fGenomic.Close()
+		loader.ReplayDataset(genomicFilePath, replaySize)
+
+		fGenomic, err = os.Open(genomicFilePath)
+		if err != nil {
+			log.Error("Error while opening the new genomic file", err)
+			return cli.NewExitError(err, 1)
+		}
 	}
 
-	loader.LoadClient(el, entryPointIdx, fClinical, fGenomic, listSensitive, replaySize)
+	loader.LoadClient(el, entryPointIdx, fClinical, fGenomic, listSensitive)
 
 	return nil
 }
@@ -110,8 +118,7 @@ func readDDTRequestXMLFrom(input io.Reader) (*lib.XMLMedCoDTTRequest, error) {
 	return &parsedXML, nil
 }
 
-func unlynxRequestFromApp(c *cli.Context) error {
-
+func unlynxDDTRequestFromApp(c *cli.Context) error {
 	// cli arguments
 	groupFilePath := c.String("file")
 	// TODO: use the serverIdentityID / UUID + el.Search rather than the entry point index
@@ -134,23 +141,13 @@ func unlynxRequestFromApp(c *cli.Context) error {
 		return cli.NewExitError(err, 1)
 	}
 
-	// check which message we have: a DDTRequest or a AggRequest
-	_, err = readDDTRequestXMLFrom(os.Stdin)
-	if err == nil {
-
-		err = unlynxDDTRequest(os.Stdin, os.Stdout, el, entryPointIdx, proofs)
-		if err != nil {
-			log.Error("Error while querying Unlynx", err)
-			return cli.NewExitError(err, 2)
-		}
-
-		return nil
+	err = unlynxDDTRequest(os.Stdin, os.Stdout, el, entryPointIdx, proofs)
+	if err != nil {
+		log.Error("Error while requesting a DDT", err)
+		return cli.NewExitError(err, 2)
 	}
 
-	// TODO: need to do the agg request parser
-
-	log.Error("Error while unmarshalling xml.", err)
-	return err
+	return nil
 }
 
 // TODO: no log.Fatal in general (this stops immediately)
@@ -202,7 +199,7 @@ func unlynxDDTRequest(input io.Reader, output io.Writer, el *onet.Roster, entryP
 		log.Error("The number of tags", len(result), "does not match the number of terms", len(encQueryTerms), ".", err)
 	}
 
-	tr.DDTResquestTimeCommun = totalTime - tr.DDTRequestTimeExec
+	tr.DDTRequestTimeCommun = totalTime - tr.DDTRequestTimeExec
 	tr.DDTparsingTime = parsingTime
 	tr.DDTRequestTimeExec += tr.DDTparsingTime
 
@@ -226,6 +223,7 @@ func writeDDTResponseXML(output io.Writer, xmlQuery *lib.XMLMedCoDTTRequest, res
 			<tagged_value>adfw25e457f=</tagged_value>
 			<tagged_value>ADfFD5FDads=</tagged_value>
 		    </tagged_values>
+		    <error></error>
 		</unlynx_ddt_response>
 	*/
 
@@ -241,7 +239,7 @@ func writeDDTResponseXML(output io.Writer, xmlQuery *lib.XMLMedCoDTTRequest, res
 		resultString = `<unlynx_ddt_response>
 					<id>` + (*xmlQuery).QueryID + `</id>
 					<times unit="ms">{"DDTRequest execution time":` + strconv.FormatInt(int64(tr.DDTRequestTimeExec.Nanoseconds()/1000000.0), 10) +
-			`,"DDTRequest communication time":` + strconv.FormatInt(int64(tr.DDTResquestTimeCommun.Nanoseconds()/1000000.0), 10) +
+			`,"DDTRequest communication time":` + strconv.FormatInt(int64(tr.DDTRequestTimeCommun.Nanoseconds()/1000000.0), 10) +
 			`,"DDTRequest parsing time":` + strconv.FormatInt(int64(tr.DDTparsingTime.Nanoseconds()/1000000.0), 10) +
 			`}</times>
 					<tagged_values>` + resultTags + `</tagged_values>
@@ -250,18 +248,22 @@ func writeDDTResponseXML(output io.Writer, xmlQuery *lib.XMLMedCoDTTRequest, res
 	} else if xmlQuery != nil {
 		resultString = `<unlynx_ddt_response>
 					<id>` + (*xmlQuery).QueryID + `</id>
+					<times unit="ms"></times>
+					<tagged_values></tagged_values>
 					<error>` + err.Error() + `</error>
 				</unlynx_ddt_response>`
 	} else {
 		resultString = `<unlynx_ddt_response>
 					<id>unknown</id>
+					<times unit="ms"></times>
+					<tagged_values></tagged_values>
 					<error>` + err.Error() + `</error>
 				</unlynx_ddt_response>`
 	}
 
 	_, err = io.WriteString(output, resultString)
 	if err != nil {
-		log.Error("Error while writing result.", err)
+		log.Error("Error while writing DDTResponseXML.", err)
 		return err
 	}
 	return nil
@@ -272,7 +274,7 @@ func writeDDTResponseXML(output io.Writer, xmlQuery *lib.XMLMedCoDTTRequest, res
 //----------------------------------------------------------------------------------------------------------------------
 
 // read from a reader an xml (until EOF), and unmarshal it
-/*func readAggRequestXMLFrom(input io.Reader) (*lib.XMLMedCoAggRequest, error) {
+func readAggRequestXMLFrom(input io.Reader) (*lib.XMLMedCoAggRequest, error) {
 
 	// read from stdin TODO: limit the amount read
 	dataBytes, errIo := ioutil.ReadAll(input)
@@ -288,20 +290,19 @@ func writeDDTResponseXML(output io.Writer, xmlQuery *lib.XMLMedCoDTTRequest, res
 	parsedXML := lib.XMLMedCoAggRequest{}
 	errXML := xml.Unmarshal(dataBytes, &parsedXML)
 	if errXML != nil {
-		log.Error("Error while unmarshalling DDTRequest xml.", errXML)
+		log.Error("Error while unmarshalling AggRequest xml.", errXML)
 		return nil, errXML
 	}
 
 	return &parsedXML, nil
-}*/
+}
 
 func unlynxAggRequestFromApp(c *cli.Context) error {
-
 	// cli arguments
 	groupFilePath := c.String("file")
 	// TODO: use the serverIdentityID / UUID + el.Search rather than the entry point index
-	//entryPointIdx := c.Int("entryPointIdx")
-	//proofs := c.Bool("proofs")
+	entryPointIdx := c.Int("entryPointIdx")
+	proofs := c.Bool("proofs")
 
 	// generate el with group file
 	f, err := os.Open(groupFilePath)
@@ -319,11 +320,11 @@ func unlynxAggRequestFromApp(c *cli.Context) error {
 		return cli.NewExitError(err, 1)
 	}
 
-	/*err = unlynxAggRequest(os.Stdin, os.Stdout, el, entryPointIdx, proofs)
+	err = unlynxAggRequest(os.Stdin, os.Stdout, el, entryPointIdx, proofs)
 	if err != nil {
-		log.Error("Error while querying Unlynx", err)
+		log.Error("Error while requesting a DDT", err)
 		return cli.NewExitError(err, 2)
-	}*/
+	}
 
 	return nil
 }
@@ -331,7 +332,7 @@ func unlynxAggRequestFromApp(c *cli.Context) error {
 // TODO: no log.Fatal in general (this stops immediately)
 // TODO: handle errors in to/from bytes in crypto.go
 // run aggregation of the results (and remaining protocols), all errors will be sent to the output
-/*func unlynxAggRequest(input io.Reader, output io.Writer, el *onet.Roster, entryPointIdx int, proofs bool) error {
+func unlynxAggRequest(input io.Reader, output io.Writer, el *onet.Roster, entryPointIdx int, proofs bool) error {
 	start := time.Now()
 
 	// get data from input
@@ -387,4 +388,51 @@ func unlynxAggRequestFromApp(c *cli.Context) error {
 		return err
 	}
 	return nil
-}*/
+}
+
+// output result xml on a writer (if result_err != nil, the error is sent)
+func writeAggResponseXML(output io.Writer, xmlQuery *lib.XMLMedCoDTTRequest, aggregate *lib.CipherText, tr *serviceI2B2.TimeResults, err error) error {
+
+	/*
+		<unlynx_agg_response>
+		    <id>request ID</id>
+		    <times>{cc: 55}</times>
+		    <aggregate>f85as4fas57f=</aggregate>
+		    <error></error>
+		</unlynx_agg_response>
+	*/
+
+	resultString := ""
+	if err == nil && xmlQuery != nil {
+		resultString = `<unlynx_agg_response>
+					<id>` + (*xmlQuery).QueryID + `</id>
+					<times unit="ms">{"DDTRequest execution time":` + strconv.FormatInt(int64(tr.DDTRequestTimeExec.Nanoseconds()/1000000.0), 10) +
+			`,"DDTRequest communication time":` + strconv.FormatInt(int64(tr.DDTRequestTimeCommun.Nanoseconds()/1000000.0), 10) +
+			`,"DDTRequest parsing time":` + strconv.FormatInt(int64(tr.DDTparsingTime.Nanoseconds()/1000000.0), 10) +
+			`}</times>
+					<aggregate>" + aggregate.Serialize() + "</aggregate>
+					<error></error>
+				</unlynx_ddt_response>`
+	} else if xmlQuery != nil {
+		resultString = `<unlynx_agg_response>
+					<id>` + (*xmlQuery).QueryID + `</id>
+					<times></times>
+		    			<aggregate></aggregate>
+					<error>` + err.Error() + `</error>
+				</unlynx_agg_response>`
+	} else {
+		resultString = `<unlynx_agg_response>
+					<id>unknown</id>
+					<times></times>
+		    			<aggregate></aggregate>
+					<error>` + err.Error() + `</error>
+				</unlynx_agg_response>`
+	}
+
+	_, err = io.WriteString(output, resultString)
+	if err != nil {
+		log.Error("Error while writing AggResponseXML.", err)
+		return err
+	}
+	return nil
+}

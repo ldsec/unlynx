@@ -177,10 +177,17 @@ func main() {
 
 		// BEGIN CLIENT: QUERIER ----------
 		{
-			Name:    "run",
-			Aliases: []string{"r"},
-			Usage:   "Execute a query using Unlynx. Feed the query XML (UTF-8 encoded) to stdin and close it.",
-			Action:  unlynxRequestFromApp,
+			Name:    "runDDT",
+			Aliases: []string{"rDDT"},
+			Usage:   "Execute a DDT request using Unlynx. Feed the query XML (UTF-8 encoded) to stdin and close it.",
+			Action:  unlynxDDTRequestFromApp,
+			Flags:   querierFlags,
+		},
+		{
+			Name:    "runAgg",
+			Aliases: []string{"rAgg"},
+			Usage:   "Execute a Aggregation request using Unlynx. Feed the query XML (UTF-8 encoded) to stdin and close it.",
+			Action:  unlynxAggRequestFromApp,
 			Flags:   querierFlags,
 		},
 		// CLIENT END: QUERIER ----------

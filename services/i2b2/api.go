@@ -32,14 +32,14 @@ func NewUnLynxClient(entryPoint *network.ServerIdentity, clientID string) *API {
 	return newClient
 }
 
-// Send Query
+// Send Queries
 //______________________________________________________________________________________________________________________
 
-// SendSurveyDDTRequestTerms send the encrypted query terms and DDT tags those terms (the array of terms is ordered).
+// SendSurveyDDTRequestTerms sends the encrypted query terms and DDT tags those terms (the array of terms is ordered).
 func (c *API) SendSurveyDDTRequestTerms(entities *onet.Roster, surveyID SurveyID, terms lib.CipherVector, proofs bool) (*SurveyID, []lib.GroupingKey, TimeResults, error) {
-	log.Lvl1("Client", c.ClientID, "is creating a survey with ID:", surveyID)
+	log.Lvl1("Client", c.ClientID, "is creating a DDT survey with ID:", surveyID)
 
-	sdq := SurveyDDTRequestTerms{
+	sdq := SurveyDDTRequest{
 		SurveyID: surveyID,
 		Roster:   *entities,
 		Proofs:   proofs,
@@ -52,6 +52,33 @@ func (c *API) SendSurveyDDTRequestTerms(entities *onet.Roster, surveyID SurveyID
 
 	resp := ServiceResultDDT{}
 	err := c.SendProtobuf(c.entryPoint, &sdq, &resp)
+	if err != nil {
+		return nil, resp.Result, TimeResults{}, err
+	}
+	return &surveyID, resp.Result, resp.TR, nil
+}
+
+// SendSurveyAggRequest sends the encrypted aggregate local results at each node and expects a shuffling and a key switching of these data.
+func (c *API) SendSurveyAggRequest(entities *onet.Roster, surveyID SurveyID, terms lib.CipherVector, proofs bool, cPK abstract.Point, aggregate lib.CipherText) (*SurveyID, lib.CipherText, TimeResults, error) {
+	log.Lvl1("Client", c.ClientID, "is creating a Agg survey with ID:", surveyID)
+
+	listAggregate := make([]lib.CipherText,0)
+	listAggregate = append(listAggregate, aggregate)
+
+	sar := SurveyAggRequest{
+		SurveyID: surveyID,
+		Roster:   *entities,
+		Proofs:   proofs,
+		ClientPubKey: cPK,
+
+		Aggregate: listAggregate,
+		AggregateShuffled: make([]lib.ProcessResponse,0),
+
+		IntraMessage: false,
+	}
+
+	resp := ServiceResultAgg{}
+	err := c.SendProtobuf(c.entryPoint, &sar, &resp)
 	if err != nil {
 		return nil, resp.Result, TimeResults{}, err
 	}
