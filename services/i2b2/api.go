@@ -62,17 +62,17 @@ func (c *API) SendSurveyDDTRequestTerms(entities *onet.Roster, surveyID SurveyID
 func (c *API) SendSurveyAggRequest(entities *onet.Roster, surveyID SurveyID, cPK abstract.Point, aggregate lib.CipherText, proofs bool) (*SurveyID, lib.CipherText, TimeResults, error) {
 	log.Lvl1("Client", c.ClientID, "is creating a Agg survey with ID:", surveyID)
 
-	listAggregate := make([]lib.CipherText,0)
+	listAggregate := make([]lib.CipherText, 0)
 	listAggregate = append(listAggregate, aggregate)
 
 	sar := SurveyAggRequest{
-		SurveyID: surveyID,
-		Roster:   *entities,
-		Proofs:   proofs,
+		SurveyID:     surveyID,
+		Roster:       *entities,
+		Proofs:       proofs,
 		ClientPubKey: cPK,
 
-		Aggregate: listAggregate,
-		AggregateShuffled: make([]lib.ProcessResponse,0),
+		Aggregate:         listAggregate,
+		AggregateShuffled: make([]lib.ProcessResponse, 0),
 
 		IntraMessage: false,
 	}

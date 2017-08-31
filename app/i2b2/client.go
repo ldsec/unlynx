@@ -71,7 +71,7 @@ func loadData(c *cli.Context) error {
 	if replaySize < 1 {
 		log.Error("Wrong file size value (1>)", err)
 		return cli.NewExitError(err, 1)
-	} else {
+	} else if replaySize > 1 {
 		fGenomic.Close()
 		loader.ReplayDataset(genomicFilePath, replaySize)
 
@@ -358,9 +358,9 @@ func unlynxAggRequest(input io.Reader, output io.Writer, el *onet.Roster, entryP
 
 	client := serviceI2B2.NewUnLynxClient(el.List[entryPointIdx], strconv.Itoa(entryPointIdx))
 	_, result, tr, err := client.SendSurveyAggRequestTerms(
-		el, 					// Roster
+		el, // Roster
 		serviceI2B2.SurveyID(xmlQuery.QueryID), // SurveyID
-		encQueryTerms, 				// Encrypted query terms to tag
+		encQueryTerms,                          // Encrypted query terms to tag
 		proofs,                                 // compute proofs?
 	)
 
@@ -373,8 +373,8 @@ func unlynxAggRequest(input io.Reader, output io.Writer, el *onet.Roster, entryP
 	}
 
 	// sanity check
-	if len(result) == 0 || len(result) != len(encQueryTerms){
-		log.Error("The number of tags",len(result), "does not match the number of terms",len(encQueryTerms), ".", err)
+	if len(result) == 0 || len(result) != len(encQueryTerms) {
+		log.Error("The number of tags", len(result), "does not match the number of terms", len(encQueryTerms), ".", err)
 	}
 
 	tr.DDTResquestTimeCommun = totalTime - tr.DDTRequestTimeExec

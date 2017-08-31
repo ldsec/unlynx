@@ -71,15 +71,15 @@ type ConceptPath struct {
 
 // Support global variables
 var (
-	EncID            int64   		// clinical sensitive IDs
-	ClearID          int64   		// clinical non-sensitive IDs
-	AllSensitiveIDs  []int64 		// stores the EncID(s) and the genomic IDs
-	EncounterMapping map[string]int64	// map a sample ID to a numeric ID
-	PatientMapping   map[string]int64       // map a patient ID to a numeric ID
+	EncID            int64            // clinical sensitive IDs
+	ClearID          int64            // clinical non-sensitive IDs
+	AllSensitiveIDs  []int64          // stores the EncID(s) and the genomic IDs
+	EncounterMapping map[string]int64 // map a sample ID to a numeric ID
+	PatientMapping   map[string]int64 // map a patient ID to a numeric ID
 )
 
 // ReplayDataset replays the dataset x number of times
-func ReplayDataset(filename string, x int) error{
+func ReplayDataset(filename string, x int) error {
 	log.LLvl1("Replaying dataset", x, "times...")
 
 	// open file to read
@@ -103,7 +103,7 @@ func ReplayDataset(filename string, x int) error{
 
 	header := true
 	// replay x times
-	for t:=0; t<x-1; t++ {
+	for t := 0; t < x-1; t++ {
 		for _, el := range record {
 			// not a comment or blank line
 			if string(el[0]) == "" || string(el[0][0:1]) == "#" {

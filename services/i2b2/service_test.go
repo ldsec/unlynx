@@ -20,12 +20,11 @@ func getParam(nbHosts int) (*onet.Roster, *onet.LocalTest) {
 	// don't register the tree or entitylist
 	_, el, _ := local.GenTree(nbHosts, true)
 
-
 	// get query parameters
 	return el, local
 }
 
-func getClients(nbHosts int, el *onet.Roster) []*serviceI2B2.API{
+func getClients(nbHosts int, el *onet.Roster) []*serviceI2B2.API {
 	clients := make([]*serviceI2B2.API, nbHosts)
 	for i := 0; i < nbHosts; i++ {
 		clients[i] = serviceI2B2.NewUnLynxClient(el.List[i], strconv.Itoa(i))
@@ -129,7 +128,7 @@ func TestServiceAgg(t *testing.T) {
 
 	var result_node1, result_node2, result_node3, result_node4, result_node5, result_node6 lib.CipherText
 
-	wg := lib.StartParallelize(len(el.List)*2)
+	wg := lib.StartParallelize(len(el.List) * 2)
 
 	// the first two threads execute the same operation (repetition) to check that in the end it yields the same result
 	// surveyID should be the same
@@ -201,16 +200,15 @@ func TestServiceAgg(t *testing.T) {
 	listResults1 := make([]int64, 0)
 	listResults1 = append(listResults1, lib.DecryptInt(secKey1, result_node1), lib.DecryptInt(secKey2, result_node2), lib.DecryptInt(secKey3, result_node3))
 
-	assert.Contains(t,listResults1, int64(2))
-	assert.Contains(t,listResults1, int64(1))
-	assert.Contains(t,listResults1, int64(3))
+	assert.Contains(t, listResults1, int64(2))
+	assert.Contains(t, listResults1, int64(1))
+	assert.Contains(t, listResults1, int64(3))
 
 	listResults2 := make([]int64, 0)
 	listResults2 = append(listResults2, lib.DecryptInt(secKey1, result_node4), lib.DecryptInt(secKey2, result_node5), lib.DecryptInt(secKey3, result_node6))
 
-	assert.Contains(t,listResults2, int64(4))
-	assert.Contains(t,listResults2, int64(5))
-	assert.Contains(t,listResults2, int64(6))
-
+	assert.Contains(t, listResults2, int64(4))
+	assert.Contains(t, listResults2, int64(5))
+	assert.Contains(t, listResults2, int64(6))
 
 }
