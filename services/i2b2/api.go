@@ -59,7 +59,7 @@ func (c *API) SendSurveyDDTRequestTerms(entities *onet.Roster, surveyID SurveyID
 }
 
 // SendSurveyAggRequest sends the encrypted aggregate local results at each node and expects a shuffling and a key switching of these data.
-func (c *API) SendSurveyAggRequest(entities *onet.Roster, surveyID SurveyID, terms lib.CipherVector, proofs bool, cPK abstract.Point, aggregate lib.CipherText) (*SurveyID, lib.CipherText, TimeResults, error) {
+func (c *API) SendSurveyAggRequest(entities *onet.Roster, surveyID SurveyID, cPK abstract.Point, aggregate lib.CipherText, proofs bool) (*SurveyID, lib.CipherText, TimeResults, error) {
 	log.Lvl1("Client", c.ClientID, "is creating a Agg survey with ID:", surveyID)
 
 	listAggregate := make([]lib.CipherText,0)
@@ -80,6 +80,7 @@ func (c *API) SendSurveyAggRequest(entities *onet.Roster, surveyID SurveyID, ter
 	resp := ServiceResultAgg{}
 	err := c.SendProtobuf(c.entryPoint, &sar, &resp)
 	if err != nil {
+
 		return nil, resp.Result, TimeResults{}, err
 	}
 	return &surveyID, resp.Result, resp.TR, nil

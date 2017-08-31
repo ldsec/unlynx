@@ -847,7 +847,7 @@ func writeDemodataObservationFactClear(el int64, sampleID, patientID string) err
 
 	clear := `INSERT INTO i2b2demodata.observation_fact VALUES(` + strconv.FormatInt(PatientMapping[patientID], 10) + `, ` + strconv.FormatInt(EncounterMapping[sampleID], 10) + `,
 			'CLEAR:` + strconv.FormatInt(el, 10) + `', 'chuv', 'NOW()', '@', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-			'chuv', NULL, NULL, NULL, NULL, 'NOW()', NULL, 1, 1);` + "\n"
+			'chuv', NULL, NULL, NULL, NULL, 'NOW()', NULL, 1);` + "\n"
 
 	_, err := DBi2b2DemodataObservationFact.WriteString(clear)
 
@@ -862,7 +862,7 @@ func writeDemodataObservationFactClear(el int64, sampleID, patientID string) err
 func writeDemodataObservationFactEnc(el string, link PatientVisitLink) error {
 
 	encrypted := `INSERT INTO i2b2demodata.observation_fact VALUES(` + strconv.FormatInt(link.PatientID, 10) + `, ` + strconv.FormatInt(link.EncounterID, 10) + `, 'TAG_ID:` + el + `',
-			'chuv', 'NOW()', '@', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'chuv', NULL, NULL, NULL, NULL, 'NOW()', NULL, 1, 1);` + "\n"
+			'chuv', 'NOW()', '@', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'chuv', NULL, NULL, NULL, NULL, 'NOW()', NULL, 1);` + "\n"
 
 	_, err := DBi2b2DemodataObservationFact.WriteString(encrypted)
 
