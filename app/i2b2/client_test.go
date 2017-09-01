@@ -319,7 +319,6 @@ func TestMedCoDDTRequestV2(t *testing.T) {
 		assert.Equal(t, len(response.TaggedValues), nbrTerms, "("+string(i)+") The number of tags is different from the number of initial terms")
 
 		for _, el := range response.TaggedValues {
-
 			for j := i + 1; j < len(finalResponses); j++ {
 				assert.NotContains(t, finalResponses[j].TaggedValues, el, "There are tags that are the same among nodes")
 			}
@@ -381,17 +380,17 @@ func TestLocalAggregate(t *testing.T) {
 	sizeVector := 10
 	realResult := int64(0)
 
-	listEncElements := make(lib.CipherVector,0)
-	for i := 0; i< sizeVector; i++ {
-		listEncElements = append(listEncElements,*lib.EncryptInt(pubKey,int64(1)))
+	listEncElements := make(lib.CipherVector, 0)
+	for i := 0; i < sizeVector; i++ {
+		listEncElements = append(listEncElements, *lib.EncryptInt(pubKey, int64(1)))
 		realResult += int64(1)
 	}
 
-	result := LocalAggregate(listEncElements,pubKey)
+	result := LocalAggregate(listEncElements, pubKey)
 
-	resultDec := lib.DecryptInt(secKey,*result)
+	resultDec := lib.DecryptInt(secKey, *result)
 
-	assert.Equal(t,realResult, resultDec)
+	assert.Equal(t, realResult, resultDec)
 }
 
 func TestMedcoAggRequest(t *testing.T) {
@@ -422,14 +421,14 @@ func TestMedcoAggRequest(t *testing.T) {
 	finalResponses = append(finalResponses, parseAggResponse(t, writer1.String()))
 	finalResponses = append(finalResponses, parseAggResponse(t, writer2.String()))
 
-	expectedResponses := [3]int64{20,30,50}
+	expectedResponses := [3]int64{20, 30, 50}
 	for i, response := range finalResponses {
 		assert.True(t, response.Error == "")
 		aux := lib.CipherText{}
 		err := aux.Deserialize(finalResponses[i].AggregateV)
-		assert.Nil(t,err)
+		assert.Nil(t, err)
 
-		assert.Contains(t, expectedResponses, lib.DecryptInt(clientSecKey,aux), "Aggregation result does not match")
+		assert.Contains(t, expectedResponses, lib.DecryptInt(clientSecKey, aux), "Aggregation result does not match")
 	}
 
 	testLocalTeardown()
@@ -463,14 +462,14 @@ func TestMedCoAggRequestV2(t *testing.T) {
 	finalResponses = append(finalResponses, parseAggResponse(t, writer1.String()))
 	finalResponses = append(finalResponses, parseAggResponse(t, writer2.String()))
 
-	expectedResponses := [3]int64{100,7,4}
+	expectedResponses := [3]int64{100, 7, 4}
 	for i, response := range finalResponses {
 		assert.True(t, response.Error == "")
 		aux := lib.CipherText{}
 		err := aux.Deserialize(finalResponses[i].AggregateV)
-		assert.Nil(t,err)
+		assert.Nil(t, err)
 
-		assert.Contains(t, expectedResponses, lib.DecryptInt(clientSecKey,aux), "Aggregation result does not match")
+		assert.Contains(t, expectedResponses, lib.DecryptInt(clientSecKey, aux), "Aggregation result does not match")
 	}
 
 	testLocalTeardown()
@@ -506,13 +505,13 @@ func TestMedCoAggRequestRemote(t *testing.T) {
 	finalResponses = append(finalResponses, parseAggResponse(t, writer1.String()))
 	finalResponses = append(finalResponses, parseAggResponse(t, writer2.String()))
 
-	expectedResponses := [3]int64{3,47,31}
+	expectedResponses := [3]int64{3, 47, 31}
 	for i, response := range finalResponses {
 		assert.True(t, response.Error == "")
 		aux := lib.CipherText{}
 		err := aux.Deserialize(finalResponses[i].AggregateV)
-		assert.Nil(t,err)
+		assert.Nil(t, err)
 
-		assert.Contains(t, expectedResponses, lib.DecryptInt(clientSecKey,aux), "Aggregation result does not match")
+		assert.Contains(t, expectedResponses, lib.DecryptInt(clientSecKey, aux), "Aggregation result does not match")
 	}
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/lca1/unlynx/app/i2b2/loader"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/services/i2b2"
+	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/app"
 	"gopkg.in/dedis/onet.v1/log"
@@ -16,7 +17,6 @@ import (
 	"os"
 	"strconv"
 	"time"
-	"gopkg.in/dedis/crypto.v0/abstract"
 )
 
 // Loader functions
@@ -371,11 +371,11 @@ func unlynxAggRequest(input io.Reader, output io.Writer, el *onet.Roster, entryP
 
 	client := serviceI2B2.NewUnLynxClient(el.List[entryPointIdx], strconv.Itoa(entryPointIdx))
 	_, result, tr, err := client.SendSurveyAggRequest(
-		el,         			// Roster
-		serviceI2B2.SurveyID(id),       // SurveyID
-		cPK,       			// client public key
-		*aggregate,  			// Encrypted local aggregation result
-		proofs,     			// compute proofs?
+		el, // Roster
+		serviceI2B2.SurveyID(id), // SurveyID
+		cPK,        // client public key
+		*aggregate, // Encrypted local aggregation result
+		proofs,     // compute proofs?
 	)
 
 	totalTime := time.Since(start)
@@ -400,15 +400,16 @@ func unlynxAggRequest(input io.Reader, output io.Writer, el *onet.Roster, entryP
 	return nil
 }
 
-func LocalAggregate(encDummyFlags lib.CipherVector, pubKey abstract.Point) *lib.CipherText{
+// LocalAggregate locally aggregates the encrypted dummy flags
+func LocalAggregate(encDummyFlags lib.CipherVector, pubKey abstract.Point) *lib.CipherText {
 	// there are no results
 	if len(encDummyFlags) == 0 {
-		return lib.EncryptInt(pubKey,int64(0))
+		return lib.EncryptInt(pubKey, int64(0))
 	}
 
 	result := &encDummyFlags[0]
-	for i:=1; i < len(encDummyFlags); i++ {
-		result.Add(*result,encDummyFlags[i])
+	for i := 1; i < len(encDummyFlags); i++ {
+		result.Add(*result, encDummyFlags[i])
 	}
 
 	return result
