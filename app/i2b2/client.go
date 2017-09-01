@@ -16,6 +16,7 @@ import (
 	"os"
 	"strconv"
 	"time"
+	"gopkg.in/dedis/crypto.v0/abstract"
 )
 
 // Loader functions
@@ -344,7 +345,7 @@ func unlynxAggRequest(input io.Reader, output io.Writer, el *onet.Roster, entryP
 	}
 
 	// get formatted data
-	encQueryTerms, id, err := xmlQuery.AggRequestToUnlynxFormat()
+	encDummyFlags, id, err := xmlQuery.AggRequestToUnlynxFormat()
 	if err != nil {
 		log.Error("Error extracing patients data.", err)
 		writeAggResponseXML(output, nil, nil, nil, err)
@@ -353,15 +354,28 @@ func unlynxAggRequest(input io.Reader, output io.Writer, el *onet.Roster, entryP
 
 	parsingTime := time.Since(start)
 
+	// locally aggregate results
+	start = time.Now()
+	aggregate := LocalAggregate(encDummyFlags, el.Aggregate)
+	aggregationTime := time.Since(start)
+
 	// launch query
 	start = time.Now()
 
+	cPK, err := lib.DeserializePoint(xmlQuery.ClientPubKey)
+	if err != nil {
+		log.Error("Error decoding client public key.", err)
+		writeAggResponseXML(output, nil, nil, nil, err)
+		return err
+	}
+
 	client := serviceI2B2.NewUnLynxClient(el.List[entryPointIdx], strconv.Itoa(entryPointIdx))
-	_, result, tr, err := client.SendSurveyAggRequestTerms(
-		el, // Roster
-		serviceI2B2.SurveyID(xmlQuery.QueryID), // SurveyID
-		encQueryTerms,                          // Encrypted query terms to tag
-		proofs,                                 // compute proofs?
+	_, result, tr, err := client.SendSurveyAggRequest(
+		el,         			// Roster
+		serviceI2B2.SurveyID(id),       // SurveyID
+		cPK,       			// client public key
+		*aggregate,  			// Encrypted local aggregation result
+		proofs,     			// compute proofs?
 	)
 
 	totalTime := time.Since(start)
@@ -372,26 +386,36 @@ func unlynxAggRequest(input io.Reader, output io.Writer, el *onet.Roster, entryP
 		return err
 	}
 
-	// sanity check
-	if len(result) == 0 || len(result) != len(encQueryTerms) {
-		log.Error("The number of tags", len(result), "does not match the number of terms", len(encQueryTerms), ".", err)
-	}
+	tr.AggRequestTimeCommun = totalTime - tr.DDTRequestTimeExec
+	tr.LocalAggregationTime = aggregationTime
+	tr.AggParsingTime = parsingTime
+	tr.AggRequestTimeExec += tr.AggParsingTime + tr.LocalAggregationTime
 
-	tr.DDTResquestTimeCommun = totalTime - tr.DDTRequestTimeExec
-	tr.DDTparsingTime = parsingTime
-	tr.DDTRequestTimeExec += tr.DDTparsingTime
-
-	err = writeDDTResponseXML(output, xmlQuery, result, tr, nil)
+	err = writeAggResponseXML(output, xmlQuery, &result, &tr, nil)
 	if err != nil {
 		log.Error("Error while writing result.", err)
-		writeDDTResponseXML(output, nil, nil, nil, err)
+		writeAggResponseXML(output, nil, nil, nil, err)
 		return err
 	}
 	return nil
 }
 
+func LocalAggregate(encDummyFlags lib.CipherVector, pubKey abstract.Point) *lib.CipherText{
+	// there are no results
+	if len(encDummyFlags) == 0 {
+		return lib.EncryptInt(pubKey,int64(0))
+	}
+
+	result := &encDummyFlags[0]
+	for i:=1; i < len(encDummyFlags); i++ {
+		result.Add(*result,encDummyFlags[i])
+	}
+
+	return result
+}
+
 // output result xml on a writer (if result_err != nil, the error is sent)
-func writeAggResponseXML(output io.Writer, xmlQuery *lib.XMLMedCoDTTRequest, aggregate *lib.CipherText, tr *serviceI2B2.TimeResults, err error) error {
+func writeAggResponseXML(output io.Writer, xmlQuery *lib.XMLMedCoAggRequest, aggregate *lib.CipherText, tr *serviceI2B2.TimeResults, err error) error {
 
 	/*
 		<unlynx_agg_response>
@@ -406,13 +430,14 @@ func writeAggResponseXML(output io.Writer, xmlQuery *lib.XMLMedCoDTTRequest, agg
 	if err == nil && xmlQuery != nil {
 		resultString = `<unlynx_agg_response>
 					<id>` + (*xmlQuery).QueryID + `</id>
-					<times unit="ms">{"DDTRequest execution time":` + strconv.FormatInt(int64(tr.DDTRequestTimeExec.Nanoseconds()/1000000.0), 10) +
-			`,"DDTRequest communication time":` + strconv.FormatInt(int64(tr.DDTRequestTimeCommun.Nanoseconds()/1000000.0), 10) +
-			`,"DDTRequest parsing time":` + strconv.FormatInt(int64(tr.DDTparsingTime.Nanoseconds()/1000000.0), 10) +
+					<times unit="ms">{"AggRequest execution time":` + strconv.FormatInt(int64(tr.AggRequestTimeExec.Nanoseconds()/1000000.0), 10) +
+			`,"AggRequest communication time":` + strconv.FormatInt(int64(tr.AggRequestTimeCommun.Nanoseconds()/1000000.0), 10) +
+			`,"AggRequest parsing time":` + strconv.FormatInt(int64(tr.AggParsingTime.Nanoseconds()/1000000.0), 10) +
+			`,"AggRequest aggregation time":` + strconv.FormatInt(int64(tr.LocalAggregationTime.Nanoseconds()/1000000.0), 10) +
 			`}</times>
-					<aggregate>" + aggregate.Serialize() + "</aggregate>
+					<aggregate>` + aggregate.Serialize() + `</aggregate>
 					<error></error>
-				</unlynx_ddt_response>`
+				</unlynx_agg_response>`
 	} else if xmlQuery != nil {
 		resultString = `<unlynx_agg_response>
 					<id>` + (*xmlQuery).QueryID + `</id>

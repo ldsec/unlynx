@@ -111,7 +111,7 @@ func main() {
 		},
 		cli.StringSliceFlag{
 			Name:  optionListSensitive + ", " + optionListSensitiveShort,
-			Value: "",
+			Value: &cli.StringSlice{},
 			Usage: "Fields listed as sensitive (\"all\" means all clinical fields are considered sensitive)",
 		},
 	}

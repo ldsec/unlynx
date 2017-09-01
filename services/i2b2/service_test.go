@@ -9,7 +9,6 @@ import (
 	"gopkg.in/dedis/onet.v1/log"
 	"strconv"
 	"testing"
-	//"time"
 )
 
 func getParam(nbHosts int) (*onet.Roster, *onet.LocalTest) {

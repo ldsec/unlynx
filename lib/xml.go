@@ -53,7 +53,6 @@ func (xml *XMLMedCoDTTRequest) DDTRequestToUnlynxFormat() (CipherVector, string,
 <unlynx_agg_request>
     <id>request ID</id>
     <client_public_key>5D4D45ESAFD5FDads==</client_public_key>
-
     <enc_dummy_flags>
         <enc_dummy_flag>adfw25e4f85as4fas57f=</enc_dummy_flag>
         <enc_dummy_flag>ADA5D4D45ESAFD5FDads=</enc_dummy_flag>

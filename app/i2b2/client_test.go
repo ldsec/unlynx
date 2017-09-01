@@ -22,7 +22,6 @@ var local *onet.LocalTest
 var el *onet.Roster
 
 var nbrTerms = 50
-var nbrFlags = 50
 
 // SETUP / TEARDOWN FUNCTIONS
 // ----------------------------------------------------------
@@ -141,13 +140,12 @@ func getXMLReaderDDTRequestV2(t *testing.T, variant int) io.Reader {
 	return strings.NewReader(stringBuf.String())
 }
 
-func getXMLReaderAggRequest(t *testing.T, variant int) io.Reader {
+func getXMLReaderAggRequest(t *testing.T, nbrFlags int) io.Reader {
 
 	/*
 		<unlynx_agg_request>
 		    <id>request ID</id>
 		    <client_public_key>5D4D45ESAFD5FDads==</client_public_key>
-
 		    <enc_dummy_flags>
 			<enc_dummy_flag>adfw25e4f85as4fas57f=</enc_dummy_flag>
 			<enc_dummy_flag>ADA5D4D45ESAFD5FDads=</enc_dummy_flag>
@@ -169,7 +167,7 @@ func getXMLReaderAggRequest(t *testing.T, variant int) io.Reader {
 		encFlagsXML += "<enc_dummy_flag>" + val + "</enc_dummy_flag>"
 	}
 
-	queryID := "query_ID_XYZf" + strconv.Itoa(variant)
+	queryID := "query_ID_XYZf"
 
 	xmlReader := strings.NewReader(`<unlynx_agg_request>
 						<id>` + queryID + `</id>
@@ -184,13 +182,12 @@ func getXMLReaderAggRequest(t *testing.T, variant int) io.Reader {
 	return xmlReader
 }
 
-func getXMLReaderAggRequestV2(t *testing.T, variant int) io.Reader {
+func getXMLReaderAggRequestV2(t *testing.T, nbrFlags int) io.Reader {
 
 	/*
 		<unlynx_agg_request>
 		    <id>request ID</id>
 		    <client_public_key>5D4D45ESAFD5FDads==</client_public_key>
-
 		    <enc_dummy_flags>
 			<enc_dummy_flag>adfw25e4f85as4fas57f=</enc_dummy_flag>
 			<enc_dummy_flag>ADA5D4D45ESAFD5FDads=</enc_dummy_flag>
@@ -212,7 +209,7 @@ func getXMLReaderAggRequestV2(t *testing.T, variant int) io.Reader {
 		encFlagsXML += "<enc_dummy_flag>" + val + "</enc_dummy_flag>"
 	}
 
-	queryID := "query_ID_XYZf" + strconv.Itoa(variant)
+	queryID := "query_ID_XYZf"
 
 	var stringBuf bytes.Buffer
 
@@ -332,7 +329,8 @@ func TestMedCoDDTRequestV2(t *testing.T) {
 	testLocalTeardown()
 }
 
-func TestUnlynxQueryRemote(t *testing.T) {
+func TestMedCoDDTRequestRemote(t *testing.T) {
+	t.Skip()
 	testRemoteSetup()
 
 	// start queries
@@ -377,4 +375,144 @@ func TestUnlynxQueryRemote(t *testing.T) {
 }
 
 // AGG TEST FUNCTIONS
-// ----------------------------------------------------------
+func TestLocalAggregate(t *testing.T) {
+	secKey, pubKey := lib.GenKey()
+
+	sizeVector := 10
+	realResult := int64(0)
+
+	listEncElements := make(lib.CipherVector,0)
+	for i := 0; i< sizeVector; i++ {
+		listEncElements = append(listEncElements,*lib.EncryptInt(pubKey,int64(1)))
+		realResult += int64(1)
+	}
+
+	result := LocalAggregate(listEncElements,pubKey)
+
+	resultDec := lib.DecryptInt(secKey,*result)
+
+	assert.Equal(t,realResult, resultDec)
+}
+
+func TestMedcoAggRequest(t *testing.T) {
+	testLocalSetup()
+
+	// Start queriers (3 nodes)
+	wg := lib.StartParallelize(2)
+	var writer, writer1, writer2 bytes.Buffer
+
+	go func() {
+		defer wg.Done()
+		err1 := unlynxAggRequest(getXMLReaderAggRequest(t, 20), &writer1, el, 1, false)
+		assert.True(t, err1 == nil)
+	}()
+	go func() {
+		defer wg.Done()
+		err2 := unlynxAggRequest(getXMLReaderAggRequest(t, 50), &writer2, el, 2, false)
+		assert.True(t, err2 == nil)
+	}()
+	err := unlynxAggRequest(getXMLReaderAggRequest(t, 30), &writer, el, 0, false)
+	assert.True(t, err == nil)
+	lib.EndParallelize(wg)
+
+	// Check results
+	finalResponses := make([]lib.XMLMedCoAggResponse, 0)
+
+	finalResponses = append(finalResponses, parseAggResponse(t, writer.String()))
+	finalResponses = append(finalResponses, parseAggResponse(t, writer1.String()))
+	finalResponses = append(finalResponses, parseAggResponse(t, writer2.String()))
+
+	expectedResponses := [3]int64{20,30,50}
+	for i, response := range finalResponses {
+		assert.True(t, response.Error == "")
+		aux := lib.CipherText{}
+		err := aux.Deserialize(finalResponses[i].AggregateV)
+		assert.Nil(t,err)
+
+		assert.Contains(t, expectedResponses, lib.DecryptInt(clientSecKey,aux), "Aggregation result does not match")
+	}
+
+	testLocalTeardown()
+}
+
+func TestMedCoAggRequestV2(t *testing.T) {
+	testLocalSetup()
+
+	// Start queriers (3 nodes)
+	wg := lib.StartParallelize(2)
+	var writer, writer1, writer2 bytes.Buffer
+
+	go func() {
+		defer wg.Done()
+		err1 := unlynxAggRequest(getXMLReaderAggRequestV2(t, 100), &writer1, el, 1, false)
+		assert.True(t, err1 == nil)
+	}()
+	go func() {
+		defer wg.Done()
+		err2 := unlynxAggRequest(getXMLReaderAggRequestV2(t, 4), &writer2, el, 2, false)
+		assert.True(t, err2 == nil)
+	}()
+	err := unlynxAggRequest(getXMLReaderAggRequestV2(t, 7), &writer, el, 0, false)
+	assert.True(t, err == nil)
+	lib.EndParallelize(wg)
+
+	// Check results
+	finalResponses := make([]lib.XMLMedCoAggResponse, 0)
+
+	finalResponses = append(finalResponses, parseAggResponse(t, writer.String()))
+	finalResponses = append(finalResponses, parseAggResponse(t, writer1.String()))
+	finalResponses = append(finalResponses, parseAggResponse(t, writer2.String()))
+
+	expectedResponses := [3]int64{100,7,4}
+	for i, response := range finalResponses {
+		assert.True(t, response.Error == "")
+		aux := lib.CipherText{}
+		err := aux.Deserialize(finalResponses[i].AggregateV)
+		assert.Nil(t,err)
+
+		assert.Contains(t, expectedResponses, lib.DecryptInt(clientSecKey,aux), "Aggregation result does not match")
+	}
+
+	testLocalTeardown()
+}
+
+func TestMedCoAggRequestRemote(t *testing.T) {
+	t.Skip()
+	testRemoteSetup()
+
+	// start queries
+	wg := lib.StartParallelize(2)
+	var writer, writer1, writer2 bytes.Buffer
+
+	go func() {
+		defer wg.Done()
+		err1 := unlynxAggRequest(getXMLReaderAggRequest(t, 3), &writer1, el, 1, false)
+		assert.True(t, err1 == nil)
+	}()
+	go func() {
+		defer wg.Done()
+		err2 := unlynxAggRequest(getXMLReaderAggRequest(t, 47), &writer2, el, 2, false)
+		assert.True(t, err2 == nil)
+	}()
+
+	err := unlynxAggRequest(getXMLReaderAggRequest(t, 31), &writer, el, 0, false)
+	assert.True(t, err == nil)
+	lib.EndParallelize(wg)
+
+	// Check results
+	finalResponses := make([]lib.XMLMedCoAggResponse, 0)
+
+	finalResponses = append(finalResponses, parseAggResponse(t, writer.String()))
+	finalResponses = append(finalResponses, parseAggResponse(t, writer1.String()))
+	finalResponses = append(finalResponses, parseAggResponse(t, writer2.String()))
+
+	expectedResponses := [3]int64{3,47,31}
+	for i, response := range finalResponses {
+		assert.True(t, response.Error == "")
+		aux := lib.CipherText{}
+		err := aux.Deserialize(finalResponses[i].AggregateV)
+		assert.Nil(t,err)
+
+		assert.Contains(t, expectedResponses, lib.DecryptInt(clientSecKey,aux), "Aggregation result does not match")
+	}
+}
