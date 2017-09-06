@@ -30,8 +30,17 @@ func TestLoadDataFiles(t *testing.T) {
 		log.Fatal("Error while opening the genomic file", err)
 	}
 
-	err = loader.InitFiles()
-	assert.True(t, err == nil)
+	loader.EncID = int64(1)
+	loader.ClearID = int64(1)
+	loader.EncounterMapping = make(map[string]int64)
+	loader.PatientMapping = make(map[string]int64)
+	loader.AllSensitiveIDs = make([]int64, 0)
+
+	for i,f := range loader.FilePaths{
+		fp, err := os.Create(f)
+		assert.True(t, err == nil, err)
+		loader.FileHandlers[i] = fp
+	}
 
 	listSensitive := make([]string, 0)
 	listSensitive = append(listSensitive, "PRIMARY_TUMOR_LOCALIZATION_TYPE")
@@ -40,7 +49,9 @@ func TestLoadDataFiles(t *testing.T) {
 	err = loader.LoadDataFiles(el, 0, fClinical, fGenomic, listSensitive)
 	assert.True(t, err == nil, err)
 
-	loader.CloseFiles()
+	for _,f := range loader.FileHandlers{
+		f.Close()
+	}
 }
 
 func TestReplayDataset(t *testing.T) {
