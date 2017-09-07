@@ -35,11 +35,13 @@ func TestLoadDataFiles(t *testing.T) {
 	loader.EncounterMapping = make(map[string]int64)
 	loader.PatientMapping = make(map[string]int64)
 	loader.AllSensitiveIDs = make([]int64, 0)
+	loader.FileHandlers = make([]*os.File, 0)
+	loader.TextSearchIndex = int64(1)
 
-	for i,f := range loader.FilePaths{
+	for _, f := range loader.FilePaths {
 		fp, err := os.Create(f)
 		assert.True(t, err == nil, err)
-		loader.FileHandlers[i] = fp
+		loader.FileHandlers = append(loader.FileHandlers, fp)
 	}
 
 	listSensitive := make([]string, 0)
@@ -49,7 +51,7 @@ func TestLoadDataFiles(t *testing.T) {
 	err = loader.LoadDataFiles(el, 0, fClinical, fGenomic, listSensitive)
 	assert.True(t, err == nil, err)
 
-	for _,f := range loader.FileHandlers{
+	for _, f := range loader.FileHandlers {
 		f.Close()
 	}
 }
@@ -57,5 +59,16 @@ func TestLoadDataFiles(t *testing.T) {
 func TestReplayDataset(t *testing.T) {
 	t.Skip()
 	err := loader.ReplayDataset(GENOMIC_FILE, 2)
+	assert.True(t, err == nil)
+}
+
+func TestCreateLoadSqlFile(t *testing.T) {
+	for _, f := range loader.FilePaths {
+		fp, err := os.Create(f)
+		assert.True(t, err == nil, err)
+		loader.FileHandlers = append(loader.FileHandlers, fp)
+	}
+
+	err := loader.CreateLoadSQLFile()
 	assert.True(t, err == nil)
 }

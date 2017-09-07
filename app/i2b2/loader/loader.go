@@ -27,20 +27,21 @@ const (
 
 // The different paths and handlers for all the .sql files
 var (
-	FilePaths = [...]string {"files/SHRINE_ONT_CLINICAL_SENSITIVE.csv",
-				"files/SHRINE_ONT_CLINICAL_NON_SENSITIVE.csv",
-				"files/SHRINE_ONT_GENOMIC_ANNOTATIONS.csv",
-				"files/I2B2METADATA_SENSITIVE_TAGGED.csv",
-				"files/I2B2METADATA_CLINICAL_NON_SENSITIVE.csv",
-				"files/I2B2DEMODATA_CONCEPT_DIMENSION.csv",
-				"files/I2B2DEMODATA_PATIENT_MAPPING.csv",
-				"files/I2B2DEMODATA_PATIENT_DIMENSION.csv",
-				"files/I2B2DEMODATA_ENCOUNTER_MAPPING.csv",
-				"files/I2B2DEMODATA_VISIT_DIMENSION.csv",
-				"files/I2B2DEMODATA_PROVIDER_DIMENSION.csv",
-				"files/I2B2DEMODATA_OBSERVATION_FACT.csv"}
+	FilePaths = [...]string{"files/SHRINEONT_CLINICAL_SENSITIVE.csv",
+		"files/SHRINEONT_CLINICAL_NON_SENSITIVE.csv",
+		"files/SHRINEONT_GENOMIC_ANNOTATIONS.csv",
+		"files/I2B2METADATA_SENSITIVE_TAGGED.csv",
+		"files/I2B2METADATA_CLINICAL_NON_SENSITIVE.csv",
+		"files/I2B2DEMODATA_CONCEPT_DIMENSION.csv",
+		"files/I2B2DEMODATA_PATIENT_MAPPING.csv",
+		"files/I2B2DEMODATA_PATIENT_DIMENSION.csv",
+		"files/I2B2DEMODATA_ENCOUNTER_MAPPING.csv",
+		"files/I2B2DEMODATA_VISIT_DIMENSION.csv",
+		"files/I2B2DEMODATA_PROVIDER_DIMENSION.csv",
+		"files/I2B2DEMODATA_OBSERVATION_FACT.csv",
+		"files/26-load-data.sql"}
 
-	FileHandlers 	[12]*os.File
+	FileHandlers []*os.File
 )
 
 // PatientVisitLink contains the link between the patient and the visit/encounter (patient ID and sample ID)
@@ -62,6 +63,7 @@ var (
 	AllSensitiveIDs  []int64          // stores the EncID(s) and the genomic IDs
 	EncounterMapping map[string]int64 // map a sample ID to a numeric ID
 	PatientMapping   map[string]int64 // map a patient ID to a numeric ID
+	TextSearchIndex  int64            // needed for the observation_fact table (counter)
 )
 
 // ReplayDataset replays the dataset x number of times
@@ -132,12 +134,6 @@ func ReplayDataset(filename string, x int) error {
 
 // LoadClient initiates the loading process
 func LoadClient(el *onet.Roster, entryPointIdx int, fClinical *os.File, fGenomic *os.File, listSensitive []string) error {
-	// check for inconsistencies
-	if len(FileHandlers) != len(FilePaths) {
-		log.Fatal("The number of .sql files is incorrect")
-		return errors.New("The number of .sql files is incorrect")
-	}
-
 	db, err := connectDB()
 	if err != nil {
 		return err
@@ -149,27 +145,55 @@ func LoadClient(el *onet.Roster, entryPointIdx int, fClinical *os.File, fGenomic
 	EncounterMapping = make(map[string]int64)
 	PatientMapping = make(map[string]int64)
 	AllSensitiveIDs = make([]int64, 0)
+	FileHandlers = make([]*os.File, 0)
+	TextSearchIndex = int64(1)
 
-	for i,f := range FilePaths{
+	for _, f := range FilePaths {
 		fp, err := os.Create(f)
 		if err != nil {
 			log.Fatal("Error while opening", f)
 			return err
 		}
-		FileHandlers[i] = fp
+		FileHandlers = append(FileHandlers, fp)
 	}
 
 	err = LoadDataFiles(el, entryPointIdx, fClinical, fGenomic, listSensitive)
 	if err != nil {
-		log.Fatal("Error while generating the sql files", err)
+		log.Fatal("Error while generating the data .csv file", err)
 		return err
 	}
 
-	for _,f := range FileHandlers{
+	err = CreateLoadSQLFile()
+	if err != nil {
+		log.Fatal("Error while generating the loading .sql file", err)
+		return err
+	}
+
+	for _, f := range FileHandlers {
 		f.Close()
 	}
 
 	db.Close()
+	return nil
+}
+
+// CreateLoadSQLFile creates a load .sql script
+func CreateLoadSQLFile() error {
+	loading := ""
+	for i := 0; i < len(FilePaths)-1; i++ {
+		tokens := strings.Split(FilePaths[i], "/")
+
+		tablename := strings.Split(FilePaths[i], "_")
+
+		loading += `COPY shrine_ont.clinical_sensitive FROM '/docker-entrypoint-initdb.d/` + tokens[1] + `SHRINE_ONT_CLINICAL_SENSITIVE.csv' ESCAPE '"' DELIMITER ',' CSV;` + "\n"
+	}
+
+	_, err := FileHandlers[12].WriteString(loading)
+
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -383,10 +407,10 @@ func LoadDataFiles(group *onet.Roster, entryPointIdx int, fClinical *os.File, fG
 func writeShrineOntologyEnc(el string) error {
 
 	/*clinicalSensitive := `INSERT INTO shrine_ont.clinical_sensitive VALUES (3, '\\medco\\clinical\\sensitive\\` + el + `\\', '` + el + `', 'N', 'CA', NULL, NULL, NULL, 'concept_cd', 'concept_dimension', 'concept_path', 'T', 'LIKE',
-				  '\\medco\\clinical\\sensitive\\` + el + `\\', 'Sensitive field encrypted by Unlynx', '\\medco\\clinical\\sensitive\\` + el + `\\',
-				   'NOW()', NULL, NULL, NULL, 'ENC_ID', '@', NULL, NULL, NULL, NULL);` + "\n"*/
+	  '\\medco\\clinical\\sensitive\\` + el + `\\', 'Sensitive field encrypted by Unlynx', '\\medco\\clinical\\sensitive\\` + el + `\\',
+	   'NOW()', NULL, NULL, NULL, 'ENC_ID', '@', NULL, NULL, NULL, NULL);` + "\n"*/
 
-	clinicalSensitive := `3,\\medco\\clinical\\sensitive\\` + el + `\\,` + el + `,N,CA,,,,concept_cd,concept_dimension,concept_path,T,LIKE,\\medco\\clinical\\sensitive\\` + el + `\\,Sensitive field encrypted by Unlynx,\\medco\\clinical\\sensitive\\` + el + `\\,NOW(),,,,ENC_ID,@,,,,` + "\n"
+	clinicalSensitive := `"3","\\medco\\clinical\\sensitive\\` + el + `\\","` + el + `","N","CA",,,,"concept_cd","concept_dimension","concept_path","T","LIKE","\\medco\\clinical\\sensitive\\` + el + `\\","Sensitive field encrypted by Unlynx","\\medco\\clinical\\sensitive\\` + el + `\\","NOW()",,,,"ENC_ID","@",,,,` + "\n"
 
 	_, err := FileHandlers[0].WriteString(clinicalSensitive)
 
@@ -401,10 +425,10 @@ func writeShrineOntologyEnc(el string) error {
 func writeShrineOntologyLeafEnc(field, el string) error {
 
 	/*clinicalSensitive := `INSERT INTO shrine_ont.clinical_sensitive VALUES (4, '\\medco\\clinical\\sensitive\\` + field + `\\` + el + `\\', '` + el + `', 'N', 'LA', NULL, 'ENC_ID:` + strconv.FormatInt(EncID, 10) + `', NULL, 'concept_cd', 'concept_dimension', 'concept_path', 'T', 'LIKE',
-			  '\\medco\\clinical\\sensitive\\` + field + `\\` + el + `\\', 'Sensitive value encrypted by Unlynx',  '\\medco\\clinical\\sensitive\\` + field + `\\` + el + `\\',
-			   'NOW()', NULL, NULL, NULL, 'ENC_ID', '@', NULL, NULL, NULL, NULL);` + "\n"*/
+	  '\\medco\\clinical\\sensitive\\` + field + `\\` + el + `\\', 'Sensitive value encrypted by Unlynx',  '\\medco\\clinical\\sensitive\\` + field + `\\` + el + `\\',
+	   'NOW()', NULL, NULL, NULL, 'ENC_ID', '@', NULL, NULL, NULL, NULL);` + "\n"*/
 
-	clinicalSensitive := `4,\\medco\\clinical\\sensitive\\` + field + `\\` + el + `\\,` + el + `,N,LA,,ENC_ID:` + strconv.FormatInt(EncID, 10) + `,,concept_cd,concept_dimension,concept_path,T,LIKE,\\medco\\clinical\\sensitive\\` + field + `\\` + el + `\\,Sensitive value encrypted by Unlynx,\\medco\\clinical\\sensitive\\` + field + `\\` + el + `\\,NOW(),,,,ENC_ID,@,,,,` + "\n"
+	clinicalSensitive := `"4","\\medco\\clinical\\sensitive\\` + field + `\\` + el + `\\","` + el + `","N","LA",,"ENC_ID:` + strconv.FormatInt(EncID, 10) + `",,"concept_cd","concept_dimension","concept_path","T","LIKE","\\medco\\clinical\\sensitive\\` + field + `\\` + el + `\\","Sensitive value encrypted by Unlynx","\\medco\\clinical\\sensitive\\` + field + `\\` + el + `\\","NOW()",,,,"ENC_ID","@",,,,` + "\n"
 
 	_, err := FileHandlers[0].WriteString(clinicalSensitive)
 
@@ -419,10 +443,10 @@ func writeShrineOntologyLeafEnc(field, el string) error {
 func writeShrineOntologyClear(el string) error {
 
 	/*clinical := `INSERT INTO shrine_ont.clinical_non_sensitive VALUES (3, '\\medco\\clinical\\nonsensitive\\` + el + `\\', '` + el + `', 'N', 'CA', NULL, NULL, NULL, 'concept_cd', 'concept_dimension', 'concept_path', 'T', 'LIKE',
-				  '\\medco\\clinical\\nonsensitive\\` + el + `\\', 'Non-sensitive field', '\\medco\\clinical\\nonsensitive\\` + el + `\\',
-				   'NOW()', NULL, NULL, NULL, 'CLEAR', '@', NULL, NULL, NULL, NULL);` + "\n"*/
+	  '\\medco\\clinical\\nonsensitive\\` + el + `\\', 'Non-sensitive field', '\\medco\\clinical\\nonsensitive\\` + el + `\\',
+	   'NOW()', NULL, NULL, NULL, 'CLEAR', '@', NULL, NULL, NULL, NULL);` + "\n"*/
 
-	clinical := `3,\\medco\\clinical\\nonsensitive\\` + el + `\\,` + el + `,N,CA,,,,concept_cd,concept_dimension,concept_path,T,LIKE,\\medco\\clinical\\nonsensitive\\` + el + `\\,Non-sensitive field,\\medco\\clinical\\nonsensitive\\` + el + `\\,NOW(),,,,CLEAR,@,,,,` + "\n"
+	clinical := `"3","\\medco\\clinical\\nonsensitive\\` + el + `\\","` + el + `","N","CA",,,,"concept_cd","concept_dimension","concept_path","T","LIKE","\\medco\\clinical\\nonsensitive\\` + el + `\\","Non-sensitive field","\\medco\\clinical\\nonsensitive\\` + el + `\\","NOW()",,,,"CLEAR","@",,,,` + "\n"
 
 	_, err := FileHandlers[1].WriteString(clinical)
 
@@ -437,10 +461,10 @@ func writeShrineOntologyClear(el string) error {
 func writeShrineOntologyLeafClear(field, el string) error {
 
 	/*clinical := `INSERT INTO shrine_ont.clinical_non_sensitive VALUES (4, '\\medco\\clinical\\nonsensitive\\` + field + `\\` + el + `\\', '` + el + `', 'N', 'LA', NULL, 'CLEAR:` + strconv.FormatInt(ClearID, 10) + `', NULL, 'concept_cd', 'concept_dimension', 'concept_path', 'T', 'LIKE',
-		  '\\medco\\clinical\\nonsensitive\\` + field + `\\` + el + `\\', 'Non-sensitive value',  '\\medco\\clinical\\sensitive\\` + field + `\\` + el + `\\',
-		   'NOW()', NULL, NULL, NULL, 'CLEAR', '@', NULL, NULL, NULL, NULL);` + "\n"*/
+	  '\\medco\\clinical\\nonsensitive\\` + field + `\\` + el + `\\', 'Non-sensitive value',  '\\medco\\clinical\\sensitive\\` + field + `\\` + el + `\\',
+	   'NOW()', NULL, NULL, NULL, 'CLEAR', '@', NULL, NULL, NULL, NULL);` + "\n"*/
 
-	clinical := `4,\\medco\\clinical\\nonsensitive\\` + field + `\\` + el + `\\,` + el + `,N,LA,,CLEAR:` + strconv.FormatInt(ClearID, 10) + `,,concept_cd,concept_dimension,concept_path,T,LIKE,\\medco\\clinical\\nonsensitive\\` + field + `\\` + el + `\\,Non-sensitive value,\\medco\\clinical\\sensitive\\` + field + `\\` + el + `\\,NOW(),,,,CLEAR,@,,,,` + "\n"
+	clinical := `"4","\\medco\\clinical\\nonsensitive\\` + field + `\\` + el + `\\","` + el + `","N","LA",,"CLEAR:` + strconv.FormatInt(ClearID, 10) + `",,"concept_cd","concept_dimension","concept_path","T","LIKE","\\medco\\clinical\\nonsensitive\\` + field + `\\` + el + `\\","Non-sensitive value","\\medco\\clinical\\sensitive\\` + field + `\\` + el + `\\","NOW()",,,,"CLEAR","@",,,,` + "\n"
 
 	_, err := FileHandlers[1].WriteString(clinical)
 
@@ -488,7 +512,7 @@ func writeShrineOntologyGenomicAnnotations(fields []string, indexGenVariant map[
 
 	/*annotation := `INSERT INTO shrine_ont.genomic_annotations VALUES ('` + strconv.FormatInt(id, 10) + `', '{ ` + otherFields + `}');` + "\n"*/
 
-	annotation := strconv.FormatInt(id, 10) + `,"{` + otherFields + `}"` + "\n"
+	annotation := `"` + strconv.FormatInt(id, 10) + `","{` + otherFields + `}"` + "\n"
 
 	_, err = FileHandlers[2].WriteString(annotation)
 
@@ -584,7 +608,7 @@ func writeMetadataSensitiveTagged(list []lib.GroupingKey, patientVisitLinkList [
 			/*sensitive := `INSERT INTO i2b2metadata.sensitive_tagged VALUES (2, '\\medco\\tagged\\` + string(el) + `\\', '', 'N', 'LA ', NULL, 'TAG_ID:` + strconv.FormatUint(uint64(tagID), 10) + `', NULL, 'concept_cd', 'concept_dimension', 'concept_path', 'T', 'LIKE',
 			'\\medco\\tagged\\` + string(el) + `\\', NULL, NULL, 'NOW()', NULL, NULL, NULL, 'TAG_ID', '@', NULL, NULL, NULL, NULL);` + "\n"*/
 
-			sensitive := `2,\\medco\\tagged\\` + string(el) + `\\,'',N,LA,,TAG_ID:` + strconv.FormatUint(uint64(tagID), 10) + `,,concept_cd,concept_dimension,concept_path,T,LIKE,\\medco\\tagged\\` + string(el) + `\\,,,NOW(),,,,TAG_ID,@,,,,` + "\n"
+			sensitive := `"2","\\medco\\tagged\\` + string(el) + `\\","''","N","LA",,"TAG_ID:` + strconv.FormatUint(uint64(tagID), 10) + `",,"concept_cd","concept_dimension","concept_path","T","LIKE","\\medco\\tagged\\` + string(el) + `\\",,,"NOW()",,,,"TAG_ID","@",,,,` + "\n"
 
 			_, err := FileHandlers[3].WriteString(sensitive)
 
@@ -610,10 +634,10 @@ func writeMetadataSensitiveTagged(list []lib.GroupingKey, patientVisitLinkList [
 func writeMetadataOntologyClear(el string) error {
 
 	/*clinical := `INSERT INTO i2b2metadata.clinical_non_sensitive VALUES (3, '\\medco\\clinical\\nonsensitive\\` + el + `\\', '` + el + `', 'N', 'CA', NULL, NULL, NULL, 'concept_cd', 'concept_dimension', 'concept_path', 'T', 'LIKE',
-				  '\\medco\\clinical\\nonsensitive\\` + el + `\\', 'Non-sensitive field', '\\medco\\clinical\\nonsensitive\\` + el + `\\',
-				   'NOW()', NULL, NULL, NULL, 'CLEAR', '@', NULL, NULL, NULL, NULL);` + "\n"*/
+	  '\\medco\\clinical\\nonsensitive\\` + el + `\\', 'Non-sensitive field', '\\medco\\clinical\\nonsensitive\\` + el + `\\',
+	   'NOW()', NULL, NULL, NULL, 'CLEAR', '@', NULL, NULL, NULL, NULL);` + "\n"*/
 
-	clinical := `3,\\medco\\clinical\\nonsensitive\\` + el + `\\',` + el + `,N,CA,,,,concept_cd,concept_dimension,concept_path,T,LIKE,\\medco\\clinical\\nonsensitive\\` + el + `\\,Non-sensitive field,\\medco\\clinical\\nonsensitive\\` + el + `\\,NOW(),,,,CLEAR,@,,,,` + "\n"
+	clinical := `"3","\\medco\\clinical\\nonsensitive\\` + el + `\\","` + el + `","N","CA",,,,"concept_cd","concept_dimension","concept_path","T","LIKE","\\medco\\clinical\\nonsensitive\\` + el + `\\","Non-sensitive field","\\medco\\clinical\\nonsensitive\\` + el + `\\","NOW()",,,,"CLEAR","@",,,,` + "\n"
 
 	_, err := FileHandlers[4].WriteString(clinical)
 
@@ -628,10 +652,10 @@ func writeMetadataOntologyClear(el string) error {
 func writeMetadataOntologyLeafClear(field, el string) error {
 
 	/*clinical := `INSERT INTO i2b2metadata.clinical_non_sensitive VALUES (4, '\\medco\\clinical\\nonsensitive\\` + field + `\\` + el + `\\', '` + el + `', 'N', 'LA', NULL, 'CLEAR:` + strconv.FormatInt(ClearID, 10) + `', NULL, 'concept_cd', 'concept_dimension', 'concept_path', 'T', 'LIKE',
-			  '\\medco\\clinical\\nonsensitive\\` + field + `\\` + el + `\\', 'Non-sensitive value',  '\\medco\\clinical\\sensitive\\` + field + `\\` + el + `\\',
-			   'NOW()', NULL, NULL, NULL, 'CLEAR', '@', NULL, NULL, NULL, NULL);` + "\n"*/
+	  '\\medco\\clinical\\nonsensitive\\` + field + `\\` + el + `\\', 'Non-sensitive value',  '\\medco\\clinical\\sensitive\\` + field + `\\` + el + `\\',
+	   'NOW()', NULL, NULL, NULL, 'CLEAR', '@', NULL, NULL, NULL, NULL);` + "\n"*/
 
-	clinical := `4,\\medco\\clinical\\nonsensitive\\` + field + `\\` + el + `\\,` + el + `,N,LA,,CLEAR:` + strconv.FormatInt(ClearID, 10) + `,,concept_cd,concept_dimension,concept_path,T,LIKE,\\medco\\clinical\\nonsensitive\\` + field + `\\` + el + `\\,Non-sensitive value,\\medco\\clinical\\sensitive\\` + field + `\\` + el + `\\,NOW(),,,,CLEAR,@,,,,` + "\n"
+	clinical := `"4","\\medco\\clinical\\nonsensitive\\` + field + `\\` + el + `\\","` + el + `","N","LA",,"CLEAR:` + strconv.FormatInt(ClearID, 10) + `",,"concept_cd","concept_dimension","concept_path","T","LIKE","\\medco\\clinical\\nonsensitive\\` + field + `\\` + el + `\\","Non-sensitive value","\\medco\\clinical\\sensitive\\` + field + `\\` + el + `\\","NOW()",,,,"CLEAR","@",,,,` + "\n"
 
 	_, err := FileHandlers[4].WriteString(clinical)
 
@@ -647,7 +671,7 @@ func writeDemodataConceptDimensionCleartextConcepts(field, el string) error {
 
 	/*cleartextConcepts := `INSERT INTO i2b2demodata.concept_dimension VALUES ('\\medco\\clinical\\nonsensitive\\` + field + `\\` + el + `\\', 'CLEAR:` + strconv.FormatInt(ClearID, 10) + `', '` + el + `', NULL, NULL, NULL, 'NOW()', NULL, NULL);` + "\n"*/
 
-	cleartextConcepts := `\\medco\\clinical\\nonsensitive\\` + field + `\\` + el + `\\,CLEAR:` + strconv.FormatInt(ClearID, 10) + `,` + el + `,,,,NOW(),,` + "\n"
+	cleartextConcepts := `"\\medco\\clinical\\nonsensitive\\` + field + `\\` + el + `\\","CLEAR:` + strconv.FormatInt(ClearID, 10) + `","` + el + `",,,,"NOW()",,` + "\n"
 
 	_, err := FileHandlers[5].WriteString(cleartextConcepts)
 
@@ -664,9 +688,9 @@ func writeDemodataConceptDimensionTaggedConcepts(el string, id string) error {
 
 	/*taggedConcepts := `INSERT INTO i2b2demodata.concept_dimension VALUES ('\\medco\\tagged\\` + el + `\\', 'TAG_ID:` + id + `', NULL, NULL, NULL, NULL, 'NOW()', NULL, NULL);` + "\n"*/
 
-	taggedConcepts := `\\medco\\tagged\\` + el + `\\,TAG_ID:` + id + `,,,,,NOW(),,` + "\n"
+	taggedConcepts := `"\\medco\\tagged\\` + el + `\\","TAG_ID:` + id + `",,,,,"NOW()",,` + "\n"
 
-	_, err :=  FileHandlers[5].WriteString(taggedConcepts)
+	_, err := FileHandlers[5].WriteString(taggedConcepts)
 
 	if err != nil {
 		log.Fatal("Error in the writeDemodataConceptDimensionTaggedConcepts():", err)
@@ -680,7 +704,7 @@ func writeDemodataPatientMapping(el string) error {
 
 	/*chuv := `INSERT INTO i2b2demodata.patient_mapping VALUES ('` + el + `', 'chuv', ` + strconv.FormatInt(PatientMapping[el], 10) + `, NULL, 'Demo', NULL, NULL, NULL, 'NOW()', NULL, 1);` + "\n"*/
 
-	chuv := el + `,chuv,` + strconv.FormatInt(PatientMapping[el], 10) + `,,Demo,,,,NOW(),,1` + "\n"
+	chuv := `"` + el + `","chuv","` + strconv.FormatInt(PatientMapping[el], 10) + `",,"Demo",,,,"NOW()",,"1"` + "\n"
 
 	_, err := FileHandlers[6].WriteString(chuv)
 
@@ -691,9 +715,9 @@ func writeDemodataPatientMapping(el string) error {
 
 	/*hive := `INSERT INTO i2b2demodata.patient_mapping VALUES ('` + strconv.FormatInt(PatientMapping[el], 10) + `', 'HIVE', ` + strconv.FormatInt(PatientMapping[el], 10) + `, 'A', 'HIVE', NULL, 'NOW()', 'NOW()', 'NOW()', 'edu.harvard.i2b2.crc', 1);` + "\n"*/
 
-	hive := strconv.FormatInt(PatientMapping[el], 10) + `,HIVE,` + strconv.FormatInt(PatientMapping[el], 10) + `,A,HIVE,,NOW(),NOW(),NOW(),edu.harvard.i2b2.crc,1` + "\n"
+	hive := `"` + strconv.FormatInt(PatientMapping[el], 10) + `","HIVE","` + strconv.FormatInt(PatientMapping[el], 10) + `","A","HIVE",,"NOW()","NOW()","NOW()","edu.harvard.i2b2.crc","1"` + "\n"
 
-	_, err = FileHandlers[7].WriteString(hive)
+	_, err = FileHandlers[6].WriteString(hive)
 
 	if err != nil {
 		log.Fatal("Error in the writeDemodataPatientMapping()-Hive:", err)
@@ -712,7 +736,7 @@ func writeDemodataPatientDimension(group *onet.Roster, patientID string) error {
 
 	/*patientDimension := `INSERT INTO i2b2demodata.patient_dimension VALUES (` + strconv.FormatInt(PatientMapping[patientID], 10) + `, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'NOW()', NULL, 1, '` + base64.StdEncoding.EncodeToString(b) + `');` + "\n"*/
 
-	patientDimension := strconv.FormatInt(PatientMapping[patientID], 10) + `,,,,,,,,,,,,,,,,NOW(),,1,` + base64.StdEncoding.EncodeToString(b) + "\n"
+	patientDimension := `"` + strconv.FormatInt(PatientMapping[patientID], 10) + `",,,,,,,,,,,,,,,,"NOW()",,"1","` + base64.StdEncoding.EncodeToString(b) + `"` + "\n"
 
 	_, err := FileHandlers[7].WriteString(patientDimension)
 
@@ -728,7 +752,7 @@ func writeDemodataEncounterMapping(sampleID, patientID string) error {
 
 	/*encounterChuv := `INSERT INTO i2b2demodata.encounter_mapping VALUES ('` + sampleID + `', 'chuv', 'Demo', ` + strconv.FormatInt(EncounterMapping[sampleID], 10) + `, '` + patientID + `', 'chuv', NULL, NULL, NULL, NULL, 'NOW()', NULL, 1);` + "\n"*/
 
-	encounterChuv := sampleID + `,chuv,Demo,` + strconv.FormatInt(EncounterMapping[sampleID], 10) + `,` + patientID + `,chuv,,,,,NOW(),,1` + "\n"
+	encounterChuv := `"` + sampleID + `","chuv","Demo","` + strconv.FormatInt(EncounterMapping[sampleID], 10) + `","` + patientID + `","chuv",,,,,"NOW()",,"1"` + "\n"
 
 	_, err := FileHandlers[8].WriteString(encounterChuv)
 
@@ -739,7 +763,7 @@ func writeDemodataEncounterMapping(sampleID, patientID string) error {
 
 	/*encounterHive := `INSERT INTO i2b2demodata.encounter_mapping VALUES ('` + strconv.FormatInt(EncounterMapping[sampleID], 10) + `', 'HIVE', 'HIVE', ` + strconv.FormatInt(EncounterMapping[sampleID], 10) + `, '` + sampleID + `', 'chuv', 'A', NULL, 'NOW()', 'NOW()', 'NOW()', 'edu.harvard.i2b2.crc', 1);` + "\n"*/
 
-	encounterHive := strconv.FormatInt(EncounterMapping[sampleID], 10) + `,HIVE,HIVE,` + strconv.FormatInt(EncounterMapping[sampleID], 10) + `,` + sampleID + `,chuv,A,,NOW(),NOW(),NOW(),edu.harvard.i2b2.crc,1` + "\n"
+	encounterHive := `"` + strconv.FormatInt(EncounterMapping[sampleID], 10) + `","HIVE","HIVE","` + strconv.FormatInt(EncounterMapping[sampleID], 10) + `","` + sampleID + `","chuv","A",,"NOW()","NOW()","NOW()","edu.harvard.i2b2.crc","1"` + "\n"
 
 	_, err = FileHandlers[8].WriteString(encounterHive)
 
@@ -755,7 +779,7 @@ func writeDemodataVisitDimension(sampleID, patientID string) error {
 
 	/*visit := `INSERT INTO i2b2demodata.visit_dimension VALUES (` + strconv.FormatInt(EncounterMapping[sampleID], 10) + `, ` + strconv.FormatInt(PatientMapping[patientID], 10) + `, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'NOW()', 'chuv', 1);` + "\n"*/
 
-	visit := strconv.FormatInt(EncounterMapping[sampleID], 10) + `,` + strconv.FormatInt(PatientMapping[patientID], 10) + `,,,,,,,,,,,NOW(),chuv,1` + "\n"
+	visit := `"` + strconv.FormatInt(EncounterMapping[sampleID], 10) + `","` + strconv.FormatInt(PatientMapping[patientID], 10) + `",,,,,,,,,,,"NOW()","chuv","1"` + "\n"
 
 	_, err := FileHandlers[9].WriteString(visit)
 
@@ -771,7 +795,7 @@ func writeDemodataProviderDimension() error {
 
 	/*provider := `INSERT INTO i2b2demodata.provider_dimension VALUES ('chuv', '\\medco\\institutions\\chuv\\', 'chuv', NULL, NULL, NULL, 'NOW()', NULL, 1);` + "\n"*/
 
-	provider := `chuv,\\medco\\institutions\\chuv\\,chuv,,,,NOW(),,1` + "\n"
+	provider := `"chuv","\\medco\\institutions\\chuv\\","chuv",,,,"NOW()",,"1"` + "\n"
 
 	_, err := FileHandlers[10].WriteString(provider)
 
@@ -786,10 +810,10 @@ func writeDemodataProviderDimension() error {
 func writeDemodataObservationFactClear(el int64, sampleID, patientID string) error {
 
 	/*clear := `INSERT INTO i2b2demodata.observation_fact VALUES (` + strconv.FormatInt(PatientMapping[patientID], 10) + `, ` + strconv.FormatInt(EncounterMapping[sampleID], 10) + `,
-			'CLEAR:` + strconv.FormatInt(el, 10) + `', 'chuv', 'NOW()', '@', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-			'chuv', NULL, NULL, NULL, NULL, 'NOW()', NULL, 1);` + "\n"*/
+	'CLEAR:` + strconv.FormatInt(el, 10) + `', 'chuv', 'NOW()', '@', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+	'chuv', NULL, NULL, NULL, NULL, 'NOW()', NULL, 1, ` + strconv.FormatInt(TextSearchIndex, 10) + `);` + "\n"*/
 
-	clear := strconv.FormatInt(PatientMapping[patientID], 10) + `,` + strconv.FormatInt(EncounterMapping[sampleID], 10) + `,CLEAR:` + strconv.FormatInt(el, 10) + `,chuv,NOW(),@,1,,,,,,,,chuv,,,,,NOW(),,1` + "\n"
+	clear := `"` + strconv.FormatInt(PatientMapping[patientID], 10) + `","` + strconv.FormatInt(EncounterMapping[sampleID], 10) + `","CLEAR:` + strconv.FormatInt(el, 10) + `","chuv","NOW()","@","1",,,,,,,,"chuv",,,,,"NOW()",,"1","` + strconv.FormatInt(TextSearchIndex, 10) + `"` + "\n"
 
 	_, err := FileHandlers[11].WriteString(clear)
 
@@ -798,15 +822,17 @@ func writeDemodataObservationFactClear(el int64, sampleID, patientID string) err
 		return err
 	}
 
+	TextSearchIndex++
+
 	return nil
 }
 
 func writeDemodataObservationFactEnc(el string, link PatientVisitLink) error {
 
 	/*encrypted := `INSERT INTO i2b2demodata.observation_fact VALUES (` + strconv.FormatInt(link.PatientID, 10) + `, ` + strconv.FormatInt(link.EncounterID, 10) + `, 'TAG_ID:` + el + `',
-			'chuv', 'NOW()', '@', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'chuv', NULL, NULL, NULL, NULL, 'NOW()', NULL, 1);` + "\n"*/
+	'chuv', 'NOW()', '@', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'chuv', NULL, NULL, NULL, NULL, 'NOW()', NULL, 1, ` + strconv.FormatInt(TextSearchIndex, 10) + `);` + "\n"*/
 
-	encrypted := strconv.FormatInt(link.PatientID, 10) + `,` + strconv.FormatInt(link.EncounterID, 10) + `,TAG_ID:` + el + `,chuv, NOW(),@,1,,,,,,,,chuv,,,,,NOW(),,1` + "\n"
+	encrypted := `"` + strconv.FormatInt(link.PatientID, 10) + `","` + strconv.FormatInt(link.EncounterID, 10) + `","TAG_ID:` + el + `","chuv","NOW()","@","1",,,,,,,,"chuv",,,,,"NOW()",,"1","` + strconv.FormatInt(TextSearchIndex, 10) + `"` + "\n"
 
 	_, err := FileHandlers[11].WriteString(encrypted)
 
@@ -814,6 +840,8 @@ func writeDemodataObservationFactEnc(el string, link PatientVisitLink) error {
 		log.Fatal("Error in the writeDemodataObservationFactEnc():", err)
 		return err
 	}
+
+	TextSearchIndex++
 
 	return nil
 
