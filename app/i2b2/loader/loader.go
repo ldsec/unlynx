@@ -2,11 +2,9 @@ package loader
 
 import (
 	"crypto/rand"
-	"database/sql"
 	"encoding/binary"
 	"encoding/csv"
 	"errors"
-	"fmt"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/services/i2b2"
 	"gopkg.in/dedis/crypto.v0/base64"
@@ -14,22 +12,41 @@ import (
 	"gopkg.in/dedis/onet.v1/log"
 	"io"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
+	"bytes"
 )
 
 // DB settings
 const (
+	DBhost     = "localhost"
+	DBport     = 5434
 	DBuser     = "postgres"
 	DBpassword = "prigen2017"
-	DBname     = "test"
+	DBname     = "medcodeployment"
 )
 
 // The different paths and handlers for all the .sql files
 var (
-	FilePaths = [...]string{"files/SHRINEONT_CLINICAL_SENSITIVE.csv",
-		"files/SHRINEONT_CLINICAL_NON_SENSITIVE.csv",
-		"files/SHRINEONT_GENOMIC_ANNOTATIONS.csv",
+	Tablenames  = [...]string{"shrine_ont.clinical_sensitive",
+		"shrine_ont.clinical_non_sensitive",
+		"shrine_ont.genomic_annotations",
+		"i2b2metadata.sensitive_tagged",
+		"i2b2metadata.clinical_non_sensitive",
+		"i2b2demodata.concept_dimension",
+		"i2b2demodata.patient_mapping",
+		"i2b2demodata.patient_dimension",
+		"i2b2demodata.encounter_mapping",
+		"i2b2demodata.visit_dimension",
+		"i2b2demodata.provider_dimension",
+		"i2b2demodata.observation_fact"}
+
+	FileBashPath = "26-load-data.sh"
+
+	FilePaths = [...]string{"files/SHRINE_ONT_CLINICAL_SENSITIVE.csv",
+		"files/SHRINE_ONT_CLINICAL_NON_SENSITIVE.csv",
+		"files/SHRINE_ONT_GENOMIC_ANNOTATIONS.csv",
 		"files/I2B2METADATA_SENSITIVE_TAGGED.csv",
 		"files/I2B2METADATA_CLINICAL_NON_SENSITIVE.csv",
 		"files/I2B2DEMODATA_CONCEPT_DIMENSION.csv",
@@ -38,8 +55,7 @@ var (
 		"files/I2B2DEMODATA_ENCOUNTER_MAPPING.csv",
 		"files/I2B2DEMODATA_VISIT_DIMENSION.csv",
 		"files/I2B2DEMODATA_PROVIDER_DIMENSION.csv",
-		"files/I2B2DEMODATA_OBSERVATION_FACT.csv",
-		"files/26-load-data.sql"}
+		"files/I2B2DEMODATA_OBSERVATION_FACT.csv"}
 
 	FileHandlers []*os.File
 )
@@ -134,11 +150,6 @@ func ReplayDataset(filename string, x int) error {
 
 // LoadClient initiates the loading process
 func LoadClient(el *onet.Roster, entryPointIdx int, fClinical *os.File, fGenomic *os.File, listSensitive []string) error {
-	db, err := connectDB()
-	if err != nil {
-		return err
-	}
-
 	// init global variables
 	EncID = int64(1)
 	ClearID = int64(1)
@@ -157,48 +168,71 @@ func LoadClient(el *onet.Roster, entryPointIdx int, fClinical *os.File, fGenomic
 		FileHandlers = append(FileHandlers, fp)
 	}
 
-	err = LoadDataFiles(el, entryPointIdx, fClinical, fGenomic, listSensitive)
+	err := GenerateDataFiles(el, entryPointIdx, fClinical, fGenomic, listSensitive)
 	if err != nil {
 		log.Fatal("Error while generating the data .csv file", err)
 		return err
 	}
 
-	err = CreateLoadSQLFile()
+	err = LoadDataFiles()
 	if err != nil {
 		log.Fatal("Error while generating the loading .sql file", err)
 		return err
 	}
 
-	for _, f := range FileHandlers {
-		f.Close()
+	for _, fp := range FileHandlers {
+		fp.Close()
 	}
-
-	db.Close()
 	return nil
 }
 
-// CreateLoadSQLFile creates a load .sql script
-func CreateLoadSQLFile() error {
-	loading := ""
-	for i := 0; i < len(FilePaths)-1; i++ {
-		tokens := strings.Split(FilePaths[i], "/")
-
-		tablename := strings.Split(FilePaths[i], "_")
-
-		loading += `COPY shrine_ont.clinical_sensitive FROM '/docker-entrypoint-initdb.d/` + tokens[1] + `SHRINE_ONT_CLINICAL_SENSITIVE.csv' ESCAPE '"' DELIMITER ',' CSV;` + "\n"
+// LoadDataFiles creates a load .sql script
+func LoadDataFiles() error {
+	fp, err := os.Create(FileBashPath)
+	if err != nil {
+		return err
 	}
 
-	_, err := FileHandlers[12].WriteString(loading)
+	loading := `#!/usr/bin/env bash` + "\n" + "\n" + `PGPASSWORD=` + DBpassword + ` psql -v ON_ERROR_STOP=1 -h "` + DBhost + `" -U "` + DBuser + `" -p ` + strconv.FormatInt(int64(DBport),10) + ` -d "` + DBname + `" <<-EOSQL` + "\n"
+	for i := 0; i < len(Tablenames); i++ {
+		tokens := strings.Split(FilePaths[i], "/")
 
+		// todo:: there is no genomic annotations table
+		if tokens[1] != "SHRINE_ONT_GENOMIC_ANNOTATIONS.csv" {
+			loading += `\copy `+ Tablenames[i] + ` FROM 'files/` + tokens[1] + `' ESCAPE '"' DELIMITER ',' CSV;` + "\n"
+		}
+	}
+	loading += "EOSQL"
+
+	_, err = fp.WriteString(loading)
 	if err != nil {
+		return err
+	}
+
+	fp.Close()
+
+	/*_, err = exec.Command("/bin/sh", FileBashPath).Output()
+	if err != nil {
+		log.LLvl1(err)
+		return err
+	}*/
+
+	// Display just the stderr if an error occurs
+	cmd := exec.Command("/bin/sh", FileBashPath)
+	stderr := &bytes.Buffer{}    // make sure to import bytes
+	cmd.Stderr = stderr
+	err = cmd.Run()
+	if err != nil {
+		log.LLvl1("Error when running command.  Error log:", stderr.String())
+		log.LLvl1("Got command status:", err.Error())
 		return err
 	}
 
 	return nil
 }
 
-// LoadDataFiles loads the data from the dataset and populates the .sql scripts
-func LoadDataFiles(group *onet.Roster, entryPointIdx int, fClinical *os.File, fGenomic *os.File, listSensitive []string) error {
+// GenerateDataFiles generates the data from the dataset and populates the .csv scripts
+func GenerateDataFiles(group *onet.Roster, entryPointIdx int, fClinical *os.File, fGenomic *os.File, listSensitive []string) error {
 	// patient_id counter
 	pid := int64(1)
 	// encounter_id counter
@@ -845,13 +879,6 @@ func writeDemodataObservationFactEnc(el string, link PatientVisitLink) error {
 
 	return nil
 
-}
-
-func connectDB() (*sql.DB, error) {
-	dbinfo := fmt.Sprintf("user=%s password=%s dbname=%s sslmode=disable",
-		DBuser, DBpassword, DBname)
-	db, err := sql.Open("postgres", dbinfo)
-	return db, err
 }
 
 func containsArrayString(s []string, e string) bool {

@@ -14,7 +14,7 @@ const (
 	GENOMIC_FILE  = "files/data_mutations_extended_skcm_broad.csv"
 )
 
-func TestLoadDataFiles(t *testing.T) {
+func TestGenerateDataFiles(t *testing.T) {
 	log.SetDebugVisible(1)
 	local := onet.NewLocalTest()
 	_, el, _ := local.GenTree(3, true)
@@ -48,7 +48,7 @@ func TestLoadDataFiles(t *testing.T) {
 	listSensitive = append(listSensitive, "PRIMARY_TUMOR_LOCALIZATION_TYPE")
 	listSensitive = append(listSensitive, "CANCER_TYPE_DETAILED")
 
-	err = loader.LoadDataFiles(el, 0, fClinical, fGenomic, listSensitive)
+	err = loader.GenerateDataFiles(el, 0, fClinical, fGenomic, listSensitive)
 	assert.True(t, err == nil, err)
 
 	for _, f := range loader.FileHandlers {
@@ -62,13 +62,8 @@ func TestReplayDataset(t *testing.T) {
 	assert.True(t, err == nil)
 }
 
-func TestCreateLoadSqlFile(t *testing.T) {
-	for _, f := range loader.FilePaths {
-		fp, err := os.Create(f)
-		assert.True(t, err == nil, err)
-		loader.FileHandlers = append(loader.FileHandlers, fp)
-	}
-
-	err := loader.CreateLoadSQLFile()
+func TestCreateLoadBashFile(t *testing.T) {
+	t.Skip()
+	err := loader.LoadDataFiles()
 	assert.True(t, err == nil)
 }
