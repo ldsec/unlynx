@@ -33,7 +33,7 @@ var (
 		"shrine_ont.clinical_non_sensitive",
 		"shrine_ont.genomic_annotations",
 		"i2b2metadata.sensitive_tagged",
-		"i2b2metadata.clinical_non_sensitive",
+		"i2b2metadata.non_sensitive_clear",
 		"i2b2demodata.concept_dimension",
 		"i2b2demodata.patient_mapping",
 		"i2b2demodata.patient_dimension",
@@ -48,7 +48,7 @@ var (
 		"files/SHRINE_ONT_CLINICAL_NON_SENSITIVE.csv",
 		"files/SHRINE_ONT_GENOMIC_ANNOTATIONS.csv",
 		"files/I2B2METADATA_SENSITIVE_TAGGED.csv",
-		"files/I2B2METADATA_CLINICAL_NON_SENSITIVE.csv",
+		"files/I2B2METADATA_NON_SENSITIVE_CLEAR.csv",
 		"files/I2B2DEMODATA_CONCEPT_DIMENSION.csv",
 		"files/I2B2DEMODATA_PATIENT_MAPPING.csv",
 		"files/I2B2DEMODATA_PATIENT_DIMENSION.csv",
@@ -186,22 +186,22 @@ func LoadClient(el *onet.Roster, entryPointIdx int, fClinical *os.File, fGenomic
 	return nil
 }
 
-// LoadDataFiles creates a load .sql script
-func LoadDataFiles() error {
+// GenerateLoadingScript creates a load .sql script
+func GenerateLoadingScript() error {
 	fp, err := os.Create(FileBashPath)
 	if err != nil {
 		return err
 	}
 
 	loading := `#!/usr/bin/env bash` + "\n" + "\n" + `PGPASSWORD=` + DBpassword + ` psql -v ON_ERROR_STOP=1 -h "` + DBhost + `" -U "` + DBuser + `" -p ` + strconv.FormatInt(int64(DBport),10) + ` -d "` + DBname + `" <<-EOSQL` + "\n"
+
+	loading += "BEGIN;\n"
 	for i := 0; i < len(Tablenames); i++ {
 		tokens := strings.Split(FilePaths[i], "/")
 
-		// todo:: there is no genomic annotations table
-		if tokens[1] != "SHRINE_ONT_GENOMIC_ANNOTATIONS.csv" {
-			loading += `\copy `+ Tablenames[i] + ` FROM 'files/` + tokens[1] + `' ESCAPE '"' DELIMITER ',' CSV;` + "\n"
-		}
+		loading += `\copy `+ Tablenames[i] + ` FROM 'files/` + tokens[1] + `' ESCAPE '"' DELIMITER ',' CSV;` + "\n"
 	}
+	loading += "COMMIT;\n"
 	loading += "EOSQL"
 
 	_, err = fp.WriteString(loading)
@@ -210,18 +210,16 @@ func LoadDataFiles() error {
 	}
 
 	fp.Close()
+	return nil
+}
 
-	/*_, err = exec.Command("/bin/sh", FileBashPath).Output()
-	if err != nil {
-		log.LLvl1(err)
-		return err
-	}*/
-
+// LoadDataFiles executes the loading script
+func LoadDataFiles() error{
 	// Display just the stderr if an error occurs
 	cmd := exec.Command("/bin/sh", FileBashPath)
 	stderr := &bytes.Buffer{}    // make sure to import bytes
 	cmd.Stderr = stderr
-	err = cmd.Run()
+	err := cmd.Run()
 	if err != nil {
 		log.LLvl1("Error when running command.  Error log:", stderr.String())
 		log.LLvl1("Got command status:", err.Error())
@@ -440,11 +438,11 @@ func GenerateDataFiles(group *onet.Roster, entryPointIdx int, fClinical *os.File
 
 func writeShrineOntologyEnc(el string) error {
 
-	/*clinicalSensitive := `INSERT INTO shrine_ont.clinical_sensitive VALUES (3, '\\medco\\clinical\\sensitive\\` + el + `\\', '` + el + `', 'N', 'CA', NULL, NULL, NULL, 'concept_cd', 'concept_dimension', 'concept_path', 'T', 'LIKE',
-	  '\\medco\\clinical\\sensitive\\` + el + `\\', 'Sensitive field encrypted by Unlynx', '\\medco\\clinical\\sensitive\\` + el + `\\',
+	/*clinicalSensitive := `INSERT INTO shrine_ont.clinical_sensitive VALUES (3, '\medco\clinical\sensitive\` + el + `\', '` + el + `', 'N', 'CA', NULL, NULL, NULL, 'concept_cd', 'concept_dimension', 'concept_path', 'T', 'LIKE',
+	  '\medco\clinical\sensitive\` + el + `\', 'Sensitive field encrypted by Unlynx', '\medco\clinical\sensitive\` + el + `\',
 	   'NOW()', NULL, NULL, NULL, 'ENC_ID', '@', NULL, NULL, NULL, NULL);` + "\n"*/
 
-	clinicalSensitive := `"3","\\medco\\clinical\\sensitive\\` + el + `\\","` + el + `","N","CA",,,,"concept_cd","concept_dimension","concept_path","T","LIKE","\\medco\\clinical\\sensitive\\` + el + `\\","Sensitive field encrypted by Unlynx","\\medco\\clinical\\sensitive\\` + el + `\\","NOW()",,,,"ENC_ID","@",,,,` + "\n"
+	clinicalSensitive := `"3","\medco\clinical\sensitive\` + el + `\","` + el + `","N","CA",,,,"concept_cd","concept_dimension","concept_path","T","LIKE","\medco\clinical\sensitive\` + el + `\","Sensitive field encrypted by Unlynx","\medco\clinical\sensitive\` + el + `\","NOW()",,,,"ENC_ID","@",,,,` + "\n"
 
 	_, err := FileHandlers[0].WriteString(clinicalSensitive)
 
@@ -458,11 +456,11 @@ func writeShrineOntologyEnc(el string) error {
 
 func writeShrineOntologyLeafEnc(field, el string) error {
 
-	/*clinicalSensitive := `INSERT INTO shrine_ont.clinical_sensitive VALUES (4, '\\medco\\clinical\\sensitive\\` + field + `\\` + el + `\\', '` + el + `', 'N', 'LA', NULL, 'ENC_ID:` + strconv.FormatInt(EncID, 10) + `', NULL, 'concept_cd', 'concept_dimension', 'concept_path', 'T', 'LIKE',
-	  '\\medco\\clinical\\sensitive\\` + field + `\\` + el + `\\', 'Sensitive value encrypted by Unlynx',  '\\medco\\clinical\\sensitive\\` + field + `\\` + el + `\\',
+	/*clinicalSensitive := `INSERT INTO shrine_ont.clinical_sensitive VALUES (4, '\medco\clinical\sensitive\` + field + `\` + el + `\', '` + el + `', 'N', 'LA', NULL, 'ENC_ID:` + strconv.FormatInt(EncID, 10) + `', NULL, 'concept_cd', 'concept_dimension', 'concept_path', 'T', 'LIKE',
+	  '\medco\clinical\sensitive\` + field + `\` + el + `\', 'Sensitive value encrypted by Unlynx',  '\medco\clinical\sensitive\` + field + `\` + el + `\',
 	   'NOW()', NULL, NULL, NULL, 'ENC_ID', '@', NULL, NULL, NULL, NULL);` + "\n"*/
 
-	clinicalSensitive := `"4","\\medco\\clinical\\sensitive\\` + field + `\\` + el + `\\","` + el + `","N","LA",,"ENC_ID:` + strconv.FormatInt(EncID, 10) + `",,"concept_cd","concept_dimension","concept_path","T","LIKE","\\medco\\clinical\\sensitive\\` + field + `\\` + el + `\\","Sensitive value encrypted by Unlynx","\\medco\\clinical\\sensitive\\` + field + `\\` + el + `\\","NOW()",,,,"ENC_ID","@",,,,` + "\n"
+	clinicalSensitive := `"4","\medco\clinical\sensitive\` + field + `\` + el + `\","` + el + `","N","LA",,"ENC_ID:` + strconv.FormatInt(EncID, 10) + `",,"concept_cd","concept_dimension","concept_path","T","LIKE","\medco\clinical\sensitive\` + field + `\` + el + `\","Sensitive value encrypted by Unlynx","\medco\clinical\sensitive\` + field + `\` + el + `\","NOW()",,,,"ENC_ID","@",,,,` + "\n"
 
 	_, err := FileHandlers[0].WriteString(clinicalSensitive)
 
@@ -476,11 +474,11 @@ func writeShrineOntologyLeafEnc(field, el string) error {
 
 func writeShrineOntologyClear(el string) error {
 
-	/*clinical := `INSERT INTO shrine_ont.clinical_non_sensitive VALUES (3, '\\medco\\clinical\\nonsensitive\\` + el + `\\', '` + el + `', 'N', 'CA', NULL, NULL, NULL, 'concept_cd', 'concept_dimension', 'concept_path', 'T', 'LIKE',
-	  '\\medco\\clinical\\nonsensitive\\` + el + `\\', 'Non-sensitive field', '\\medco\\clinical\\nonsensitive\\` + el + `\\',
+	/*clinical := `INSERT INTO shrine_ont.clinical_non_sensitive VALUES (3, '\medco\clinical\nonsensitive\` + el + `\', '` + el + `', 'N', 'CA', NULL, NULL, NULL, 'concept_cd', 'concept_dimension', 'concept_path', 'T', 'LIKE',
+	  '\medco\clinical\nonsensitive\` + el + `\', 'Non-sensitive field', '\medco\clinical\nonsensitive\` + el + `\',
 	   'NOW()', NULL, NULL, NULL, 'CLEAR', '@', NULL, NULL, NULL, NULL);` + "\n"*/
 
-	clinical := `"3","\\medco\\clinical\\nonsensitive\\` + el + `\\","` + el + `","N","CA",,,,"concept_cd","concept_dimension","concept_path","T","LIKE","\\medco\\clinical\\nonsensitive\\` + el + `\\","Non-sensitive field","\\medco\\clinical\\nonsensitive\\` + el + `\\","NOW()",,,,"CLEAR","@",,,,` + "\n"
+	clinical := `"3","\medco\clinical\nonsensitive\` + el + `\","` + el + `","N","CA",,,,"concept_cd","concept_dimension","concept_path","T","LIKE","\medco\clinical\nonsensitive\` + el + `\","Non-sensitive field","\medco\clinical\nonsensitive\` + el + `\","NOW()",,,,"CLEAR","@",,,,` + "\n"
 
 	_, err := FileHandlers[1].WriteString(clinical)
 
@@ -494,11 +492,11 @@ func writeShrineOntologyClear(el string) error {
 
 func writeShrineOntologyLeafClear(field, el string) error {
 
-	/*clinical := `INSERT INTO shrine_ont.clinical_non_sensitive VALUES (4, '\\medco\\clinical\\nonsensitive\\` + field + `\\` + el + `\\', '` + el + `', 'N', 'LA', NULL, 'CLEAR:` + strconv.FormatInt(ClearID, 10) + `', NULL, 'concept_cd', 'concept_dimension', 'concept_path', 'T', 'LIKE',
-	  '\\medco\\clinical\\nonsensitive\\` + field + `\\` + el + `\\', 'Non-sensitive value',  '\\medco\\clinical\\sensitive\\` + field + `\\` + el + `\\',
+	/*clinical := `INSERT INTO shrine_ont.clinical_non_sensitive VALUES (4, '\medco\clinical\nonsensitive\` + field + `\` + el + `\', '` + el + `', 'N', 'LA', NULL, 'CLEAR:` + strconv.FormatInt(ClearID, 10) + `', NULL, 'concept_cd', 'concept_dimension', 'concept_path', 'T', 'LIKE',
+	  '\medco\clinical\nonsensitive\` + field + `\` + el + `\', 'Non-sensitive value',  '\medco\clinical\sensitive\` + field + `\` + el + `\',
 	   'NOW()', NULL, NULL, NULL, 'CLEAR', '@', NULL, NULL, NULL, NULL);` + "\n"*/
 
-	clinical := `"4","\\medco\\clinical\\nonsensitive\\` + field + `\\` + el + `\\","` + el + `","N","LA",,"CLEAR:` + strconv.FormatInt(ClearID, 10) + `",,"concept_cd","concept_dimension","concept_path","T","LIKE","\\medco\\clinical\\nonsensitive\\` + field + `\\` + el + `\\","Non-sensitive value","\\medco\\clinical\\sensitive\\` + field + `\\` + el + `\\","NOW()",,,,"CLEAR","@",,,,` + "\n"
+	clinical := `"4","\medco\clinical\nonsensitive\` + field + `\` + el + `\","` + el + `","N","LA",,"CLEAR:` + strconv.FormatInt(ClearID, 10) + `",,"concept_cd","concept_dimension","concept_path","T","LIKE","\medco\clinical\nonsensitive\` + field + `\` + el + `\","Non-sensitive value","\medco\clinical\sensitive\` + field + `\` + el + `\","NOW()",,,,"CLEAR","@",,,,` + "\n"
 
 	_, err := FileHandlers[1].WriteString(clinical)
 
@@ -538,7 +536,9 @@ func writeShrineOntologyGenomicAnnotations(fields []string, indexGenVariant map[
 	otherFields := ""
 	for i, el := range record {
 		if _, ok := indexGenVariant[el]; ok == false {
-			otherFields += fields[i] + ":" + strings.Replace(el, "'", "''", -1) + ", "
+			//otherFields += fields[i] + ":" + strings.Replace(el, "'", "''", -1) + ", "
+
+			otherFields += "\"\"" + fields[i] + "\"\":\"\"" + el + "\"\", "
 		}
 	}
 	// remove the last ", "
@@ -586,10 +586,11 @@ func encryptAndTag(list []int64, group *onet.Roster, entryPointIdx int) ([]lib.G
 	// TAGGING
 	client := serviceI2B2.NewUnLynxClient(group.List[entryPointIdx], strconv.Itoa(entryPointIdx))
 	_, result, _, err := client.SendSurveyDDTRequestTerms(
-		group, // Roster
-		serviceI2B2.SurveyID("tagging_loading_phase"), // SurveyID
-		listEncryptedElements,                         // Encrypted query terms to tag
-		false, // compute proofs?
+		group, 						// Roster
+		serviceI2B2.SurveyID("tagging_loading_phase"), 	// SurveyID
+		listEncryptedElements,                         	// Encrypted query terms to tag
+		false, 						// compute proofs?
+		true,  						// it's for testing
 	)
 
 	if err != nil {
@@ -639,10 +640,10 @@ func writeMetadataSensitiveTagged(list []lib.GroupingKey, patientVisitLinkList [
 			}
 			tagValues[string(el)] = int64(tagID)
 
-			/*sensitive := `INSERT INTO i2b2metadata.sensitive_tagged VALUES (2, '\\medco\\tagged\\` + string(el) + `\\', '', 'N', 'LA ', NULL, 'TAG_ID:` + strconv.FormatUint(uint64(tagID), 10) + `', NULL, 'concept_cd', 'concept_dimension', 'concept_path', 'T', 'LIKE',
-			'\\medco\\tagged\\` + string(el) + `\\', NULL, NULL, 'NOW()', NULL, NULL, NULL, 'TAG_ID', '@', NULL, NULL, NULL, NULL);` + "\n"*/
+			/*sensitive := `INSERT INTO i2b2metadata.sensitive_tagged VALUES (2, '\medco\tagged\` + string(el) + `\', '', 'N', 'LA ', NULL, 'TAG_ID:` + strconv.FormatUint(uint64(tagID), 10) + `', NULL, 'concept_cd', 'concept_dimension', 'concept_path', 'T', 'LIKE',
+			'\medco\tagged\` + string(el) + `\', NULL, NULL, 'NOW()', NULL, NULL, NULL, 'TAG_ID', '@', NULL, NULL, NULL, NULL);` + "\n"*/
 
-			sensitive := `"2","\\medco\\tagged\\` + string(el) + `\\","''","N","LA",,"TAG_ID:` + strconv.FormatUint(uint64(tagID), 10) + `",,"concept_cd","concept_dimension","concept_path","T","LIKE","\\medco\\tagged\\` + string(el) + `\\",,,"NOW()",,,,"TAG_ID","@",,,,` + "\n"
+			sensitive := `"2","\medco\tagged\` + string(el) + `\","\"\"","N","LA",,"TAG_ID:` + strconv.FormatUint(uint64(tagID), 10) + `",,"concept_cd","concept_dimension","concept_path","T","LIKE","\medco\tagged\` + string(el) + `\",,,"NOW()",,,,"TAG_ID","@",,,,` + "\n"
 
 			_, err := FileHandlers[3].WriteString(sensitive)
 
@@ -667,11 +668,11 @@ func writeMetadataSensitiveTagged(list []lib.GroupingKey, patientVisitLinkList [
 
 func writeMetadataOntologyClear(el string) error {
 
-	/*clinical := `INSERT INTO i2b2metadata.clinical_non_sensitive VALUES (3, '\\medco\\clinical\\nonsensitive\\` + el + `\\', '` + el + `', 'N', 'CA', NULL, NULL, NULL, 'concept_cd', 'concept_dimension', 'concept_path', 'T', 'LIKE',
-	  '\\medco\\clinical\\nonsensitive\\` + el + `\\', 'Non-sensitive field', '\\medco\\clinical\\nonsensitive\\` + el + `\\',
+	/*clinical := `INSERT INTO i2b2metadata.clinical_non_sensitive VALUES (3, '\medco\clinical\nonsensitive\` + el + `\', '` + el + `', 'N', 'CA', NULL, NULL, NULL, 'concept_cd', 'concept_dimension', 'concept_path', 'T', 'LIKE',
+	  '\medco\clinical\nonsensitive\` + el + `\', 'Non-sensitive field', '\medco\clinical\nonsensitive\` + el + `\',
 	   'NOW()', NULL, NULL, NULL, 'CLEAR', '@', NULL, NULL, NULL, NULL);` + "\n"*/
 
-	clinical := `"3","\\medco\\clinical\\nonsensitive\\` + el + `\\","` + el + `","N","CA",,,,"concept_cd","concept_dimension","concept_path","T","LIKE","\\medco\\clinical\\nonsensitive\\` + el + `\\","Non-sensitive field","\\medco\\clinical\\nonsensitive\\` + el + `\\","NOW()",,,,"CLEAR","@",,,,` + "\n"
+	clinical := `"3","\medco\clinical\nonsensitive\` + el + `\","` + el + `","N","CA",,,,"concept_cd","concept_dimension","concept_path","T","LIKE","\medco\clinical\nonsensitive\` + el + `\","Non-sensitive field","\medco\clinical\nonsensitive\` + el + `\","NOW()",,,,"CLEAR","@",,,,` + "\n"
 
 	_, err := FileHandlers[4].WriteString(clinical)
 
@@ -685,11 +686,11 @@ func writeMetadataOntologyClear(el string) error {
 
 func writeMetadataOntologyLeafClear(field, el string) error {
 
-	/*clinical := `INSERT INTO i2b2metadata.clinical_non_sensitive VALUES (4, '\\medco\\clinical\\nonsensitive\\` + field + `\\` + el + `\\', '` + el + `', 'N', 'LA', NULL, 'CLEAR:` + strconv.FormatInt(ClearID, 10) + `', NULL, 'concept_cd', 'concept_dimension', 'concept_path', 'T', 'LIKE',
-	  '\\medco\\clinical\\nonsensitive\\` + field + `\\` + el + `\\', 'Non-sensitive value',  '\\medco\\clinical\\sensitive\\` + field + `\\` + el + `\\',
+	/*clinical := `INSERT INTO i2b2metadata.clinical_non_sensitive VALUES (4, '\medco\clinical\nonsensitive\` + field + `\` + el + `\', '` + el + `', 'N', 'LA', NULL, 'CLEAR:` + strconv.FormatInt(ClearID, 10) + `', NULL, 'concept_cd', 'concept_dimension', 'concept_path', 'T', 'LIKE',
+	  '\medco\clinical\nonsensitive\` + field + `\` + el + `\', 'Non-sensitive value',  '\medco\clinical\sensitive\` + field + `\` + el + `\',
 	   'NOW()', NULL, NULL, NULL, 'CLEAR', '@', NULL, NULL, NULL, NULL);` + "\n"*/
 
-	clinical := `"4","\\medco\\clinical\\nonsensitive\\` + field + `\\` + el + `\\","` + el + `","N","LA",,"CLEAR:` + strconv.FormatInt(ClearID, 10) + `",,"concept_cd","concept_dimension","concept_path","T","LIKE","\\medco\\clinical\\nonsensitive\\` + field + `\\` + el + `\\","Non-sensitive value","\\medco\\clinical\\sensitive\\` + field + `\\` + el + `\\","NOW()",,,,"CLEAR","@",,,,` + "\n"
+	clinical := `"4","\medco\clinical\nonsensitive\` + field + `\` + el + `\","` + el + `","N","LA",,"CLEAR:` + strconv.FormatInt(ClearID, 10) + `",,"concept_cd","concept_dimension","concept_path","T","LIKE","\medco\clinical\nonsensitive\` + field + `\` + el + `\","Non-sensitive value","\medco\clinical\sensitive\` + field + `\` + el + `\","NOW()",,,,"CLEAR","@",,,,` + "\n"
 
 	_, err := FileHandlers[4].WriteString(clinical)
 
@@ -703,9 +704,9 @@ func writeMetadataOntologyLeafClear(field, el string) error {
 
 func writeDemodataConceptDimensionCleartextConcepts(field, el string) error {
 
-	/*cleartextConcepts := `INSERT INTO i2b2demodata.concept_dimension VALUES ('\\medco\\clinical\\nonsensitive\\` + field + `\\` + el + `\\', 'CLEAR:` + strconv.FormatInt(ClearID, 10) + `', '` + el + `', NULL, NULL, NULL, 'NOW()', NULL, NULL);` + "\n"*/
+	/*cleartextConcepts := `INSERT INTO i2b2demodata.concept_dimension VALUES ('\medco\clinical\nonsensitive\` + field + `\` + el + `\', 'CLEAR:` + strconv.FormatInt(ClearID, 10) + `', '` + el + `', NULL, NULL, NULL, 'NOW()', NULL, NULL);` + "\n"*/
 
-	cleartextConcepts := `"\\medco\\clinical\\nonsensitive\\` + field + `\\` + el + `\\","CLEAR:` + strconv.FormatInt(ClearID, 10) + `","` + el + `",,,,"NOW()",,` + "\n"
+	cleartextConcepts := `"\medco\clinical\nonsensitive\` + field + `\` + el + `\","CLEAR:` + strconv.FormatInt(ClearID, 10) + `","` + el + `",,,,"NOW()",,` + "\n"
 
 	_, err := FileHandlers[5].WriteString(cleartextConcepts)
 
@@ -720,9 +721,9 @@ func writeDemodataConceptDimensionCleartextConcepts(field, el string) error {
 
 func writeDemodataConceptDimensionTaggedConcepts(el string, id string) error {
 
-	/*taggedConcepts := `INSERT INTO i2b2demodata.concept_dimension VALUES ('\\medco\\tagged\\` + el + `\\', 'TAG_ID:` + id + `', NULL, NULL, NULL, NULL, 'NOW()', NULL, NULL);` + "\n"*/
+	/*taggedConcepts := `INSERT INTO i2b2demodata.concept_dimension VALUES ('\medco\tagged\` + el + `\', 'TAG_ID:` + id + `', NULL, NULL, NULL, NULL, 'NOW()', NULL, NULL);` + "\n"*/
 
-	taggedConcepts := `"\\medco\\tagged\\` + el + `\\","TAG_ID:` + id + `",,,,,"NOW()",,` + "\n"
+	taggedConcepts := `"\medco\tagged\` + el + `\","TAG_ID:` + id + `",,,,,"NOW()",,` + "\n"
 
 	_, err := FileHandlers[5].WriteString(taggedConcepts)
 
@@ -827,9 +828,9 @@ func writeDemodataVisitDimension(sampleID, patientID string) error {
 
 func writeDemodataProviderDimension() error {
 
-	/*provider := `INSERT INTO i2b2demodata.provider_dimension VALUES ('chuv', '\\medco\\institutions\\chuv\\', 'chuv', NULL, NULL, NULL, 'NOW()', NULL, 1);` + "\n"*/
+	/*provider := `INSERT INTO i2b2demodata.provider_dimension VALUES ('chuv', '\medco\institutions\chuv\', 'chuv', NULL, NULL, NULL, 'NOW()', NULL, 1);` + "\n"*/
 
-	provider := `"chuv","\\medco\\institutions\\chuv\\","chuv",,,,"NOW()",,"1"` + "\n"
+	provider := `"chuv","\medco\institutions\chuv\","chuv",,,,"NOW()",,"1"` + "\n"
 
 	_, err := FileHandlers[10].WriteString(provider)
 

@@ -9,6 +9,7 @@ import (
 	"gopkg.in/dedis/onet.v1/log"
 	"strconv"
 	"testing"
+	"gopkg.in/dedis/onet.v1/network"
 )
 
 func getParam(nbHosts int) (*onet.Roster, *onet.LocalTest) {
@@ -61,7 +62,7 @@ func TestServiceDDT(t *testing.T) {
 		defer wg.Done()
 
 		var err error
-		_, result_node1, _, err = clients[0].SendSurveyDDTRequestTerms(el, serviceI2B2.SurveyID("testDDTSurvey_node1"), qt, proofs)
+		_, result_node1, _, err = clients[0].SendSurveyDDTRequestTerms(el, serviceI2B2.SurveyID("testDDTSurvey_node1"), qt, proofs, true)
 
 		if err != nil {
 			t.Fatal("Client", clients[0], " service did not start: ", err)
@@ -71,7 +72,7 @@ func TestServiceDDT(t *testing.T) {
 		defer wg.Done()
 
 		var err error
-		_, result_node1_repeated, _, err = clients[0].SendSurveyDDTRequestTerms(el, serviceI2B2.SurveyID("testDDTSurvey_node1_repeated"), qt, proofs)
+		_, result_node1_repeated, _, err = clients[0].SendSurveyDDTRequestTerms(el, serviceI2B2.SurveyID("testDDTSurvey_node1_repeated"), qt, proofs, true)
 
 		if err != nil {
 			t.Fatal("Client", clients[0], " service did not start: ", err)
@@ -81,7 +82,7 @@ func TestServiceDDT(t *testing.T) {
 		defer wg.Done()
 
 		var err error
-		_, result_node2, _, err = clients[1].SendSurveyDDTRequestTerms(el, serviceI2B2.SurveyID("testDDTSurvey_node2"), qt, proofs)
+		_, result_node2, _, err = clients[1].SendSurveyDDTRequestTerms(el, serviceI2B2.SurveyID("testDDTSurvey_node2"), qt, proofs, true)
 
 		if err != nil {
 			t.Fatal("Client", clients[1], " service did not start: ", err)
@@ -89,7 +90,7 @@ func TestServiceDDT(t *testing.T) {
 	}()
 
 	var err error
-	_, result_node3, _, err = clients[2].SendSurveyDDTRequestTerms(el, serviceI2B2.SurveyID("testDDTSurvey_node3"), qt, proofs)
+	_, result_node3, _, err = clients[2].SendSurveyDDTRequestTerms(el, serviceI2B2.SurveyID("testDDTSurvey_node3"), qt, proofs, true)
 
 	if err != nil {
 		t.Fatal("Client", clients[2], " service did not start: ", err)
@@ -210,4 +211,18 @@ func TestServiceAgg(t *testing.T) {
 	assert.Contains(t, listResults2, int64(5))
 	assert.Contains(t, listResults2, int64(6))
 
+}
+
+func TestCheckDDTSecrets(t *testing.T) {
+	addr := network.NewLocalAddress("local://127.0.0.1:2020")
+	_, err := serviceI2B2.CheckDDTSecrets("secrets.toml", addr)
+	assert.Nil(t, err, "Error while writing the secrets to the TOML file")
+
+	addr = network.NewLocalAddress("local://127.0.0.1:2010")
+	_, err = serviceI2B2.CheckDDTSecrets("secrets.toml", addr)
+	assert.Nil(t, err, "Error while writing the secrets to the TOML file")
+
+	addr = network.NewLocalAddress("local://127.0.0.1:2000")
+	_, err = serviceI2B2.CheckDDTSecrets("secrets.toml", addr)
+	assert.Nil(t, err, "Error while writing the secrets to the TOML file")
 }

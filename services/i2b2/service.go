@@ -1,30 +1,28 @@
 package serviceI2B2
 
 import (
-	"bufio"
-	"fmt"
 	"github.com/btcsuite/goleveldb/leveldb/errors"
 	"github.com/fanliao/go-concurrentMap"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/protocols"
 	"github.com/lca1/unlynx/services"
 	"gopkg.in/dedis/crypto.v0/abstract"
-	"gopkg.in/dedis/crypto.v0/base64"
 	"gopkg.in/dedis/crypto.v0/random"
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"
 	"os"
-	"strings"
 	"sync"
 	"time"
+	"github.com/BurntSushi/toml"
+	"gopkg.in/dedis/crypto.v0/base64"
 )
 
 // ServiceName is the registered name for the unlynx service.
-const ServiceName = "UnLynxI2b2"
+const ServiceName = "UnLynxI2B2"
 
 // DDTSecretsPath filename
-const DDTSecretsPath = "ddt_secrets_"
+const DDTSecretsPath = "secrets"
 
 // TimeResults includes all variables that will store the durations (to collect the execution/communication time)
 type TimeResults struct {
@@ -46,6 +44,7 @@ type SurveyDDTRequest struct {
 	SurveyID SurveyID
 	Roster   onet.Roster
 	Proofs   bool
+	Testing  bool
 
 	Terms lib.CipherVector // query terms
 
@@ -242,6 +241,7 @@ func (s *Service) HandleSurveyDDTRequestTerms(sdq *SurveyDDTRequest) (network.Me
 				IntraMessage:  true,
 				MessageSource: s.ServerIdentity(),
 				Proofs:        sdq.Proofs,
+				Testing:       sdq.Testing,
 			})
 
 		if err != nil {
@@ -520,9 +520,17 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 
 		s.Mutex.Lock()
 
-		aux, err := checkDDTSecrets(DDTSecretsPath+s.ServerIdentity().Address.Host()+":"+s.ServerIdentity().Address.Port()+".txt", serverIDMap.Address)
-		if err != nil || aux == nil {
-			log.Fatal("Error while reading the DDT secrets from file", err)
+		var aux abstract.Scalar
+		if survey.Request.Testing {
+			aux, err = CheckDDTSecrets(DDTSecretsPath+"_"+s.ServerIdentity().Address.Host()+":"+s.ServerIdentity().Address.Port()+".toml", serverIDMap.Address)
+			if err != nil || aux == nil {
+				log.Fatal("Error while reading the DDT secrets from file", err)
+			}
+		} else {
+			aux, err = CheckDDTSecrets(os.Getenv("UNLYNX_DDT_SECRETS_FILE_PATH"), serverIDMap.Address)
+			if err != nil || aux == nil {
+				log.Fatal("Error while reading the DDT secrets from file", err)
+			}
 		}
 
 		s.Mutex.Unlock()
@@ -671,58 +679,31 @@ func (s *Service) KeySwitchingPhase(targetSurvey SurveyID, roster *onet.Roster) 
 // Support functions
 //______________________________________________________________________________________________________________________
 
-func checkDDTSecrets(path string, id network.Address) (abstract.Scalar, error) {
+type secretDDT struct {
+	ServerID string
+	Secret   string
+}
+
+type secretsDTT struct {
+	Secrets []secretDDT
+}
+
+type privateTOML struct {
+	Public string
+	Private string
+	Address string
+	Description string
+	Secrets []secretDDT
+}
+
+func createTOMLsecrets(path string, id network.Address) (abstract.Scalar, error){
 	var fileHandle *os.File
 	var err error
 	defer fileHandle.Close()
 
-	if _, err = os.Stat(path); os.IsNotExist(err) {
-		fileHandle, err = os.Create(path)
+	fileHandle, err = os.Create(path)
 
-		secret := network.Suite.Scalar().Pick(random.Stream)
-		b, err := secret.MarshalBinary()
-
-		if err != nil {
-			return nil, err
-		}
-
-		fmt.Fprintf(fileHandle, "%s %s\n", id.String(), base64.StdEncoding.EncodeToString(b))
-
-		return secret, nil
-
-	}
-
-	fileHandle, err = os.Open(path)
-
-	if err != nil {
-		return nil, err
-	}
-
-	scanner := bufio.NewScanner(fileHandle)
-	for scanner.Scan() {
-		line := scanner.Text()
-		tokens := strings.Split(line, " ")
-
-		if id.String() == tokens[0] {
-			secret := network.Suite.Scalar()
-
-			b, err := base64.StdEncoding.DecodeString(tokens[1])
-
-			if err != nil {
-				return nil, err
-			}
-
-			err = secret.UnmarshalBinary(b)
-
-			if err != nil {
-				return nil, err
-			}
-
-			return secret, nil
-		}
-	}
-
-	fileHandle.Close()
+	encoder := toml.NewEncoder(fileHandle)
 
 	secret := network.Suite.Scalar().Pick(random.Stream)
 	b, err := secret.MarshalBinary()
@@ -731,8 +712,78 @@ func checkDDTSecrets(path string, id network.Address) (abstract.Scalar, error) {
 		return nil, err
 	}
 
-	fileHandle, err = os.OpenFile(path, os.O_APPEND|os.O_WRONLY, 0600)
-	fmt.Fprintf(fileHandle, "%s %s\n", id.String(), base64.StdEncoding.EncodeToString(b))
+	aux := make([]secretDDT,0)
+	aux = append(aux, secretDDT{ServerID: id.String(), Secret: base64.StdEncoding.EncodeToString(b)})
+	endR := privateTOML{Public: "", Private: "", Address: "", Description: "", Secrets: aux}
+
+	err = encoder.Encode(&endR)
+	if err != nil {
+		return nil, err
+	}
+
+	return secret, nil
+}
+
+func addTOMLsecret(path string, content privateTOML) error{
+	var fileHandle *os.File
+	defer fileHandle.Close()
+
+	fileHandle, err := os.Create(path)
+
+	encoder := toml.NewEncoder(fileHandle)
+
+	err = encoder.Encode(&content)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func CheckDDTSecrets(path string, id network.Address) (abstract.Scalar, error) {
+	var err error
+
+	if _, err = os.Stat(path); os.IsNotExist(err) {
+		return createTOMLsecrets(path, id)
+	}
+
+	contents := privateTOML{}
+	if _, err := toml.DecodeFile(path, &contents); err != nil {
+		return nil, err
+	}
+
+	for _, el := range contents.Secrets {
+		if el.ServerID == id.String() {
+			secret := network.Suite.Scalar()
+
+			b, err := base64.StdEncoding.DecodeString(el.Secret)
+			if err != nil {
+				return nil, err
+			}
+
+			err = secret.UnmarshalBinary(b)
+			if err != nil {
+				return nil, err
+			}
+
+			return secret, nil
+		}
+	}
+
+	// no secret for this 'source' server
+	secret := network.Suite.Scalar().Pick(random.Stream)
+	b, err := secret.MarshalBinary()
+
+	if err != nil {
+		return nil, err
+	}
+
+	contents.Secrets = append(contents.Secrets, secretDDT{ServerID: id.String(), Secret: base64.StdEncoding.EncodeToString(b)})
+
+	err = addTOMLsecret(path, contents)
+	if err != nil {
+		return nil, err
+	}
 
 	return secret, nil
 }
