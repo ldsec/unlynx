@@ -26,12 +26,12 @@ _testmain.go
 *.cov
 *.gob
 
-*.DS_Store
+.DS_Store
 
 .idea/
 
 services/data/*.txt
-services/i2b2/*.txt
+services/i2b2/*.toml
 
 simul/test_data/*.csv
 simul/test_data/graphs/*.pdf
@@ -44,10 +44,10 @@ simul/deter.toml
 app/default/*.toml
 app/default/test
 app/default/service_storage
-app/i2b2/*.txt
+app/i2b2/*.toml
 app/i2b2/loader/files/*.sql
 app/i2b2/loader/files/*.csv
-app/i2b2/loader/*.txt
+app/i2b2/loader/*.toml
 
 unlynx
 unlynxI2B2

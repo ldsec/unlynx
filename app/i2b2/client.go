@@ -185,6 +185,7 @@ func unlynxDDTRequest(input io.Reader, output io.Writer, el *onet.Roster, entryP
 		serviceI2B2.SurveyID(id), // SurveyID
 		encQueryTerms,            // Encrypted query terms to tag
 		proofs,                   // compute proofs?
+		true, 			  // it's for testing
 	)
 
 	totalTime := time.Since(start)

@@ -107,7 +107,13 @@ func TestReplayDataset(t *testing.T) {
 	assert.True(t, err == nil)
 }
 
-func TestCreateLoadBashFile(t *testing.T) {
+func TestGenerateLoadingScript(t *testing.T) {
+	err := loader.GenerateLoadingScript()
+	assert.True(t, err == nil)
+}
+
+func TestLoadDataFiles(t *testing.T) {
+	t.Skip()
 	err := loader.LoadDataFiles()
 	assert.True(t, err == nil)
 }
