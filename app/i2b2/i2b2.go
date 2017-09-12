@@ -59,10 +59,10 @@ const (
 	optionListSensitiveShort = "s"
 
 	// database settings
-	optionDBhost = "host"
+	optionDBhost      = "host"
 	optionDBhostShort = "h"
 
-	optionDBport = "port"
+	optionDBport      = "port"
 	optionDBportShort = "p"
 
 	optionDBname      = "n"
@@ -73,7 +73,6 @@ const (
 
 	optionDBpassword      = "password"
 	optionDBpasswordShort = "d"
-
 )
 
 /*

@@ -1,12 +1,14 @@
 package serviceI2B2
 
 import (
+	"github.com/BurntSushi/toml"
 	"github.com/btcsuite/goleveldb/leveldb/errors"
 	"github.com/fanliao/go-concurrentMap"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/protocols"
 	"github.com/lca1/unlynx/services"
 	"gopkg.in/dedis/crypto.v0/abstract"
+	"gopkg.in/dedis/crypto.v0/base64"
 	"gopkg.in/dedis/crypto.v0/random"
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
@@ -14,8 +16,6 @@ import (
 	"os"
 	"sync"
 	"time"
-	"github.com/BurntSushi/toml"
-	"gopkg.in/dedis/crypto.v0/base64"
 )
 
 // ServiceName is the registered name for the unlynx service.
@@ -689,14 +689,14 @@ type secretsDTT struct {
 }
 
 type privateTOML struct {
-	Public string
-	Private string
-	Address string
+	Public      string
+	Private     string
+	Address     string
 	Description string
-	Secrets []secretDDT
+	Secrets     []secretDDT
 }
 
-func createTOMLsecrets(path string, id network.Address) (abstract.Scalar, error){
+func createTOMLsecrets(path string, id network.Address) (abstract.Scalar, error) {
 	var fileHandle *os.File
 	var err error
 	defer fileHandle.Close()
@@ -712,7 +712,7 @@ func createTOMLsecrets(path string, id network.Address) (abstract.Scalar, error)
 		return nil, err
 	}
 
-	aux := make([]secretDDT,0)
+	aux := make([]secretDDT, 0)
 	aux = append(aux, secretDDT{ServerID: id.String(), Secret: base64.StdEncoding.EncodeToString(b)})
 	endR := privateTOML{Public: "", Private: "", Address: "", Description: "", Secrets: aux}
 
@@ -724,7 +724,7 @@ func createTOMLsecrets(path string, id network.Address) (abstract.Scalar, error)
 	return secret, nil
 }
 
-func addTOMLsecret(path string, content privateTOML) error{
+func addTOMLsecret(path string, content privateTOML) error {
 	var fileHandle *os.File
 	defer fileHandle.Close()
 
@@ -740,6 +740,7 @@ func addTOMLsecret(path string, content privateTOML) error{
 	return nil
 }
 
+// CheckDDTSecrets checks for the existence of the DDT secrets on the private_*.toml (we need to ensure that we use the same secrets always)
 func CheckDDTSecrets(path string, id network.Address) (abstract.Scalar, error) {
 	var err error
 

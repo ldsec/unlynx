@@ -4,10 +4,10 @@ import (
 	"github.com/lca1/unlynx/app/i2b2/loader"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/dedis/onet.v1"
+	"gopkg.in/dedis/onet.v1/app"
 	"gopkg.in/dedis/onet.v1/log"
 	"os"
 	"testing"
-	"gopkg.in/dedis/onet.v1/app"
 )
 
 const (
@@ -26,7 +26,7 @@ func getRoster(groupFilePath string) (*onet.Roster, error) {
 		defer local.CloseAll()
 		return el, nil
 
-	// generate el with group file
+		// generate el with group file
 	} else {
 		log.Info("Creating roster from group file path")
 
