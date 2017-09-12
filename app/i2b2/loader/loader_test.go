@@ -49,7 +49,7 @@ func getRoster(groupFilePath string) (*onet.Roster, error) {
 	}
 }
 
-func generateDataFiles(t *testing.T, el *onet.Roster) {
+func generateDataFiles(t *testing.T, el *onet.Roster, entryPointIdx int) {
 	log.SetDebugVisible(1)
 
 	fClinical, err := os.Open(CLINICAL_FILE)
@@ -80,7 +80,7 @@ func generateDataFiles(t *testing.T, el *onet.Roster) {
 	listSensitive = append(listSensitive, "PRIMARY_TUMOR_LOCALIZATION_TYPE")
 	listSensitive = append(listSensitive, "CANCER_TYPE_DETAILED")
 
-	err = loader.GenerateDataFiles(el, 0, fClinical, fGenomic, listSensitive)
+	err = loader.GenerateDataFiles(el, entryPointIdx, fClinical, fGenomic, listSensitive)
 	assert.True(t, err == nil, err)
 
 	for _, f := range loader.FileHandlers {
@@ -91,14 +91,14 @@ func generateDataFiles(t *testing.T, el *onet.Roster) {
 func TestGenerateDataFilesLocalTest(t *testing.T) {
 	el, err := getRoster("")
 	assert.True(t, err == nil, err)
-	generateDataFiles(t, el)
+	generateDataFiles(t, el, 0)
 }
 
 func TestGenerateDataFilesGroupFile(t *testing.T) {
 	// todo: fix hardcoded path
 	el, err := getRoster("/home/misbach/repositories/medco-deployment/configuration/keys/dev-3nodes-samehost/group.toml")
 	assert.True(t, err == nil, err)
-	generateDataFiles(t, el)
+	generateDataFiles(t, el, 0)
 }
 
 func TestReplayDataset(t *testing.T) {

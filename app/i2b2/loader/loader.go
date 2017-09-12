@@ -590,7 +590,7 @@ func encryptAndTag(list []int64, group *onet.Roster, entryPointIdx int) ([]lib.G
 		serviceI2B2.SurveyID("tagging_loading_phase"), 	// SurveyID
 		listEncryptedElements,                         	// Encrypted query terms to tag
 		false, 						// compute proofs?
-		true,  						// it's for testing
+		false,  						// it's for testing
 	)
 
 	if err != nil {
