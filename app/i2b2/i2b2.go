@@ -17,13 +17,23 @@ const (
 
 	// DefaultGroupFile is the name of the default file to lookup for group definition
 	DefaultGroupFile = "public.toml"
-
 	// DefaultClinicalFile is the name of the default clinical file (dataset)
 	DefaultClinicalFile = ""
 	// DefaultGenomicFile is the name of the default genomic file (dataset)
 	DefaultGenomicFile = ""
 	// DefaultSizeFile is the size of the data that we are going to consider (1 - original)
 	DefaultSizeFile = 1
+
+	// DefaultDBhost is the name of the default database hostname
+	DefaultDBhost = "localhost"
+	// DefaultDBport is the value of the default database access port
+	DefaultDBport = 5434
+	// DefaultDBname is the name of the default database name
+	DefaultDBname = "medcodeployment"
+	// DefaultDBuser is the name of the default user
+	DefaultDBuser = "postgres"
+	// DefaultDBpassword is the name of the default password
+	DefaultDBpassword = "prigen2017"
 
 	optionConfig      = "config"
 	optionConfigShort = "c"
@@ -47,6 +57,23 @@ const (
 
 	optionListSensitive      = "sensitive"
 	optionListSensitiveShort = "s"
+
+	// database settings
+	optionDBhost = "host"
+	optionDBhostShort = "h"
+
+	optionDBport = "port"
+	optionDBportShort = "p"
+
+	optionDBname      = "n"
+	optionDBnameShort = "name"
+
+	optionDBuser      = "user"
+	optionDBuserShort = "u"
+
+	optionDBpassword      = "password"
+	optionDBpasswordShort = "d"
+
 )
 
 /*
@@ -94,11 +121,6 @@ func main() {
 			Name:  optionEntryPointIdx,
 			Usage: "Index (relative to the group definition file) of the collective authority server to load the data.",
 		},
-		cli.IntFlag{
-			Name:  optionSizeFile + ", " + optionSizeFileShort,
-			Value: DefaultSizeFile,
-			Usage: "Replay dataset (default: 1 - original, 2 - two times more entries, etc.)",
-		},
 		cli.StringFlag{
 			Name:  optionClinicalFile + ", " + optionClinicalFileShort,
 			Value: DefaultClinicalFile,
@@ -113,6 +135,36 @@ func main() {
 			Name:  optionListSensitive + ", " + optionListSensitiveShort,
 			Value: &cli.StringSlice{},
 			Usage: "Fields listed as sensitive (\"all\" means all clinical fields are considered sensitive)",
+		},
+		cli.IntFlag{
+			Name:  optionSizeFile + ", " + optionSizeFileShort,
+			Value: DefaultSizeFile,
+			Usage: "Replay dataset (default: 1 - original, 2 - two times more entries, etc.)",
+		},
+		cli.StringFlag{
+			Name:  optionDBhost + ", " + optionDBhostShort,
+			Value: DefaultDBhost,
+			Usage: "Database hostname",
+		},
+		cli.IntFlag{
+			Name:  optionDBport + ", " + optionDBportShort,
+			Value: DefaultDBport,
+			Usage: "Database port",
+		},
+		cli.StringFlag{
+			Name:  optionDBname + ", " + optionDBnameShort,
+			Value: DefaultDBname,
+			Usage: "Database name",
+		},
+		cli.StringFlag{
+			Name:  optionDBuser + ", " + optionDBuserShort,
+			Value: DefaultDBuser,
+			Usage: "Database user",
+		},
+		cli.StringFlag{
+			Name:  optionDBpassword + ", " + optionDBpasswordShort,
+			Value: DefaultDBpassword,
+			Usage: "Database password",
 		},
 	}
 
@@ -177,17 +229,10 @@ func main() {
 
 		// BEGIN CLIENT: QUERIER ----------
 		{
-			Name:    "runDDT",
-			Aliases: []string{"rDDT"},
-			Usage:   "Execute a DDT request using Unlynx. Feed the query XML (UTF-8 encoded) to stdin and close it.",
-			Action:  unlynxDDTRequestFromApp,
-			Flags:   querierFlags,
-		},
-		{
-			Name:    "runAgg",
-			Aliases: []string{"rAgg"},
-			Usage:   "Execute a Aggregation request using Unlynx. Feed the query XML (UTF-8 encoded) to stdin and close it.",
-			Action:  unlynxAggRequestFromApp,
+			Name:    "run",
+			Aliases: []string{"r"},
+			Usage:   "Execute a DDT or Aggregation request using Unlynx. Feed the query XML (UTF-8 encoded) to stdin and close it.",
+			Action:  unlynxRequestFromApp,
 			Flags:   querierFlags,
 		},
 		// CLIENT END: QUERIER ----------

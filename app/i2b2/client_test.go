@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"github.com/lca1/unlynx/app/i2b2/loader"
 )
 
 var clientSecKey abstract.Scalar

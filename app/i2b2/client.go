@@ -17,6 +17,9 @@ import (
 	"os"
 	"strconv"
 	"time"
+	"database/sql"
+	"fmt"
+	_ "github.com/lib/pq"
 )
 
 // Loader functions
@@ -35,6 +38,24 @@ func loadData(c *cli.Context) error {
 	entryPointIdx := c.Int("entryPointIdx")
 	listSensitive := c.StringSlice("sensitive")
 	replaySize := c.Int("size")
+
+	// db settings
+	dbHost := c.String("dbHost")
+	dbPort := c.Int("dbPort")
+	dbName := c.String("dbName")
+	dbUser := c.String("dbUser")
+	dbPassword := c.String("dbPassword")
+
+	databaseS := loader.DBSettings{DBhost: dbHost, DBport: dbPort, DBname: dbName, DBuser: dbUser, DBpassword: dbPassword}
+
+	// check if db connection works
+	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+ "password=%s dbname=%s sslmode=disable", dbHost, dbPort, dbUser, dbPassword, dbName)
+	db, err := sql.Open("postgres", psqlInfo)
+	if err != nil {
+		log.Error("Error while opening database", err)
+		return cli.NewExitError(err, 1)
+	}
+	db.Close()
 
 	// generate el with group file
 	f, err := os.Open(groupFilePath)
@@ -83,13 +104,49 @@ func loadData(c *cli.Context) error {
 		}
 	}
 
-	loader.LoadClient(el, entryPointIdx, fClinical, fGenomic, listSensitive)
+	loader.LoadClient(el, entryPointIdx, fClinical, fGenomic, listSensitive, databaseS, false)
 
 	return nil
 }
 
 // Client functions
 //______________________________________________________________________________________________________________________
+
+func unlynxRequestFromApp(c *cli.Context) error {
+	// cli arguments
+	groupFilePath := c.String("file")
+	// TODO: use the serverIdentityID / UUID + el.Search rather than the entry point index
+	entryPointIdx := c.Int("entryPointIdx")
+	proofs := c.Bool("proofs")
+
+	// generate el with group file
+	f, err := os.Open(groupFilePath)
+	if err != nil {
+		log.Error("Error while opening group file", err)
+		return cli.NewExitError(err, 1)
+	}
+	el, err := app.ReadGroupToml(f)
+	if err != nil {
+		log.Error("Error while reading group file", err)
+		return cli.NewExitError(err, 1)
+	}
+	if len(el.List) <= 0 {
+		log.Error("Empty or invalid group file", err)
+		return cli.NewExitError(err, 1)
+	}
+
+	errDDT := unlynxDDTRequest(os.Stdin, os.Stdout, el, entryPointIdx, proofs)
+	if errDDT != nil {
+		errAgg := unlynxAggRequest(os.Stdin, os.Stdout, el, entryPointIdx, proofs)
+
+		if errAgg != nil {
+			log.Error("Error while requesting something...", err)
+			return cli.NewExitError(err, 2)
+		}
+	}
+
+	return nil
+}
 
 //----------------------------------------------------------------------------------------------------------------------
 //#----------------------------------------------- DDT REQUEST ---------------------------------------------------------
@@ -119,38 +176,6 @@ func readDDTRequestXMLFrom(input io.Reader) (*lib.XMLMedCoDTTRequest, error) {
 	return &parsedXML, nil
 }
 
-func unlynxDDTRequestFromApp(c *cli.Context) error {
-	// cli arguments
-	groupFilePath := c.String("file")
-	// TODO: use the serverIdentityID / UUID + el.Search rather than the entry point index
-	entryPointIdx := c.Int("entryPointIdx")
-	proofs := c.Bool("proofs")
-
-	// generate el with group file
-	f, err := os.Open(groupFilePath)
-	if err != nil {
-		log.Error("Error while opening group file", err)
-		return cli.NewExitError(err, 1)
-	}
-	el, err := app.ReadGroupToml(f)
-	if err != nil {
-		log.Error("Error while reading group file", err)
-		return cli.NewExitError(err, 1)
-	}
-	if len(el.List) <= 0 {
-		log.Error("Empty or invalid group file", err)
-		return cli.NewExitError(err, 1)
-	}
-
-	err = unlynxDDTRequest(os.Stdin, os.Stdout, el, entryPointIdx, proofs)
-	if err != nil {
-		log.Error("Error while requesting a DDT", err)
-		return cli.NewExitError(err, 2)
-	}
-
-	return nil
-}
-
 // TODO: no log.Fatal in general (this stops immediately)
 // TODO: handle errors in to/from bytes in crypto.go
 // run DDT of query parameters, all errors will be sent to the output
@@ -159,10 +184,7 @@ func unlynxDDTRequest(input io.Reader, output io.Writer, el *onet.Roster, entryP
 
 	// get data from input
 	xmlQuery, err := readDDTRequestXMLFrom(input)
-
 	if err != nil {
-		log.Error("Error parsing DDTRequest XML.", err)
-		writeDDTResponseXML(output, nil, nil, nil, err)
 		return err
 	}
 
@@ -272,7 +294,7 @@ func writeDDTResponseXML(output io.Writer, xmlQuery *lib.XMLMedCoDTTRequest, res
 }
 
 //----------------------------------------------------------------------------------------------------------------------
-//#----------------------------------------------- AGG REQUEST ----------------------------------------------------------
+//#----------------------------------------------- AGG REQUEST ---------------------------------------------------------
 //----------------------------------------------------------------------------------------------------------------------
 
 // read from a reader an xml (until EOF), and unmarshal it
@@ -299,38 +321,6 @@ func readAggRequestXMLFrom(input io.Reader) (*lib.XMLMedCoAggRequest, error) {
 	return &parsedXML, nil
 }
 
-func unlynxAggRequestFromApp(c *cli.Context) error {
-	// cli arguments
-	groupFilePath := c.String("file")
-	// TODO: use the serverIdentityID / UUID + el.Search rather than the entry point index
-	entryPointIdx := c.Int("entryPointIdx")
-	proofs := c.Bool("proofs")
-
-	// generate el with group file
-	f, err := os.Open(groupFilePath)
-	if err != nil {
-		log.Error("Error while opening group file", err)
-		return cli.NewExitError(err, 1)
-	}
-	el, err := app.ReadGroupToml(f)
-	if err != nil {
-		log.Error("Error while reading group file", err)
-		return cli.NewExitError(err, 1)
-	}
-	if len(el.List) <= 0 {
-		log.Error("Empty or invalid group file", err)
-		return cli.NewExitError(err, 1)
-	}
-
-	err = unlynxAggRequest(os.Stdin, os.Stdout, el, entryPointIdx, proofs)
-	if err != nil {
-		log.Error("Error while requesting a DDT", err)
-		return cli.NewExitError(err, 2)
-	}
-
-	return nil
-}
-
 // TODO: no log.Fatal in general (this stops immediately)
 // TODO: handle errors in to/from bytes in crypto.go
 // run aggregation of the results (and remaining protocols), all errors will be sent to the output
@@ -340,8 +330,6 @@ func unlynxAggRequest(input io.Reader, output io.Writer, el *onet.Roster, entryP
 	// get data from input
 	xmlQuery, err := readAggRequestXMLFrom(input)
 	if err != nil {
-		log.Error("Error parsing AggRequest XML.", err)
-		writeAggResponseXML(output, nil, nil, nil, err)
 		return err
 	}
 

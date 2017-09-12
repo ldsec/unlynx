@@ -18,14 +18,13 @@ import (
 	"bytes"
 )
 
-// DB settings
-const (
-	DBhost     = "localhost"
-	DBport     = 5434
-	DBuser     = "postgres"
-	DBpassword = "prigen2017"
-	DBname     = "medcodeployment"
-)
+type DBSettings struct {
+	DBhost string
+	DBport int
+	DBuser string
+	DBpassword string
+	DBname string
+}
 
 // The different paths and handlers for all the .sql files
 var (
@@ -74,6 +73,7 @@ type ConceptPath struct {
 
 // Support global variables
 var (
+	Testing          bool             // testing environment
 	EncID            int64            // clinical sensitive IDs
 	ClearID          int64            // clinical non-sensitive IDs
 	AllSensitiveIDs  []int64          // stores the EncID(s) and the genomic IDs
@@ -149,7 +149,7 @@ func ReplayDataset(filename string, x int) error {
 }
 
 // LoadClient initiates the loading process
-func LoadClient(el *onet.Roster, entryPointIdx int, fClinical *os.File, fGenomic *os.File, listSensitive []string) error {
+func LoadClient(el *onet.Roster, entryPointIdx int, fClinical *os.File, fGenomic *os.File, listSensitive []string, databaseS DBSettings, testing bool) error {
 	// init global variables
 	EncID = int64(1)
 	ClearID = int64(1)
@@ -158,6 +158,7 @@ func LoadClient(el *onet.Roster, entryPointIdx int, fClinical *os.File, fGenomic
 	AllSensitiveIDs = make([]int64, 0)
 	FileHandlers = make([]*os.File, 0)
 	TextSearchIndex = int64(1)
+	Testing = testing
 
 	for _, f := range FilePaths {
 		fp, err := os.Create(f)
@@ -174,9 +175,15 @@ func LoadClient(el *onet.Roster, entryPointIdx int, fClinical *os.File, fGenomic
 		return err
 	}
 
+	err = GenerateLoadingScript(databaseS)
+	if err != nil {
+		log.Fatal("Error while generating the loading .sh file", err)
+		return err
+	}
+
 	err = LoadDataFiles()
 	if err != nil {
-		log.Fatal("Error while generating the loading .sql file", err)
+		log.Fatal("Error while loading .sql file", err)
 		return err
 	}
 
@@ -187,13 +194,14 @@ func LoadClient(el *onet.Roster, entryPointIdx int, fClinical *os.File, fGenomic
 }
 
 // GenerateLoadingScript creates a load .sql script
-func GenerateLoadingScript() error {
+func GenerateLoadingScript(databaseS DBSettings) error {
 	fp, err := os.Create(FileBashPath)
 	if err != nil {
 		return err
 	}
 
-	loading := `#!/usr/bin/env bash` + "\n" + "\n" + `PGPASSWORD=` + DBpassword + ` psql -v ON_ERROR_STOP=1 -h "` + DBhost + `" -U "` + DBuser + `" -p ` + strconv.FormatInt(int64(DBport),10) + ` -d "` + DBname + `" <<-EOSQL` + "\n"
+	loading := `#!/usr/bin/env bash` + "\n" + "\n" + `PGPASSWORD=` + databaseS.DBpassword + ` psql -v ON_ERROR_STOP=1 -h "` + databaseS.DBhost +
+		`" -U "` + databaseS.DBuser + `" -p ` + strconv.FormatInt(int64(databaseS.DBport),10) + ` -d "` + databaseS.DBname + `" <<-EOSQL` + "\n"
 
 	loading += "BEGIN;\n"
 	for i := 0; i < len(Tablenames); i++ {
@@ -590,7 +598,7 @@ func encryptAndTag(list []int64, group *onet.Roster, entryPointIdx int) ([]lib.G
 		serviceI2B2.SurveyID("tagging_loading_phase"), 	// SurveyID
 		listEncryptedElements,                         	// Encrypted query terms to tag
 		false, 						// compute proofs?
-		true,  						// it's for testing
+		Testing,  					// it's for testing
 	)
 
 	if err != nil {

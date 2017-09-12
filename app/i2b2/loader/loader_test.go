@@ -37,6 +37,7 @@ func TestGenerateDataFiles(t *testing.T) {
 	loader.AllSensitiveIDs = make([]int64, 0)
 	loader.FileHandlers = make([]*os.File, 0)
 	loader.TextSearchIndex = int64(1)
+	loader.Testing = true
 
 	for _, f := range loader.FilePaths {
 		fp, err := os.Create(f)
@@ -63,7 +64,7 @@ func TestReplayDataset(t *testing.T) {
 }
 
 func TestGenerateLoadingScript(t *testing.T) {
-	err := loader.GenerateLoadingScript()
+	err := loader.GenerateLoadingScript(loader.DBSettings{DBhost: "localhost", DBport: 5434, DBname: "medcodeployment", DBuser: "postgres", DBpassword: "prigen2017"})
 	assert.True(t, err == nil)
 }
 
