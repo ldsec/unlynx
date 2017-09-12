@@ -135,7 +135,7 @@ func unlynxRequestFromApp(c *cli.Context) error {
 		return cli.NewExitError(err, 1)
 	}
 
-	errDDT := unlynxDDTRequest(os.Stdin, os.Stdout, el, entryPointIdx, proofs)
+	errDDT := unlynxDDTRequest(os.Stdin, os.Stdout, el, entryPointIdx, proofs, false)
 	if errDDT != nil {
 		errAgg := unlynxAggRequest(os.Stdin, os.Stdout, el, entryPointIdx, proofs)
 
@@ -179,7 +179,7 @@ func readDDTRequestXMLFrom(input io.Reader) (*lib.XMLMedCoDTTRequest, error) {
 // TODO: no log.Fatal in general (this stops immediately)
 // TODO: handle errors in to/from bytes in crypto.go
 // run DDT of query parameters, all errors will be sent to the output
-func unlynxDDTRequest(input io.Reader, output io.Writer, el *onet.Roster, entryPointIdx int, proofs bool) error {
+func unlynxDDTRequest(input io.Reader, output io.Writer, el *onet.Roster, entryPointIdx int, proofs, testing bool) error {
 	start := time.Now()
 
 	// get data from input
@@ -207,7 +207,7 @@ func unlynxDDTRequest(input io.Reader, output io.Writer, el *onet.Roster, entryP
 		serviceI2B2.SurveyID(id), // SurveyID
 		encQueryTerms,            // Encrypted query terms to tag
 		proofs,                   // compute proofs?
-		true,                     // it's for testing
+		testing,                     // it's for testing
 	)
 
 	totalTime := time.Since(start)

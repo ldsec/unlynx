@@ -251,15 +251,15 @@ func TestMedcoDDTRequest(t *testing.T) {
 
 	go func() {
 		defer wg.Done()
-		err1 := unlynxDDTRequest(getXMLReaderDDTRequest(t, 1), &writer1, el, 1, false)
+		err1 := unlynxDDTRequest(getXMLReaderDDTRequest(t, 1), &writer1, el, 1, false, true)
 		assert.True(t, err1 == nil)
 	}()
 	go func() {
 		defer wg.Done()
-		err2 := unlynxDDTRequest(getXMLReaderDDTRequest(t, 2), &writer2, el, 2, false)
+		err2 := unlynxDDTRequest(getXMLReaderDDTRequest(t, 2), &writer2, el, 2, false, true)
 		assert.True(t, err2 == nil)
 	}()
-	err := unlynxDDTRequest(getXMLReaderDDTRequest(t, 0), &writer, el, 0, false)
+	err := unlynxDDTRequest(getXMLReaderDDTRequest(t, 0), &writer, el, 0, false, true)
 	assert.True(t, err == nil)
 	lib.EndParallelize(wg)
 
@@ -295,15 +295,15 @@ func TestMedCoDDTRequestV2(t *testing.T) {
 
 	go func() {
 		defer wg.Done()
-		err1 := unlynxDDTRequest(getXMLReaderDDTRequestV2(t, 1), &writer1, el, 1, false)
+		err1 := unlynxDDTRequest(getXMLReaderDDTRequestV2(t, 1), &writer1, el, 1, false, true)
 		assert.True(t, err1 == nil)
 	}()
 	go func() {
 		defer wg.Done()
-		err2 := unlynxDDTRequest(getXMLReaderDDTRequestV2(t, 2), &writer2, el, 2, false)
+		err2 := unlynxDDTRequest(getXMLReaderDDTRequestV2(t, 2), &writer2, el, 2, false, true)
 		assert.True(t, err2 == nil)
 	}()
-	err := unlynxDDTRequest(getXMLReaderDDTRequestV2(t, 0), &writer, el, 0, false)
+	err := unlynxDDTRequest(getXMLReaderDDTRequestV2(t, 0), &writer, el, 0, false, true)
 	assert.True(t, err == nil)
 	lib.EndParallelize(wg)
 
@@ -338,16 +338,16 @@ func TestMedCoDDTRequestRemote(t *testing.T) {
 
 	go func() {
 		defer wg.Done()
-		err1 := unlynxDDTRequest(getXMLReaderDDTRequest(t, 1), &writer1, el, 1, false)
+		err1 := unlynxDDTRequest(getXMLReaderDDTRequest(t, 1), &writer1, el, 1, false, true)
 		assert.True(t, err1 == nil)
 	}()
 	go func() {
 		defer wg.Done()
-		err2 := unlynxDDTRequest(getXMLReaderDDTRequest(t, 2), &writer2, el, 2, false)
+		err2 := unlynxDDTRequest(getXMLReaderDDTRequest(t, 2), &writer2, el, 2, false, true)
 		assert.True(t, err2 == nil)
 	}()
 
-	err := unlynxDDTRequest(getXMLReaderDDTRequest(t, 0), &writer, el, 0, false)
+	err := unlynxDDTRequest(getXMLReaderDDTRequest(t, 0), &writer, el, 0, false, true)
 	assert.True(t, err == nil)
 	lib.EndParallelize(wg)
 
