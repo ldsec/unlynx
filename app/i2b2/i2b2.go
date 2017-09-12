@@ -43,6 +43,8 @@ const (
 
 	optionEntryPointIdx = "entryPointIdx"
 
+	optionProofs = "proofs"
+
 	optionDecryptKey      = "key"
 	optionDecryptKeyShort = "k"
 
@@ -59,10 +61,10 @@ const (
 	optionListSensitiveShort = "s"
 
 	// database settings
-	optionDBhost = "host"
+	optionDBhost      = "host"
 	optionDBhostShort = "h"
 
-	optionDBport = "port"
+	optionDBport      = "port"
 	optionDBportShort = "p"
 
 	optionDBname      = "n"
@@ -73,7 +75,6 @@ const (
 
 	optionDBpassword      = "password"
 	optionDBpasswordShort = "d"
-
 )
 
 /*
@@ -177,6 +178,11 @@ func main() {
 		cli.IntFlag{
 			Name:  optionEntryPointIdx,
 			Usage: "Index (relative to the group definition file) of the collective authority server to send the query.",
+		},
+		cli.IntFlag{
+			Name:  optionProofs,
+			Value: 0,
+			Usage: "Enable/Disable proofs",
 		},
 	}
 

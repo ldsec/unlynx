@@ -7,9 +7,9 @@ import (
 	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
+	"gopkg.in/dedis/onet.v1/network"
 	"strconv"
 	"testing"
-	"gopkg.in/dedis/onet.v1/network"
 )
 
 func getParam(nbHosts int) (*onet.Roster, *onet.LocalTest) {

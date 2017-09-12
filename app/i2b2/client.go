@@ -3,10 +3,13 @@ package main
 // I2b2 Unlynx client
 
 import (
+	"database/sql"
 	"encoding/xml"
+	"fmt"
 	"github.com/lca1/unlynx/app/i2b2/loader"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/services/i2b2"
+	_ "github.com/lib/pq"
 	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/app"
@@ -17,9 +20,6 @@ import (
 	"os"
 	"strconv"
 	"time"
-	"database/sql"
-	"fmt"
-	_ "github.com/lib/pq"
 )
 
 // Loader functions
@@ -49,7 +49,7 @@ func loadData(c *cli.Context) error {
 	databaseS := loader.DBSettings{DBhost: dbHost, DBport: dbPort, DBname: dbName, DBuser: dbUser, DBpassword: dbPassword}
 
 	// check if db connection works
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+ "password=%s dbname=%s sslmode=disable", dbHost, dbPort, dbUser, dbPassword, dbName)
+	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+"password=%s dbname=%s sslmode=disable", dbHost, dbPort, dbUser, dbPassword, dbName)
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
 		log.Error("Error while opening database", err)

@@ -1,6 +1,7 @@
 package loader
 
 import (
+	"bytes"
 	"crypto/rand"
 	"encoding/binary"
 	"encoding/csv"
@@ -15,20 +16,20 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
-	"bytes"
 )
 
+// DBSettings stores the database settings
 type DBSettings struct {
-	DBhost string
-	DBport int
-	DBuser string
+	DBhost     string
+	DBport     int
+	DBuser     string
 	DBpassword string
-	DBname string
+	DBname     string
 }
 
 // The different paths and handlers for all the .sql files
 var (
-	Tablenames  = [...]string{"shrine_ont.clinical_sensitive",
+	Tablenames = [...]string{"shrine_ont.clinical_sensitive",
 		"shrine_ont.clinical_non_sensitive",
 		"shrine_ont.genomic_annotations",
 		"i2b2metadata.sensitive_tagged",
@@ -201,13 +202,13 @@ func GenerateLoadingScript(databaseS DBSettings) error {
 	}
 
 	loading := `#!/usr/bin/env bash` + "\n" + "\n" + `PGPASSWORD=` + databaseS.DBpassword + ` psql -v ON_ERROR_STOP=1 -h "` + databaseS.DBhost +
-		`" -U "` + databaseS.DBuser + `" -p ` + strconv.FormatInt(int64(databaseS.DBport),10) + ` -d "` + databaseS.DBname + `" <<-EOSQL` + "\n"
+		`" -U "` + databaseS.DBuser + `" -p ` + strconv.FormatInt(int64(databaseS.DBport), 10) + ` -d "` + databaseS.DBname + `" <<-EOSQL` + "\n"
 
 	loading += "BEGIN;\n"
 	for i := 0; i < len(Tablenames); i++ {
 		tokens := strings.Split(FilePaths[i], "/")
 
-		loading += `\copy `+ Tablenames[i] + ` FROM 'files/` + tokens[1] + `' ESCAPE '"' DELIMITER ',' CSV;` + "\n"
+		loading += `\copy ` + Tablenames[i] + ` FROM 'files/` + tokens[1] + `' ESCAPE '"' DELIMITER ',' CSV;` + "\n"
 	}
 	loading += "COMMIT;\n"
 	loading += "EOSQL"
@@ -222,10 +223,10 @@ func GenerateLoadingScript(databaseS DBSettings) error {
 }
 
 // LoadDataFiles executes the loading script
-func LoadDataFiles() error{
+func LoadDataFiles() error {
 	// Display just the stderr if an error occurs
 	cmd := exec.Command("/bin/sh", FileBashPath)
-	stderr := &bytes.Buffer{}    // make sure to import bytes
+	stderr := &bytes.Buffer{} // make sure to import bytes
 	cmd.Stderr = stderr
 	err := cmd.Run()
 	if err != nil {
@@ -594,10 +595,10 @@ func encryptAndTag(list []int64, group *onet.Roster, entryPointIdx int) ([]lib.G
 	// TAGGING
 	client := serviceI2B2.NewUnLynxClient(group.List[entryPointIdx], strconv.Itoa(entryPointIdx))
 	_, result, _, err := client.SendSurveyDDTRequestTerms(
-		group, 						// Roster
-		serviceI2B2.SurveyID("tagging_loading_phase"), 	// SurveyID
-		listEncryptedElements,                         	// Encrypted query terms to tag
-		false, 						// compute proofs?
+		group, // Roster
+		serviceI2B2.SurveyID("tagging_loading_phase"), // SurveyID
+		listEncryptedElements,                         // Encrypted query terms to tag
+		false, // compute proofs?
 		Testing,
 	)
 
