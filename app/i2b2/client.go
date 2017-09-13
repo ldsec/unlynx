@@ -135,9 +135,15 @@ func unlynxRequestFromApp(c *cli.Context) error {
 		return cli.NewExitError(err, 1)
 	}
 
-	errDDT := unlynxDDTRequest(os.Stdin, os.Stdout, el, entryPointIdx, proofs, false)
+	data, err := readRequestXMLFrom(os.Stdin)
+	if err != nil {
+		log.Error("Error while reading from the stdin", err)
+		return cli.NewExitError(err, 2)
+	}
+
+	errDDT := unlynxDDTRequest(data, os.Stdout, el, entryPointIdx, proofs, false)
 	if errDDT != nil {
-		errAgg := unlynxAggRequest(os.Stdin, os.Stdout, el, entryPointIdx, proofs)
+		errAgg := unlynxAggRequest(data, os.Stdout, el, entryPointIdx, proofs)
 
 		if errAgg != nil {
 			log.Error("Error while requesting something...", err)
@@ -148,13 +154,8 @@ func unlynxRequestFromApp(c *cli.Context) error {
 	return nil
 }
 
-//----------------------------------------------------------------------------------------------------------------------
-//#----------------------------------------------- DDT REQUEST ---------------------------------------------------------
-//----------------------------------------------------------------------------------------------------------------------
-
 // read from a reader an xml (until EOF), and unmarshal it
-func readDDTRequestXMLFrom(input io.Reader) (*lib.XMLMedCoDTTRequest, error) {
-
+func readRequestXMLFrom(input io.Reader) ([]byte, error) {
 	// read from stdin TODO: limit the amount read
 	dataBytes, errIo := ioutil.ReadAll(input)
 
@@ -165,10 +166,19 @@ func readDDTRequestXMLFrom(input io.Reader) (*lib.XMLMedCoDTTRequest, error) {
 
 	log.Info("Correctly read standard input until EOF.")
 
+	return dataBytes, nil
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+//#----------------------------------------------- DDT REQUEST ---------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
+
+// unmarshal the DDTRequest XML
+func parserDDTRequestXML(input []byte) (*lib.XMLMedCoDTTRequest, error) {
 	// unmarshal xml (assumes bytes are UTF-8 encoded)
 	parsedXML := lib.XMLMedCoDTTRequest{}
 
-	errXML := xml.Unmarshal(dataBytes, &parsedXML)
+	errXML := xml.Unmarshal(input, &parsedXML)
 	if errXML != nil {
 		return nil, errXML
 	}
@@ -179,11 +189,11 @@ func readDDTRequestXMLFrom(input io.Reader) (*lib.XMLMedCoDTTRequest, error) {
 // TODO: no log.Fatal in general (this stops immediately)
 // TODO: handle errors in to/from bytes in crypto.go
 // run DDT of query parameters, all errors will be sent to the output
-func unlynxDDTRequest(input io.Reader, output io.Writer, el *onet.Roster, entryPointIdx int, proofs, testing bool) error {
+func unlynxDDTRequest(input []byte, output io.Writer, el *onet.Roster, entryPointIdx int, proofs, testing bool) error {
 	start := time.Now()
 
 	// get data from input
-	xmlQuery, err := readDDTRequestXMLFrom(input)
+	xmlQuery, err := parserDDTRequestXML(input)
 	if err != nil {
 		return err
 	}
@@ -207,7 +217,7 @@ func unlynxDDTRequest(input io.Reader, output io.Writer, el *onet.Roster, entryP
 		serviceI2B2.SurveyID(id), // SurveyID
 		encQueryTerms,            // Encrypted query terms to tag
 		proofs,                   // compute proofs?
-		testing,                     // it's for testing
+		testing,                  // it's for testing
 	)
 
 	totalTime := time.Since(start)
@@ -297,22 +307,11 @@ func writeDDTResponseXML(output io.Writer, xmlQuery *lib.XMLMedCoDTTRequest, res
 //#----------------------------------------------- AGG REQUEST ---------------------------------------------------------
 //----------------------------------------------------------------------------------------------------------------------
 
-// read from a reader an xml (until EOF), and unmarshal it
-func readAggRequestXMLFrom(input io.Reader) (*lib.XMLMedCoAggRequest, error) {
-
-	// read from stdin TODO: limit the amount read
-	dataBytes, errIo := ioutil.ReadAll(input)
-
-	if errIo != nil {
-		log.Error("Error while reading standard input.", errIo)
-		return nil, errIo
-	}
-
-	log.Info("Correctly read standard input until EOF.")
-
+// unmarshal the AggRequest XML
+func parseAggRequestXML(input []byte) (*lib.XMLMedCoAggRequest, error) {
 	// unmarshal xml (assumes bytes are UTF-8 encoded)
 	parsedXML := lib.XMLMedCoAggRequest{}
-	errXML := xml.Unmarshal(dataBytes, &parsedXML)
+	errXML := xml.Unmarshal(input, &parsedXML)
 	if errXML != nil {
 		log.Error("Error while unmarshalling AggRequest xml.", errXML)
 		return nil, errXML
@@ -324,11 +323,11 @@ func readAggRequestXMLFrom(input io.Reader) (*lib.XMLMedCoAggRequest, error) {
 // TODO: no log.Fatal in general (this stops immediately)
 // TODO: handle errors in to/from bytes in crypto.go
 // run aggregation of the results (and remaining protocols), all errors will be sent to the output
-func unlynxAggRequest(input io.Reader, output io.Writer, el *onet.Roster, entryPointIdx int, proofs bool) error {
+func unlynxAggRequest(input []byte, output io.Writer, el *onet.Roster, entryPointIdx int, proofs bool) error {
 	start := time.Now()
 
 	// get data from input
-	xmlQuery, err := readAggRequestXMLFrom(input)
+	xmlQuery, err := parseAggRequestXML(input)
 	if err != nil {
 		return err
 	}

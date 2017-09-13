@@ -251,15 +251,21 @@ func TestMedcoDDTRequest(t *testing.T) {
 
 	go func() {
 		defer wg.Done()
-		err1 := unlynxDDTRequest(getXMLReaderDDTRequest(t, 1), &writer1, el, 1, false, true)
+		input, err1 := readRequestXMLFrom(getXMLReaderDDTRequest(t, 1))
+		assert.True(t, err1 == nil)
+		err1 = unlynxDDTRequest(input, &writer1, el, 1, false, true)
 		assert.True(t, err1 == nil)
 	}()
 	go func() {
 		defer wg.Done()
-		err2 := unlynxDDTRequest(getXMLReaderDDTRequest(t, 2), &writer2, el, 2, false, true)
+		input, err2 := readRequestXMLFrom(getXMLReaderDDTRequest(t, 2))
+		assert.True(t, err2 == nil)
+		err2 = unlynxDDTRequest(input, &writer2, el, 2, false, true)
 		assert.True(t, err2 == nil)
 	}()
-	err := unlynxDDTRequest(getXMLReaderDDTRequest(t, 0), &writer, el, 0, false, true)
+	input, err := readRequestXMLFrom(getXMLReaderDDTRequest(t, 0))
+	assert.True(t, err == nil)
+	err = unlynxDDTRequest(input, &writer, el, 0, false, true)
 	assert.True(t, err == nil)
 	lib.EndParallelize(wg)
 
@@ -295,15 +301,21 @@ func TestMedCoDDTRequestV2(t *testing.T) {
 
 	go func() {
 		defer wg.Done()
-		err1 := unlynxDDTRequest(getXMLReaderDDTRequestV2(t, 1), &writer1, el, 1, false, true)
+		input, err1 := readRequestXMLFrom(getXMLReaderDDTRequestV2(t, 1))
+		assert.True(t, err1 == nil)
+		err1 = unlynxDDTRequest(input, &writer1, el, 1, false, true)
 		assert.True(t, err1 == nil)
 	}()
 	go func() {
 		defer wg.Done()
-		err2 := unlynxDDTRequest(getXMLReaderDDTRequestV2(t, 2), &writer2, el, 2, false, true)
+		input, err2 := readRequestXMLFrom(getXMLReaderDDTRequestV2(t, 2))
+		assert.True(t, err2 == nil)
+		err2 = unlynxDDTRequest(input, &writer2, el, 2, false, true)
 		assert.True(t, err2 == nil)
 	}()
-	err := unlynxDDTRequest(getXMLReaderDDTRequestV2(t, 0), &writer, el, 0, false, true)
+	input, err := readRequestXMLFrom(getXMLReaderDDTRequestV2(t, 0))
+	assert.True(t, err == nil)
+	err = unlynxDDTRequest(input, &writer, el, 0, false, true)
 	assert.True(t, err == nil)
 	lib.EndParallelize(wg)
 
@@ -338,16 +350,21 @@ func TestMedCoDDTRequestRemote(t *testing.T) {
 
 	go func() {
 		defer wg.Done()
-		err1 := unlynxDDTRequest(getXMLReaderDDTRequest(t, 1), &writer1, el, 1, false, true)
+		input, err1 := readRequestXMLFrom(getXMLReaderDDTRequest(t, 1))
+		assert.True(t, err1 == nil)
+		err1 = unlynxDDTRequest(input, &writer1, el, 1, false, true)
 		assert.True(t, err1 == nil)
 	}()
 	go func() {
 		defer wg.Done()
-		err2 := unlynxDDTRequest(getXMLReaderDDTRequest(t, 2), &writer2, el, 2, false, true)
+		input, err2 := readRequestXMLFrom(getXMLReaderDDTRequest(t, 2))
+		assert.True(t, err2 == nil)
+		err2 = unlynxDDTRequest(input, &writer2, el, 2, false, true)
 		assert.True(t, err2 == nil)
 	}()
-
-	err := unlynxDDTRequest(getXMLReaderDDTRequest(t, 0), &writer, el, 0, false, true)
+	input, err := readRequestXMLFrom(getXMLReaderDDTRequest(t, 0))
+	assert.True(t, err == nil)
+	err = unlynxDDTRequest(input, &writer, el, 0, false, true)
 	assert.True(t, err == nil)
 	lib.EndParallelize(wg)
 
@@ -402,15 +419,21 @@ func TestMedcoAggRequest(t *testing.T) {
 
 	go func() {
 		defer wg.Done()
-		err1 := unlynxAggRequest(getXMLReaderAggRequest(t, 20), &writer1, el, 1, false)
+		input, err1 := readRequestXMLFrom(getXMLReaderAggRequest(t, 20))
+		assert.True(t, err1 == nil)
+		err1 = unlynxAggRequest(input, &writer1, el, 1, false)
 		assert.True(t, err1 == nil)
 	}()
 	go func() {
 		defer wg.Done()
-		err2 := unlynxAggRequest(getXMLReaderAggRequest(t, 50), &writer2, el, 2, false)
+		input, err2 := readRequestXMLFrom(getXMLReaderAggRequest(t, 50))
+		assert.True(t, err2 == nil)
+		err2 = unlynxAggRequest(input, &writer2, el, 2, false)
 		assert.True(t, err2 == nil)
 	}()
-	err := unlynxAggRequest(getXMLReaderAggRequest(t, 30), &writer, el, 0, false)
+	input, err := readRequestXMLFrom(getXMLReaderAggRequest(t, 30))
+	assert.True(t, err == nil)
+	err = unlynxAggRequest(input, &writer, el, 0, false)
 	assert.True(t, err == nil)
 	lib.EndParallelize(wg)
 
@@ -443,15 +466,21 @@ func TestMedCoAggRequestV2(t *testing.T) {
 
 	go func() {
 		defer wg.Done()
-		err1 := unlynxAggRequest(getXMLReaderAggRequestV2(t, 100), &writer1, el, 1, false)
+		input, err1 := readRequestXMLFrom(getXMLReaderAggRequestV2(t, 100))
+		assert.True(t, err1 == nil)
+		err1 = unlynxAggRequest(input, &writer1, el, 1, false)
 		assert.True(t, err1 == nil)
 	}()
 	go func() {
 		defer wg.Done()
-		err2 := unlynxAggRequest(getXMLReaderAggRequestV2(t, 4), &writer2, el, 2, false)
+		input, err2 := readRequestXMLFrom(getXMLReaderAggRequestV2(t, 4))
+		assert.True(t, err2 == nil)
+		err2 = unlynxAggRequest(input, &writer2, el, 2, false)
 		assert.True(t, err2 == nil)
 	}()
-	err := unlynxAggRequest(getXMLReaderAggRequestV2(t, 7), &writer, el, 0, false)
+	input, err := readRequestXMLFrom(getXMLReaderAggRequestV2(t, 7))
+	assert.True(t, err == nil)
+	err = unlynxAggRequest(input, &writer, el, 0, false)
 	assert.True(t, err == nil)
 	lib.EndParallelize(wg)
 
@@ -485,16 +514,21 @@ func TestMedCoAggRequestRemote(t *testing.T) {
 
 	go func() {
 		defer wg.Done()
-		err1 := unlynxAggRequest(getXMLReaderAggRequest(t, 3), &writer1, el, 1, false)
+		input, err1 := readRequestXMLFrom(getXMLReaderAggRequest(t, 3))
+		assert.True(t, err1 == nil)
+		err1 = unlynxAggRequest(input, &writer1, el, 1, false)
 		assert.True(t, err1 == nil)
 	}()
 	go func() {
 		defer wg.Done()
-		err2 := unlynxAggRequest(getXMLReaderAggRequest(t, 47), &writer2, el, 2, false)
+		input, err2 := readRequestXMLFrom(getXMLReaderAggRequest(t, 47))
+		assert.True(t, err2 == nil)
+		err2 = unlynxAggRequest(input, &writer2, el, 2, false)
 		assert.True(t, err2 == nil)
 	}()
-
-	err := unlynxAggRequest(getXMLReaderAggRequest(t, 31), &writer, el, 0, false)
+	input, err := readRequestXMLFrom(getXMLReaderAggRequest(t, 31))
+	assert.True(t, err == nil)
+	err = unlynxAggRequest(input, &writer, el, 0, false)
 	assert.True(t, err == nil)
 	lib.EndParallelize(wg)
 
