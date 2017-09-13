@@ -527,14 +527,12 @@ func writeShrineOntologyGenomicAnnotations(fields []string, indexGenVariant map[
 	// generate id
 	aux, err := strconv.ParseInt(record[indexGenVariant["Start_Position"]], 10, 64)
 	if err != nil {
-		log.Fatal("Error while parsing Start Position")
-		return int64(-1), err
+		return int64(0), err
 	}
 
 	id, err := GetVariantID(record[indexGenVariant["Chromosome"]], aux, record[indexGenVariant["Reference_Allele"]], record[indexGenVariant["Tumor_Seq_Allele1"]])
 	if err != nil {
-		log.Fatal("Error while generating the genomic id")
-		return int64(-1), err
+		return int64(0), err
 	}
 
 	// if genomic id already exist we don't need to add it to the shrine_ont.genomic_annotations
