@@ -64,9 +64,9 @@ func TestGetVariantID(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, res, int64(288230382887780688))
 
-	res, err = loader.GetVariantID("100", int64(2300), "C", "T")
+	res, err = loader.GetVariantID("10", int64(2300), "C", "T")
 	assert.Nil(t, err)
-	assert.Equal(t, res, int64(1152923974447928320))
+	assert.Equal(t, res, int64(2882306231358198784))
 
 	res, err = loader.GetVariantID("1", int64(999999), "TAAAC", "G")
 	assert.Nil(t, err)

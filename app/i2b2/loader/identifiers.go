@@ -43,7 +43,7 @@ const (
 
 	 -> Range from 1 to 26 inclusive, 2^5 = 32 ==> 5 bits storage
 	*/
-	ChromosomeIDRegex = "^[XYM]|[1-9]|(1[0-9])|(2[0-3])$"
+	ChromosomeIDRegex = "^([XYM]|[1-9]|(1[0-9])|(2[0-3]))$"
 
 	/*
 	 Valid values for the alleles.
@@ -63,7 +63,7 @@ const (
 )
 
 // TypeFlagGenomicVariant encodes the type of id.
-const TypeFlagGenomicVariant = int64(0)
+const TypeFlagGenomicVariant = int64(1)
 
 /*
  Possible range of positions values (position in 1-based coordinate system, minimum is 1).
