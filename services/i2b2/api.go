@@ -7,6 +7,7 @@ import (
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"
+	"github.com/satori/go.uuid"
 )
 
 // API represents a client with the server to which he is connected and its public/private key pair.
@@ -40,7 +41,7 @@ func (c *API) SendSurveyDDTRequestTerms(entities *onet.Roster, surveyID SurveyID
 	log.Lvl1("Client", c.ClientID, "is creating a DDT survey with ID:", surveyID)
 
 	sdq := SurveyDDTRequest{
-		SurveyID: surveyID,
+		SurveyID: SurveyID(uuid.NewV4().String()),
 		Roster:   *entities,
 		Proofs:   proofs,
 		Testing:  testing,
