@@ -43,7 +43,7 @@ const (
 
 	 -> Range from 1 to 26 inclusive, 2^5 = 32 ==> 5 bits storage
 	*/
-	ChromosomeIDRegex = "^[XYM]|[1-9]|(1[0-9])|(2[0-3])$"
+	ChromosomeIDRegex = "^([XYM]|[1-9]|(1[0-9])|(2[0-3]))$"
 
 	/*
 	 Valid values for the alleles.
