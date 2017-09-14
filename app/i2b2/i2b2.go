@@ -54,13 +54,13 @@ const (
 
 	// dataset settings (for now we have no incremental loading, and so we require both ontology and dataset files)
 
-	optionOntologyClinical = "ont_clinical"
+	optionOntologyClinical      = "ont_clinical"
 	optionOntologyClinicalShort = "oc"
 
 	optionListSensitive      = "sensitive"
 	optionListSensitiveShort = "s"
 
-	optionOntologyGenomic  = "ont_genomic"
+	optionOntologyGenomic      = "ont_genomic"
 	optionOntologyGenomicShort = "og"
 
 	optionSizeFile      = "replay"

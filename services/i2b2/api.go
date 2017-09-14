@@ -2,12 +2,12 @@ package serviceI2B2
 
 import (
 	"github.com/lca1/unlynx/lib"
+	"github.com/satori/go.uuid"
 	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/crypto.v0/config"
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"
-	"github.com/satori/go.uuid"
 )
 
 // API represents a client with the server to which he is connected and its public/private key pair.

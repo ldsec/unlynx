@@ -11,10 +11,10 @@ import (
 )
 
 const (
-	CLINICAL_FILE = "files/data_clinical_skcm_broad_part1.csv"
-	GENOMIC_FILE  = "files/data_mutations_extended_skcm_broad_part1.csv"
 	CLINICAL_ONTOLOGY = "files/data_clinical_skcm_broad.csv"
-	GENOMIC_ONTOLOGY = "files/data_mutations_extended_skcm_broad.csv"
+	GENOMIC_ONTOLOGY  = "files/data_mutations_extended_skcm_broad.csv"
+	CLINICAL_FILE     = "files/data_clinical_skcm_broad_part1.csv"
+	GENOMIC_FILE      = "files/data_mutations_extended_skcm_broad_part1.csv"
 )
 
 func getRoster(groupFilePath string) (*onet.Roster, *onet.LocalTest, error) {
@@ -53,26 +53,20 @@ func getRoster(groupFilePath string) (*onet.Roster, *onet.LocalTest, error) {
 func generateFiles(t *testing.T, el *onet.Roster, entryPointIdx int) {
 	log.SetDebugVisible(1)
 
-	fClinical, err := os.Open(CLINICAL_FILE)
-	assert.True(t, err == nil, err)
-	fGenomic, err := os.Open(GENOMIC_FILE)
-	assert.True(t, err == nil, err)
-
 	fOntologyClinical, err := os.Open(CLINICAL_ONTOLOGY)
 	assert.True(t, err == nil, err)
 	fOntologyGenomic, err := os.Open(GENOMIC_ONTOLOGY)
 	assert.True(t, err == nil, err)
 
+	fClinical, err := os.Open(CLINICAL_FILE)
+	assert.True(t, err == nil, err)
+	fGenomic, err := os.Open(GENOMIC_FILE)
+	assert.True(t, err == nil, err)
+
 	// init global variables
 	loader.FileHandlers = make([]*os.File, 0)
 	loader.Testing = true
-	loader.EncID = int64(1)
-	loader.ClearID = int64(1)
 	loader.OntValues = make(map[loader.ConceptPath]loader.ConceptID)
-	loader.KeyForSensitiveIDs = make([]loader.ConceptPath, 0)
-	loader.AllSensitiveIDs = make([]int64, 0)
-	loader.EncounterMapping = make(map[string]int64)
-	loader.PatientMapping = make(map[string]int64)
 	loader.TextSearchIndex = int64(1)
 
 	for _, f := range loader.FilePaths {
@@ -85,14 +79,10 @@ func generateFiles(t *testing.T, el *onet.Roster, entryPointIdx int) {
 	listSensitive = append(listSensitive, "PRIMARY_TUMOR_LOCALIZATION_TYPE")
 	listSensitive = append(listSensitive, "CANCER_TYPE_DETAILED")
 
-	err = loader.GenerateOntologyFiles(el, entryPointIdx, fClinical, fGenomic, listSensitive)
+	err = loader.GenerateOntologyFiles(el, entryPointIdx, fOntologyClinical, fOntologyGenomic, listSensitive)
 	assert.True(t, err == nil, err)
 
-	// to free some memory
-	loader.KeyForSensitiveIDs = make([]loader.ConceptPath, 0)
-	loader.AllSensitiveIDs = make([]int64, 0)
-
-	err = loader.GenerateDataFiles(el, fGenomic, fClinical)
+	err = loader.GenerateDataFiles(el, fClinical, fGenomic)
 	assert.True(t, err == nil, err)
 
 	for _, f := range loader.FileHandlers {
