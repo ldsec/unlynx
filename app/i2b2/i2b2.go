@@ -74,7 +74,7 @@ const (
 
 	// database settings
 	optionDBhost      = "host"
-	optionDBhostShort = "h"
+	optionDBhostShort = "nothelp"
 
 	optionDBport      = "port"
 	optionDBportShort = "p"

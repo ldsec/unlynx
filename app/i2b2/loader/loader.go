@@ -153,7 +153,7 @@ func ReplayDataset(filename string, x int) error {
 // LoadClient initiates the loading process
 func LoadClient(el *onet.Roster, entryPointIdx int, fOntClinical, fOntGenomic, fClinical, fGenomic *os.File, listSensitive []string, databaseS DBSettings, testing bool) error {
 	// init global variables
-	FileHandlers := make([]*os.File, 0)
+	FileHandlers = make([]*os.File, 0)
 	OntValues = make(map[ConceptPath]ConceptID)
 	Testing = testing
 	TextSearchIndex = int64(1) // needed for the observation_fact table (counter)
