@@ -63,7 +63,7 @@ const (
 )
 
 // TypeFlagGenomicVariant encodes the type of id.
-const TypeFlagGenomicVariant = int64(0)
+const TypeFlagGenomicVariant = int64(1)
 
 /*
  Possible range of positions values (position in 1-based coordinate system, minimum is 1).

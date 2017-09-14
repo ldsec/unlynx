@@ -32,6 +32,8 @@ import (
 func loadData(c *cli.Context) error {
 
 	// data set file paths
+	clinicalOntologyPath := c.String("ont_clinical")
+	genomicOntologyPath := c.String("ont_genomic")
 	clinicalFilePath := c.String("clinical")
 	genomicFilePath := c.String("genomic")
 	groupFilePath := c.String("file")
@@ -73,6 +75,18 @@ func loadData(c *cli.Context) error {
 		return cli.NewExitError(err, 1)
 	}
 
+	fOntClinical, err := os.Open(clinicalOntologyPath)
+	if err != nil {
+		log.Error("Error while opening the clinical ontology file", err)
+		return cli.NewExitError(err, 1)
+	}
+
+	fOntGenomic, err := os.Open(genomicOntologyPath)
+	if err != nil {
+		log.Error("Error while opening the genomic ontology file", err)
+		return cli.NewExitError(err, 1)
+	}
+
 	fClinical, err := os.Open(clinicalFilePath)
 	if err != nil {
 		log.Error("Error while opening the clinical file", err)
@@ -104,7 +118,7 @@ func loadData(c *cli.Context) error {
 		}
 	}
 
-	loader.LoadClient(el, entryPointIdx, fClinical, fGenomic, listSensitive, databaseS, false)
+	loader.LoadClient(el, entryPointIdx, fOntClinical, fOntGenomic, fClinical, fGenomic, listSensitive, databaseS, false)
 
 	return nil
 }

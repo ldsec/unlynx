@@ -17,10 +17,14 @@ const (
 
 	// DefaultGroupFile is the name of the default file to lookup for group definition
 	DefaultGroupFile = "public.toml"
+	// DefaultOntologyClinical is the name of the default clinical file (dataset)
+	DefaultOntologyClinical = "data_clinical_skcm_broad.csv"
+	// DefaultOntologyGenomic is the name of the default clinical file (dataset)
+	DefaultOntologyGenomic = "data_mutations_extended_skcm_broad.csv"
 	// DefaultClinicalFile is the name of the default clinical file (dataset)
-	DefaultClinicalFile = ""
+	DefaultClinicalFile = "data_clinical_skcm_broad.csv"
 	// DefaultGenomicFile is the name of the default genomic file (dataset)
-	DefaultGenomicFile = ""
+	DefaultGenomicFile = "data_mutations_extended_skcm_broad.csv"
 	// DefaultSizeFile is the size of the data that we are going to consider (1 - original)
 	DefaultSizeFile = 1
 
@@ -48,6 +52,17 @@ const (
 	optionDecryptKey      = "key"
 	optionDecryptKeyShort = "k"
 
+	// dataset settings (for now we have no incremental loading, and so we require both ontology and dataset files)
+
+	optionOntologyClinical = "ont_clinical"
+	optionOntologyClinicalShort = "oc"
+
+	optionListSensitive      = "sensitive"
+	optionListSensitiveShort = "s"
+
+	optionOntologyGenomic  = "ont_genomic"
+	optionOntologyGenomicShort = "og"
+
 	optionSizeFile      = "replay"
 	optionSizeFileShort = "r"
 
@@ -56,9 +71,6 @@ const (
 
 	optionGenomicFile      = "genomic"
 	optionGenomicFileShort = "g"
-
-	optionListSensitive      = "sensitive"
-	optionListSensitiveShort = "s"
 
 	// database settings
 	optionDBhost      = "host"
@@ -123,6 +135,21 @@ func main() {
 			Usage: "Index (relative to the group definition file) of the collective authority server to load the data.",
 		},
 		cli.StringFlag{
+			Name:  optionOntologyClinical + ", " + optionOntologyClinicalShort,
+			Value: DefaultOntologyClinical,
+			Usage: "Clinical ontology to load",
+		},
+		cli.StringSliceFlag{
+			Name:  optionListSensitive + ", " + optionListSensitiveShort,
+			Value: &cli.StringSlice{},
+			Usage: "Clinical fields listed as sensitive (\"all\" means all clinical fields are considered sensitive)",
+		},
+		cli.StringFlag{
+			Name:  optionOntologyGenomic + ", " + optionOntologyGenomicShort,
+			Value: DefaultOntologyGenomic,
+			Usage: "Genomic ontology to load",
+		},
+		cli.StringFlag{
 			Name:  optionClinicalFile + ", " + optionClinicalFileShort,
 			Value: DefaultClinicalFile,
 			Usage: "Clinical file to load",
@@ -131,11 +158,6 @@ func main() {
 			Name:  optionGenomicFile + ", " + optionGenomicFileShort,
 			Value: DefaultGenomicFile,
 			Usage: "Genomic file to load",
-		},
-		cli.StringSliceFlag{
-			Name:  optionListSensitive + ", " + optionListSensitiveShort,
-			Value: &cli.StringSlice{},
-			Usage: "Fields listed as sensitive (\"all\" means all clinical fields are considered sensitive)",
 		},
 		cli.IntFlag{
 			Name:  optionSizeFile + ", " + optionSizeFileShort,

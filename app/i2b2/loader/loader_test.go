@@ -11,11 +11,13 @@ import (
 )
 
 const (
-	CLINICAL_FILE = "files/data_clinical_skcm_broad.csv"
-	GENOMIC_FILE  = "files/data_mutations_extended_skcm_broad.csv"
+	CLINICAL_FILE = "files/data_clinical_skcm_broad_part1.csv"
+	GENOMIC_FILE  = "files/data_mutations_extended_skcm_broad_part1.csv"
+	CLINICAL_ONTOLOGY = "files/data_clinical_skcm_broad.csv"
+	GENOMIC_ONTOLOGY = "files/data_mutations_extended_skcm_broad.csv"
 )
 
-func getRoster(groupFilePath string) (*onet.Roster, error) {
+func getRoster(groupFilePath string) (*onet.Roster, *onet.LocalTest, error) {
 
 	// empty string: make localtest
 	if len(groupFilePath) == 0 {
@@ -23,8 +25,7 @@ func getRoster(groupFilePath string) (*onet.Roster, error) {
 
 		local := onet.NewLocalTest()
 		_, el, _ := local.GenTree(3, true)
-		defer local.CloseAll()
-		return el, nil
+		return el, local, nil
 
 		// generate el with group file
 	} else {
@@ -33,43 +34,46 @@ func getRoster(groupFilePath string) (*onet.Roster, error) {
 		f, err := os.Open(groupFilePath)
 		if err != nil {
 			log.Error("Error while opening group file", err)
-			return nil, err
+			return nil, nil, err
 		}
 		el, err := app.ReadGroupToml(f)
 		if err != nil {
 			log.Error("Error while reading group file", err)
-			return nil, err
+			return nil, nil, err
 		}
 		if len(el.List) <= 0 {
 			log.Error("Empty or invalid group file", err)
-			return nil, err
+			return nil, nil, err
 		}
 
-		return el, nil
+		return el, nil, nil
 	}
 }
 
-func generateDataFiles(t *testing.T, el *onet.Roster, entryPointIdx int) {
+func generateFiles(t *testing.T, el *onet.Roster, entryPointIdx int) {
 	log.SetDebugVisible(1)
 
 	fClinical, err := os.Open(CLINICAL_FILE)
-	if err != nil {
-		log.Fatal("Error while opening the clinical file", err)
-	}
-
+	assert.True(t, err == nil, err)
 	fGenomic, err := os.Open(GENOMIC_FILE)
-	if err != nil {
-		log.Fatal("Error while opening the genomic file", err)
-	}
+	assert.True(t, err == nil, err)
 
+	fOntologyClinical, err := os.Open(CLINICAL_ONTOLOGY)
+	assert.True(t, err == nil, err)
+	fOntologyGenomic, err := os.Open(GENOMIC_ONTOLOGY)
+	assert.True(t, err == nil, err)
+
+	// init global variables
+	loader.FileHandlers = make([]*os.File, 0)
+	loader.Testing = true
 	loader.EncID = int64(1)
 	loader.ClearID = int64(1)
+	loader.OntValues = make(map[loader.ConceptPath]loader.ConceptID)
+	loader.KeyForSensitiveIDs = make([]loader.ConceptPath, 0)
+	loader.AllSensitiveIDs = make([]int64, 0)
 	loader.EncounterMapping = make(map[string]int64)
 	loader.PatientMapping = make(map[string]int64)
-	loader.AllSensitiveIDs = make([]int64, 0)
-	loader.FileHandlers = make([]*os.File, 0)
 	loader.TextSearchIndex = int64(1)
-	loader.Testing = true
 
 	for _, f := range loader.FilePaths {
 		fp, err := os.Create(f)
@@ -81,25 +85,40 @@ func generateDataFiles(t *testing.T, el *onet.Roster, entryPointIdx int) {
 	listSensitive = append(listSensitive, "PRIMARY_TUMOR_LOCALIZATION_TYPE")
 	listSensitive = append(listSensitive, "CANCER_TYPE_DETAILED")
 
-	err = loader.GenerateDataFiles(el, entryPointIdx, fClinical, fGenomic, listSensitive)
+	err = loader.GenerateOntologyFiles(el, entryPointIdx, fClinical, fGenomic, listSensitive)
+	assert.True(t, err == nil, err)
+
+	// to free some memory
+	loader.KeyForSensitiveIDs = make([]loader.ConceptPath, 0)
+	loader.AllSensitiveIDs = make([]int64, 0)
+
+	err = loader.GenerateDataFiles(el, fGenomic, fClinical)
 	assert.True(t, err == nil, err)
 
 	for _, f := range loader.FileHandlers {
 		f.Close()
 	}
+
+	fClinical.Close()
+	fGenomic.Close()
+
+	fOntologyClinical.Close()
+	fOntologyGenomic.Close()
 }
 
-func TestGenerateDataFilesLocalTest(t *testing.T) {
-	el, err := getRoster("")
+func TestGenerateFilesLocalTest(t *testing.T) {
+	el, local, err := getRoster("")
 	assert.True(t, err == nil, err)
-	generateDataFiles(t, el, 0)
+	generateFiles(t, el, 0)
+	local.CloseAll()
 }
 
-func TestGenerateDataFilesGroupFile(t *testing.T) {
+func TestGenerateFilesGroupFile(t *testing.T) {
+	t.Skip()
 	// todo: fix hardcoded path
-	el, err := getRoster("/home/misbach/repositories/medco-deployment/configuration/keys/dev-3nodes-samehost/group.toml")
+	el, _, err := getRoster("/home/misbach/repositories/medco-deployment/configuration/keys/dev-3nodes-samehost/group.toml")
 	assert.True(t, err == nil, err)
-	generateDataFiles(t, el, 0)
+	generateFiles(t, el, 0)
 }
 
 func TestReplayDataset(t *testing.T) {

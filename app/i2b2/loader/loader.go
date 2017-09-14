@@ -72,15 +72,27 @@ type ConceptPath struct {
 	Record string //leaf
 }
 
+// ConceptID defines its ID (e.g., E,1 - for ENC_ID,1; C,1 - for CLEAR_ID,1; sdasdcfsx,1432 - for tagged_value,TAG_ID
+type ConceptID struct {
+	Identifier string
+	Value      int64
+}
+
 // Support global variables
 var (
-	Testing          bool             // testing environment
-	EncID            int64            // clinical sensitive IDs
-	ClearID          int64            // clinical non-sensitive IDs
-	AllSensitiveIDs  []int64          // stores the EncID(s) and the genomic IDs
-	EncounterMapping map[string]int64 // map a sample ID to a numeric ID
-	PatientMapping   map[string]int64 // map a patient ID to a numeric ID
-	TextSearchIndex  int64            // needed for the observation_fact table (counter)
+	Testing    bool             		// testing environment
+
+	EncID      int64            		// clinical sensitive IDs
+	ClearID    int64            		// clinical non-sensitive IDs
+
+	OntValues  map[ConceptPath]ConceptID    // stores the concepth path and the correspondent ID
+
+	KeyForSensitiveIDs []ConceptPath	// stores the concept path for the corresponding EncID(s) and the genomic IDs
+	AllSensitiveIDs  []int64          	// stores the EncID(s) and the genomic IDs
+
+	EncounterMapping map[string]int64 	// map a sample ID to a numeric ID
+	PatientMapping   map[string]int64 	// map a patient ID to a numeric ID
+	TextSearchIndex  int64            	// needed for the observation_fact table (counter)
 )
 
 // ReplayDataset replays the dataset x number of times
@@ -150,16 +162,24 @@ func ReplayDataset(filename string, x int) error {
 }
 
 // LoadClient initiates the loading process
-func LoadClient(el *onet.Roster, entryPointIdx int, fClinical *os.File, fGenomic *os.File, listSensitive []string, databaseS DBSettings, testing bool) error {
+func LoadClient(el *onet.Roster, entryPointIdx int, fOntClinical, fOntGenomic, fClinical, fGenomic *os.File, listSensitive []string, databaseS DBSettings, testing bool) error {
 	// init global variables
+	FileHandlers = make([]*os.File, 0)
+
+	Testing = testing
+
 	EncID = int64(1)
 	ClearID = int64(1)
+
+	OntValues = make(map[ConceptPath]ConceptID)
+
+	KeyForSensitiveIDs = make([]ConceptPath, 0)
+	AllSensitiveIDs = make([]int64, 0)
+
 	EncounterMapping = make(map[string]int64)
 	PatientMapping = make(map[string]int64)
-	AllSensitiveIDs = make([]int64, 0)
-	FileHandlers = make([]*os.File, 0)
 	TextSearchIndex = int64(1)
-	Testing = testing
+
 
 	for _, f := range FilePaths {
 		fp, err := os.Create(f)
@@ -170,9 +190,19 @@ func LoadClient(el *onet.Roster, entryPointIdx int, fClinical *os.File, fGenomic
 		FileHandlers = append(FileHandlers, fp)
 	}
 
-	err := GenerateDataFiles(el, entryPointIdx, fClinical, fGenomic, listSensitive)
+	err := GenerateOntologyFiles(el, entryPointIdx, fOntClinical, fOntGenomic, listSensitive)
 	if err != nil {
-		log.Fatal("Error while generating the data .csv file", err)
+		log.Fatal("Error while generating the ontology .csv files", err)
+		return err
+	}
+
+	// to free some memory
+	KeyForSensitiveIDs = make([]ConceptPath, 0)
+	AllSensitiveIDs = make([]int64, 0)
+
+	err = GenerateDataFiles(el, fClinical, fGenomic)
+	if err != nil {
+		log.Fatal("Error while generating the data .csv files", err)
 		return err
 	}
 
@@ -238,20 +268,187 @@ func LoadDataFiles() error {
 	return nil
 }
 
-// GenerateDataFiles generates the data from the dataset and populates the .csv scripts
-func GenerateDataFiles(group *onet.Roster, entryPointIdx int, fClinical *os.File, fGenomic *os.File, listSensitive []string) error {
+func GenerateOntologyFiles(group *onet.Roster, entryPointIdx int, fOntClinical, fOntGenomic *os.File, listSensitive []string) error{
+
+	// load clinical ontology
+	reader := csv.NewReader(fOntClinical)
+	reader.Comma = '\t'
+
+	first := true
+	headerClinical := make([]string, 0)
+	for {
+		// read just one record, but we could ReadAll() as well
+		record, err := reader.Read()
+		// end-of-file is fitted into err
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			return err
+		}
+
+		// if it is not a commented line
+		if len(record)>0 && string(record[0]) != "" && string(record[0][0:1]) != "#" {
+
+			// the HEADER
+			if first == true {
+
+				// skip SampleID and PatientID
+				for i := 2; i < len(record); i++ {
+
+					// sensitive
+					if containsArrayString(listSensitive, record[i]) == true || (len(listSensitive) == 1 && listSensitive[0] == "all") {
+						if err := writeShrineOntologyEnc(record[i]); err != nil {
+							return err
+						}
+						// we don't generate the MetadataOntologyEnc because we will do this afterwards (so that we only perform 1 DDT with all sensitive elements)
+					} else {
+						if err := writeShrineOntologyClear(record[i]); err != nil {
+							return err
+						}
+						if err := writeMetadataOntologyClear(record[i]); err != nil {
+							return err
+						}
+					}
+					headerClinical = append(headerClinical, record[i])
+
+				}
+				first = false
+
+			} else {
+
+				for i, j := 2, 0; i < len(record); i, j = i+1, j+1 {
+
+					if record[i] == "" {
+						record[i] = "<empty>"
+					}
+
+					// sensitive
+					if containsArrayString(listSensitive, headerClinical[j]) == true || (len(listSensitive) == 1 && listSensitive[0] == "all") {
+
+						// if concept path does not exist
+						if _, ok := OntValues[ConceptPath{Field: headerClinical[j], Record: record[i]}]; ok == false {
+							if err := writeShrineOntologyLeafEnc(headerClinical[j], record[i]); err != nil {
+								return err
+							}
+							// we don't generate the MetadataOntologyLeafEnc because we will do this afterwards (so that we only perform 1 DDT with all sensitive elements)
+
+							KeyForSensitiveIDs = append(KeyForSensitiveIDs, ConceptPath{Field: headerClinical[j], Record: record[i]})
+							AllSensitiveIDs = append(AllSensitiveIDs, EncID)
+							OntValues[ConceptPath{Field: headerClinical[j], Record: record[i]}] = ConceptID{Identifier: "E", Value: EncID}
+							EncID++
+						}
+
+					} else {
+
+						// if concept path does not exist
+						if _, ok := OntValues[ConceptPath{Field: headerClinical[j], Record: record[i]}]; ok == false {
+							if err := writeShrineOntologyLeafClear(headerClinical[j], record[i]); err != nil {
+								return err
+							}
+							if err := writeMetadataOntologyLeafClear(headerClinical[j], record[i]); err != nil {
+								return err
+							}
+
+							OntValues[ConceptPath{Field: headerClinical[j], Record: record[i]}] = ConceptID{Identifier: "C", Value: ClearID}
+							ClearID++
+						}
+					}
+
+				}
+
+			}
+		}
+	}
+
+	fOntClinical.Close()
+
+	log.LLvl1("Finished parsing the clinical ontology...")
+
+	// load genomic
+	reader = csv.NewReader(fOntGenomic)
+	reader.Comma = '\t'
+
+
+	first = true
+	//headerGenomic := make([]string, 0)
+	// this arrays stores the indexes of the fields we need to use to generate a genomic id
+	//indexGenVariant := make(map[string]int)
+
+	for {
+		log.LLvl1("dsadasdasdasdasd")
+		// read just one record, but we could ReadAll() as well
+		record, err := reader.Read()
+		log.LLvl1("dsadasdasdasdasd",record)
+		// end-of-file is fitted into err
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			log.LLvl1("NOOOOO")
+			return err
+		}
+
+
+		// if it is not a commented line
+		if len(record)>0 {
+			/*if string(record[0]) != "" && string(record[0][0:1]) != "#" {
+
+				// the HEADER
+				if first == true {
+					for i, el := range record {
+						if el == "Tumor_Sample_Barcode" || el == "Chromosome" || el == "Start_Position" || el == "Reference_Allele" || el == "Tumor_Seq_Allele1" {
+							indexGenVariant[el] = i
+						}
+						headerGenomic = append(headerGenomic, el)
+
+					}
+					first = false
+				} else {
+					genomicID, err := generateGenomicID(indexGenVariant, record)
+
+					// if genomic id already exist we don't need to add it to the shrine_ont.genomic_annotations
+					if err == nil &&  containsArrayInt64(AllSensitiveIDs, genomicID) == false {
+						if err := writeShrineOntologyGenomicAnnotations(genomicID, headerGenomic, indexGenVariant, record); err != nil {
+							return err
+						}
+
+						KeyForSensitiveIDs = append(KeyForSensitiveIDs, ConceptPath{Field: strconv.FormatInt(genomicID,10), Record: ""})
+						AllSensitiveIDs = append(AllSensitiveIDs, genomicID)
+					}
+				}
+
+			}*/
+		}
+
+	}
+
+	fOntGenomic.Close()
+
+	log.LLvl1("Finished parsing the genomic ontology...")
+
+	// write the tagged values
+	taggedValues, err := encryptAndTag(AllSensitiveIDs, group, entryPointIdx)
+	if err != nil {
+		return err
+	}
+	if err := writeMetadataSensitiveTagged(taggedValues); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func GenerateDataFiles(group *onet.Roster, fClinical, fGenomic *os.File) error{
 	// patient_id counter
 	pid := int64(1)
 	// encounter_id counter
 	eid := int64(1)
 
+	ontValuesSmallCopy := make(map[ConceptPath]bool)     // reduced set of ontology data
+	patientVisitMap := make(map[string]PatientVisitLink) // maps between the Sample ID (Tumor_barcode) and a combination of patient and encounter IDs
+
 	if err := writeDemodataProviderDimension(); err != nil {
 		return err
 	}
-
-	ontValues := make(map[ConceptPath]int64)             // stores the concepth path and the correspondent clinical ID (ENC_ID or CLEAR_ID)
-	patientVisitLinkList := make([]PatientVisitLink, 0)  // stores the corresponding patient and encounter IDs of the encrypted fields
-	patientVisitMap := make(map[string]PatientVisitLink) // maps between the Sample ID (Tumor_barcode) and a combination of patient and encounter IDs
 
 	// load clinical
 	reader := csv.NewReader(fClinical)
@@ -277,21 +474,6 @@ func GenerateDataFiles(group *onet.Roster, entryPointIdx int, fClinical *os.File
 
 				// skip SampleID and PatientID
 				for i := 2; i < len(record); i++ {
-
-					// sensitive
-					if containsArrayString(listSensitive, record[i]) == true || (len(listSensitive) == 1 && listSensitive[0] == "all") {
-						if err := writeShrineOntologyEnc(record[i]); err != nil {
-							return err
-						}
-						// we don't generate the MetadataOntologyEnc because we will do this afterwards (so that we only perform 1 DDT with all sensitive elements)
-					} else {
-						if err := writeShrineOntologyClear(record[i]); err != nil {
-							return err
-						}
-						if err := writeMetadataOntologyClear(record[i]); err != nil {
-							return err
-						}
-					}
 					headerClinical = append(headerClinical, record[i])
 
 				}
@@ -332,44 +514,36 @@ func GenerateDataFiles(group *onet.Roster, entryPointIdx int, fClinical *os.File
 					}
 
 					// sensitive
-					if containsArrayString(listSensitive, headerClinical[j]) == true || (len(listSensitive) == 1 && listSensitive[0] == "all") {
-
+					if OntValues[ConceptPath{Field: headerClinical[j], Record: record[i]}].Identifier != "C" {
 						// if concept path does not exist
-						if _, ok := ontValues[ConceptPath{Field: headerClinical[j], Record: record[i]}]; ok == false {
-							if err := writeShrineOntologyLeafEnc(headerClinical[j], record[i]); err != nil {
+						if _, ok := ontValuesSmallCopy[ConceptPath{Field: headerClinical[j], Record: record[i]}]; ok == false {
+							if err := writeDemodataConceptDimensionTaggedConcepts(headerClinical[j], record[i]); err != nil {
 								return err
 							}
-							// we don't generate the MetadataOntologyLeafEnc because we will do this afterwards (so that we only perform 1 DDT with all sensitive elements)
-
-							ontValues[ConceptPath{Field: headerClinical[j], Record: record[i]}] = EncID
-							EncID++
+							ontValuesSmallCopy[ConceptPath{Field: headerClinical[j], Record: record[i]}] = true
 						}
 
-						patientVisitLinkList = append(patientVisitLinkList, PatientVisitLink{PatientID: PatientMapping[record[1]], EncounterID: EncounterMapping[record[0]]})
-						AllSensitiveIDs = append(AllSensitiveIDs, ontValues[ConceptPath{Field: headerClinical[j], Record: record[i]}])
-					} else {
+						if err := writeDemodataObservationFactEnc(OntValues[ConceptPath{Field: headerClinical[j], Record: record[i]}].Value,
+							strconv.FormatInt(PatientMapping[record[1]], 10),
+							strconv.FormatInt(EncounterMapping[record[0]], 10)); err != nil {
+							return err
+						}
 
+					} else {
 						// if concept path does not exist
-						if _, ok := ontValues[ConceptPath{Field: headerClinical[j], Record: record[i]}]; ok == false {
-							if err := writeShrineOntologyLeafClear(headerClinical[j], record[i]); err != nil {
-								return err
-							}
-							if err := writeMetadataOntologyLeafClear(headerClinical[j], record[i]); err != nil {
-								return err
-							}
+						if _, ok := ontValuesSmallCopy[ConceptPath{Field: headerClinical[j], Record: record[i]}]; ok == false {
 							if err := writeDemodataConceptDimensionCleartextConcepts(headerClinical[j], record[i]); err != nil {
 								return err
 							}
-
-							ontValues[ConceptPath{Field: headerClinical[j], Record: record[i]}] = ClearID
-							ClearID++
+							ontValuesSmallCopy[ConceptPath{Field: headerClinical[j], Record: record[i]}] = true
 						}
 
-						if err := writeDemodataObservationFactClear(ontValues[ConceptPath{Field: headerClinical[j], Record: record[i]}], record[0], record[1]); err != nil {
+						if err := writeDemodataObservationFactClear(OntValues[ConceptPath{Field: headerClinical[j], Record: record[i]}].Value,
+							strconv.FormatInt(PatientMapping[record[1]], 10),
+							strconv.FormatInt(EncounterMapping[record[0]], 10)); err != nil {
 							return err
 						}
 					}
-
 				}
 
 			}
@@ -413,14 +587,22 @@ func GenerateDataFiles(group *onet.Roster, entryPointIdx int, fClinical *os.File
 				}
 				first = false
 			} else {
-				genomicID, err := writeShrineOntologyGenomicAnnotations(headerGenomic, indexGenVariant, record)
+				genomicID, err := generateGenomicID(indexGenVariant, record)
 
 				if err == nil {
-					patientVisitLinkList = append(patientVisitLinkList, PatientVisitLink{PatientID: patientVisitMap[record[indexGenVariant["Tumor_Sample_Barcode"]]].PatientID,
-						EncounterID: patientVisitMap[record[indexGenVariant["Tumor_Sample_Barcode"]]].EncounterID})
-					AllSensitiveIDs = append(AllSensitiveIDs, genomicID)
-				} else if err != nil && genomicID == int64(-1) { // if it is a fatal error
-					return err
+					// if concept path does not exist
+					if _, ok := ontValuesSmallCopy[ConceptPath{Field: strconv.FormatInt(genomicID, 10), Record: ""}]; ok == false {
+						if err := writeDemodataConceptDimensionTaggedConcepts(strconv.FormatInt(genomicID, 10), ""); err != nil {
+							return err
+						}
+						ontValuesSmallCopy[ConceptPath{Field: strconv.FormatInt(genomicID, 10), Record: ""}] = true
+					}
+
+					if err := writeDemodataObservationFactEnc(OntValues[ConceptPath{Field: strconv.FormatInt(genomicID, 10), Record: ""}].Value,
+						strconv.FormatInt(patientVisitMap[record[indexGenVariant["Tumor_Sample_Barcode"]]].PatientID, 10),
+						strconv.FormatInt(patientVisitMap[record[indexGenVariant["Tumor_Sample_Barcode"]]].EncounterID, 10)); err != nil {
+						return err
+					}
 				}
 			}
 
@@ -430,15 +612,6 @@ func GenerateDataFiles(group *onet.Roster, entryPointIdx int, fClinical *os.File
 	fGenomic.Close()
 
 	log.LLvl1("Finished parsing the genomic dataset...")
-
-	// write the tagged values
-	taggedValues, err := encryptAndTag(AllSensitiveIDs, group, entryPointIdx)
-	if err != nil {
-		return err
-	}
-	if err := writeMetadataSensitiveTagged(taggedValues, patientVisitLinkList); err != nil {
-		return err
-	}
 
 	log.LLvl1("The End.")
 
@@ -517,30 +690,29 @@ func writeShrineOntologyLeafClear(field, el string) error {
 	return nil
 }
 
-func writeShrineOntologyGenomicAnnotations(fields []string, indexGenVariant map[string]int, record []string) (int64, error) {
+func generateGenomicID(indexGenVariant map[string]int, record []string) (int64, error) {
 
 	// if the ref and alt are too big ignore them (for now....)
 	if len(record[indexGenVariant["Reference_Allele"]]) > 6 || len(record[indexGenVariant["Tumor_Seq_Allele1"]]) > 6 {
-		return int64(0), errors.New("Reference and/or Alternate base size is bigger than the maximum allowed")
+		return int64(-1), errors.New("Reference and/or Alternate base size is bigger than the maximum allowed")
 	}
 
 	// generate id
 	aux, err := strconv.ParseInt(record[indexGenVariant["Start_Position"]], 10, 64)
 	if err != nil {
-		log.Fatal("Error while parsing Start Position")
 		return int64(-1), err
 	}
 
 	id, err := GetVariantID(record[indexGenVariant["Chromosome"]], aux, record[indexGenVariant["Reference_Allele"]], record[indexGenVariant["Tumor_Seq_Allele1"]])
 	if err != nil {
-		log.Fatal("Error while generating the genomic id")
 		return int64(-1), err
 	}
 
-	// if genomic id already exist we don't need to add it to the shrine_ont.genomic_annotations
-	if containsArrayInt64(AllSensitiveIDs, id) == true {
-		return id, nil
-	}
+	return id, nil
+
+}
+
+func writeShrineOntologyGenomicAnnotations(id int64, fields []string, indexGenVariant map[string]int, record []string) error {
 
 	otherFields := ""
 	for i, el := range record {
@@ -557,14 +729,14 @@ func writeShrineOntologyGenomicAnnotations(fields []string, indexGenVariant map[
 
 	annotation := `"` + strconv.FormatInt(id, 10) + `","{` + otherFields + `}"` + "\n"
 
-	_, err = FileHandlers[2].WriteString(annotation)
+	_, err := FileHandlers[2].WriteString(annotation)
 
 	if err != nil {
 		log.Fatal("Error in the writeShrineOntologyGenomicAnnotations():", err)
-		return int64(-1), err
+		return err
 	}
 
-	return id, nil
+	return nil
 }
 
 // GenerateRandomBytes returns securely generated random bytes.
@@ -612,66 +784,52 @@ func encryptAndTag(list []int64, group *onet.Roster, entryPointIdx int) ([]lib.G
 	return result, nil
 }
 
-func writeMetadataSensitiveTagged(list []lib.GroupingKey, patientVisitLinkList []PatientVisitLink) error {
+func writeMetadataSensitiveTagged(list []lib.GroupingKey) error {
 
-	if len(list) != len(patientVisitLinkList) {
-		log.Fatal("The number of sensitive elements does not match the number of 'PatientVisitLink's.")
+	if len(list) != len(KeyForSensitiveIDs) {
+		log.Fatal("The number of sensitive elements does not match the number of 'KeyForSensitiveID's.")
 		return errors.New("")
 	}
 
-	tagValues := make(map[string]int64)
 	tagIDs := make(map[int64]bool)
 
 	for i, el := range list {
+		// generate a tagID with 32bits (cannot be repeated)
+		ok := false
+		var tagID uint32
 
-		// if element el does not exist yet
-		if _, okTagV := tagValues[string(el)]; okTagV == false {
-			// generate a tagID with 32bits (cannot be repeated)
-			ok := false
-			var tagID uint32
-
-			// while random tag is not unique
-			for ok == false {
-				b, err := GenerateRandomBytes(4)
-
-				if err != nil {
-					log.Fatal("Error while generating random number", err)
-					return err
-				}
-
-				tagID = binary.BigEndian.Uint32(b)
-
-				// if random tag does not exist yet
-				if _, okTagID := tagIDs[int64(tagID)]; okTagID == false {
-					tagIDs[int64(tagID)] = true
-					ok = true
-				}
-			}
-			tagValues[string(el)] = int64(tagID)
-
-			/*sensitive := `INSERT INTO i2b2metadata.sensitive_tagged VALUES (2, '\medco\tagged\` + string(el) + `\', '', 'N', 'LA ', NULL, 'TAG_ID:` + strconv.FormatUint(uint64(tagID), 10) + `', NULL, 'concept_cd', 'concept_dimension', 'concept_path', 'T', 'LIKE',
-			'\medco\tagged\` + string(el) + `\', NULL, NULL, 'NOW()', NULL, NULL, NULL, 'TAG_ID', '@', NULL, NULL, NULL, NULL);` + "\n"*/
-
-			sensitive := `"2","\medco\tagged\` + string(el) + `\","\"\"","N","LA",,"TAG_ID:` + strconv.FormatUint(uint64(tagID), 10) + `",,"concept_cd","concept_dimension","concept_path","T","LIKE","\medco\tagged\` + string(el) + `\",,,"NOW()",,,,"TAG_ID","@",,,,` + "\n"
-
-			_, err := FileHandlers[3].WriteString(sensitive)
+		// while random tag is not unique
+		for ok == false {
+			b, err := GenerateRandomBytes(4)
 
 			if err != nil {
-				log.Fatal("Error in the writeMetadataSensitiveTagged():", err)
+				log.Fatal("Error while generating random number", err)
 				return err
 			}
 
-			if err := writeDemodataConceptDimensionTaggedConcepts(string(el), strconv.FormatUint(uint64(tagValues[string(el)]), 10)); err != nil {
-				return err
-			}
+			tagID = binary.BigEndian.Uint32(b)
 
+			// if random tag does not exist yet
+			if _, okTagID := tagIDs[int64(tagID)]; okTagID == false {
+				tagIDs[int64(tagID)] = true
+				ok = true
+			}
 		}
 
-		if err := writeDemodataObservationFactEnc(strconv.FormatUint(uint64(tagValues[string(el)]), 10), patientVisitLinkList[i]); err != nil {
+		/*sensitive := `INSERT INTO i2b2metadata.sensitive_tagged VALUES (2, '\medco\tagged\` + string(el) + `\', '', 'N', 'LA ', NULL, 'TAG_ID:` + strconv.FormatUint(uint64(tagID), 10) + `', NULL, 'concept_cd', 'concept_dimension', 'concept_path', 'T', 'LIKE',
+			'\medco\tagged\` + string(el) + `\', NULL, NULL, 'NOW()', NULL, NULL, NULL, 'TAG_ID', '@', NULL, NULL, NULL, NULL);` + "\n"*/
+
+		sensitive := `"2","\medco\tagged\` + string(el) + `\","""","N","LA",,"TAG_ID:` + strconv.FormatInt(int64(tagID), 10) + `",,"concept_cd","concept_dimension","concept_path","T","LIKE","\medco\tagged\` + string(el) + `\",,,"NOW()",,,,"TAG_ID","@",,,,` + "\n"
+
+		_, err := FileHandlers[3].WriteString(sensitive)
+
+		if err != nil {
+			log.Fatal("Error in the writeMetadataSensitiveTagged():", err)
 			return err
 		}
-	}
 
+		OntValues[KeyForSensitiveIDs[i]] = ConceptID{Identifier: string(el), Value: int64(tagID)}
+	}
 	return nil
 }
 
@@ -713,9 +871,9 @@ func writeMetadataOntologyLeafClear(field, el string) error {
 
 func writeDemodataConceptDimensionCleartextConcepts(field, el string) error {
 
-	/*cleartextConcepts := `INSERT INTO i2b2demodata.concept_dimension VALUES ('\medco\clinical\nonsensitive\` + field + `\` + el + `\', 'CLEAR:` + strconv.FormatInt(ClearID, 10) + `', '` + el + `', NULL, NULL, NULL, 'NOW()', NULL, NULL);` + "\n"*/
+	/*cleartextConcepts := `INSERT INTO i2b2demodata.concept_dimension VALUES ('\medco\clinical\nonsensitive\` + field + `\` + record + `\', 'CLEAR:` + strconv.FormatInt(OntValues[ConceptPath{Field: field, Record: record}].Value, 10) + `', '` + record + `', NULL, NULL, NULL, 'NOW()', NULL, NULL);` + "\n"*/
 
-	cleartextConcepts := `"\medco\clinical\nonsensitive\` + field + `\` + el + `\","CLEAR:` + strconv.FormatInt(ClearID, 10) + `","` + el + `",,,,"NOW()",,` + "\n"
+	cleartextConcepts := `"\medco\clinical\nonsensitive\` + field + `\` + el + `\","CLEAR:` + strconv.FormatInt(OntValues[ConceptPath{Field: field, Record: el}].Value, 10) + `","` + el + `",,,,"NOW()",,` + "\n"
 
 	_, err := FileHandlers[5].WriteString(cleartextConcepts)
 
@@ -728,11 +886,11 @@ func writeDemodataConceptDimensionCleartextConcepts(field, el string) error {
 
 }
 
-func writeDemodataConceptDimensionTaggedConcepts(el string, id string) error {
+func writeDemodataConceptDimensionTaggedConcepts(field string, el string) error {
 
-	/*taggedConcepts := `INSERT INTO i2b2demodata.concept_dimension VALUES ('\medco\tagged\` + el + `\', 'TAG_ID:` + id + `', NULL, NULL, NULL, NULL, 'NOW()', NULL, NULL);` + "\n"*/
+	/*taggedConcepts := `INSERT INTO i2b2demodata.concept_dimension VALUES ('\medco\tagged\` + OntValues[ConceptPath{Field: field, Record: el}].Identifier + `\', 'TAG_ID:` + strconv.FormatInt(OntValues[ConceptPath{Field: field, Record: el}].Value, 10) + `', NULL, NULL, NULL, NULL, 'NOW()', NULL, NULL);` + "\n"*/
 
-	taggedConcepts := `"\medco\tagged\` + el + `\","TAG_ID:` + id + `",,,,,"NOW()",,` + "\n"
+	taggedConcepts := `"\medco\tagged\` + OntValues[ConceptPath{Field: field, Record: el}].Identifier + `\","TAG_ID:` + strconv.FormatInt(OntValues[ConceptPath{Field: field, Record: el}].Value, 10) + `",,,,,"NOW()",,` + "\n"
 
 	_, err := FileHandlers[5].WriteString(taggedConcepts)
 
@@ -853,11 +1011,11 @@ func writeDemodataProviderDimension() error {
 
 func writeDemodataObservationFactClear(el int64, sampleID, patientID string) error {
 
-	/*clear := `INSERT INTO i2b2demodata.observation_fact VALUES (` + strconv.FormatInt(PatientMapping[patientID], 10) + `, ` + strconv.FormatInt(EncounterMapping[sampleID], 10) + `,
+	/*clear := `INSERT INTO i2b2demodata.observation_fact VALUES (` + patientID + `, ` + sampleID, 10) + `,
 	'CLEAR:` + strconv.FormatInt(el, 10) + `', 'chuv', 'NOW()', '@', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
 	'chuv', NULL, NULL, NULL, NULL, 'NOW()', NULL, 1, ` + strconv.FormatInt(TextSearchIndex, 10) + `);` + "\n"*/
 
-	clear := `"` + strconv.FormatInt(PatientMapping[patientID], 10) + `","` + strconv.FormatInt(EncounterMapping[sampleID], 10) + `","CLEAR:` + strconv.FormatInt(el, 10) + `","chuv","NOW()","@","1",,,,,,,,"chuv",,,,,"NOW()",,"1","` + strconv.FormatInt(TextSearchIndex, 10) + `"` + "\n"
+	clear := `"` + patientID + `","` + sampleID + `","CLEAR:` + strconv.FormatInt(el, 10) + `","chuv","NOW()","@","1",,,,,,,,"chuv",,,,,"NOW()",,"1","` + strconv.FormatInt(TextSearchIndex, 10) + `"` + "\n"
 
 	_, err := FileHandlers[11].WriteString(clear)
 
@@ -871,12 +1029,12 @@ func writeDemodataObservationFactClear(el int64, sampleID, patientID string) err
 	return nil
 }
 
-func writeDemodataObservationFactEnc(el string, link PatientVisitLink) error {
+func writeDemodataObservationFactEnc(el int64, sampleID, patientID string) error {
 
-	/*encrypted := `INSERT INTO i2b2demodata.observation_fact VALUES (` + strconv.FormatInt(link.PatientID, 10) + `, ` + strconv.FormatInt(link.EncounterID, 10) + `, 'TAG_ID:` + el + `',
+	/*encrypted := `INSERT INTO i2b2demodata.observation_fact VALUES (` + patientID + `, ` + sampleID + `, 'TAG_ID:` + strconv.FormatInt(el, 10) + `',
 	'chuv', 'NOW()', '@', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'chuv', NULL, NULL, NULL, NULL, 'NOW()', NULL, 1, ` + strconv.FormatInt(TextSearchIndex, 10) + `);` + "\n"*/
 
-	encrypted := `"` + strconv.FormatInt(link.PatientID, 10) + `","` + strconv.FormatInt(link.EncounterID, 10) + `","TAG_ID:` + el + `","chuv","NOW()","@","1",,,,,,,,"chuv",,,,,"NOW()",,"1","` + strconv.FormatInt(TextSearchIndex, 10) + `"` + "\n"
+	encrypted := `"` + patientID + `","` + sampleID + `","TAG_ID:` + strconv.FormatInt(el, 10) + `","chuv","NOW()","@","1",,,,,,,,"chuv",,,,,"NOW()",,"1","` + strconv.FormatInt(TextSearchIndex, 10) + `"` + "\n"
 
 	_, err := FileHandlers[11].WriteString(encrypted)
 
