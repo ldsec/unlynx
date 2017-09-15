@@ -104,9 +104,9 @@ func TestGenerateFilesLocalTest(t *testing.T) {
 }
 
 func TestGenerateFilesGroupFile(t *testing.T) {
-	t.Skip()
+	//t.Skip()
 	// todo: fix hardcoded path
-	el, _, err := getRoster("/home/misbach/repositories/medco-deployment/configuration/keys/dev-3nodes-samehost/group.toml")
+	el, _, err := getRoster("/Users/jagomes/Documents/EPFL/MedCo/i2b2/medco-deployment/configuration/keys/dev-3nodes-samehost/group.toml")
 	assert.True(t, err == nil, err)
 	generateFiles(t, el, 0)
 }

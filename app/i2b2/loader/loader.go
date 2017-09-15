@@ -16,6 +16,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // DBSettings stores the database settings
@@ -152,6 +153,8 @@ func ReplayDataset(filename string, x int) error {
 
 // LoadClient initiates the loading process
 func LoadClient(el *onet.Roster, entryPointIdx int, fOntClinical, fOntGenomic, fClinical, fGenomic *os.File, listSensitive []string, databaseS DBSettings, testing bool) error {
+	start := time.Now()
+
 	// init global variables
 	FileHandlers := make([]*os.File, 0)
 	OntValues = make(map[ConceptPath]ConceptID)
@@ -173,9 +176,7 @@ func LoadClient(el *onet.Roster, entryPointIdx int, fOntClinical, fOntGenomic, f
 		return err
 	}
 
-	// to free some memory
-	//KeyForSensitiveIDs = make([]ConceptPath, 0)
-	//AllSensitiveIDs = make([]int64, 0)
+	// to free
 
 	err = GenerateDataFiles(el, fClinical, fGenomic)
 	if err != nil {
@@ -183,11 +184,17 @@ func LoadClient(el *onet.Roster, entryPointIdx int, fOntClinical, fOntGenomic, f
 		return err
 	}
 
+	fClinical.Close()
+	fGenomic.Close()
+
 	err = GenerateLoadingScript(databaseS)
 	if err != nil {
 		log.Fatal("Error while generating the loading .sh file", err)
 		return err
 	}
+
+	fOntClinical.Close()
+	fOntGenomic.Close()
 
 	err = LoadDataFiles()
 	if err != nil {
@@ -202,6 +209,10 @@ func LoadClient(el *onet.Roster, entryPointIdx int, fOntClinical, fOntGenomic, f
 	// to free memory
 	OntValues = make(map[ConceptPath]ConceptID)
 	FileHandlers = make([]*os.File, 0)
+
+	loadTime := time.Since(start)
+
+	log.LLvl1("The loading took:",loadTime)
 
 	return nil
 }
@@ -405,10 +416,12 @@ func GenerateOntologyFiles(group *onet.Roster, entryPointIdx int, fOntClinical, 
 	log.LLvl1("Finished parsing the genomic ontology...")
 
 	// write the tagged values
+
 	taggedValues, err := encryptAndTag(allSensitiveIDs, group, entryPointIdx)
 	if err != nil {
 		return err
 	}
+
 	if err := writeMetadataSensitiveTagged(taggedValues, keyForSensitiveIDs); err != nil {
 		return err
 	}
@@ -752,20 +765,22 @@ func GenerateRandomBytes(n int) ([]byte, error) {
 func encryptAndTag(list []int64, group *onet.Roster, entryPointIdx int) ([]lib.GroupingKey, error) {
 
 	// ENCRYPTION
+	start := time.Now()
 	listEncryptedElements := make(lib.CipherVector, len(list))
 
 	for i := int64(0); i < int64(len(list)); i++ {
 		listEncryptedElements[i] = *lib.EncryptInt(group.Aggregate, list[i])
 	}
-	log.LLvl1("Finished encrypting the sensitive data...")
+	log.LLvl1("Finished encrypting the sensitive data... (",time.Since(start),")")
 
 	// TAGGING
+	start = time.Now()
 	client := serviceI2B2.NewUnLynxClient(group.List[entryPointIdx], strconv.Itoa(entryPointIdx))
-	_, result, _, err := client.SendSurveyDDTRequestTerms(
-		group, // Roster
-		serviceI2B2.SurveyID("tagging_loading_phase"), // SurveyID
-		listEncryptedElements,                         // Encrypted query terms to tag
-		false, // compute proofs?
+	_, result, tr, err := client.SendSurveyDDTRequestTerms(
+		group, 							// Roster
+		serviceI2B2.SurveyID("tagging_loading_phase"), 		// SurveyID
+		listEncryptedElements,                         		// Encrypted query terms to tag
+		false, 							// compute proofs?
 		Testing,
 	)
 
@@ -774,7 +789,13 @@ func encryptAndTag(list []int64, group *onet.Roster, entryPointIdx int) ([]lib.G
 		return nil, err
 	}
 
-	log.LLvl1("Finished tagging the sensitive data...")
+	totalTime := time.Since(start)
+
+	tr.DDTRequestTimeCommun = totalTime - tr.DDTRequestTimeExec
+
+	log.LLvl1("DDT took: exec -",tr.DDTRequestTimeExec,"commun -",tr.DDTRequestTimeCommun)
+
+	log.LLvl1("Finished tagging the sensitive data... (",totalTime,")")
 
 	return result, nil
 }
