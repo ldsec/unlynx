@@ -156,7 +156,7 @@ func LoadClient(el *onet.Roster, entryPointIdx int, fOntClinical, fOntGenomic, f
 	start := time.Now()
 
 	// init global variables
-	FileHandlers := make([]*os.File, 0)
+	FileHandlers = make([]*os.File, 0)
 	OntValues = make(map[ConceptPath]ConceptID)
 	Testing = testing
 	TextSearchIndex = int64(1) // needed for the observation_fact table (counter)

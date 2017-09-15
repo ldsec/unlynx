@@ -39,7 +39,7 @@ func loadData(c *cli.Context) error {
 	groupFilePath := c.String("file")
 	entryPointIdx := c.Int("entryPointIdx")
 	listSensitive := c.StringSlice("sensitive")
-	replaySize := c.Int("size")
+	replaySize := c.Int("replay")
 
 	// db settings
 	dbHost := c.String("dbHost")
