@@ -156,10 +156,15 @@ func (p *DeterministicTaggingProtocol) Start() error {
 // Dispatch is called on each tree node. It waits for incoming messages and handles them.
 func (p *DeterministicTaggingProtocol) Dispatch() error {
 	//************ ----- first round, add value derivated from ephemeral secret to message ---- ********************
+	log.Lvl1("hallo joao 1 ")
 	lengthBef := <-p.LengthNodeChannel
+	log.Lvl1("hallo joao 2 ")
 	deterministicTaggingTargetBytesBef := <-p.PreviousNodeInPathChannel
+	log.Lvl1("hallo joao 3 ")
 	deterministicTaggingTargetBef := DeterministicTaggingMessage{Data: make([]GroupingAttributes, 0)}
+	log.Lvl1("hallo joao 4 ")
 	deterministicTaggingTargetBef.FromBytes(deterministicTaggingTargetBytesBef.Data, lengthBef.CVLengths)
+	log.Lvl1("hallo joao 5 - ", len(deterministicTaggingTargetBef.Data))
 
 	startT := time.Now()
 	wg := lib.StartParallelize(len(deterministicTaggingTargetBef.Data))
