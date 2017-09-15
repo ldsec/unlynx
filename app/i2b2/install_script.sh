@@ -29,10 +29,4 @@ curl -L https://github.com/docker/compose/releases/download/1.14.0/docker-compos
 
 chmod +x /usr/local/bin/docker-compose
 
-git clone https://c4science.ch/diffusion/2521/i-b-core-server-medco.git
-
-#cd i-b-core-server-medco/ch.epfl.lca1.medco/deployment/
-
-#docker-compose build
-
-#docker-compose up
+#git clone https://c4science.ch/source/medco-deployment.git
