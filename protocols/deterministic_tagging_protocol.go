@@ -165,6 +165,7 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 	wg := lib.StartParallelize(len(deterministicTaggingTargetBef.Data))
 	toAdd := network.Suite.Point().Mul(network.Suite.Point().Base(), *p.SurveySecretKey)
 	for i := range deterministicTaggingTargetBef.Data {
+		log.LLvl1("i:", i)
 		if lib.PARALLELIZE {
 			go func(v []GroupingAttributes, i int) {
 				defer wg.Done()
