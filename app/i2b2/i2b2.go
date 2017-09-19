@@ -73,20 +73,20 @@ const (
 	optionGenomicFileShort = "g"
 
 	// database settings
-	optionDBhost      = "host"
-	optionDBhostShort = "nothelp"
+	optionDBhost      = "dbHost"
+	optionDBhostShort = "dbH"
 
-	optionDBport      = "port"
-	optionDBportShort = "p"
+	optionDBport      = "dbPort"
+	optionDBportShort = "dbP"
 
-	optionDBname      = "n"
-	optionDBnameShort = "name"
+	optionDBname      = "dbName"
+	optionDBnameShort = "dbN"
 
-	optionDBuser      = "user"
-	optionDBuserShort = "u"
+	optionDBuser      = "dbUser"
+	optionDBuserShort = "dbU"
 
-	optionDBpassword      = "password"
-	optionDBpasswordShort = "d"
+	optionDBpassword      = "dbPassword"
+	optionDBpasswordShort = "dbPw"
 )
 
 /*
