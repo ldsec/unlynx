@@ -1050,7 +1050,7 @@ func writeDemodataObservationFactEnc(el int64, idV, idP int64) error {
 	/*encrypted := `INSERT INTO i2b2demodata.observation_fact VALUES (` + strconv.FormatInt(idP, 10) + `, ` + strconv.FormatInt(idV, 10) + `, 'TAG_ID:` + strconv.FormatInt(el, 10) + `',
 	'chuv', 'NOW()', '@', 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'chuv', NULL, NULL, NULL, NULL, 'NOW()', NULL, 1, ` + strconv.FormatInt(TextSearchIndex, 10) + `);` + "\n"*/
 
-	encrypted := `"` + strconv.FormatInt(idP, 10) + `","` + strconv.FormatInt(idV, 10) + `","TAG_ID:` + strconv.FormatInt(el, 10) + `","chuv","NOW()","@","1",,,,,,,,"chuv",,,,,"NOW()",,"1","` + strconv.FormatInt(TextSearchIndex, 10) + `"` + "\n"
+	encrypted := `"` + strconv.FormatInt(idP, 10) + `","` + strconv.FormatInt(idV, 10) + `","TAG_ID:` + strconv.FormatInt(el, 10) + `","chuv","NOW()","@","` + strconv.FormatInt(TextSearchIndex, 10) + `",,,,,,,,"chuv",,,,,"NOW()",,"1","` + strconv.FormatInt(TextSearchIndex, 10) + `"` + "\n"
 
 	_, err := FileHandlers[11].WriteString(encrypted)
 
