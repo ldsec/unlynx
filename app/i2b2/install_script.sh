@@ -36,6 +36,7 @@ wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-
 
 sudo apt-get update
 
-sudo apt-get install postgresql-9.6
+sudo apt-get install postgresql-client-9.6
 
 #git clone https://c4science.ch/source/medco-deployment.git
+ 
