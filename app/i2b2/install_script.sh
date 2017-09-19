@@ -29,4 +29,12 @@ curl -L https://github.com/docker/compose/releases/download/1.14.0/docker-compos
 
 chmod +x /usr/local/bin/docker-compose
 
+sudo add-apt-repository "deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main"
+
+wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+
+sudo apt-get update
+
+sudo apt-get install postgresql-9.6
+
 #git clone https://c4science.ch/source/medco-deployment.git

@@ -212,7 +212,7 @@ func LoadClient(el *onet.Roster, entryPointIdx int, fOntClinical, fOntGenomic, f
 
 	loadTime := time.Since(start)
 
-	log.LLvl1("The loading took:",loadTime)
+	log.LLvl1("The loading took:", loadTime)
 
 	return nil
 }
@@ -771,16 +771,16 @@ func encryptAndTag(list []int64, group *onet.Roster, entryPointIdx int) ([]lib.G
 	for i := int64(0); i < int64(len(list)); i++ {
 		listEncryptedElements[i] = *lib.EncryptInt(group.Aggregate, list[i])
 	}
-	log.LLvl1("Finished encrypting the sensitive data... (",time.Since(start),")")
+	log.LLvl1("Finished encrypting the sensitive data... (", time.Since(start), ")")
 
 	// TAGGING
 	start = time.Now()
 	client := serviceI2B2.NewUnLynxClient(group.List[entryPointIdx], strconv.Itoa(entryPointIdx))
 	_, result, tr, err := client.SendSurveyDDTRequestTerms(
-		group, 							// Roster
-		serviceI2B2.SurveyID("tagging_loading_phase"), 		// SurveyID
-		listEncryptedElements,                         		// Encrypted query terms to tag
-		false, 							// compute proofs?
+		group, // Roster
+		serviceI2B2.SurveyID("tagging_loading_phase"), // SurveyID
+		listEncryptedElements,                         // Encrypted query terms to tag
+		false, // compute proofs?
 		Testing,
 	)
 
@@ -793,9 +793,9 @@ func encryptAndTag(list []int64, group *onet.Roster, entryPointIdx int) ([]lib.G
 
 	tr.DDTRequestTimeCommun = totalTime - tr.DDTRequestTimeExec
 
-	log.LLvl1("DDT took: exec -",tr.DDTRequestTimeExec,"commun -",tr.DDTRequestTimeCommun)
+	log.LLvl1("DDT took: exec -", tr.DDTRequestTimeExec, "commun -", tr.DDTRequestTimeCommun)
 
-	log.LLvl1("Finished tagging the sensitive data... (",totalTime,")")
+	log.LLvl1("Finished tagging the sensitive data... (", totalTime, ")")
 
 	return result, nil
 }
