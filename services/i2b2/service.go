@@ -492,7 +492,6 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 
 	switch tn.ProtocolName() {
 	case protocols.DeterministicTaggingProtocolName:
-		log.LLvl1("hello Mickael 1", s.ServerIdentity())
 		target := SurveyID(string(conf.Data))
 		survey := castToSurveyTag(s.MapSurveyTag.Get(string(target)))
 		pi, err = protocols.NewDeterministicTaggingProtocol(tn)
@@ -519,7 +518,6 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 			serverIDMap = survey.Request.MessageSource
 		}
 
-		log.LLvl1("hello Mickael 2", s.ServerIdentity())
 		s.Mutex.Lock()
 
 		var aux abstract.Scalar
@@ -536,12 +534,10 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 		}
 
 		s.Mutex.Unlock()
-		log.LLvl1("hello Mickael 3", s.ServerIdentity())
 
 		hashCreation.SurveySecretKey = &aux
 		hashCreation.Proofs = s.Proofs
 
-		log.LLvl1("hello Mickael 4", s.ServerIdentity())
 	case protocols.ShufflingProtocolName:
 		pi, err := protocols.NewShufflingProtocol(tn)
 		if err != nil {
@@ -599,7 +595,6 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 
 // StartProtocol starts a specific protocol (Pipeline, Shuffling, etc.)
 func (s *Service) StartProtocol(name string, targetSurvey SurveyID, roster *onet.Roster) (onet.ProtocolInstance, error) {
-	log.LLvl1("hello Mickael 0", roster, targetSurvey)
 	tree := roster.GenerateNaryTreeWithRoot(2, s.ServerIdentity())
 	tn := s.NewTreeNodeInstance(tree, tree.Root, name)
 
