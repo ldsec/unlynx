@@ -48,6 +48,7 @@ app/i2b2/*.toml
 app/i2b2/loader/files/*.sql
 app/i2b2/loader/files/*.csv
 app/i2b2/loader/*.toml
+app/i2b2/graphs/*.pdf
 
 unlynx
 unlynxI2B2
