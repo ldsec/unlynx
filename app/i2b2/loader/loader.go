@@ -417,7 +417,7 @@ func GenerateOntologyFiles(group *onet.Roster, entryPointIdx int, fOntClinical, 
 
 	// write the tagged values
 
-	taggedValues, err := encryptAndTag(allSensitiveIDs, group, entryPointIdx)
+	taggedValues, err := EncryptAndTag(allSensitiveIDs, group, entryPointIdx)
 	if err != nil {
 		return err
 	}
@@ -762,7 +762,7 @@ func GenerateRandomBytes(n int) ([]byte, error) {
 	return b, nil
 }
 
-func encryptAndTag(list []int64, group *onet.Roster, entryPointIdx int) ([]lib.GroupingKey, error) {
+func EncryptAndTag(list []int64, group *onet.Roster, entryPointIdx int) ([]lib.GroupingKey, error) {
 
 	// ENCRYPTION
 	start := time.Now()

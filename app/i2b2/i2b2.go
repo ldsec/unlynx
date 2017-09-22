@@ -49,6 +49,8 @@ const (
 
 	optionProofs = "proofs"
 
+	optionPerfType = "perf"
+
 	optionDecryptKey      = "key"
 	optionDecryptKeyShort = "k"
 
@@ -191,6 +193,23 @@ func main() {
 		},
 	}
 
+	computePerfFlags := []cli.Flag{
+		cli.StringFlag{
+			Name:  optionGroupFile + ", " + optionGroupFileShort,
+			Value: DefaultGroupFile,
+			Usage: "Unlynx group definition file",
+		},
+		cli.IntFlag{
+			Name:  optionEntryPointIdx,
+			Usage: "Index (relative to the group definition file) of the collective authority server to load the data.",
+		},
+		cli.StringFlag{
+			Name:  optionPerfType,
+			Usage: "Perfomance type to compute.",
+		},
+	}
+
+
 	querierFlags := []cli.Flag{
 		cli.StringFlag{
 			Name:  optionGroupFile + ", " + optionGroupFileShort,
@@ -254,6 +273,16 @@ func main() {
 			Flags:   loaderFlags,
 		},
 		// CLIENT END: DATA LOADER ------------
+
+		// BEGIN CLIENT: PERF RUN ----------
+		{
+			Name:    "perf",
+			Aliases: []string{"p"},
+			Usage:   "Compute performance times.",
+			Action:  computePerfFromApp,
+			Flags:   computePerfFlags,
+		},
+		// CLIENT END: PERF RUN ------------
 
 		// BEGIN CLIENT: QUERIER ----------
 		{
