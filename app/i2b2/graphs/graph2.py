@@ -5,18 +5,18 @@ import pandas as pd
 raw_data = {
     'x_label':  ['5', '10', '100', '500'],
     'y1_label': [0, 0, 0, 0],                 # ib2b Insecure
-    'y2_label': [0.2, 0.4, 2.7, 12.7],        # DB traffic
+    'y2_label': [0.3, 0.4, 2.8, 12.9],        # DB traffic
     'y3_label': [0, 0, 0, 0],                 # Secure Protocols
     'y4_label': [0, 0, 0, 0],                 # medco
-    'y5_label': [0.2, 0.4, 2.7, 12.7],        # DB traffic
-    'y6_label': [0.32, 0.36, 0.46, 1.02],     # Secure Protocols
+    'y5_label': [0.3, 0.4, 2.8, 12.9],        # DB traffic
+    'y6_label': [0.095, 0.1, 0.26, 0.956],    # Secure Protocols
     'y7_label': [0, 0, 0, 0],                 # medco+
     'y8_label': [8.4, 8.4, 8.4, 8.4],         # DB traffic
     'y9_label': [65.4, 66.3, 68.4, 70.9],     # Secure Protocols
     'hatch_i2b2': [0, 0, 0, 0],               # hatch i2b2
     'hatch_unlynx': [0, 0, 0, 0],             # hatch unlynx
-    'total1': [0.2, 0.4, 2.7, 12.7],          # i2b2 Insecure
-    'total2': [0.52, 0.76, 3.2, 13.7],        # total medco
+    'total1': [0.3, 0.4, 2.8, 12.9],          # i2b2 Insecure
+    'total2': [0.4, 0.5, 3.1, 13.8],          # total medco
     'total3': [73.8, 74.7, 76.8, 79.3],       # total medco+
 }
 
@@ -189,20 +189,20 @@ ax1.set_ylim([0, 10000])
 ax1.set_xlim([0, ind[3] + bar_width + bar_width + bar_width])
 
 # Labelling
-ax1.text(ind[0] + bar_width/2 - 0.12, df['total1'][0]+0.05,
+ax1.text(ind[0] + bar_width/2 - 0.11, df['total1'][0]+0.05,
          str(df['total1'][0]), color='black', fontweight='bold')
-ax1.text(ind[1] + bar_width/2 - 0.12, df['total1'][1]+0.05,
+ax1.text(ind[1] + bar_width/2 - 0.11, df['total1'][1]+0.05,
          str(df['total1'][1]), color='black', fontweight='bold')
-ax1.text(ind[2] + bar_width/2 - 0.12, df['total1'][2]+0.2,
+ax1.text(ind[2] + bar_width/2 - 0.11, df['total1'][2]+0.2,
          str(df['total1'][2]), color='black', fontweight='bold')
-ax1.text(ind[3] + bar_width/2 - 0.22, df['total1'][3]+1,
+ax1.text(ind[3] + bar_width/2 - 0.20, df['total1'][3]+1,
          str(df['total1'][3]), color='black', fontweight='bold')
 
-ax1.text(ind[0] + bar_width + bar_width/2 - 0.18, df['total2'][0]+0.05,
+ax1.text(ind[0] + bar_width + bar_width/2 - 0.11, df['total2'][0]+0.05,
          str(df['total2'][0]), color='black', fontweight='bold')
-ax1.text(ind[1] + bar_width + bar_width/2 - 0.18, df['total2'][1]+0.05,
+ax1.text(ind[1] + bar_width + bar_width/2 - 0.11, df['total2'][1]+0.05,
          str(df['total2'][1]), color='black', fontweight='bold')
-ax1.text(ind[2] + bar_width + bar_width/2 - 0.12, df['total2'][2]+0.2,
+ax1.text(ind[2] + bar_width + bar_width/2 - 0.11, df['total2'][2]+0.2,
          str(df['total2'][2]), color='black', fontweight='bold')
 ax1.text(ind[3] + bar_width + bar_width/2 - 0.17, df['total2'][3]+1,
          str(df['total2'][3]), color='black', fontweight='bold')

@@ -3,31 +3,19 @@ import numpy as np
 import pandas as pd
 
 raw_data_query_one = {
-    'x_label':  ['1x', '2x', '4x'],
-    'y1_label': [1.8, 1.9, 2],          # Insecure i2b2
-    'y2_label': [2.4, 2.4, 2.6],        # Without DDT
-    'y3_label': [90.9, 180.6, 351.3],   # With DDT
+    'x_label':  ['1x', '2x', '4x', '100x', '1000x'],
+    'y1_label': [1.8, 1.9, 2, 2.6, 6.8],             # Insecure i2b2
+    'y2_label': [2.4, 2.4, 2.6, 3.3, 9.6],           # Without DDT
+    'y3_label': [90.9, 180.6, 351.3, 0.05, 0.05],    # With DDT
 }
-
-raw_data_query_two = {
-    'x_label':  ['1x', '2x', '4x'],
-    'y1_label': [6.1, 6.4, 6.6],      # Insecure i2b2
-    'y2_label': [6.7, 7.1, 7.3],      # Without DDT
-    'y3_label': [91.6, 180.7, 357.5], # With DDT
-}
-
 font = {'family': 'Bitstream Vera Sans',
         'size': 26}
 
 plt.rc('font', **font)
 
 df = pd.DataFrame(raw_data_query_one, raw_data_query_one['x_label'])
-add = 0.1
 
-#df = pd.DataFrame(raw_data_query_two, raw_data_query_two['x_label'])
-#add = 1
-
-N = 3
+N = 5
 ind = np.arange(N)  # The x locations for the groups
 
 # Create the general blog and the "subplots" i.e. the bars
@@ -80,28 +68,36 @@ ax1.set_xticks(ind + bar_width + bar_width/2)
 ax1.set_xticklabels(df['x_label'])
 ax1.set_yscale('symlog', basey=10)
 ax1.set_ylim([0, 100000])
-ax1.set_xlim([0, ind[2] + bar_width + bar_width + bar_width])
+ax1.set_xlim([0, ind[2] + bar_width * 10])
 
 # Labelling
-ax1.text(ind[0] + bar_width/2 - 0.08, df['y1_label'][0]+add,
+ax1.text(ind[0] + bar_width/2 - 0.16, df['y1_label'][0]+df['y1_label'][0]/18,
          str(df['y1_label'][0]), color='black', fontweight='bold')
-ax1.text(ind[1] + bar_width/2 - 0.08, df['y1_label'][1]+add,
+ax1.text(ind[1] + bar_width/2 - 0.16, df['y1_label'][1]+df['y1_label'][0]/16,
          str(df['y1_label'][1]), color='black', fontweight='bold')
-ax1.text(ind[2] + bar_width/2 - 0.08, df['y1_label'][2]+add,
+ax1.text(ind[2] + bar_width/2 - 0.16, df['y1_label'][2]+df['y1_label'][0]/8,
          str(df['y1_label'][2]), color='black', fontweight='bold')
+ax1.text(ind[3] + bar_width/2 - 0.16, df['y1_label'][3]+df['y1_label'][0]/6,
+         str(df['y1_label'][3]), color='black', fontweight='bold')
+ax1.text(ind[4] + bar_width/2 - 0.16, df['y1_label'][4]+df['y1_label'][0]/2,
+         str(df['y1_label'][4]), color='black', fontweight='bold')
 
-ax1.text(ind[0] + bar_width + bar_width/2 - 0.08, df['y2_label'][0]+add,
+ax1.text(ind[0] + bar_width + bar_width/2 - 0.15, df['y2_label'][0]+df['y2_label'][0]/5,
          str(df['y2_label'][0]), color='black', fontweight='bold')
-ax1.text(ind[1] + bar_width + bar_width/2 - 0.08, df['y2_label'][1]+add,
+ax1.text(ind[1] + bar_width + bar_width/2 - 0.15, df['y2_label'][1]+df['y2_label'][1]/5,
          str(df['y2_label'][1]), color='black', fontweight='bold')
-ax1.text(ind[2] + bar_width + bar_width/2 - 0.08, df['y2_label'][2]+add,
+ax1.text(ind[2] + bar_width + bar_width/2 - 0.15, df['y2_label'][2]+df['y2_label'][2]/5,
          str(df['y2_label'][2]), color='black', fontweight='bold')
+ax1.text(ind[3] + bar_width + bar_width/2 - 0.15, df['y2_label'][3]+df['y2_label'][3]/4,
+         str(df['y2_label'][3]), color='black', fontweight='bold')
+ax1.text(ind[4] + bar_width + bar_width/2 - 0.15, df['y2_label'][4]+df['y2_label'][4]/4,
+         str(df['y2_label'][4]), color='black', fontweight='bold')
 
-ax1.text(ind[0] + bar_width + bar_width + bar_width/2 - 0.12, df['y3_label'][0]+8,
+ax1.text(ind[0] + bar_width + bar_width + bar_width/2 - 0.20, df['y3_label'][0]+8,
          str(df['y3_label'][0]), color='black', fontweight='bold')
-ax1.text(ind[1] + bar_width + bar_width + bar_width/2 - 0.16, df['y3_label'][1]+16,
+ax1.text(ind[1] + bar_width + bar_width + bar_width/2 - 0.25, df['y3_label'][1]+16,
          str(df['y3_label'][1]), color='black', fontweight='bold')
-ax1.text(ind[2] + bar_width + bar_width + bar_width/2 - 0.16, df['y3_label'][2]+32,
+ax1.text(ind[2] + bar_width + bar_width + bar_width/2 - 0.25, df['y3_label'][2]+32,
          str(df['y3_label'][2]), color='black', fontweight='bold')
 
 # Set the label and legends
@@ -112,5 +108,4 @@ plt.legend(loc='upper left', fontsize=32)
 ax1.tick_params(axis='x', labelsize=32)
 ax1.tick_params(axis='y', labelsize=32)
 
-plt.savefig('scalabilty_data_use_case_1.pdf', format='pdf')
-#plt.savefig('scalabilty_data_use_case_2.pdf', format='pdf')
+plt.savefig('scalabilty_data_use_case_1_b.pdf', format='pdf')

@@ -7,46 +7,44 @@ font = {'family': 'Bitstream Vera Sans',
 
 plt.rc('font', **font)
 
-#percentage = 100/0.9
 percentage = 1
 removex1 = 0
-removex2 = 0.741-0.006-0.031-0.007-0.6-0.064-0.03
-removex3 = 0.741-0.006-0.026-0.009-0.6-0.061-0.03
+removex2 = 2.39 - 0.02 - 0.14 - 0.02 - 2.08 - 0.02
+removex3 = 2.39 - 0.02 - 0.14 - 0.02 - 2.09 - 0.02
 
 raw_data_query_one = {'h_label': ['S1', 'S2', 'S3'],                                                # Servers
-            'y1_label': [0.006*percentage, 0.006*percentage, 0.006*percentage],                     # Query Parsing
-            'y2_label': [0.026*percentage, 0.031*percentage, 0.026*percentage],                     # Query Tagging Com
-            'y3_label': [0.008*percentage, 0.007*percentage, 0.009*percentage],                     # Query Tagging
-            'y4_label': [(0.6+0.061)*percentage, (0.6+0.064)*percentage, (0.6+0.061)*percentage],   # i2b2 query
-            'y5_label': [0.04*percentage, 0.03*percentage, 0.03*percentage],                        # Aggregation
-            'y6_label': [0.006*percentage, 0.006*percentage, 0.006*percentage],                     # Shuffling
-            'y7_label': [0.006*percentage, 0.006*percentage, 0.006*percentage],                     # Key switching
-            'extra': [(0.9-0.74)*percentage, (0.9-0.74)*percentage, (0.9-0.74)*percentage],         # Unlynx processing
+            'y1_label': [0.02*percentage, 0.02*percentage, 0.02*percentage],                        # Query Parsing
+            'y2_label': [0.14*percentage, 0.14*percentage, 0.14*percentage],                        # Query Tagging Com
+            'y3_label': [0.02*percentage, 0.02*percentage, 0.02*percentage],                        # Query Tagging
+            'y4_label': [2.19*percentage, 2.08*percentage, 2.09*percentage],                        # i2b2 query
+            'y5_label': [0.02*percentage, 0.02*percentage, 0.02*percentage],                        # Aggregation
+            'y6_label': [0.02*percentage, 0.02*percentage, 0.02*percentage],                        # Shuffling
+            'y7_label': [0.02*percentage, 0.02*percentage, 0.02*percentage],                        # Key switching
+            'extra': [(2.4-2.37)*percentage, (2.5-2.4)*percentage, (2.4-2.38)*percentage],          # Unlynx processing
             'waiting':  [removex1*percentage, removex2*percentage, removex3*percentage],            # waiting
             'empty': [0, 0, 0]                                                                      # empty
             }
 
-#percentage = 100/6.5
-removex1 = 0
-removex2 = 6.314-0.02-0.09-0.025-6-0.057-0.04
-removex3 = 6.314-0.02-0.16-0.032-6-0.059-0.03
+removex1 = 6.66 - 0.04 - 0.14 - 0.04 - 6.1 - 0.04
+removex2 = 6.66 - 0.04 - 0.13 - 0.04 - 6.3 - 0.04
+removex3 = 0
 
 raw_data_query_two = {'h_label': ['S1', 'S2', 'S3'],                                           # Servers
-            'y1_label': [0.02*percentage, 0.02*percentage, 0.02*percentage],                   # Query Parsing
-            'y2_label': [0.128*percentage, 0.09*percentage, 0.16*percentage],                  # Query Tagging Com
-            'y3_label': [0.038*percentage, 0.025*percentage, 0.032*percentage],                # Query Tagging
-            'y4_label': [(6+0.061)*percentage, (6+0.057)*percentage, (6+0.059)*percentage],    # i2b2 query
-            'y5_label': [0.07*percentage, 0.04*percentage, 0.03*percentage],                   # Aggregation
-            'y6_label': [0.02*percentage, 0.02*percentage, 0.02*percentage],                   # Shuffling
-            'y7_label': [0.02*percentage, 0.02*percentage, 0.02*percentage],                   # Key switching
-            'extra': [(6.5-6.314)*percentage, (6.5-6.314)*percentage, (6.5-6.314)*percentage], # Unlynx processing
+            'y1_label': [0.04*percentage, 0.04*percentage, 0.04*percentage],                   # Query Parsing
+            'y2_label': [0.14*percentage, 0.13*percentage, 0.14*percentage],                   # Query Tagging Com
+            'y3_label': [0.04*percentage, 0.04*percentage, 0.04*percentage],                   # Query Tagging
+            'y4_label': [6.1*percentage, 6.3*percentage, 6.4*percentage],                      # i2b2 query
+            'y5_label': [0.04*percentage, 0.04*percentage, 0.04*percentage],                   # Aggregation
+            'y6_label': [0.04*percentage, 0.04*percentage, 0.04*percentage],                   # Shuffling
+            'y7_label': [0.04*percentage, 0.04*percentage, 0.04*percentage],                   # Key switching
+            'extra': [(6.7-6.64)*percentage, (6.66-6.63)*percentage, (6.66-6.54)*percentage],  # Unlynx processing
             'waiting':  [removex1*percentage, removex2*percentage, removex3*percentage],       # waiting
             'empty': [0, 0, 0]                                                                 # empty
             }
 
 
-df = pd.DataFrame(raw_data_query_one, raw_data_query_one['h_label'])
-#df = pd.DataFrame(raw_data_query_two, raw_data_query_two['h_label'])
+#df = pd.DataFrame(raw_data_query_one, raw_data_query_one['h_label'])
+df = pd.DataFrame(raw_data_query_two, raw_data_query_two['h_label'])
 
 # Create the general plot and the "subplots" i.e. the bars
 f, ax1 = plt.subplots(1, figsize=(9, 7))
@@ -225,10 +223,10 @@ ax1.tick_params(axis='y', labelsize=22)
 # Set a buffer around the edge
 plt.ylim([min(tick_pos) - bar_width, max(tick_pos) + bar_width + 0.8])
 
-ax1.set_xlim([0, 1])
-plt.axvline(x=0.741, ymin=0, ymax=10, linewidth=1, color='k')
-plt.savefig('timeline_use_case_1.pdf', format='pdf')
+#ax1.set_xlim([0, 3])
+#plt.axvline(x=2.39, ymin=0, ymax=10, linewidth=1, color='k')
+#plt.savefig('timeline_use_case_1.pdf', format='pdf')
 
-#ax1.set_xlim([0, 7])
-#plt.axvline(x=6.314, ymin=0, ymax=10, linewidth=1, color='k')
-#plt.savefig('timeline_use_case_2.pdf', format='pdf')
+ax1.set_xlim([0, 7])
+plt.axvline(x=6.66, ymin=0, ymax=10, linewidth=1, color='k')
+plt.savefig('timeline_use_case_2.pdf', format='pdf')
