@@ -4,7 +4,7 @@ import pandas as pd
 
 raw_data_query_one = {
     'x_label':  ['3', '6', '9', '10'],
-    'y1_label': [2, 2, 2, 2],                   # Insecure i2b2
+    'y1_label': [1.8, 1.8, 1.8, 1.8],           # Insecure i2b2
     'y2_label': [2.4, 2.7, 3, 3.1],             # Without DDT
     'y3_label': [90.9, 287.2, 544.3, 606.3],    # With DDT
 }
@@ -73,13 +73,13 @@ ax1.set_ylim([0, 100000])
 ax1.set_xlim([0, ind[3] + bar_width + bar_width + bar_width])
 
 # Labelling
-ax1.text(ind[0] + bar_width/2 - 0.03, df['y1_label'][0]+0.2,
+ax1.text(ind[0] + bar_width/2 - 0.09, df['y1_label'][0]+0.1,
          str(df['y1_label'][0]), color='black', fontweight='bold')
-ax1.text(ind[1] + bar_width/2 - 0.03, df['y1_label'][1]+0.2,
+ax1.text(ind[1] + bar_width/2 - 0.09, df['y1_label'][1]+0.1,
          str(df['y1_label'][1]), color='black', fontweight='bold')
-ax1.text(ind[2] + bar_width/2 - 0.03, df['y1_label'][2]+0.2,
+ax1.text(ind[2] + bar_width/2 - 0.09, df['y1_label'][2]+0.1,
          str(df['y1_label'][2]), color='black', fontweight='bold')
-ax1.text(ind[3] + bar_width/2 - 0.03, df['y1_label'][3]+0.2,
+ax1.text(ind[3] + bar_width/2 - 0.09, df['y1_label'][3]+0.1,
          str(df['y1_label'][3]), color='black', fontweight='bold')
 
 ax1.text(ind[0] + bar_width + bar_width/2 - 0.09, df['y2_label'][0]+0.2,
