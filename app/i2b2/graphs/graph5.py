@@ -7,10 +7,6 @@ removex1 = 2.4 - 0.04 - 0.14 - 0.04 - 1.8 - 0.147 - 0.04 - 0.04 - 0.04
 removex2 = 3.6 - 0.04 - 0.14 - 0.04 - 2.3 - 0.604 - 0.07 - 0.04 - 0.04
 removex3 = 9.6 - 0.04 - 0.14 - 0.04 - 3.4 - 3.4 - 0.68 - 0.04 - 0.04
 
-print removex1
-print removex2
-print removex3
-
 raw_data_query_one = {'x_label': ['\n\n\n1x', '\n\n\n100x', '\n\n\n1000x'],            # number of entries
                       #i2b2 clear timeline
                       'y1_label_clear': [0.04, 0.04, 0.04],          # Query Parsing
