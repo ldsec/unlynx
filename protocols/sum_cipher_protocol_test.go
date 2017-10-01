@@ -3,7 +3,6 @@ package protocols
 import (
 	"testing"
 	"gopkg.in/dedis/onet.v1"
-	"github.com/lca1/unlynx/protocols"
 	"gopkg.in/dedis/onet.v1/network"
 	"time"
 	"github.com/stretchr/testify/assert"
@@ -14,11 +13,11 @@ func TestSumCipherProtocol(t *testing.T) {
 	local := onet.NewLocalTest()
 
 	// You must register this protocol before creating the servers
-	onet.GlobalProtocolRegister("SumCipher",NewSumCipherTest)
+	onet.GlobalProtocolRegister("SumCipherTest",NewSumCipherTest)
 	_, _, tree := local.GenTree(10, true)
 	defer local.CloseAll()
 
-	p, err := local.CreateProtocol("SumCipher", tree)
+	p, err := local.CreateProtocol("SumCipherTest", tree)
 	if err != nil {
 		t.Fatal("Couldn't start protocol:", err)
 	}
@@ -42,10 +41,10 @@ func TestSumCipherProtocol(t *testing.T) {
 
 //inject Test data
 func NewSumCipherTest(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
-	pi, err := protocols.NewCollectiveAggregationProtocol(tni)
+	pi, err := NewSumCipherProtocol(tni)
 	protocol := pi.(*ProtocolSumCipher)
 
-	testCiphers := make([]int,5)
+	testCiphers := make([]int,10)
 
 	switch tni.Index() {
 	case 0:
