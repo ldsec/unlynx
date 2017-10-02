@@ -4,6 +4,7 @@ import (
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/network"
 	"errors"
+	"gopkg.in/dedis/onet.v1/log"
 )
 
 
@@ -29,8 +30,6 @@ type ReplySumCipherBytes struct {
 _________________________________________________________________________________________________________________________
 */
 
-
-
 type StructAnnounce struct {
 	*onet.TreeNode
 	AnnounceSumCipher
@@ -43,11 +42,10 @@ type StructReply struct {
 }
 
 type ProtocolSumCipher struct {
-
 	*onet.TreeNodeInstance
-	Message string
-	Ciphers []int
+
 	Sum chan int
+	Ciphers []int
 
 }
 /*
@@ -63,8 +61,10 @@ func init() {
 func NewSumCipherProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance,error) {
 	st := &ProtocolSumCipher{
 		TreeNodeInstance: n,
-		Sum: 			make(chan int),
+		Sum : make(chan int),
 	}
+
+
 	return st,nil
 }
 
@@ -73,12 +73,43 @@ func (p* ProtocolSumCipher) Start() error {
 	if p.Ciphers == nil {
 			return errors.New("No Shares to collect")
 		}
+
+	log.Lvl1(p.ServerIdentity(), " started a Sum Cipher Protocol (", len(p.Ciphers), "local group(s) )")
 	//send to the children of the root
 	p.SendToChildren(&AnnounceSumCipher{})
+
 
 	return nil
 	}
 
+/*
+func (p *ProtocolSumCipher) HandleAnnounce(announce StructAnnounce) error{
+	if !p.IsLeaf() {
+		p.SendToChildren(&announce.AnnounceSumCipher)
+	} else {
+		p.HandleReply(nil)
+	}
+	return nil
+
+}
+
+func (p *ProtocolSumCipher) HandleReply(reply []StructReply) error {
+	defer p.Done()
+
+	sum := 0
+	for _, c := range reply {
+		sum += c.Sum
+	}
+	log.Lvl3(p.ServerIdentity().Address, "is done with total of", sum)
+	if !p.IsRoot() {
+		log.Lvl3("Sending to parent")
+		return p.SendTo(p.Parent(), &ReplySumCipher{sum})
+	}
+	log.Lvl3("Root-node is done - nbr of children found:", sum)
+	p.Sum <- sum
+	return nil
+}
+*/
 //dispatch is called on the node and handle incoming messages
 func (p* ProtocolSumCipher) Dispatch() error {
 
@@ -86,52 +117,46 @@ func (p* ProtocolSumCipher) Dispatch() error {
 	if !p.IsRoot() {
 		p.sumCipherAnnouncementPhase()
 	}
-
 	//Ascending aggreg
-	aggregateSum := p.ascendingAggregationPhase()
+	p.ascendingAggregationPhase()
+	log.Lvl1(p.ServerIdentity(), " completed aggregation phase (", len(p.Ciphers), "group(s) )")
 
 	//report result
-	if p.IsRoot() {
-		p.Sum <- aggregateSum
-	}
+
 	return nil
 }
 
 func (p *ProtocolSumCipher) sumCipherAnnouncementPhase() {
 	if !p.IsLeaf() {
-		p.SendToChildren(&p.Ciphers)
+		p.SendToChildren(&AnnounceSumCipher{})
 	}
 }
 
 // Results pushing up the tree containing aggregation results.
-func (p *ProtocolSumCipher) ascendingAggregationPhase() int {
+func (p *ProtocolSumCipher) ascendingAggregationPhase() error {
 
 	if p.Ciphers == nil {
-		p.Sum  <-0
+		p.Sum <- 0
 	}
 
-	//roundTotComput := lib.StartTimer(p.Name() + "_CollectiveAggregation(ascendingAggregation)")
+	sum := 0
+	for _,v  := range p.Ciphers{
+		log.Lvl1(v,p.ServerIdentity())
+		sum+= v
 
-	if !p.IsLeaf() {
 
-		for i, _ := range p.Ciphers {
-			childrenContribution := ReplySumCipher{}
-			childrenContribution.Sum += p.Ciphers[i]
-			//lib.EndTimer(roundProofs)
-			//roundComput := lib.StartTimer(p.Name() + "_CollectiveAggregation(Aggregation)")
-		}
 	}
-
-	//lib.EndTimer(roundTotComput)
-
+	log.Lvl3(p.ServerIdentity().Address, "is done with total of", sum)
 	if !p.IsRoot() {
-
-		p.SendToParent(ReplySumCipher{<-p.Sum})
-
+		p.SendTo(p.Parent(),&ReplySumCipher{sum})
 	}
 
-	return <-p.Sum
+	p.Sum <-sum
+
+
+	return nil
 }
+
 
 
 

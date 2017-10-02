@@ -21,18 +21,19 @@ func TestSumCipherProtocol(t *testing.T) {
 	if err != nil {
 		t.Fatal("Couldn't start protocol:", err)
 	}
+
 	protocol := p.(*ProtocolSumCipher)
 
 	go protocol.Start()
 	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*5*2) * time.Millisecond
 
-	result := protocol.Sum
+
 	//verify results
 
 	expectedResults := 5
 
 	select {
-	case Result := <- result:
+	case Result := <- protocol.Sum:
 		assert.Equal(t, expectedResults, Result)
 	case <-time.After(timeout):
 		t.Fatal("Didn't finish in time")
