@@ -228,11 +228,11 @@ func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.
 		s.PushData(resp, recq.Proofs)
 
 		//number of data providers who have already pushed the data
-		(castToSurvey(s.Survey.Get((string)(resp.SurveyID))).DpChannel) <- 1
+		castToSurvey(s.Survey.Get((string)(resp.SurveyID))).DpChannel <- 1
 	}
 
 	// update surveyChannel so that the server knows he can start to process data from DPs
-	(castToSurvey(s.Survey.Get((string)(recq.SurveyID))).SurveyChannel) <- 1
+	castToSurvey(s.Survey.Get((string)(recq.SurveyID))).SurveyChannel <- 1
 	return &ServiceState{recq.SurveyID}, nil
 }
 
@@ -257,9 +257,9 @@ func (s *Service) HandleSurveyResponseQuery(resp *SurveyResponseQuery) (network.
 		s.PushData(resp, survey.Query.Proofs)
 
 		//unblock the channel to allow another DP to send its data
-		(castToSurvey(s.Survey.Get((string)(resp.SurveyID))).SurveyChannel) <- 1
+		castToSurvey(s.Survey.Get((string)(resp.SurveyID))).SurveyChannel <- 1
 		//number of data providers who have already pushed the data
-		(castToSurvey(s.Survey.Get((string)(resp.SurveyID))).DpChannel) <- 1
+		castToSurvey(s.Survey.Get((string)(resp.SurveyID))).DpChannel <- 1
 
 		return &ServiceState{"1"}, nil
 	}
@@ -301,7 +301,7 @@ func (s *Service) HandleSurveyResultsQuery(resq *SurveyResultsQuery) (network.Me
 
 // HandleDDTfinished handles the message
 func (s *Service) HandleDDTfinished(recq *DDTfinished) (network.Message, onet.ClientError) {
-	(castToSurvey(s.Survey.Get((string)(recq.SurveyID))).DDTChannel) <- 1
+	castToSurvey(s.Survey.Get((string)(recq.SurveyID))).DDTChannel <- 1
 	return nil, nil
 }
 

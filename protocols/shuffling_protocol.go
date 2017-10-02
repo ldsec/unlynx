@@ -334,7 +334,7 @@ func (sm *ShufflingMessage) ToBytes() ([]byte, int, int, int) {
 func (sm *ShufflingMessage) FromBytes(data []byte, gacbLength, aabLength, pgaebLength int) {
 	var nbrData int
 
-	elementLength := (gacbLength*64 + aabLength*64 + pgaebLength*64) //CAUTION: hardcoded 64 (size of el-gamal element C,K)
+	elementLength := gacbLength*64 + aabLength*64 + pgaebLength*64 //CAUTION: hardcoded 64 (size of el-gamal element C,K)
 	nbrData = len(data) / elementLength
 
 	(*sm).Data = make([]lib.ProcessResponse, nbrData)

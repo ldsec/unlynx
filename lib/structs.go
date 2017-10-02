@@ -164,7 +164,7 @@ func (cv *ProcessResponse) CipherVectorTag(h abstract.Point) []abstract.Scalar {
 			go func(i int) {
 				defer wg.Done()
 				for j := 0; j < VPARALLELIZE && (j+i < aggrAttrLen+grpAttrLen+whereAttrLen); j++ {
-					es[i+j] = ComputeE(i+j, (*cv), seed, aggrAttrLen, grpAttrLen)
+					es[i+j] = ComputeE(i+j, *cv, seed, aggrAttrLen, grpAttrLen)
 				}
 
 			}(i)
@@ -174,7 +174,7 @@ func (cv *ProcessResponse) CipherVectorTag(h abstract.Point) []abstract.Scalar {
 	} else {
 		for i := 0; i < aggrAttrLen+grpAttrLen+whereAttrLen; i++ {
 			//+detAttrLen
-			es[i] = ComputeE(i, (*cv), seed, aggrAttrLen, grpAttrLen)
+			es[i] = ComputeE(i, *cv, seed, aggrAttrLen, grpAttrLen)
 		}
 
 	}
@@ -214,19 +214,19 @@ func EncryptDpClearResponse(ccr DpClearResponse, encryptionKey abstract.Point, c
 	cr.GroupByClear = ccr.GroupByClear
 	cr.GroupByEnc = make(map[string][]byte, len(ccr.GroupByEnc))
 	for i, v := range ccr.GroupByEnc {
-		cr.GroupByEnc[i] = ((*EncryptInt(encryptionKey, v)).ToBytes())
+		cr.GroupByEnc[i] = (*EncryptInt(encryptionKey, v)).ToBytes()
 	}
 	//cr.GroupByEnc = *EncryptIntVector(encryptionKey, ccr.GroupByEnc)
 	cr.WhereClear = ccr.WhereClear
 	cr.WhereEnc = make(map[string][]byte, len(ccr.WhereEnc))
 	for i, v := range ccr.WhereEnc {
-		cr.WhereEnc[i] = ((*EncryptInt(encryptionKey, v)).ToBytes())
+		cr.WhereEnc[i] = (*EncryptInt(encryptionKey, v)).ToBytes()
 	}
 	//cr.WhereEnc = *EncryptIntVector(encryptionKey, ccr.WhereEnc)
 	cr.AggregatingAttributesClear = ccr.AggregatingAttributesClear
 	cr.AggregatingAttributesEnc = make(map[string][]byte, len(ccr.AggregatingAttributesEnc))
 	for i, v := range ccr.AggregatingAttributesEnc {
-		cr.AggregatingAttributesEnc[i] = ((*EncryptInt(encryptionKey, v)).ToBytes())
+		cr.AggregatingAttributesEnc[i] = (*EncryptInt(encryptionKey, v)).ToBytes()
 	}
 	if count {
 		cr.AggregatingAttributesEnc["count"] = (*EncryptInt(encryptionKey, int64(1))).ToBytes()
@@ -299,8 +299,8 @@ func (cv *FilteredResponse) FromBytes(data []byte, aabLength, pgaebLength int) {
 	(*cv).AggregatingAttributes = make(CipherVector, aabLength)
 	(*cv).GroupByEnc = make(CipherVector, pgaebLength)
 
-	aabByteLength := (aabLength * 64) //CAREFUL: hardcoded 64 (size of el-gamal element C,K)
-	pgaebByteLength := (pgaebLength * 64)
+	aabByteLength := aabLength * 64 //CAREFUL: hardcoded 64 (size of el-gamal element C,K)
+	pgaebByteLength := pgaebLength * 64
 
 	aab := data[:aabByteLength]
 	pgaeb := data[aabByteLength : aabByteLength+pgaebByteLength]
@@ -326,8 +326,8 @@ func (crd *FilteredResponseDet) FromBytes(data []byte, gacbLength, aabLength, dt
 	(*crd).Fr.AggregatingAttributes = make(CipherVector, aabLength)
 	(*crd).Fr.GroupByEnc = make(CipherVector, gacbLength)
 
-	aabByteLength := (aabLength * 64) //CAREFUL: hardcoded 64 (size of el-gamal element C,K)
-	gacbByteLength := (gacbLength * 64)
+	aabByteLength := aabLength * 64 //CAREFUL: hardcoded 64 (size of el-gamal element C,K)
+	gacbByteLength := gacbLength * 64
 
 	aab := data[:aabByteLength]
 	gacb := data[aabByteLength : gacbByteLength+aabByteLength]
@@ -363,9 +363,9 @@ func (cv *ProcessResponse) FromBytes(data []byte, gacbLength, aabLength, pgaebLe
 	(*cv).WhereEnc = make(CipherVector, pgaebLength)
 	(*cv).GroupByEnc = make(CipherVector, gacbLength)
 
-	gacbByteLength := (gacbLength * 64)
-	aabByteLength := (aabLength * 64) //CAREFUL: hardcoded 64 (size of el-gamal element C,K)
-	pgaebByteLength := (pgaebLength * 64)
+	gacbByteLength := gacbLength * 64
+	aabByteLength := aabLength * 64 //CAREFUL: hardcoded 64 (size of el-gamal element C,K)
+	pgaebByteLength := pgaebLength * 64
 
 	gacb := data[:gacbByteLength]
 	aab := data[gacbByteLength : gacbByteLength+aabByteLength]
@@ -396,9 +396,9 @@ func (crd *ProcessResponseDet) FromBytes(data []byte, gacbLength, aabLength, pga
 	(*crd).PR.WhereEnc = make(CipherVector, pgaebLength)
 	(*crd).PR.GroupByEnc = make(CipherVector, gacbLength)
 
-	aabByteLength := (aabLength * 64) //CAREFUL: hardcoded 64 (size of el-gamal element C,K)
-	pgaebByteLength := (pgaebLength * 64)
-	gacbByteLength := (gacbLength * 64)
+	aabByteLength := aabLength * 64 //CAREFUL: hardcoded 64 (size of el-gamal element C,K)
+	pgaebByteLength := pgaebLength * 64
+	gacbByteLength := gacbLength * 64
 
 	gacb := data[:gacbByteLength]
 	aab := data[gacbByteLength : gacbByteLength+aabByteLength]

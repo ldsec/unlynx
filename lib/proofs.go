@@ -612,5 +612,5 @@ func DetTagAdditionProofVerification(psap PublishedDetTagAdditionProof) bool {
 	//log.LLvl1("Proof verified")
 
 	cv := network.Suite.Point().Add(psap.C1, psap.C2)
-	return (partProof && reflect.DeepEqual(cv, psap.R))
+	return partProof && reflect.DeepEqual(cv, psap.R)
 }

@@ -45,9 +45,9 @@ func TestCollectiveAggregation(t *testing.T) {
 	feedback := protocol.FeedbackChannel
 
 	//verify results
-	expectedGroups := map[lib.GroupingKey][]int64{groupingAttrA.Key(): []int64{1, 1},
-		groupingAttrB.Key(): []int64{1, 2},
-		groupingAttrC.Key(): []int64{3, 3}}
+	expectedGroups := map[lib.GroupingKey][]int64{groupingAttrA.Key(): {1, 1},
+		groupingAttrB.Key(): {1, 2},
+		groupingAttrC.Key(): {3, 3}}
 
 	expectedResults := map[lib.GroupingKey][]int64{groupingAttrA.Key(): {3, 5, 7, 9, 11},
 		groupingAttrB.Key(): {1, 2, 3, 4, 5},

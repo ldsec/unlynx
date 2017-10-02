@@ -222,7 +222,7 @@ func (s *Service) Process(msg *network.Envelope) {
 
 // HandleSurveyGenerated handles the message
 func (s *Service) HandleSurveyGenerated(recq *SurveyGenerated) (network.Message, onet.ClientError) {
-	(castToSurvey(s.Survey.Get((string)(recq.SurveyID))).SurveyChannel) <- 1
+	castToSurvey(s.Survey.Get((string)(recq.SurveyID))).SurveyChannel <- 1
 	return nil, nil
 }
 
@@ -346,7 +346,7 @@ func (s *Service) HandleSurveyDpQuery(sdq *SurveyDpQuery) (network.Message, onet
 
 		if int64(size) == services.CountDPs(sdq.MapDPs) {
 			for i := 0; i < int(nbrDPsLocal); i++ {
-				(castToSurvey(s.Survey.Get((string)(sdq.SurveyGenID))).IntermediateChannel) <- 1
+				castToSurvey(s.Survey.Get((string)(sdq.SurveyGenID))).IntermediateChannel <- 1
 			}
 		}
 		s.Mutex.Unlock()
@@ -378,7 +378,7 @@ func (s *Service) HandleSurveyDpQuery(sdq *SurveyDpQuery) (network.Message, onet
 			s.Survey.Put((string)(sdq.SurveyGenID), survey)
 			s.TR.ExecTime += time.Since(start)
 
-			s.StartServicePartTwo(sdq.SurveyGenID, (sdq.QueryMode == 1))
+			s.StartServicePartTwo(sdq.SurveyGenID, sdq.QueryMode == 1)
 
 			start = time.Now()
 			survey = castToSurvey(s.Survey.Get((string)(sdq.SurveyGenID)))
@@ -421,7 +421,7 @@ func (s *Service) HandleSurveyDpQuery(sdq *SurveyDpQuery) (network.Message, onet
 			s.Survey.Put((string)(sdq.SurveyGenID), survey)
 
 			for i := int64(0); i < sdq.MapDPs[s.String()]; i++ {
-				(castToSurvey(s.Survey.Get((string)(sdq.SurveyGenID))).FinalChannel) <- 1
+				castToSurvey(s.Survey.Get((string)(sdq.SurveyGenID))).FinalChannel <- 1
 			}
 		}
 
@@ -497,7 +497,7 @@ func (s *Service) HandleSurveyResultsSharing(resp *SurveyResultSharing) (network
 
 	if int64(size) == services.CountDPs(resp.MapDPs) {
 		for i := 0; i < int(resp.MapDPs[s.String()]); i++ {
-			(castToSurvey(s.Survey.Get((string)(resp.SurveyGenID))).IntermediateChannel) <- 1
+			castToSurvey(s.Survey.Get((string)(resp.SurveyGenID))).IntermediateChannel <- 1
 		}
 	}
 
@@ -509,7 +509,7 @@ func (s *Service) HandleSurveyResultsSharing(resp *SurveyResultSharing) (network
 func (s *Service) HandleSurveyFinalResultsSharing(respArr *SurveyFinalResultsSharingMessage) (network.Message, onet.ClientError) {
 	start := time.Now()
 	// convert the message from the double array to a map
-	resp := (&SurveyFinalResultsSharing{})
+	resp := &SurveyFinalResultsSharing{}
 	resp.SurveyGenID = respArr.SurveyGenID
 
 	resp.Results = make(map[ResultID]lib.FilteredResponse)
@@ -528,7 +528,7 @@ func (s *Service) HandleSurveyFinalResultsSharing(respArr *SurveyFinalResultsSha
 	// count the number of responses associated with each server or in other words the number of DPs (to unlock the FinalChannel)
 	for k := range survey.IntermediateResults {
 		if k.ServerID == s.ServerIdentity().ID {
-			(castToSurvey(s.Survey.Get((string)(resp.SurveyGenID))).FinalChannel) <- 1
+			castToSurvey(s.Survey.Get((string)(resp.SurveyGenID))).FinalChannel <- 1
 		}
 	}
 

@@ -44,13 +44,18 @@ type StructReply struct {
 type ProtocolSumCipher struct {
 	*onet.TreeNodeInstance
 
-	Sum chan int
-	Ciphers []int
+	Feedback chan int
 
+	ChildDataChannel     chan []StructReply
+	AnnounceChannel chan StructAnnounce
+
+	Ciphers []int
+	Sum 	int
 }
 /*
 _______________________________________________________________________________
  */
+
 func init() {
 	network.RegisterMessage(AnnounceSumCipher{})
 	network.RegisterMessage(ReplySumCipher{})
@@ -61,9 +66,18 @@ func init() {
 func NewSumCipherProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance,error) {
 	st := &ProtocolSumCipher{
 		TreeNodeInstance: n,
-		Sum : make(chan int),
+		Feedback: make(chan int),
 	}
 
+	err := st.RegisterChannel(&st.AnnounceChannel)
+	if err != nil {
+		return nil, errors.New("couldn't register data reference channel: " + err.Error())
+	}
+
+	err = st.RegisterChannel(&st.ChildDataChannel)
+	if err != nil {
+		return nil, errors.New("couldn't register child reference channel" + err.Error())
+	}
 
 	return st,nil
 }
@@ -72,45 +86,15 @@ func NewSumCipherProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance,error
 func (p* ProtocolSumCipher) Start() error {
 	if p.Ciphers == nil {
 			return errors.New("No Shares to collect")
-		}
-
+	}
 	log.Lvl1(p.ServerIdentity(), " started a Sum Cipher Protocol (", len(p.Ciphers), "local group(s) )")
 	//send to the children of the root
 	p.SendToChildren(&AnnounceSumCipher{})
 
-
 	return nil
 	}
-
-/*
-func (p *ProtocolSumCipher) HandleAnnounce(announce StructAnnounce) error{
-	if !p.IsLeaf() {
-		p.SendToChildren(&announce.AnnounceSumCipher)
-	} else {
-		p.HandleReply(nil)
-	}
-	return nil
-
-}
-
-func (p *ProtocolSumCipher) HandleReply(reply []StructReply) error {
-	defer p.Done()
-
-	sum := 0
-	for _, c := range reply {
-		sum += c.Sum
-	}
-	log.Lvl3(p.ServerIdentity().Address, "is done with total of", sum)
-	if !p.IsRoot() {
-		log.Lvl3("Sending to parent")
-		return p.SendTo(p.Parent(), &ReplySumCipher{sum})
-	}
-	log.Lvl3("Root-node is done - nbr of children found:", sum)
-	p.Sum <- sum
-	return nil
-}
-*/
 //dispatch is called on the node and handle incoming messages
+
 func (p* ProtocolSumCipher) Dispatch() error {
 
 	//Go down the tree
@@ -118,43 +102,49 @@ func (p* ProtocolSumCipher) Dispatch() error {
 		p.sumCipherAnnouncementPhase()
 	}
 	//Ascending aggreg
-	p.ascendingAggregationPhase()
-	log.Lvl1(p.ServerIdentity(), " completed aggregation phase (", len(p.Ciphers), "group(s) )")
+
+	sum := p.ascendingAggregationPhase()
+	log.Lvl1(p.ServerIdentity(), " completed aggregation phase (", sum, " is the sum ")
 
 	//report result
-
+	if p.IsRoot() {
+		p.Feedback <-sum
+	}
 	return nil
 }
 
 func (p *ProtocolSumCipher) sumCipherAnnouncementPhase() {
+	AnnounceMessage := <-p.AnnounceChannel
 	if !p.IsLeaf() {
-		p.SendToChildren(&AnnounceSumCipher{})
+		p.SendToChildren(&AnnounceMessage.AnnounceSumCipher)
 	}
 }
 
 // Results pushing up the tree containing aggregation results.
-func (p *ProtocolSumCipher) ascendingAggregationPhase() error {
+func (p *ProtocolSumCipher) ascendingAggregationPhase() int {
 
 	if p.Ciphers == nil {
-		p.Sum <- 0
+		p.Sum = 0
 	}
 
-	sum := 0
-	for _,v  := range p.Ciphers{
-		log.Lvl1(v,p.ServerIdentity())
-		sum+= v
+	if !p.IsLeaf() {
 
-
+		for _, v := range <-p.ChildDataChannel {
+			p.Sum += v.Sum
+		}
 	}
-	log.Lvl3(p.ServerIdentity().Address, "is done with total of", sum)
+
+	for _, v := range p.Ciphers {
+			p.Sum += v
+	}
+
 	if !p.IsRoot() {
-		p.SendTo(p.Parent(),&ReplySumCipher{sum})
+		log.Lvl1("The sum is ",p.Sum)
+		p.SendToParent(&ReplySumCipher{p.Sum})
+
 	}
 
-	p.Sum <-sum
-
-
-	return nil
+	return p.Sum
 }
 
 

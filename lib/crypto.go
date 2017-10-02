@@ -496,7 +496,7 @@ func (cv *CipherVector) ToBytes() ([]byte, int) {
 
 // FromBytes converts a byte array to a CipherVector. Note that you need to create the (empty) object beforehand.
 func (cv *CipherVector) FromBytes(data []byte, length int) {
-	(*cv) = make(CipherVector, length)
+	*cv = make(CipherVector, length)
 	for i, pos := 0, 0; i < length*64; i, pos = i+64, pos+1 {
 		ct := CipherText{}
 		ct.FromBytes(data[i : i+64])

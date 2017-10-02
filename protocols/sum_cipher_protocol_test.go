@@ -33,7 +33,7 @@ func TestSumCipherProtocol(t *testing.T) {
 	expectedResults := 5
 
 	select {
-	case Result := <- protocol.Sum:
+	case Result := <- protocol.Feedback:
 		assert.Equal(t, expectedResults, Result)
 	case <-time.After(timeout):
 		t.Fatal("Didn't finish in time")
