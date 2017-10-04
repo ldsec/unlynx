@@ -5,6 +5,8 @@ import (
 	"gopkg.in/dedis/onet.v1/network"
 	"errors"
 	"gopkg.in/dedis/onet.v1/log"
+	"math/big"
+	"math/rand"
 )
 
 
@@ -44,11 +46,14 @@ type StructReply struct {
 type ProtocolSumCipher struct {
 	*onet.TreeNodeInstance
 
+	//the feedback final
 	Feedback chan int
 
-	ChildDataChannel     chan []StructReply
+	//Channel for up and down communication
+	ChildDataChannel chan []StructReply
 	AnnounceChannel chan StructAnnounce
 
+	//The data of the protocol
 	Ciphers []int
 	Sum 	int
 }
@@ -71,12 +76,12 @@ func NewSumCipherProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance,error
 
 	err := st.RegisterChannel(&st.AnnounceChannel)
 	if err != nil {
-		return nil, errors.New("couldn't register data reference channel: " + err.Error())
+		return nil, errors.New("couldn't register Announce data channel: " + err.Error())
 	}
 
 	err = st.RegisterChannel(&st.ChildDataChannel)
 	if err != nil {
-		return nil, errors.New("couldn't register child reference channel" + err.Error())
+		return nil, errors.New("couldn't register Child Response channel" + err.Error())
 	}
 
 	return st,nil
@@ -87,7 +92,8 @@ func (p* ProtocolSumCipher) Start() error {
 	if p.Ciphers == nil {
 			return errors.New("No Shares to collect")
 	}
-	log.Lvl1(p.ServerIdentity(), " started a Sum Cipher Protocol (", len(p.Ciphers), "local group(s) )")
+	log.Lvl1(p.ServerIdentity(), " started a Sum Cipher Protocol (", len(p.Ciphers), " different shares")
+
 	//send to the children of the root
 	p.SendToChildren(&AnnounceSumCipher{})
 
@@ -101,8 +107,8 @@ func (p* ProtocolSumCipher) Dispatch() error {
 	if !p.IsRoot() {
 		p.sumCipherAnnouncementPhase()
 	}
-	//Ascending aggreg
 
+	//Ascending aggreg
 	sum := p.ascendingAggregationPhase()
 	log.Lvl1(p.ServerIdentity(), " completed aggregation phase (", sum, " is the sum ")
 
@@ -114,6 +120,7 @@ func (p* ProtocolSumCipher) Dispatch() error {
 }
 
 func (p *ProtocolSumCipher) sumCipherAnnouncementPhase() {
+	//send down the tree if you have some
 	AnnounceMessage := <-p.AnnounceChannel
 	if !p.IsLeaf() {
 		p.SendToChildren(&AnnounceMessage.AnnounceSumCipher)
@@ -128,27 +135,61 @@ func (p *ProtocolSumCipher) ascendingAggregationPhase() int {
 	}
 
 	if !p.IsLeaf() {
-
+		//wait on the channel for child to complete and add sum
 		for _, v := range <-p.ChildDataChannel {
 			p.Sum += v.Sum
 		}
 	}
 
+	//do the sum of ciphers
 	for _, v := range p.Ciphers {
 			p.Sum += v
 	}
 
+	//send to parent the sum to deblock channel wait
 	if !p.IsRoot() {
-		log.Lvl1("The sum is ",p.Sum)
 		p.SendToParent(&ReplySumCipher{p.Sum})
-
 	}
 
+	//finish by returning the sum of the root
 	return p.Sum
 }
 
 
+func Share(mod *big.Int, nPieces int, secret *big.Int) []*big.Int {
+	if nPieces == 0 {
+		panic("Number of shares must be at least 1")
+	} else if nPieces == 1 {
+		return []*big.Int{secret}
+	}
+	out := make([]*big.Int, nPieces)
 
+	acc := new(big.Int)
+	for i := 0; i < nPieces-1; i++ {
+		big,err := GenerateRandomBytes(mod.BitLen())
+		if(err ==nil) {
+			errors.New("Error while splitting value")
+		}
+		out[i] = &big
 
+		acc.Add(acc, out[i])
+	}
+	acc.Sub(secret, acc)
+	acc.Mod(acc, mod)
+	out[nPieces-1] = acc
 
+	return out
+}
 
+func GenerateRandomBytes(n int) (big.Int, error) {
+	b := make([]byte, n)
+	var result big.Int
+	_, err := rand.Read(b)
+	// Note that err == nil only if we read len(b) bytes.
+	if err != nil {
+		return result, err
+	}
+
+	result.SetBytes(b)
+	return result, nil
+}
