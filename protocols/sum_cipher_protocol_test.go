@@ -6,6 +6,7 @@ import (
 	"gopkg.in/dedis/onet.v1/network"
 	"time"
 	"github.com/stretchr/testify/assert"
+	"math/big"
 )
 
 func TestSumCipherProtocol(t *testing.T) {
@@ -30,11 +31,11 @@ func TestSumCipherProtocol(t *testing.T) {
 
 	//verify results
 
-	expectedResults := 5
+	expectedResults := big.NewInt(int64(5))
 
 	select {
 	case Result := <- protocol.Feedback:
-		assert.Equal(t, expectedResults, Result)
+		assert.Equal(t, *expectedResults, *Result)
 	case <-time.After(timeout):
 		t.Fatal("Didn't finish in time")
 	}
@@ -45,19 +46,19 @@ func NewSumCipherTest(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error)
 	pi, err := NewSumCipherProtocol(tni)
 	protocol := pi.(*ProtocolSumCipher)
 
-	testCiphers := make([]int,10)
+	testCiphers := make([]*big.Int,10)
 
 	switch tni.Index() {
 	case 0:
-		testCiphers[0] = 1
+		testCiphers[0] = big.NewInt(int64(1))
 	case 1:
-		testCiphers[1] = 1
+		testCiphers[1] = big.NewInt(int64(1))
 	case 2:
-		testCiphers[2] = 1
+		testCiphers[2] = big.NewInt(int64(1))
 	case 9:
-		testCiphers[9] = 1
+		testCiphers[9] = big.NewInt(int64(1))
 	case 5:
-		testCiphers[5] = 1
+		testCiphers[5] = big.NewInt(int64(1))
 	default:
 	}
 	protocol.Ciphers = testCiphers

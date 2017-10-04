@@ -22,7 +22,7 @@ type AnnounceSumCipher struct {
 }
 
 type ReplySumCipher struct {
-	Sum int
+	Sum *big.Int
 }
 
 type ReplySumCipherBytes struct {
@@ -47,15 +47,15 @@ type ProtocolSumCipher struct {
 	*onet.TreeNodeInstance
 
 	//the feedback final
-	Feedback chan int
+	Feedback chan *big.Int
 
 	//Channel for up and down communication
 	ChildDataChannel chan []StructReply
 	AnnounceChannel chan StructAnnounce
 
 	//The data of the protocol
-	Ciphers []int
-	Sum 	int
+	Ciphers []*big.Int
+	Sum 	*big.Int
 }
 /*
 _______________________________________________________________________________
@@ -71,7 +71,7 @@ func init() {
 func NewSumCipherProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance,error) {
 	st := &ProtocolSumCipher{
 		TreeNodeInstance: n,
-		Feedback: make(chan int),
+		Feedback: make(chan *big.Int),
 	}
 
 	err := st.RegisterChannel(&st.AnnounceChannel)
@@ -128,22 +128,22 @@ func (p *ProtocolSumCipher) sumCipherAnnouncementPhase() {
 }
 
 // Results pushing up the tree containing aggregation results.
-func (p *ProtocolSumCipher) ascendingAggregationPhase() int {
+func (p *ProtocolSumCipher) ascendingAggregationPhase() *big.Int {
 
-	if p.Ciphers == nil {
-		p.Sum = 0
-	}
+	/*if p.Ciphers == nil {
+		p.Sum = *big.NewInt(0)
+	}*/
 
 	if !p.IsLeaf() {
 		//wait on the channel for child to complete and add sum
 		for _, v := range <-p.ChildDataChannel {
-			p.Sum += v.Sum
+			p.Sum.Add(p.Sum, v.Sum)
 		}
 	}
 
 	//do the sum of ciphers
 	for _, v := range p.Ciphers {
-			p.Sum += v
+		p.Sum.Add(p.Sum,v)
 	}
 
 	//send to parent the sum to deblock channel wait
@@ -192,4 +192,19 @@ func GenerateRandomBytes(n int) (big.Int, error) {
 
 	result.SetBytes(b)
 	return result, nil
+}
+
+func Encode(x big.Int) ([]big.Int) {
+	lenght := x.BitLen()+1
+	result := make([]big.Int,lenght)
+	result[0] = x
+	for i := 1; i < lenght; i++ {
+		result[i] = *(big.NewInt(int64(x.Bit(i))))
+	}
+
+	return result
+}
+
+func Decode(enc []big.Int)(x big.Int) {
+	return enc[0]
 }
