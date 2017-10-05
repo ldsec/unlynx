@@ -39,6 +39,7 @@ func TestCollectiveAggregation(t *testing.T) {
 	protocol := p.(*protocols.CollectiveAggregationProtocol)
 
 	//run protocol
+	start := time.Now()
 	go protocol.Start()
 	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*5*2) * time.Millisecond
 
@@ -67,6 +68,7 @@ func TestCollectiveAggregation(t *testing.T) {
 				assert.True(t, ok)
 				_ = v1
 				_ = v2
+				log.Lvl1("time elapsed ", time.Since(start))
 				assert.True(t, reflect.DeepEqual(v1, lib.DecryptIntVector(clientPrivate, &v2.GroupByEnc)))
 				delete(encryptedResult.GroupedData, k)
 			}

@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"math/big"
 	"math"
+	"gopkg.in/dedis/onet.v1/log"
 )
 //the field cardinality must be superior to nbclient*2^b where b is the maximum number of bit a client need to encode its value
 
@@ -39,6 +40,7 @@ func TestSumCipherProtocol(t *testing.T) {
 
 	protocol := p.(*ProtocolSumCipher)
 
+	start := time.Now()
 	go protocol.Start()
 	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*5*2) * time.Millisecond
 
@@ -55,6 +57,7 @@ func TestSumCipherProtocol(t *testing.T) {
 
 	select {
 	case Result := <- protocol.Feedback:
+		log.Lvl1("time elapsed is ",time.Since(start))
 		assert.Equal(t, expectedResults, Result)
 	case <-time.After(timeout):
 		t.Fatal("Didn't finish in time")
