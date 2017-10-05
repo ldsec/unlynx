@@ -6,7 +6,7 @@ import (
 	"errors"
 	"gopkg.in/dedis/onet.v1/log"
 	"math/big"
-	"math/rand"
+	"unlynx/utils"
 )
 
 
@@ -21,10 +21,7 @@ ________________________________________________________________________________
 type AnnounceSumCipher struct {
 }
 
-type ReplySumCipher struct {
-	Sum *big.Int
-}
-
+//Reply from the children
 type ReplySumCipherBytes struct {
 	Bytes []byte
 }
@@ -40,7 +37,7 @@ type StructAnnounce struct {
 
 type StructReply struct {
 	*onet.TreeNode
-	ReplySumCipher
+	ReplySumCipherBytes
 }
 
 type ProtocolSumCipher struct {
@@ -56,6 +53,7 @@ type ProtocolSumCipher struct {
 	//The data of the protocol
 	Ciphers []*big.Int
 	Sum 	*big.Int
+	Modulus *big.Int
 }
 /*
 _______________________________________________________________________________
@@ -63,7 +61,7 @@ _______________________________________________________________________________
 
 func init() {
 	network.RegisterMessage(AnnounceSumCipher{})
-	network.RegisterMessage(ReplySumCipher{})
+	network.RegisterMessage(ReplySumCipherBytes{})
 	onet.GlobalProtocolRegister(SumCipherProtocolName,NewSumCipherProtocol)
 }
 
@@ -72,6 +70,7 @@ func NewSumCipherProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance,error
 	st := &ProtocolSumCipher{
 		TreeNodeInstance: n,
 		Feedback: make(chan *big.Int),
+		Sum: big.NewInt(int64(0)),
 	}
 
 	err := st.RegisterChannel(&st.AnnounceChannel)
@@ -131,27 +130,34 @@ func (p *ProtocolSumCipher) sumCipherAnnouncementPhase() {
 func (p *ProtocolSumCipher) ascendingAggregationPhase() *big.Int {
 
 	/*if p.Ciphers == nil {
-		p.Sum = *big.NewInt(0)
+		p.Sum = big.NewInt(0)
 	}*/
 
 	if !p.IsLeaf() {
 		//wait on the channel for child to complete and add sum
 		for _, v := range <-p.ChildDataChannel {
-			p.Sum.Add(p.Sum, v.Sum)
+			//get the bytes and turn them back in big.Int
+			var sum big.Int
+			sum.SetBytes(v.Bytes)
+			p.Sum.Add(p.Sum, &sum)
+			p.Sum.Mod(p.Sum,p.Modulus)
 		}
 	}
 
 	//do the sum of ciphers
 	for _, v := range p.Ciphers {
-		p.Sum.Add(p.Sum,v)
+		p.Sum.Add(p.Sum, v)
+		p.Sum.Mod(p.Sum,p.Modulus)
 	}
 
 	//send to parent the sum to deblock channel wait
 	if !p.IsRoot() {
-		p.SendToParent(&ReplySumCipher{p.Sum})
+		//send the big.Int in bytes
+		p.SendToParent(&ReplySumCipherBytes{p.Sum.Bytes()})
 	}
 
 	//finish by returning the sum of the root
+	p.Sum.Mod(p.Sum,p.Modulus)
 	return p.Sum
 }
 
@@ -162,18 +168,16 @@ func Share(mod *big.Int, nPieces int, secret *big.Int) []*big.Int {
 	} else if nPieces == 1 {
 		return []*big.Int{secret}
 	}
+
 	out := make([]*big.Int, nPieces)
 
 	acc := new(big.Int)
 	for i := 0; i < nPieces-1; i++ {
-		big,err := GenerateRandomBytes(mod.BitLen())
-		if(err ==nil) {
-			errors.New("Error while splitting value")
-		}
-		out[i] = &big
+		out[i] = utils.RandInt(mod)
 
 		acc.Add(acc, out[i])
 	}
+
 	acc.Sub(secret, acc)
 	acc.Mod(acc, mod)
 	out[nPieces-1] = acc
@@ -181,21 +185,9 @@ func Share(mod *big.Int, nPieces int, secret *big.Int) []*big.Int {
 	return out
 }
 
-func GenerateRandomBytes(n int) (big.Int, error) {
-	b := make([]byte, n)
-	var result big.Int
-	_, err := rand.Read(b)
-	// Note that err == nil only if we read len(b) bytes.
-	if err != nil {
-		return result, err
-	}
 
-	result.SetBytes(b)
-	return result, nil
-}
-
-func Encode(x big.Int) ([]big.Int) {
-	lenght := x.BitLen()+1
+func Encode(x big.Int) (big.Int) {
+	/*lenght := x.BitLen()+1
 	result := make([]big.Int,lenght)
 	result[0] = x
 	for i := 1; i < lenght; i++ {
@@ -203,8 +195,10 @@ func Encode(x big.Int) ([]big.Int) {
 	}
 
 	return result
+	*/
+	return x
 }
 
-func Decode(enc []big.Int)(x big.Int) {
-	return enc[0]
+func Decode(enc big.Int)(x big.Int) {
+	return enc
 }

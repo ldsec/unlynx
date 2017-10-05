@@ -7,7 +7,21 @@ import (
 	"time"
 	"github.com/stretchr/testify/assert"
 	"math/big"
+	"math"
 )
+//the field cardinality must be superior to nbclient*2^b where b is the maximum number of bit a client need to encode its value
+
+var field = big.NewInt(int64(math.Pow(2.0,32)))
+var nbClient = 3
+var nbServ = 10
+
+var serv1Secret = big.NewInt(int64(156165846161468691))
+var serv2Secret = big.NewInt(int64(5484156416846153))
+var serv3Secret = big.NewInt(int64(568465186461844))
+
+var serv1Share = Share(field,nbServ,serv1Secret)
+var serv2Share = Share(field,nbServ,serv2Secret)
+var serv3Share = Share(field,nbServ,serv3Secret)
 
 func TestSumCipherProtocol(t *testing.T) {
 
@@ -15,7 +29,7 @@ func TestSumCipherProtocol(t *testing.T) {
 
 	// You must register this protocol before creating the servers
 	onet.GlobalProtocolRegister("SumCipherTest",NewSumCipherTest)
-	_, _, tree := local.GenTree(10, true)
+	_, _, tree := local.GenTree(nbServ, true)
 	defer local.CloseAll()
 
 	p, err := local.CreateProtocol("SumCipherTest", tree)
@@ -30,12 +44,18 @@ func TestSumCipherProtocol(t *testing.T) {
 
 
 	//verify results
+	expectedResults := big.NewInt(int64(0))
 
-	expectedResults := big.NewInt(int64(5))
+
+	expectedResults.Add(expectedResults,serv1Secret)
+	expectedResults.Add(expectedResults,serv2Secret)
+	expectedResults.Add(expectedResults,serv3Secret)
+	expectedResults.Mod(expectedResults,field)
+
 
 	select {
 	case Result := <- protocol.Feedback:
-		assert.Equal(t, *expectedResults, *Result)
+		assert.Equal(t, expectedResults, Result)
 	case <-time.After(timeout):
 		t.Fatal("Didn't finish in time")
 	}
@@ -46,22 +66,15 @@ func NewSumCipherTest(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error)
 	pi, err := NewSumCipherProtocol(tni)
 	protocol := pi.(*ProtocolSumCipher)
 
-	testCiphers := make([]*big.Int,10)
 
-	switch tni.Index() {
-	case 0:
-		testCiphers[0] = big.NewInt(int64(1))
-	case 1:
-		testCiphers[1] = big.NewInt(int64(1))
-	case 2:
-		testCiphers[2] = big.NewInt(int64(1))
-	case 9:
-		testCiphers[9] = big.NewInt(int64(1))
-	case 5:
-		testCiphers[5] = big.NewInt(int64(1))
-	default:
-	}
+	testCiphers := make([]*big.Int,nbClient)
+
+	//assign the shares to each server
+	testCiphers[0] = serv1Share[tni.Index()]
+	testCiphers[1] = serv2Share[tni.Index()]
+	testCiphers[2] = serv3Share[tni.Index()]
+
 	protocol.Ciphers = testCiphers
-
+	protocol.Modulus = field
 	return protocol, err
 }
