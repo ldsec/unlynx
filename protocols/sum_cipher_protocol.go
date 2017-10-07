@@ -7,6 +7,7 @@ import (
 	"gopkg.in/dedis/onet.v1/log"
 	"math/big"
 	"unlynx/utils"
+	"math"
 )
 
 
@@ -25,6 +26,11 @@ type AnnounceSumCipher struct {
 type ReplySumCipherBytes struct {
 	Bytes []byte
 }
+
+type ReplySumCipherLength struct {
+	BigIntLen int
+	BitLen int
+}
 /*Structs
 _________________________________________________________________________________________________________________________
 */
@@ -40,6 +46,18 @@ type StructReply struct {
 	ReplySumCipherBytes
 }
 
+type StructLength struct{
+	*onet.TreeNode
+	ReplySumCipherLength
+}
+
+type Cipher struct {
+	Share *big.Int
+
+	//for the moment put bit in int
+	Bits []uint
+}
+
 type ProtocolSumCipher struct {
 	*onet.TreeNodeInstance
 
@@ -48,10 +66,12 @@ type ProtocolSumCipher struct {
 
 	//Channel for up and down communication
 	ChildDataChannel chan []StructReply
+	LengthDataChannel chan []StructLength
+
 	AnnounceChannel chan StructAnnounce
 
 	//The data of the protocol
-	Ciphers []*big.Int
+	Ciphers []Cipher
 	Sum 	*big.Int
 	Modulus *big.Int
 }
@@ -62,6 +82,7 @@ _______________________________________________________________________________
 func init() {
 	network.RegisterMessage(AnnounceSumCipher{})
 	network.RegisterMessage(ReplySumCipherBytes{})
+	network.RegisterMessage(ReplySumCipherLength{})
 	onet.GlobalProtocolRegister(SumCipherProtocolName,NewSumCipherProtocol)
 }
 
@@ -146,7 +167,10 @@ func (p *ProtocolSumCipher) ascendingAggregationPhase() *big.Int {
 
 	//do the sum of ciphers
 	for _, v := range p.Ciphers {
-		p.Sum.Add(p.Sum, v)
+		if !Verify(v) {
+			log.Lvl1("Share refused")
+		}
+		p.Sum.Add(p.Sum, v.Share)
 		p.Sum.Mod(p.Sum,p.Modulus)
 	}
 
@@ -186,19 +210,37 @@ func Share(mod *big.Int, nPieces int, secret *big.Int) []*big.Int {
 }
 
 
-func Encode(x big.Int) (big.Int) {
-	/*lenght := x.BitLen()+1
-	result := make([]big.Int,lenght)
-	result[0] = x
-	for i := 1; i < lenght; i++ {
-		result[i] = *(big.NewInt(int64(x.Bit(i))))
+func Encode(x *big.Int) (Cipher) {
+	length := x.BitLen()
+	resultBit := make([]uint,length)
+	for i := 0; i < length; i++ {
+		resultBit[i] = x.Bit(i)
 	}
-
-	return result
-	*/
-	return x
+	cipher := Cipher{x,resultBit}
+	return cipher
 }
 
-func Decode(enc big.Int)(x big.Int) {
-	return enc
+func Verify(c Cipher) (bool) {
+	verify := 0.0
+	length := 0.0
+	log.Lvl1(length)
+	for _,b := range c.Bits {
+		if b>1 || b<0 {
+			errors.New("Not bits form in the encoding")
+			return false
+		}
+		verify+= math.Pow(2,length)*float64(b)
+		length++
+	}
+	difference := big.NewInt(int64(0))
+	difference.Sub(c.Share,big.NewInt(int64(verify)))
+	if difference.Uint64()== uint64(0) {
+		return true
+	}
+	errors.New(" The share is not equal to it's bit form")
+	return false
+}
+
+func Decode(c Cipher)(x *big.Int) {
+	return c.Share
 }

@@ -12,7 +12,7 @@ import (
 )
 //the field cardinality must be superior to nbclient*2^b where b is the maximum number of bit a client need to encode its value
 
-var field = big.NewInt(int64(math.Pow(2.0,32)))
+var field = big.NewInt(int64(math.Pow(2.0,20.0)))
 var nbClient = 3
 var nbServ = 10
 
@@ -69,15 +69,13 @@ func NewSumCipherTest(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error)
 	pi, err := NewSumCipherProtocol(tni)
 	protocol := pi.(*ProtocolSumCipher)
 
+	//assign struct of cipher to each server
+	encoded := make([]Cipher,nbClient)
+	encoded[0] = Encode(serv1Share[tni.Index()])
+	encoded[1] = Encode(serv2Share[tni.Index()])
+	encoded[2] = Encode(serv3Share[tni.Index()])
 
-	testCiphers := make([]*big.Int,nbClient)
-
-	//assign the shares to each server
-	testCiphers[0] = serv1Share[tni.Index()]
-	testCiphers[1] = serv2Share[tni.Index()]
-	testCiphers[2] = serv3Share[tni.Index()]
-
-	protocol.Ciphers = testCiphers
+	protocol.Ciphers = encoded
 	protocol.Modulus = field
 	return protocol, err
 }
