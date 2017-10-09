@@ -104,6 +104,11 @@ func NewSumCipherProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance,error
 		return nil, errors.New("couldn't register Child Response channel" + err.Error())
 	}
 
+	err = st.RegisterChannel(&st.LengthDataChannel)
+	if err != nil {
+		return nil, errors.New("couldn't register Length channel" + err.Error())
+	}
+
 	return st,nil
 }
 
@@ -112,7 +117,7 @@ func (p* ProtocolSumCipher) Start() error {
 	if p.Ciphers == nil {
 			return errors.New("No Shares to collect")
 	}
-	log.Lvl1(p.ServerIdentity(), " started a Sum Cipher Protocol (", len(p.Ciphers), " different shares")
+	log.Lvl1(p.ServerIdentity(), " started a Sum Cipher Protocol (", len(p.Ciphers), " different shares)")
 
 	//send to the children of the root
 	p.SendToChildren(&AnnounceSumCipher{})
@@ -130,7 +135,7 @@ func (p* ProtocolSumCipher) Dispatch() error {
 
 	//Ascending aggreg
 	sum := p.ascendingAggregationPhase()
-	log.Lvl1(p.ServerIdentity(), " completed aggregation phase (", sum, " is the sum ")
+	log.Lvl1(p.ServerIdentity(), " completed aggregation phase (", sum, " is the sum )")
 
 	//report result
 	if p.IsRoot() {
@@ -150,9 +155,9 @@ func (p *ProtocolSumCipher) sumCipherAnnouncementPhase() {
 // Results pushing up the tree containing aggregation results.
 func (p *ProtocolSumCipher) ascendingAggregationPhase() *big.Int {
 
-	/*if p.Ciphers == nil {
+	if p.Ciphers == nil {
 		p.Sum = big.NewInt(0)
-	}*/
+	}
 
 	if !p.IsLeaf() {
 		//wait on the channel for child to complete and add sum
@@ -223,7 +228,6 @@ func Encode(x *big.Int) (Cipher) {
 func Verify(c Cipher) (bool) {
 	verify := 0.0
 	length := 0.0
-	log.Lvl1(length)
 	for _,b := range c.Bits {
 		if b>1 || b<0 {
 			errors.New("Not bits form in the encoding")
