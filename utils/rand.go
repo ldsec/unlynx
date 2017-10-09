@@ -25,26 +25,6 @@ func RandInt(mod *big.Int) *big.Int {
 	return out
 }
 
-// Generate a random permutation of the ints specified in input.
-func RandPerm(input []int) []int {
-	n := len(input)
-	out := make([]int, n)
-	copy(out, input)
-
-	max := new(big.Int)
-	var tmp int
-	for i := 0; i < n; i++ {
-		max.SetInt64(int64(n - i))
-		j := int(RandInt(max).Int64())
-
-		// Swap out[i] and out[i+j]
-		tmp = out[i]
-		out[i] = out[i+j]
-		out[i+j] = tmp
-	}
-
-	return out
-}
 
 // We use the AES-CTR to generate pseudo-random  numbers using a
 // stream cipher. Go's native rand.Reader is extremely slow because

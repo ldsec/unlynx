@@ -68,7 +68,6 @@ type SumCipherSimulation struct {
 
 	NbrClient          int
 	NbrServ			   int
-	Modulus			*big.Int
 	Proofs             bool
 }
 
@@ -104,7 +103,7 @@ func (sim *SumCipherSimulation) Run(config *onet.SimulationConfig) error {
 
 		log.Lvl1("Starting round", round)
 
-		rooti, err := config.Overlay.CreateProtocol("SumCipher", config.Tree, onet.NilServiceID)
+		rooti, err := config.Overlay.CreateProtocol("SumCipherSimul", config.Tree, onet.NilServiceID)
 
 		if err != nil {
 			return err
@@ -113,6 +112,15 @@ func (sim *SumCipherSimulation) Run(config *onet.SimulationConfig) error {
 		dataTest,mod = createCipherSet(sim.NbrClient, sim.NbrServ)
 
 		root := rooti.(*protocols.ProtocolSumCipher)
+
+		//need to duplicate code to assign to root
+		root.Modulus = mod
+		ciph := make([]protocols.Cipher,sim.NbrClient)
+		for i,_ := range Secrets {
+			test := dataTest[Secrets[i]]
+			ciph[i] = protocols.Encode(test[0])
+		}
+		root.Ciphers = ciph
 
 		round := lib.StartTimer("_LocalAddRm(Simulation")
 
@@ -126,7 +134,7 @@ func (sim *SumCipherSimulation) Run(config *onet.SimulationConfig) error {
 }
 
 func (sim *SumCipherSimulation) Node(config *onet.SimulationConfig) error {
-	config.Server.ProtocolRegister("CollectiveAggregationSimul",
+	config.Server.ProtocolRegister("SumCipherSimul",
 		func(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 			return NewSumCipherProtocolSimul(tni, sim)
 		})
