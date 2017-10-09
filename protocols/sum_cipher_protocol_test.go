@@ -16,10 +16,12 @@ var field = big.NewInt(int64(math.Pow(2.0,20.0)))
 var nbClient = 3
 var nbServ = 10
 
+//3 random number to test
 var serv1Secret = big.NewInt(int64(156165846161468691))
 var serv2Secret = big.NewInt(int64(5484156416846153))
 var serv3Secret = big.NewInt(int64(568465186461844))
 
+//the share of them
 var serv1Share = Share(field,nbServ,serv1Secret)
 var serv2Share = Share(field,nbServ,serv2Secret)
 var serv3Share = Share(field,nbServ,serv3Secret)

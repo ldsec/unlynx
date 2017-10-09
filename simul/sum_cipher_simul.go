@@ -9,13 +9,18 @@ import (
 	"math/big"
 	"crypto/rand"
 	"errors"
+	"unlynx/lib"
 )
 
 
-func createCipherSet(numberClient, numberServer int) (map[*big.Int][]*big.Int,*big.Int) {
+var dataTest map[*big.Int][]*big.Int
+var mod *big.Int
+var Secrets []* big.Int
 
+//function to generate random value and their splits
+func createCipherSet(numberClient, numberServer int) (map[*big.Int][]*big.Int,*big.Int) {
 	//secret value of clients, and the map of secret value to shares
-	Secrets := make([]*big.Int,numberClient)
+	Secrets = make([]*big.Int,numberClient)
 	SecretsToShare := make(map[*big.Int][]*big.Int)
 
 	//modulus is set in function of the whole data miust be > nbClient*2^b
@@ -39,10 +44,7 @@ func createCipherSet(numberClient, numberServer int) (map[*big.Int][]*big.Int,*b
 	return SecretsToShare,Modulus
 }
 
-func distributeShare()(error) {
-	return nil
-}
-
+//fucntion to generate a random big int between 0 and low^expo
 func randomBig (low,expo *big.Int)(int *big.Int){
 	max := new(big.Int)
 	max.Exp(low, expo, nil).Sub(max, big.NewInt(1))
@@ -98,16 +100,50 @@ func (sim *SumCipherSimulation) Setup(dir string, hosts []string) (*onet.Simulat
 
 // Run starts the simulation.
 func (sim *SumCipherSimulation) Run(config *onet.SimulationConfig) error {
+	for round := 0; round < sim.Rounds; round++ {
 
+		log.Lvl1("Starting round", round)
+
+		rooti, err := config.Overlay.CreateProtocol("SumCipher", config.Tree, onet.NilServiceID)
+
+		if err != nil {
+			return err
+		}
+
+		dataTest,mod = createCipherSet(sim.NbrClient, sim.NbrServ)
+
+		root := rooti.(*protocols.ProtocolSumCipher)
+
+		round := lib.StartTimer("_LocalAddRm(Simulation")
+
+		root.Start()
+		results := <-root.ProtocolInstance().(*protocols.ProtocolSumCipher).Feedback
+		log.Lvl1("Aggregated result is : ", results)
+
+		lib.EndTimer(round)
+	}
 	return nil
+}
+
+func (sim *SumCipherSimulation) Node(config *onet.SimulationConfig) error {
+	config.Server.ProtocolRegister("CollectiveAggregationSimul",
+		func(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
+			return NewSumCipherProtocolSimul(tni, sim)
+		})
+
+	return sim.SimulationBFTree.Node(config)
 }
 
 func NewSumCipherProtocolSimul(tni *onet.TreeNodeInstance, sim *SumCipherSimulation) (onet.ProtocolInstance, error) {
 	protocol, err := protocols.NewSumCipherProtocol(tni)
 	pap := protocol.(*protocols.ProtocolSumCipher)
 
-	_,mod := createCipherSet(sim.NbrClient, sim.NbrServ)
-	//pap.Ciphers = data
 	pap.Modulus = mod
+	ciph := make([]protocols.Cipher,sim.NbrClient)
+	for i,_ := range Secrets {
+		test := dataTest[Secrets[i]]
+		ciph[i] = protocols.Encode(test[tni.Index()])
+	}
+	pap.Ciphers = ciph
 	return pap, err
 }
