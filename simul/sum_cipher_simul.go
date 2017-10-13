@@ -26,16 +26,13 @@ func createCipherSet(numberClient, numberServer int) (map[*big.Int][]*big.Int,*b
 	//modulus is set in function of the whole data miust be > nbClient*2^b
 	Modulus := big.NewInt(0)
 
-	MaxNumberBits :=0
+	helper := new(big.Int)
+	Modulus.Mul(big.NewInt(int64(numberClient)),helper.Exp(big.NewInt(int64(2)),big.NewInt(int64(64)),nil))
+
 	for i :=0; i < numberClient ;i++ {
-		Secrets[i] = randomBig(big.NewInt(int64(2)),big.NewInt(int64(32)))
-		if Secrets[i].BitLen() > MaxNumberBits {
-			MaxNumberBits = Secrets[i].BitLen()
-		}
+		Secrets[i] = randomBig(big.NewInt(int64(2)),big.NewInt(int64(64)))
 	}
 	//create the modulus
-	helper := new(big.Int)
-	Modulus.Mul(big.NewInt(int64(numberClient)),helper.Exp(big.NewInt(int64(2)),big.NewInt(int64(MaxNumberBits)),nil))
 
 	//create the shares
 	for i,_ := range Secrets {
@@ -103,13 +100,12 @@ func (sim *SumCipherSimulation) Run(config *onet.SimulationConfig) error {
 
 		log.Lvl1("Starting round", round)
 
+		dataTest,mod = createCipherSet(sim.NbrClient, sim.NbrServ)
 		rooti, err := config.Overlay.CreateProtocol("SumCipherSimul", config.Tree, onet.NilServiceID)
 
 		if err != nil {
 			return err
 		}
-
-		dataTest,mod = createCipherSet(sim.NbrClient, sim.NbrServ)
 
 		root := rooti.(*protocols.ProtocolSumCipher)
 
@@ -152,6 +148,7 @@ func NewSumCipherProtocolSimul(tni *onet.TreeNodeInstance, sim *SumCipherSimulat
 		test := dataTest[Secrets[i]]
 		ciph[i] = protocols.Encode(test[tni.Index()])
 	}
+
 	pap.Ciphers = ciph
 	return pap, err
 }

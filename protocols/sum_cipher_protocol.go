@@ -7,7 +7,6 @@ import (
 	"gopkg.in/dedis/onet.v1/log"
 	"math/big"
 	"unlynx/utils"
-	"math"
 )
 
 
@@ -226,18 +225,17 @@ func Encode(x *big.Int) (Cipher) {
 }
 
 func Verify(c Cipher) (bool) {
-	verify := 0.0
-	length := 0.0
-	for _,b := range c.Bits {
+	verify := big.NewInt(0)
+	for i,b := range c.Bits {
 		if b>1 || b<0 {
 			errors.New("Not bits form in the encoding")
 			return false
 		}
-		verify+= math.Pow(2,length)*float64(b)
-		length++
+		verify.Add(verify,big.NewInt(0).Mul(big.NewInt(int64(b)),big.NewInt(0).Exp(big.NewInt(2),big.NewInt(int64(i)),nil)))
+
 	}
 	difference := big.NewInt(int64(0))
-	difference.Sub(c.Share,big.NewInt(int64(verify)))
+	difference.Sub(c.Share,verify)
 	if difference.Uint64()== uint64(0) {
 		return true
 	}
