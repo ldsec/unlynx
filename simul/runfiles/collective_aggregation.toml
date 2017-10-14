@@ -1,9 +1,9 @@
 Simulation = "CollectiveAggregation"
-Servers = 3
+Servers = 4
 Bf = 2
-Rounds = 1
+Rounds = 500
 RunWait = 6000000
 Bandwidth = 1000
 
 Hosts, NbrGroups, NbrGroupAttributes, NbrAggrAttributes, Proofs
-3, 10, 2, 10, true
+4, 1, 0, 1, false

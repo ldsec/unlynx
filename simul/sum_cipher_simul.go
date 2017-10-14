@@ -5,7 +5,6 @@ import (
 	"github.com/BurntSushi/toml"
 	"gopkg.in/dedis/onet.v1/log"
 	"unlynx/protocols"
-
 	"math/big"
 	"crypto/rand"
 	"errors"
@@ -138,7 +137,9 @@ func (sim *SumCipherSimulation) Node(config *onet.SimulationConfig) error {
 	return sim.SimulationBFTree.Node(config)
 }
 
+//function called on each node to send data
 func NewSumCipherProtocolSimul(tni *onet.TreeNodeInstance, sim *SumCipherSimulation) (onet.ProtocolInstance, error) {
+
 	protocol, err := protocols.NewSumCipherProtocol(tni)
 	pap := protocol.(*protocols.ProtocolSumCipher)
 

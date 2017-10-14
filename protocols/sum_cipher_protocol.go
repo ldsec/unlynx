@@ -7,6 +7,7 @@ import (
 	"gopkg.in/dedis/onet.v1/log"
 	"math/big"
 	"unlynx/utils"
+	"time"
 )
 
 
@@ -45,10 +46,6 @@ type StructReply struct {
 	ReplySumCipherBytes
 }
 
-type StructLength struct{
-	*onet.TreeNode
-	ReplySumCipherLength
-}
 
 type Cipher struct {
 	Share *big.Int
@@ -65,7 +62,6 @@ type ProtocolSumCipher struct {
 
 	//Channel for up and down communication
 	ChildDataChannel chan []StructReply
-	LengthDataChannel chan []StructLength
 
 	AnnounceChannel chan StructAnnounce
 
@@ -81,7 +77,6 @@ _______________________________________________________________________________
 func init() {
 	network.RegisterMessage(AnnounceSumCipher{})
 	network.RegisterMessage(ReplySumCipherBytes{})
-	network.RegisterMessage(ReplySumCipherLength{})
 	onet.GlobalProtocolRegister(SumCipherProtocolName,NewSumCipherProtocol)
 }
 
@@ -93,19 +88,16 @@ func NewSumCipherProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance,error
 		Sum: big.NewInt(int64(0)),
 	}
 
+	//register the channel for announce
 	err := st.RegisterChannel(&st.AnnounceChannel)
 	if err != nil {
 		return nil, errors.New("couldn't register Announce data channel: " + err.Error())
 	}
 
+	//register the channel for child response
 	err = st.RegisterChannel(&st.ChildDataChannel)
 	if err != nil {
 		return nil, errors.New("couldn't register Child Response channel" + err.Error())
-	}
-
-	err = st.RegisterChannel(&st.LengthDataChannel)
-	if err != nil {
-		return nil, errors.New("couldn't register Length channel" + err.Error())
 	}
 
 	return st,nil
@@ -118,9 +110,10 @@ func (p* ProtocolSumCipher) Start() error {
 	}
 	log.Lvl1(p.ServerIdentity(), " started a Sum Cipher Protocol (", len(p.Ciphers), " different shares)")
 
+	start := time.Now()
 	//send to the children of the root
 	p.SendToChildren(&AnnounceSumCipher{})
-
+	log.Lvl1("time to send mesage to children of root ", time.Since(start))
 	return nil
 	}
 //dispatch is called on the node and handle incoming messages
@@ -133,8 +126,9 @@ func (p* ProtocolSumCipher) Dispatch() error {
 	}
 
 	//Ascending aggreg
+	start := time.Now()
 	sum := p.ascendingAggregationPhase()
-	log.Lvl1(p.ServerIdentity(), " completed aggregation phase (", sum, " is the sum )")
+	log.Lvl1(p.ServerIdentity(), " completed aggregation phase (", sum, " is the sum ) in ", time.Since(start))
 
 	//report result
 	if p.IsRoot() {
@@ -172,10 +166,11 @@ func (p *ProtocolSumCipher) ascendingAggregationPhase() *big.Int {
 	//do the sum of ciphers
 	for _, v := range p.Ciphers {
 		if !Verify(v) {
-			log.Lvl1("Share refused")
+			log.Lvl1("Share refused, will not use it for the operation ")
+		} else {
+			p.Sum.Add(p.Sum, Decode(v))
+			p.Sum.Mod(p.Sum, p.Modulus)
 		}
-		p.Sum.Add(p.Sum, v.Share)
-		p.Sum.Mod(p.Sum,p.Modulus)
 	}
 
 	//send to parent the sum to deblock channel wait
@@ -191,6 +186,7 @@ func (p *ProtocolSumCipher) ascendingAggregationPhase() *big.Int {
 
 
 func Share(mod *big.Int, nPieces int, secret *big.Int) []*big.Int {
+
 	if nPieces == 0 {
 		panic("Number of shares must be at least 1")
 	} else if nPieces == 1 {
@@ -202,7 +198,6 @@ func Share(mod *big.Int, nPieces int, secret *big.Int) []*big.Int {
 	acc := new(big.Int)
 	for i := 0; i < nPieces-1; i++ {
 		out[i] = utils.RandInt(mod)
-
 		acc.Add(acc, out[i])
 	}
 
@@ -228,7 +223,7 @@ func Verify(c Cipher) (bool) {
 	verify := big.NewInt(0)
 	for i,b := range c.Bits {
 		if b>1 || b<0 {
-			errors.New("Not bits form in the encoding")
+			panic("Not bits form in the encoding")
 			return false
 		}
 		verify.Add(verify,big.NewInt(0).Mul(big.NewInt(int64(b)),big.NewInt(0).Exp(big.NewInt(2),big.NewInt(int64(i)),nil)))

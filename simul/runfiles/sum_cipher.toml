@@ -1,9 +1,9 @@
 Simulation = "SumCipher"
 Servers = 4
 Bf = 2
-Rounds = 1
+Rounds = 500
 RunWait = 6000000
 Bandwidth = 1000
 
 Hosts, NbrClient, NbrServ, Proofs
-4, 4, 4, true
+4, 4, 4, false
