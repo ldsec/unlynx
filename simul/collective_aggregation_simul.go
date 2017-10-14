@@ -7,6 +7,8 @@ import (
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"
+	"time"
+	"os"
 )
 
 //var suite = network.Suite
@@ -104,12 +106,25 @@ func (sim *CollectiveAggregationSimulation) Run(config *onet.SimulationConfig) e
 
 		//time measurement
 		round := lib.StartTimer("CollectiveAggregation(SIMULATION)")
-
+		start := time.Now()
 		log.Lvl1("Start protocol")
 		root.Start()
 		<-root.ProtocolInstance().(*protocols.CollectiveAggregationProtocol).FeedbackChannel
-
+		time := time.Since(start)
 		lib.EndTimer(round)
+
+		filename:="/home/max/Documents/go/src/unlynx/simul/time"
+		f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0600)
+		if err != nil {
+			panic(err)
+		}
+
+		defer f.Close()
+
+		if _, err = f.WriteString(time.String()+"\n"); err != nil {
+			panic(err)
+		}
+
 	}
 
 	return nil

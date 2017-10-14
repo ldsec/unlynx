@@ -164,6 +164,7 @@ func (p *ProtocolSumCipher) ascendingAggregationPhase() *big.Int {
 	}
 
 	//do the sum of ciphers
+
 	for _, v := range p.Ciphers {
 		if !Verify(v) {
 			log.Lvl1("Share refused, will not use it for the operation ")

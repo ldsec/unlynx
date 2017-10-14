@@ -9,6 +9,7 @@ import (
 	"crypto/rand"
 	"errors"
 	"unlynx/lib"
+
 )
 
 
@@ -121,14 +122,17 @@ func (sim *SumCipherSimulation) Run(config *onet.SimulationConfig) error {
 
 		root.Start()
 		results := <-root.ProtocolInstance().(*protocols.ProtocolSumCipher).Feedback
+
 		log.Lvl1("Aggregated result is : ", results)
 
 		lib.EndTimer(round)
+
 	}
 	return nil
 }
 
 func (sim *SumCipherSimulation) Node(config *onet.SimulationConfig) error {
+
 	config.Server.ProtocolRegister("SumCipherSimul",
 		func(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 			return NewSumCipherProtocolSimul(tni, sim)
