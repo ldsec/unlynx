@@ -54,7 +54,7 @@ type Cipher struct {
 	Bits []uint
 }
 
-type ProtocolSumCipher struct {
+type SumCipherProtocol struct {
 	*onet.TreeNodeInstance
 
 	//the feedback final
@@ -82,7 +82,7 @@ func init() {
 
 
 func NewSumCipherProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance,error) {
-	st := &ProtocolSumCipher{
+	st := &SumCipherProtocol{
 		TreeNodeInstance: n,
 		Feedback: make(chan *big.Int),
 		Sum: big.NewInt(int64(0)),
@@ -104,7 +104,7 @@ func NewSumCipherProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance,error
 }
 
 //start called at the root
-func (p* ProtocolSumCipher) Start() error {
+func (p*SumCipherProtocol) Start() error {
 	if p.Ciphers == nil {
 			return errors.New("No Shares to collect")
 	}
@@ -118,7 +118,7 @@ func (p* ProtocolSumCipher) Start() error {
 	}
 //dispatch is called on the node and handle incoming messages
 
-func (p* ProtocolSumCipher) Dispatch() error {
+func (p*SumCipherProtocol) Dispatch() error {
 
 	//Go down the tree
 	if !p.IsRoot() {
@@ -137,7 +137,7 @@ func (p* ProtocolSumCipher) Dispatch() error {
 	return nil
 }
 
-func (p *ProtocolSumCipher) sumCipherAnnouncementPhase() {
+func (p *SumCipherProtocol) sumCipherAnnouncementPhase() {
 	//send down the tree if you have some
 	AnnounceMessage := <-p.AnnounceChannel
 	if !p.IsLeaf() {
@@ -146,7 +146,7 @@ func (p *ProtocolSumCipher) sumCipherAnnouncementPhase() {
 }
 
 // Results pushing up the tree containing aggregation results.
-func (p *ProtocolSumCipher) ascendingAggregationPhase() *big.Int {
+func (p *SumCipherProtocol) ascendingAggregationPhase() *big.Int {
 
 	if p.Ciphers == nil {
 		p.Sum = big.NewInt(0)

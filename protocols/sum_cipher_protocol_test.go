@@ -40,7 +40,7 @@ func TestSumCipherProtocol(t *testing.T) {
 		t.Fatal("Couldn't start protocol:", err)
 	}
 
-	protocol := p.(*ProtocolSumCipher)
+	protocol := p.(*SumCipherProtocol)
 
 	start := time.Now()
 	go protocol.Start()
@@ -69,7 +69,7 @@ func TestSumCipherProtocol(t *testing.T) {
 //inject Test data
 func NewSumCipherTest(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 	pi, err := NewSumCipherProtocol(tni)
-	protocol := pi.(*ProtocolSumCipher)
+	protocol := pi.(*SumCipherProtocol)
 
 	//assign struct of cipher to each server
 	encoded := make([]Cipher,nbClient)
