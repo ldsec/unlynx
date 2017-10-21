@@ -1,4 +1,4 @@
-package utils
+package prio_utils
 
 import (
 	"github.com/henrycg/prio/share"
@@ -54,29 +54,5 @@ type RequestStatus struct {
 	flag  StatusFlag
 }
 
-type CheckerPool struct {
-	serverIdx int
-	leaderIdx int
-	buffer    chan Checker
-}
 
-type Checker struct {
-	cfg *config.Config
-	req *ClientRequest
-	prg *share.ReplayPRG
-
-	mod *big.Int
-	ckt *circuit.Circuit
-
-	n int // Number of fixed points on f and g (mulGates + 1)
-	N int // n rounded up to a power of two
-
-	pointsF []*big.Int
-	pointsG []*big.Int
-	pointsH []*big.Int
-
-	evalF *big.Int
-	evalG *big.Int
-	evalH *big.Int
-}
 

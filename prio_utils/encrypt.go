@@ -1,4 +1,4 @@
-package utils
+package prio_utils
 
 import (
 	"bytes"
@@ -31,6 +31,7 @@ func encryptRequest(myPublicKey, myPrivateKey *[32]byte,
 
 	return out, nil
 }
+
 
 func decryptRequest(serverIdx int, requestID *Uuid, enc *ServerCiphertext) (*ClientRequest, error) {
 	serverPrivateKey := utils.ServerBoxPrivateKeys[serverIdx]

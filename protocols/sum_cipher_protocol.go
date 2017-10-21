@@ -6,8 +6,9 @@ import (
 	"errors"
 	"gopkg.in/dedis/onet.v1/log"
 	"math/big"
-	"unlynx/utils"
+	"unlynx/prio_utils"
 	"time"
+	"github.com/lca1/unlynx/protocols"
 )
 
 
@@ -71,8 +72,8 @@ type SumCipherProtocol struct {
 	Modulus *big.Int
 
 	//for proofs
-	Args	*utils.UploadArgs
-	pool []* utils.CheckerPool
+	Args	*prio_utils.UploadArgs
+	pool []* prio_utils.CheckerPool
 	lol int
 	Proofs  bool
 
@@ -185,17 +186,17 @@ func (p *SumCipherProtocol) ascendingAggregationPhase() *big.Int {
 		serverNumber := p.Tree().Size()
 		c := make(chan error, serverNumber)
 
-		newReqArgs := make([]utils.NewRequestArgs, serverNumber)
+		newReqArgs := make([]prio_utils.NewRequestArgs, serverNumber)
 		for s := 0; s < serverNumber; s++ {
 			newReqArgs[s].RequestID = p.Args.PublicKey
 			newReqArgs[s].Ciphertext = p.Args.Ciphertexts[s]
 		}
 
-		newReqReplies := make([]utils.NewRequestReply, serverNumber)
+		newReqReplies := make([]prio_utils.NewRequestReply, serverNumber)
 
 		for i := 0; i < serverNumber; i++ {
 			go func(j int) {
-				c <- utils.NewRequest( &newReqArgs[j], &newReqReplies[j])
+				c <- NewRequest( p, &newReqArgs[j], &newReqReplies[j])
 			}(i)
 		}
 	}
@@ -224,7 +225,7 @@ func Share(mod *big.Int, nPieces int, secret *big.Int) []*big.Int {
 
 	acc := new(big.Int)
 	for i := 0; i < nPieces-1; i++ {
-		out[i] = utils.RandInt(mod)
+		out[i] = prio_utils.RandInt(mod)
 		acc.Add(acc, out[i])
 	}
 
@@ -269,3 +270,29 @@ func Decode(c Cipher)(x *big.Int) {
 	return c.Share
 }
 
+func NewRequest(p *SumCipherProtocol,args *prio_utils.NewRequestArgs, reply *prio_utils.NewRequestReply) error {
+	// Add request to queue
+	r, err := prio_utils.decryptRequest(p.Index(), &args.RequestID, &args.Ciphertext)
+	if err != nil {
+		log.Print("Could not decrypt insert args")
+		return err
+	}
+
+	dstServer := int(args.RequestID[0]) % p.Tree().Size()
+
+	/*s.pendingMutex.RLock()
+	exists := s.pending[args.RequestID] != nil
+	s.pendingMutex.RUnlock()
+
+	if exists {
+		log.Print(s.pending[args.RequestID])
+		log.Print("Error: Key collision! Ignoring bogus request.")
+		return nil
+	}*/
+
+
+	status := new(prio_utils.RequestStatus)
+
+	return nil
+
+}

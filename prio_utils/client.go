@@ -1,4 +1,4 @@
-package utils
+package prio_utils
 
 import (
 	"math/big"
@@ -24,7 +24,7 @@ type Config struct {
 
 //This is to make ClientRequest from the config and leader
 func Request(cfg *Config, leaderForReq int) []*ClientRequest {
-	//utils.PrintTime("Initialize")
+	//prio_utils.PrintTime("Initialize")
 	//nf := len(cfg.Fields)
 	ns := cfg.Servers
 	prg := share.NewGenPRG(ns, leaderForReq)
