@@ -6,9 +6,7 @@ import (
 	"testing"
 )
 
-func TestMain(m *testing.M) {
-	log.MainTest(m)
-}
+
 
 func TestSimulation(t *testing.T) {
 	//simul.Start("runfiles/addrm_server.toml", "runfiles/collective_aggregation.toml", "runfiles/deterministic_tagging.toml", "runfiles/key_switching.toml",

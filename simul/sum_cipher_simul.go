@@ -10,6 +10,8 @@ import (
 	"errors"
 	"unlynx/lib"
 
+	"os"
+	"time"
 )
 
 
@@ -18,7 +20,7 @@ import (
 var dataTest map[*big.Int][]*big.Int
 var mod *big.Int
 var Secrets []* big.Int
-var sum float64
+//var sum float64
 
 //function to generate random value and their splits
 func createCipherSet(numberClient, numberServer int) (map[*big.Int][]*big.Int,*big.Int) {
@@ -122,10 +124,10 @@ func (sim *SumCipherSimulation) Run(config *onet.SimulationConfig) error {
 		root.Ciphers = ciph
 
 		round := lib.StartTimer("_LocalAddRm(Simulation")
-		//start := time.Now()
+		start := time.Now()
 		root.Start()
 		results := <-root.ProtocolInstance().(*protocols.SumCipherProtocol).Feedback
-		//time := time.Since(start)
+		time := time.Since(start)
 		log.Lvl1(sum)
 		log.Lvl1("Aggregated result is : ", results)
 
@@ -138,7 +140,7 @@ func (sim *SumCipherSimulation) Run(config *onet.SimulationConfig) error {
 			panic("Result is not matching")
 		}
 		lib.EndTimer(round)
-		/*filename:="/home/max/Documents/go/src/unlynx/simul/time"
+		filename:="/home/max/Documents/go/src/unlynx/simul/time"
 		f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0600)
 		if err != nil {
 			panic(err)
@@ -148,7 +150,7 @@ func (sim *SumCipherSimulation) Run(config *onet.SimulationConfig) error {
 
 		if _, err = f.WriteString(time.String()+"\n"); err != nil {
 			panic(err)
-		}*/
+		}
 	}
 	return nil
 }

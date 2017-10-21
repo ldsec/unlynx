@@ -69,6 +69,13 @@ type SumCipherProtocol struct {
 	Ciphers []Cipher
 	Sum 	*big.Int
 	Modulus *big.Int
+
+	//for proofs
+	Args	*utils.UploadArgs
+	pool []* utils.CheckerPool
+	lol int
+	Proofs  bool
+
 }
 /*
 _______________________________________________________________________________
@@ -174,6 +181,25 @@ func (p *SumCipherProtocol) ascendingAggregationPhase() *big.Int {
 		}
 	}
 
+	if p.Proofs{
+		serverNumber := p.Tree().Size()
+		c := make(chan error, serverNumber)
+
+		newReqArgs := make([]utils.NewRequestArgs, serverNumber)
+		for s := 0; s < serverNumber; s++ {
+			newReqArgs[s].RequestID = p.Args.PublicKey
+			newReqArgs[s].Ciphertext = p.Args.Ciphertexts[s]
+		}
+
+		newReqReplies := make([]utils.NewRequestReply, serverNumber)
+
+		for i := 0; i < serverNumber; i++ {
+			go func(j int) {
+				c <- utils.NewRequest( &newReqArgs[j], &newReqReplies[j])
+			}(i)
+		}
+	}
+
 	//send to parent the sum to deblock channel wait
 	if !p.IsRoot() {
 		//send the big.Int in bytes
@@ -242,3 +268,4 @@ func Verify(c Cipher) (bool) {
 func Decode(c Cipher)(x *big.Int) {
 	return c.Share
 }
+

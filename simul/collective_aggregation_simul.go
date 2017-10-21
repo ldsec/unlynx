@@ -8,12 +8,16 @@ import (
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"
 
+	"time"
+	"strconv"
 )
 
 //var suite = network.Suite
 //var grpattr = lib.DeterministCipherText{Point: suite.Point().Base()}
 //var clientPrivate = suite.Scalar().One() //one -> to have the same for each node
 //var clientPublic = suite.Point().Mul(suite.Point().Base(), clientPrivate)
+var sum = 0.0
+
 
 func createDataSet(numberGroups, numberAttributes, numberGroupAttr int) map[lib.GroupingKey]lib.FilteredResponse {
 	var secContrib = network.Suite.Scalar().One()
@@ -93,26 +97,32 @@ func (sim *CollectiveAggregationSimulation) Node(config *onet.SimulationConfig) 
 
 // Run starts the simulation of the protocol and measures its runtime.
 func (sim *CollectiveAggregationSimulation) Run(config *onet.SimulationConfig) error {
+
+
 	for round := 0; round < sim.Rounds; round++ {
-		log.Lvl1("Starting round", round)
-		rooti, err := config.Overlay.CreateProtocol("CollectiveAggregationSimul", config.Tree, onet.NilServiceID)
-		if err != nil {
-			log.Lvl1("error Run")
-			return err
+		sum = 0
+			log.Lvl1("Starting round", round)
+			rooti, err := config.Overlay.CreateProtocol("CollectiveAggregationSimul", config.Tree, onet.NilServiceID)
+			if err != nil {
+				log.Lvl1("error Run")
+				return err
+			}
+
+			root := rooti.(*protocols.CollectiveAggregationProtocol)
+
+			//time measurement
+			round := lib.StartTimer("CollectiveAggregation(SIMULATION)")
+			start := time.Now()
+			log.Lvl1("Start protocol")
+			root.Start()
+			<-root.ProtocolInstance().(*protocols.CollectiveAggregationProtocol).FeedbackChannel
+			time := time.Since(start)
+			sum += time.Seconds()
+			lib.EndTimer(round)
+
 		}
 
-		root := rooti.(*protocols.CollectiveAggregationProtocol)
-
-		//time measurement
-		round := lib.StartTimer("CollectiveAggregation(SIMULATION)")
-		//start := time.Now()
-		log.Lvl1("Start protocol")
-		root.Start()
-		<-root.ProtocolInstance().(*protocols.CollectiveAggregationProtocol).FeedbackChannel
-		//time := time.Since(start)
-		lib.EndTimer(round)
-
-		/*filename:="/home/max/Documents/go/src/unlynx/simul/time"
+		/*filename := "/home/max/Documents/go/src/unlynx/simul/time"
 		f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0600)
 		if err != nil {
 			panic(err)
@@ -120,15 +130,17 @@ func (sim *CollectiveAggregationSimulation) Run(config *onet.SimulationConfig) e
 
 		defer f.Close()
 
-		if _, err = f.WriteString(time.String()+"\n"); err != nil {
+		//to put in ms
+		if _, err = f.WriteString(FloatToString(sum * 1000)+"\n"); err != nil {
 			panic(err)
 		}*/
-
-	}
-
 	return nil
 }
 
+func FloatToString(input_num float64) string {
+	// to convert a float number to a string
+	return strconv.FormatFloat(input_num, 'f', 6, 64)
+}
 // NewAggregationProtocolSimul is a simulation specific protocol instance constructor that injects test data.
 func NewAggregationProtocolSimul(tni *onet.TreeNodeInstance, sim *CollectiveAggregationSimulation) (onet.ProtocolInstance, error) {
 

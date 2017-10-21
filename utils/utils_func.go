@@ -7,7 +7,51 @@ import (
 	"github.com/henrycg/prio/circuit"
 	"github.com/henrycg/prio/share"
 	"gopkg.in/dedis/onet.v1/log"
+	"encoding/json"
+	"github.com/henrycg/prio/config"
+	"fmt"
 )
+
+
+func checkInt(f *config.Field) error {
+	if f.IntBits <= 0 {
+		return fmt.Errorf("Field of type int or intPow must have intBits > 0")
+	}
+
+	if f.IntBits > 64 {
+		return fmt.Errorf("We only support up to 64-bit ints")
+	}
+
+	return nil
+}
+
+
+func Load(s []byte) (*config.Config, error) {
+	cfg := new(config.Config)
+
+	// XXX Here for now
+	//cfg.Fields = make([]Field, 0)
+	err := json.Unmarshal(s, &cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	if cfg.MaxPendingReqs == 0 {
+		cfg.MaxPendingReqs = DEFAULT_MAX_PENDING_REQS
+	}
+
+	for i := 0; i < len(cfg.Fields); i++ {
+		f := &cfg.Fields[i]
+		switch f.Type {
+		case config.TypeInt:
+			err = checkInt(f)
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	return cfg, err
+}
 
 func sharePolynomials(ckt *circuit.Circuit, prg *share.GenPRG) {
 	mulGates := ckt.MulGates()
@@ -50,6 +94,7 @@ func sharePolynomials(ckt *circuit.Circuit, prg *share.GenPRG) {
 		pointsG[i] = utils.Zero
 	}
 
+
 	// Interpolate through the Nth roots of unity
 	polyF := poly.InverseFFT(pointsF)
 	polyG := poly.InverseFFT(pointsG)
@@ -70,4 +115,9 @@ func sharePolynomials(ckt *circuit.Circuit, prg *share.GenPRG) {
 		hint.Mod(hint, mod)
 		prg.Share(mod, hint)
 	}
+}
+
+
+func HashToServer(cfg *Config, uuid Uuid) int {
+	return int(uuid[0]) % cfg.Servers
 }
