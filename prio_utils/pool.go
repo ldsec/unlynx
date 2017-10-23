@@ -6,6 +6,14 @@ type CheckerPool struct {
 	buffer    chan *Checker
 }
 
+func (pool *CheckerPool) put(check *Checker) {
+	select {
+	case pool.buffer <- check:
+	default:
+		// Do nothing
+	}
+}
+
 func (pool *CheckerPool) get() interface{} {
 	select {
 	case out := <-pool.buffer:
@@ -14,4 +22,3 @@ func (pool *CheckerPool) get() interface{} {
 		//		return mpc.NewChecker(p.cfg, p.serverIdx, p.leaderIdx)
 	}
 }
-

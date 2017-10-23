@@ -3,9 +3,7 @@ package prio_utils
 import (
 	"github.com/henrycg/prio/share"
 	"github.com/henrycg/prio/triple"
-	"math/big"
-	"github.com/henrycg/prio/circuit"
-	"github.com/henrycg/prio/config"
+
 )
 
 type Uuid [32]byte
@@ -31,6 +29,7 @@ type UploadArgs struct {
 	Ciphertexts []ServerCiphertext
 }
 
+
 type NewRequestArgs struct {
 	RequestID  Uuid
 	Ciphertext ServerCiphertext
@@ -39,20 +38,7 @@ type NewRequestArgs struct {
 type NewRequestReply struct {
 }
 
-type StatusFlag int
 
-// Status of a client submission.
-const (
-	NotStarted    StatusFlag = iota
-	OpenedTriples StatusFlag = iota
-	Layer1        StatusFlag = iota
-	Finished      StatusFlag = iota
-)
-
-type RequestStatus struct {
-	check *Checker
-	flag  StatusFlag
-}
 
 
 

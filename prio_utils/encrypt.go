@@ -6,7 +6,7 @@ import (
 	"golang.org/x/crypto/nacl/box"
 	"github.com/henrycg/prio/utils"
 	"crypto/rand"
-	"errors"
+
 )
 
 func encryptRequest(myPublicKey, myPrivateKey *[32]byte,
@@ -32,26 +32,3 @@ func encryptRequest(myPublicKey, myPrivateKey *[32]byte,
 	return out, nil
 }
 
-
-func decryptRequest(serverIdx int, requestID *Uuid, enc *ServerCiphertext) (*ClientRequest, error) {
-	serverPrivateKey := utils.ServerBoxPrivateKeys[serverIdx]
-	clientPublicKey := (*[32]byte)(requestID)
-
-	var buf []byte
-	buf, okay := box.Open(nil, enc.Ciphertext, &enc.Nonce,
-		clientPublicKey, serverPrivateKey)
-
-	query := new(ClientRequest)
-	if !okay {
-		return query, errors.New("Could not decrypt")
-	}
-
-	dec := gob.NewDecoder(bytes.NewBuffer(buf))
-	err := dec.Decode(&query)
-	if err != nil {
-		return query, err
-	}
-
-	return query, nil
-
-}

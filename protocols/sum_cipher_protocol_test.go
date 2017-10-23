@@ -9,6 +9,7 @@ import (
 	"math/big"
 	"math"
 	"gopkg.in/dedis/onet.v1/log"
+	"unlynx/prio_utils"
 )
 //the field cardinality must be superior to nbclient*2^b where b is the maximum number of bit a client need to encode its value
 
@@ -79,5 +80,15 @@ func NewSumCipherTest(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error)
 
 	protocol.Ciphers = encoded
 	protocol.Modulus = field
+	protocol.Proofs = true
+	cfg := new(prio_utils.Config)
+	cfg.Servers = nbServ
+	cfg.Modulus = field
+	reqs := make([]*prio_utils.ClientRequest,cfg.Servers)
+	protocol.Args,err = prio_utils.GenUploadArgs(cfg , 0, reqs)
+	if(err!= nil) {
+		log.Lvl1("Error in geneUpload")
+	}
+
 	return protocol, err
 }

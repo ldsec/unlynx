@@ -8,7 +8,12 @@ import (
 	"math/big"
 	"unlynx/prio_utils"
 	"time"
-	"github.com/lca1/unlynx/protocols"
+
+	"fmt"
+	"golang.org/x/crypto/nacl/box"
+	"encoding/gob"
+	"bytes"
+	"github.com/henrycg/prio/utils"
 )
 
 
@@ -55,6 +60,40 @@ type Cipher struct {
 	Bits []uint
 }
 
+type StatusFlag int
+
+// Status of a client submission.
+const (
+	NotStarted    StatusFlag = iota
+	OpenedTriples StatusFlag = iota
+	Layer1        StatusFlag = iota
+	Finished      StatusFlag = iota
+)
+
+type RequestStatus struct {
+	check *prio_utils.Checker
+	flag  StatusFlag
+}
+
+
+type EvalCircuitArgs struct {
+	RequestID prio_utils.Uuid
+}
+
+type FinalCircuitArgs struct {
+	RequestID prio_utils.Uuid
+	Cor       *prio_utils.Cor
+	Key       *utils.PRGKey
+}
+
+type AcceptArgs struct {
+	RequestID prio_utils.Uuid
+	Accept    bool
+}
+
+type AcceptReply struct {
+}
+
 type SumCipherProtocol struct {
 	*onet.TreeNodeInstance
 
@@ -74,9 +113,11 @@ type SumCipherProtocol struct {
 	//for proofs
 	Args	*prio_utils.UploadArgs
 	pool []* prio_utils.CheckerPool
-	lol int
+	pending      map[prio_utils.Uuid]*RequestStatus
+	pre          []*prio_utils.CheckerPrecomp
+	randomX      []*big.Int
 	Proofs  bool
-
+	cfg          *prio_utils.Config
 }
 /*
 _______________________________________________________________________________
@@ -90,10 +131,12 @@ func init() {
 
 
 func NewSumCipherProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance,error) {
+
 	st := &SumCipherProtocol{
 		TreeNodeInstance: n,
 		Feedback: make(chan *big.Int),
 		Sum: big.NewInt(int64(0)),
+		pending : make(map[prio_utils.Uuid]*RequestStatus),
 	}
 
 	//register the channel for announce
@@ -199,7 +242,64 @@ func (p *SumCipherProtocol) ascendingAggregationPhase() *big.Int {
 				c <- NewRequest( p, &newReqArgs[j], &newReqReplies[j])
 			}(i)
 		}
-	}
+		uuid := p.Args.PublicKey
+		v, ok := p.pending[uuid]
+		check := v.check
+		if !ok {
+			log.Fatal("Should never get here")
+		}
+
+
+		c = make(chan error, serverNumber)
+
+			var evalCircuitArgs *EvalCircuitArgs
+			evalCircuitArgs.RequestID = uuid
+
+			evalReplies := make([]*prio_utils.CorShare, serverNumber)
+
+			for i := 0; i < serverNumber; i++ {
+			go func(j int) {
+			c <- EvalCircuit(p, evalCircuitArgs, evalReplies[j])
+		}(i)
+		}
+
+		c = make(chan error, serverNumber)
+
+		var finalCircuitArgs FinalCircuitArgs
+		finalCircuitArgs.RequestID = uuid
+		finalCircuitArgs.Cor = check.Cor(evalReplies)
+		finalCircuitArgs.Key = utils.RandomPRGKey()
+
+		finalReplies := make([]*prio_utils.OutShare, serverNumber)
+		for i := 0; i < serverNumber; i++ {
+			go func(j int) {
+			c <- FinalCircuit(p, &finalCircuitArgs, finalReplies[j])
+		}(i)
+		}
+
+		c = make(chan error, serverNumber)
+
+		var acceptArgs AcceptArgs
+		acceptArgs.RequestID = uuid
+		acceptArgs.Accept = check.OutputIsValid(finalReplies)
+		if !acceptArgs.Accept {
+			log.Printf("Warning: rejecting request with ID %v", uuid)
+		}
+
+		/*if acceptArgs.Accept {
+			l.lastRequestMutex.Lock()
+			l.lastRequest++
+			l.lastRequestMutex.Unlock()
+		}*/
+
+		acceptReplies := make([]AcceptReply, serverNumber)
+		for i := 0; i < serverNumber; i++ {
+			go func(j int) {
+				c <- Accept(p, &acceptArgs, &acceptReplies[j])
+			}(i)
+		}
+
+		}
 
 	//send to parent the sum to deblock channel wait
 	if !p.IsRoot() {
@@ -272,7 +372,7 @@ func Decode(c Cipher)(x *big.Int) {
 
 func NewRequest(p *SumCipherProtocol,args *prio_utils.NewRequestArgs, reply *prio_utils.NewRequestReply) error {
 	// Add request to queue
-	r, err := prio_utils.decryptRequest(p.Index(), &args.RequestID, &args.Ciphertext)
+	r, err := decryptRequest(p.Index(), &args.RequestID, &args.Ciphertext)
 	if err != nil {
 		log.Print("Could not decrypt insert args")
 		return err
@@ -289,10 +389,114 @@ func NewRequest(p *SumCipherProtocol,args *prio_utils.NewRequestArgs, reply *pri
 		log.Print("Error: Key collision! Ignoring bogus request.")
 		return nil
 	}*/
+	status := new(RequestStatus)
+	fmt.Println(dstServer,r,status)
+	return nil
+
+}
+
+func EvalCircuit(p *SumCipherProtocol,args *EvalCircuitArgs, reply *prio_utils.CorShare) error {
+	leader := prio_utils.HashToServer(p.cfg, args.RequestID)
+
+	//s.pendingMutex.RLock()
+	status, okay := p.pending[args.RequestID]
+	//s.pendingMutex.RUnlock()
+	if !okay {
+		return errors.New("Could not find specified request")
+	}
+
+	if status.flag != NotStarted {
+		return errors.New("Request already processed")
+	}
+
+	if p.randomX[leader] != nil {
+		p.pre[leader].SetCheckerPrecomp(p.randomX[leader])
+	}
+	p.randomX[leader] = nil
 
 
-	status := new(prio_utils.RequestStatus)
+	status.flag = Layer1
+	status.check.CorShare(reply, p.pre[leader])
+
+	//log.Print("Done evaluating ", args.RequestID)
+	return nil
+}
+
+func FinalCircuit(p *SumCipherProtocol,args *FinalCircuitArgs, reply *prio_utils.OutShare) error {
+
+	//s.pendingMutex.RLock()
+	status, okay := p.pending[args.RequestID]
+	//s.pendingMutex.RUnlock()
+	if !okay {
+		return errors.New("Could not find specified request")
+	}
+
+	if status.flag != Layer1 {
+		return errors.New("Request already processed")
+	}
+	status.flag = Finished
+
+	status.check.OutShare(reply, args.Cor, args.Key)
 
 	return nil
+}
+
+func Accept(p *SumCipherProtocol,args *AcceptArgs, reply *AcceptReply) error {
+	//s.pendingMutex.RLock()
+	status, okay := p.pending[args.RequestID]
+	//s.pendingMutex.RUnlock()
+	if !okay {
+		return errors.New("Could not find specified request")
+	}
+
+	if status.flag != Finished {
+		return errors.New("Request not yet processed")
+	}
+
+	//s.pendingMutex.Lock()
+	delete(p.pending, args.RequestID)
+	//s.pendingMutex.Unlock()
+
+	//l := prio_utils.HashToServer(p.cfg, args.RequestID)
+	if args.Accept {
+		//s.aggMutex[l].Lock()
+		//p.agg[l].Update(status.check)
+		//s.aggMutex[l].Unlock()
+
+		//s.nProcessedCond[l].Signal()
+		//s.nProcessedMutex[l].Lock()
+		//s.nProcessed[l]++
+		//s.nProcessedMutex[l].Unlock()
+		//s.nProcessedCond[l].Signal()
+	}
+
+	//log.Printf("Done!")
+	//p.pool[l].put(status.check)
+
+	return nil
+}
+
+
+
+func decryptRequest(serverIdx int, requestID *prio_utils.Uuid, enc *prio_utils.ServerCiphertext) (*prio_utils.ClientRequest, error) {
+	serverPrivateKey := utils.ServerBoxPrivateKeys[serverIdx]
+	clientPublicKey := (*[32]byte)(requestID)
+
+	var buf []byte
+	buf, okay := box.Open(nil, enc.Ciphertext, &enc.Nonce,
+		clientPublicKey, serverPrivateKey)
+
+	query := new(prio_utils.ClientRequest)
+	if !okay {
+		return query, errors.New("Could not decrypt")
+	}
+
+	dec := gob.NewDecoder(bytes.NewBuffer(buf))
+	err := dec.Decode(&query)
+	if err != nil {
+		return query, err
+	}
+
+	return query, nil
 
 }
