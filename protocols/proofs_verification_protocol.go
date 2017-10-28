@@ -1,5 +1,5 @@
 // Package protocols contains the proof verification protocol which permits a server
-// to check all available proofs.
+// to Check all available proofs.
 // We suppose the existence of a database of all generated proofs and in this protocol, the server running it will
 // verify all the proofs.
 package protocols

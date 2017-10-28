@@ -4,13 +4,15 @@ import (
 	"math/big"
 	"github.com/henrycg/prio/share"
 	"github.com/henrycg/prio/circuit"
-	"github.com/henrycg/prio/poly"
 	"github.com/henrycg/prio/utils"
+	"github.com/henrycg/prio/poly"
+
 )
 
+// Checker holds all of the state needed to check the validity
+// of a single client submission.
 type Checker struct {
-	cfg *Config
-	req *ClientRequest
+	req *Request
 	prg *share.ReplayPRG
 
 	mod *big.Int
@@ -28,6 +30,38 @@ type Checker struct {
 	evalH *big.Int
 }
 
+
+
+func NewChecker(ckt *circuit.Circuit, serverIdx int, leaderIdx int) *Checker {
+	c := new(Checker)
+	c.prg = share.NewReplayPRG(serverIdx, leaderIdx)
+	c.ckt = ckt
+	c.mod = c.ckt.Modulus()
+
+	c.n = len(c.ckt.MulGates()) + 1
+	c.N = utils.NextPowerOfTwo(c.n)
+
+	c.pointsF = make([]*big.Int, c.N)
+	c.pointsG = make([]*big.Int, c.N)
+	c.pointsH = make([]*big.Int, 2*c.N-1)
+
+	c.evalF = new(big.Int)
+	c.evalG = new(big.Int)
+	c.evalH = new(big.Int)
+
+	return c
+}
+
+func (c *Checker) SetReq(req *Request) {
+	c.req = req
+	c.prg.Import(req.Hint)
+
+	// Reconstruct shares of internal wires using
+	// client-provided values.
+	c.ckt.ImportWires(c.prg)
+
+}
+
 type CheckerPrecomp struct {
 	x *big.Int
 
@@ -38,28 +72,6 @@ type CheckerPrecomp struct {
 	x2N *poly.PreX
 }
 
-type CorShare struct {
-	ShareD *big.Int
-	ShareE *big.Int
-}
-
-type Cor struct {
-	D *big.Int
-	E *big.Int
-}
-
-type OutShare struct {
-	Check *big.Int
-}
-
-func (c *Checker) SetReq(req *ClientRequest) {
-	c.req = req
-	c.prg.Import(req.Hint)
-
-	// Reconstruct shares of internal wires using
-	// client-provided values.
-	c.ckt.ImportWires(c.prg)
-}
 
 func (pre *CheckerPrecomp) SetCheckerPrecomp(x *big.Int) {
 	pre.x = x
@@ -67,43 +79,28 @@ func (pre *CheckerPrecomp) SetCheckerPrecomp(x *big.Int) {
 	pre.x2N = pre.deg2N.NewEvalPoint(x)
 }
 
-func (c *Checker) CorShare(out *CorShare, pre *CheckerPrecomp) {
-	c.evalPoly(pre)
 
-	out.ShareD = new(big.Int)
-	out.ShareE = new(big.Int)
+func NewCheckerPrecomp(ckt *circuit.Circuit) *CheckerPrecomp {
+	pre := new(CheckerPrecomp)
 
-	// Let the multiplication triple be: (a, b, c)
-	// where a*b = c. We want to compute z = x*y.
+	// This is the number of fixed points on f and g. It's
+	// the number of multiplication gates plus one for the
+	// constant term.
+	n := len(ckt.MulGates()) + 1
+	N := utils.NextPowerOfTwo(n)
 
-	// [d]_i = [x]_i - [a]_i
-	out.ShareD.Sub(c.evalF, c.req.TripleShare.ShareA)
-	out.ShareD.Mod(out.ShareD, c.mod)
+	rootsN := share.GetRoots(N)
+	roots2N := share.GetRoots(2 * N)
 
-	// [e]_i = [y]_i - [b]_i
-	out.ShareE.Sub(c.evalG, c.req.TripleShare.ShareB)
-	out.ShareE.Mod(out.ShareE, c.mod)
+	pre.degN = poly.NewBatch(ckt.Modulus(), rootsN)
+	pre.deg2N = poly.NewBatch(ckt.Modulus(), roots2N[0:2*N-1])
 
+	return pre
 }
 
-func (c *Checker) Cor(sharesIn []*CorShare) *Cor {
-	if len(sharesIn) != c.cfg.Servers {
-		panic("Wrong number of Cor shares")
-	}
-
-	cor := new(Cor)
-	cor.D = new(big.Int)
-	cor.E = new(big.Int)
-
-	for i := 0; i < len(sharesIn); i++ {
-		cor.D.Add(cor.D, sharesIn[i].ShareD)
-		cor.E.Add(cor.E, sharesIn[i].ShareE)
-	}
-
-	cor.D.Mod(cor.D, c.mod)
-	cor.E.Mod(cor.E, c.mod)
-
-	return cor
+type CorShare struct {
+	ShareD *big.Int
+	ShareE *big.Int
 }
 
 func (c *Checker) evalPoly(pre *CheckerPrecomp) {
@@ -144,13 +141,44 @@ func (c *Checker) evalPoly(pre *CheckerPrecomp) {
 	c.evalH.Mod(c.evalH, c.mod)
 }
 
-func (c *Checker) OutShare(out *OutShare, corIn *Cor, key *utils.PRGKey) {
+func (c *Checker) CorShare (pre *CheckerPrecomp) (*CorShare) {
+	c.evalPoly(pre)
+
+	out := new(CorShare)
+
+	out.ShareD = new(big.Int)
+	out.ShareE = new(big.Int)
+
+	// Let the multiplication triple be: (a, b, c)
+	// where a*b = c. We want to compute z = x*y.
+
+	// [d]_i = [x]_i - [a]_i
+	out.ShareD.Sub(c.evalF, c.req.TripleShare.ShareA)
+	out.ShareD.Mod(out.ShareD, c.mod)
+
+	// [e]_i = [y]_i - [b]_i
+	out.ShareE.Sub(c.evalG, c.req.TripleShare.ShareB)
+	out.ShareE.Mod(out.ShareE, c.mod)
+
+	return out
+}
+
+type OutShare struct {
+	Check *big.Int
+}
+
+type Cor struct {
+	D *big.Int
+	E *big.Int
+}
+
+func (c *Checker) OutShare( corIn *Cor, key *utils.PRGKey)(sol *OutShare) {
 	// We have shares of a bunch of values (v1, v2, ..., vK) that should
 	// all be zero. To check them, the servers sample random values
 	// (r1, r2, ..., rK) and compute the inner product:
 	//   CHECK = \sum_i (r_i * v_i).
 	// If any v_i is non-zero, then the CHECK value will be non-zero whp.
-
+	out := new(OutShare)
 	mulCheck := new(big.Int)
 	// [z]_i = d*e + d*[b]_i + e*[a]_i + [c]_i
 	if c.prg.IsLeader() {
@@ -180,6 +208,7 @@ func (c *Checker) OutShare(out *OutShare, corIn *Cor, key *utils.PRGKey) {
 	}
 
 	out.Check = c.randSum(key, shouldBeZero)
+	return out
 }
 
 func (c *Checker) randSum(key *utils.PRGKey, nums []*big.Int) *big.Int {
@@ -198,11 +227,26 @@ func (c *Checker) randSum(key *utils.PRGKey, nums []*big.Int) *big.Int {
 	return out
 }
 
+func (c *Checker) Cor(sharesIn []*CorShare) *Cor {
+
+	cor := new(Cor)
+	cor.D = new(big.Int)
+	cor.E = new(big.Int)
+
+	for i := 0; i < len(sharesIn); i++ {
+
+		cor.D.Add(cor.D, sharesIn[i].ShareD)
+		cor.E.Add(cor.E, sharesIn[i].ShareE)
+	}
+
+	cor.D.Mod(cor.D, c.mod)
+	cor.E.Mod(cor.E, c.mod)
+
+	return cor
+}
+
 
 func (c *Checker) OutputIsValid(sharesIn []*OutShare) bool {
-	if len(sharesIn) != c.cfg.Servers {
-		panic("Wrong number of Output shares")
-	}
 
 	check := new(big.Int)
 

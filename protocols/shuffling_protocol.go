@@ -160,7 +160,7 @@ func (p *ShufflingProtocol) Start() error {
 	roundShufflingStart := lib.StartTimer(p.Name() + "_Shuffling(START-noProof)")
 
 	if p.Precomputed != nil {
-		log.Lvl1(p.Name(), " uses pre-computation in shuffling")
+		log.Lvl1(p.Name(), " uses Pre-computation in shuffling")
 	}
 
 	shuffledData, pi, beta := lib.ShuffleSequence(shuffleTarget, nil, collectiveKey, p.Precomputed)
@@ -219,7 +219,7 @@ func (p *ShufflingProtocol) Dispatch() error {
 	}
 
 	if p.Precomputed != nil {
-		log.Lvl1(p.Name(), " uses pre-computation in shuffling")
+		log.Lvl1(p.Name(), " uses Pre-computation in shuffling")
 	}
 
 	shuffledData := shufflingTarget
