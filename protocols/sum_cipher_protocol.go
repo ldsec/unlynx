@@ -11,7 +11,7 @@ import (
 	"unlynx/prio_utils"
 
 	"github.com/henrycg/prio/utils"
-	"github.com/henrycg/prio/share"
+
 )
 
 
@@ -37,7 +37,8 @@ type ReplySumCipherLength struct {
 }
 
 type CorShare struct {
-	CorShare *prio_utils.CorShare
+	CorShareD []byte
+	CorShareE []byte
 }
 /*Structs
 _________________________________________________________________________________________________________________________
@@ -89,7 +90,7 @@ type SumCipherProtocol struct {
 	//for proofs
 	Proofs  bool
 	Request []*prio_utils.Request
-	pre		[]*prio_utils.CheckerPrecomp
+	pre		*prio_utils.CheckerPrecomp
 	Checker	*prio_utils.Checker
 
 	//channel for proof
@@ -237,30 +238,44 @@ func (p *SumCipherProtocol) ascendingAggregationPhase() *big.Int {
 
 	if (p.Proofs) {
 		status := new(RequestStatus)
-		status.check = p.Checker
-		status.check.SetReq(p.Request[p.Index()])
 
+		status.check = p.Checker
+
+
+		log.Lvl1("request before is " , status.check.Prg)
+		status.check.SetReq(p.Request[p.Index()])
+		log.Lvl1("N in checker is " ,status.check.N)
+		log.Lvl1("request is ", status.check)
 		log.Lvl1(p.Tree().Size())
 
 		evalReplies := make([]*prio_utils.CorShare, 1)
 		//need to do this for all shares so for all servers
 
-		p.pre[p.Index()].SetCheckerPrecomp(utils.RandInt(share.IntModulus))
 
 		//here evalReplies filled
-		evalReplies[0] = status.check.CorShare(p.pre[p.Index()])
+		evalReplies[0] = status.check.CorShare(p.pre)
 
 		//From here need to wait all evalReplies
 		if !p.IsRoot() {
-			p.SendTo(p.Root(), &CorShare{evalReplies[0]})
+			log.Lvl1("corshare is ",evalReplies[0])
+			p.SendToParent(&CorShare{evalReplies[0].ShareD.Bytes(),evalReplies[0].ShareE.Bytes()})
 		}
 
 		if p.IsRoot() {
+
 			evalRepliesFromAll := make([]*prio_utils.CorShare,1)
 			evalRepliesFromAll[0] = evalReplies[0]
-			/*for _, v := range <-p.CorShareChannel {
-				evalRepliesFromAll = append(evalRepliesFromAll, v.CorShare.CorShare )
-			}*/
+
+			//when 1 share do not work else, wait on nothing
+			if(p.Tree().Size()>1) {
+				for _, v := range <-p.CorShareChannel {
+					corshare := new(prio_utils.CorShare)
+					corshare.ShareD = big.NewInt(0).SetBytes(v.CorShareD)
+					corshare.ShareE = big.NewInt(0).SetBytes(v.CorShareE)
+					evalRepliesFromAll = append(evalRepliesFromAll, corshare)
+				}
+			}
+			log.Lvl1("will fuse corShare on :",evalRepliesFromAll[0], "and",evalRepliesFromAll[1])
 			cor := status.check.Cor(evalRepliesFromAll)
 			finalReplies := make([]*prio_utils.OutShare, 1)
 			finalReplies[p.Index()] = status.check.OutShare(cor, utils.RandomPRGKey())

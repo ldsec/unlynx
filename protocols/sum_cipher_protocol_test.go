@@ -7,15 +7,18 @@ import (
 	"time"
 	"github.com/stretchr/testify/assert"
 	"math/big"
-	"math"
+
 	"gopkg.in/dedis/onet.v1/log"
 	"unlynx/prio_utils"
+	"github.com/henrycg/prio/share"
+	"github.com/henrycg/prio/utils"
 )
 //the field cardinality must be superior to nbclient*2^b where b is the maximum number of bit a client need to encode its value
 
-var field = big.NewInt(int64(math.Pow(2.0,5.0)))
+var field = share.IntModulus
 var nbClient = 1
-var nbServ = 1
+var nbServ = 2
+var randomPoint = utils.RandInt(share.IntModulus)
 
 //3 random number to test
 var serv1Secret = big.NewInt(int64(1))
@@ -79,7 +82,7 @@ func NewSumCipherTest(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error)
 	//encoded[2] = Encode(serv3Share[tni.Index()])
 
 	protocol.Ciphers = encoded
-	protocol.Modulus = field
+	//protocol.Modulus = field
 	protocol.Proofs = true
 
 	//req length = nb server
@@ -91,10 +94,12 @@ func NewSumCipherTest(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error)
 	protocol.Request = req
 	//ckt = prio_utils.configToCircuit(dataShared)
 	protocol.Checker = prio_utils.NewChecker(ckt,tni.Index(),0)
-	protocol.pre = make([]*prio_utils.CheckerPrecomp,nbServ)
-	for i:= 0 ;i < len(protocol.pre); i++ {
-		protocol.pre[i] = prio_utils.NewCheckerPrecomp(ckt)
-	}
+	protocol.Modulus = ckt.Modulus()
+	log.Lvl1("Checker is ", protocol.Checker)
+
+
+	protocol.pre = prio_utils.NewCheckerPrecomp(ckt)
+	protocol.pre.SetCheckerPrecomp(randomPoint)
 
 	return protocol, err
 }

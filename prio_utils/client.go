@@ -39,29 +39,40 @@ func ClientRequest(dataShared []*big.Int, leaderForReq int) ([]*Request,*circuit
 
 	// Evaluate the Valid() circuit
 	ckt := configToCircuit(dataShared)
-
+	ckt2 := configToCircuit(dataShared)
 	//ckt.outputs is the value of inputs
 	ckt.Eval(inputs)
-
+	//we have more than 1 output, we have numberServ output, each are the share that the server will get
+	log.Lvl1("Ckt out is", ckt.Outputs()[0].WireValue)
+	log.Lvl1("there are", len(ckt.MulGates()), " mul gates")
 
 	// Generate sharings of the input wires and the multiplication gate wires
+	log.Lvl1("before sharing wires ", prg)
 	ckt.ShareWires(prg)
-
-	// log.Lvl1(len(prg.Hints(0).Delta))
-	//test := (big.NewInt(0).Add(prg.Hints(0).Delta[1],prg.Hints(0).Delta[0]))
+	log.Lvl1(" After Sharing wire ", prg)
+	// log.Lvl1(len(Prg.Hints(0).Delta))
+	//test := (big.NewInt(0).Add(Prg.Hints(0).Delta[1],Prg.Hints(0).Delta[0]))
 	//log.Lvl1(test.Mod(test,ckt.Modulus()));
 
 	// Construct polynomials f, g, and h and share evaluations of h
 	sharePolynomials(ckt, prg)
+	log.Lvl1("After sharing polynomials", prg)
 
 	triples := triple.NewTriple(share.IntModulus, ns)
 	for s := 0; s < ns; s++ {
 		out[s].Hint = prg.Hints(s)
 		out[s].TripleShare = triples[s]
-
 	}
 
-	return out,ckt
+	/*sum := big.NewInt(0)
+	for i := 0; i<len(out[0].Hint.Delta);i++  {
+		sum.Add(sum,out[0].Hint.Delta[i])
+		sum.Mod(sum,ckt.Modulus())
+
+		log.Lvl1(sum)
+	}*/
+
+	return out,ckt2
 }
 
 

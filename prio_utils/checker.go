@@ -13,7 +13,7 @@ import (
 // of a single client submission.
 type Checker struct {
 	req *Request
-	prg *share.ReplayPRG
+	Prg *share.ReplayPRG
 
 	mod *big.Int
 	ckt *circuit.Circuit
@@ -34,7 +34,7 @@ type Checker struct {
 
 func NewChecker(ckt *circuit.Circuit, serverIdx int, leaderIdx int) *Checker {
 	c := new(Checker)
-	c.prg = share.NewReplayPRG(serverIdx, leaderIdx)
+	c.Prg = share.NewReplayPRG(serverIdx, leaderIdx)
 	c.ckt = ckt
 	c.mod = c.ckt.Modulus()
 
@@ -54,11 +54,11 @@ func NewChecker(ckt *circuit.Circuit, serverIdx int, leaderIdx int) *Checker {
 
 func (c *Checker) SetReq(req *Request) {
 	c.req = req
-	c.prg.Import(req.Hint)
+	c.Prg.Import(req.Hint)
 
 	// Reconstruct shares of internal wires using
 	// client-provided values.
-	c.ckt.ImportWires(c.prg)
+	c.ckt.ImportWires(c.Prg)
 
 }
 
@@ -107,9 +107,9 @@ func (c *Checker) evalPoly(pre *CheckerPrecomp) {
 	mulGates := c.ckt.MulGates()
 
 	// Recover constant terms of the polynomials f, g, and h.
-	c.pointsF[0] = c.prg.Get(c.mod)
-	c.pointsG[0] = c.prg.Get(c.mod)
-	c.pointsH[0] = c.prg.Get(c.mod)
+	c.pointsF[0] = c.Prg.Get(c.mod)
+	c.pointsG[0] = c.Prg.Get(c.mod)
+	c.pointsH[0] = c.Prg.Get(c.mod)
 
 	// For all multiplication triples a_i * b_i = c_i,
 	//    polynomial [f(x)] has [f(i)] = [a_i]
@@ -128,7 +128,7 @@ func (c *Checker) evalPoly(pre *CheckerPrecomp) {
 	}
 
 	for i := 1; i < 2*c.N-1; i += 2 {
-		c.pointsH[i] = c.prg.Get(c.mod)
+		c.pointsH[i] = c.Prg.Get(c.mod)
 	}
 
 	c.evalF.Set(pre.xN.Eval(c.pointsF))
@@ -181,7 +181,7 @@ func (c *Checker) OutShare( corIn *Cor, key *utils.PRGKey)(sol *OutShare) {
 	out := new(OutShare)
 	mulCheck := new(big.Int)
 	// [z]_i = d*e + d*[b]_i + e*[a]_i + [c]_i
-	if c.prg.IsLeader() {
+	if c.Prg.IsLeader() {
 		mulCheck.Mul(corIn.D, corIn.E)
 	}
 
