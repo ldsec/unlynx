@@ -22,7 +22,7 @@ const SumCipherProtocolName = "SumCipher"
 ____________________________________________________________________________________________________________________
  */
 
- //structure to announce start of protocol
+//structure to announce start of protocol
 type AnnounceSumCipher struct {
 }
 
@@ -39,6 +39,10 @@ type ReplySumCipherLength struct {
 type CorShare struct {
 	CorShareD []byte
 	CorShareE []byte
+}
+
+type OutShare struct {
+	Out		[]byte
 }
 /*Structs
 _________________________________________________________________________________________________________________________
@@ -58,6 +62,11 @@ type StructReply struct {
 type StructCorShare struct {
 	*onet.TreeNode
 	CorShare
+}
+
+type StructOutShare struct {
+	*onet.TreeNode
+	OutShare
 }
 
 type Cipher struct {
@@ -95,6 +104,7 @@ type SumCipherProtocol struct {
 
 	//channel for proof
 	CorShareChannel	chan []StructCorShare
+	OutShareChannel		chan []StructOutShare
 
 }
 
@@ -117,6 +127,7 @@ type RequestStatus struct {
 /*
 _______________________________________________________________________________
  */
+var randomKey = utils.RandomPRGKey()
 
 func init() {
 	network.RegisterMessage(AnnounceSumCipher{})
@@ -148,7 +159,12 @@ func NewSumCipherProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance,error
 
 	err = st.RegisterChannel(&st.CorShareChannel)
 	if err != nil {
-		return nil, errors.New("Couldn't register CorrShare channer" + err.Error())
+		return nil, errors.New("Couldn't register CorrShare channel" + err.Error())
+	}
+
+	err = st.RegisterChannel(&st.OutShareChannel)
+	if err !=nil {
+		return nil,errors.New("Couldn't register OutShare channel" + err.Error())
 	}
 
 	return st,nil
@@ -157,7 +173,7 @@ func NewSumCipherProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance,error
 //start called at the root
 func (p*SumCipherProtocol) Start() error {
 	if p.Ciphers == nil {
-			return errors.New("No Shares to collect")
+		return errors.New("No Shares to collect")
 	}
 	log.Lvl1(p.ServerIdentity(), " started a Sum Cipher Protocol (", len(p.Ciphers), " different shares)")
 
@@ -166,7 +182,7 @@ func (p*SumCipherProtocol) Start() error {
 	p.SendToChildren(&AnnounceSumCipher{})
 	log.Lvl1("time to send mesage to children of root ", time.Since(start))
 	return nil
-	}
+}
 //dispatch is called on the node and handle incoming messages
 
 func (p*SumCipherProtocol) Dispatch() error {
@@ -258,30 +274,54 @@ func (p *SumCipherProtocol) ascendingAggregationPhase() *big.Int {
 		//From here need to wait all evalReplies
 		if !p.IsRoot() {
 			log.Lvl1("corshare is ",evalReplies[0])
-			p.SendToParent(&CorShare{evalReplies[0].ShareD.Bytes(),evalReplies[0].ShareE.Bytes()})
+			p.SendTo(p.Root(),&CorShare{evalReplies[0].ShareD.Bytes(),evalReplies[0].ShareE.Bytes()})
+		}
+		if(p.IsRoot()) {
+			p.SendToChildren(&CorShare{evalReplies[0].ShareD.Bytes(),evalReplies[0].ShareE.Bytes()})
 		}
 
-		if p.IsRoot() {
 
-			evalRepliesFromAll := make([]*prio_utils.CorShare,1)
-			evalRepliesFromAll[0] = evalReplies[0]
+		//actually they need to all send shares to each other so can all reconstruct core
 
-			//when 1 share do not work else, wait on nothing
-			if(p.Tree().Size()>1) {
-				for _, v := range <-p.CorShareChannel {
-					corshare := new(prio_utils.CorShare)
-					corshare.ShareD = big.NewInt(0).SetBytes(v.CorShareD)
-					corshare.ShareE = big.NewInt(0).SetBytes(v.CorShareE)
-					evalRepliesFromAll = append(evalRepliesFromAll, corshare)
-				}
+		evalRepliesFromAll := make([]*prio_utils.CorShare,1)
+		evalRepliesFromAll[0] = evalReplies[0]
+
+		//when 1 share do not work else, wait on nothing
+		if(p.Tree().Size()>1) {
+			for _, v := range <-p.CorShareChannel {
+				corshare := new(prio_utils.CorShare)
+				corshare.ShareD = big.NewInt(0).SetBytes(v.CorShareD)
+				corshare.ShareE = big.NewInt(0).SetBytes(v.CorShareE)
+				evalRepliesFromAll = append(evalRepliesFromAll, corshare)
 			}
-			log.Lvl1("will fuse corShare on :",evalRepliesFromAll[0], "and",evalRepliesFromAll[1])
-			cor := status.check.Cor(evalRepliesFromAll)
-			finalReplies := make([]*prio_utils.OutShare, 1)
-			finalReplies[p.Index()] = status.check.OutShare(cor, utils.RandomPRGKey())
-			log.Lvl1(finalReplies)
-			log.Lvl1("outpus is valide is ", status.check.OutputIsValid(finalReplies))
 		}
+		log.Lvl1("will fuse corShare on :",evalRepliesFromAll[0], "and",evalRepliesFromAll[1])
+
+		//cor is same for all server you cannot transfer it that's why you transfer the shares
+		cor := status.check.Cor(evalRepliesFromAll)
+
+		//we need to do this on all servers
+		finalReplies := make([]*prio_utils.OutShare, 1)
+		log.Lvl1(randomKey)
+		finalReplies[0] = status.check.OutShare(cor, randomKey)
+		log.Lvl1("finalReplies should not be the same", finalReplies[0])
+
+		if(!p.IsRoot()) {
+			p.SendTo(p.Root(),&OutShare{finalReplies[0].Check.Bytes()})
+		}
+
+		if(p.IsRoot()) {
+			finalRepliesAll := make([]*prio_utils.OutShare,1)
+			finalRepliesAll[0] = finalReplies[0]
+			for _, v := range <-p.OutShareChannel {
+				outShare := new(prio_utils.OutShare)
+				outShare.Check = big.NewInt(0).SetBytes(v.OutShare.Out)
+				finalRepliesAll = append(finalRepliesAll,outShare)
+			}
+			log.Lvl1("will evaluate on ", finalRepliesAll[0].Check , finalRepliesAll[1].Check)
+			log.Lvl1("output is valid ? ", status.check.OutputIsValid(finalRepliesAll))
+		}
+
 	}
 	return p.Sum
 
