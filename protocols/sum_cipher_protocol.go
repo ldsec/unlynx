@@ -285,7 +285,7 @@ func (p *SumCipherProtocol) ascendingAggregationPhase() *big.Int {
 
 		evalRepliesFromAll := make([]*prio_utils.CorShare,1)
 		evalRepliesFromAll[0] = evalReplies[0]
-
+		log.Lvl1("CorShare D & E are", evalRepliesFromAll[0])
 		//when 1 share do not work else, wait on nothing
 		if(p.Tree().Size()>1) {
 			for _, v := range <-p.CorShareChannel {
@@ -295,11 +295,12 @@ func (p *SumCipherProtocol) ascendingAggregationPhase() *big.Int {
 				evalRepliesFromAll = append(evalRepliesFromAll, corshare)
 			}
 		}
-		log.Lvl1("will fuse corShare on :",evalRepliesFromAll[0], "and",evalRepliesFromAll[1])
+		//log.Lvl1("will fuse corShare on :",evalRepliesFromAll[0], "and",evalRepliesFromAll[1])
 
 		//cor is same for all server you cannot transfer it that's why you transfer the shares
 		cor := status.check.Cor(evalRepliesFromAll)
 
+		log.Lvl1("Cor is", cor)
 		//we need to do this on all servers
 		finalReplies := make([]*prio_utils.OutShare, 1)
 		log.Lvl1(randomKey)
@@ -311,18 +312,20 @@ func (p *SumCipherProtocol) ascendingAggregationPhase() *big.Int {
 		}
 
 		if(p.IsRoot()) {
-			finalRepliesAll := make([]*prio_utils.OutShare,1)
+			finalRepliesAll := make([]*prio_utils.OutShare, 1)
 			finalRepliesAll[0] = finalReplies[0]
-			for _, v := range <-p.OutShareChannel {
-				outShare := new(prio_utils.OutShare)
-				outShare.Check = big.NewInt(0).SetBytes(v.OutShare.Out)
-				finalRepliesAll = append(finalRepliesAll,outShare)
-			}
-			log.Lvl1("will evaluate on ", finalRepliesAll[0].Check , finalRepliesAll[1].Check)
-			log.Lvl1("output is valid ? ", status.check.OutputIsValid(finalRepliesAll))
-		}
+			if p.Tree().Size() > 1 {
+				for _, v := range <-p.OutShareChannel {
+					outShare := new(prio_utils.OutShare)
+					outShare.Check = big.NewInt(0).SetBytes(v.OutShare.Out)
+					finalRepliesAll = append(finalRepliesAll, outShare)
 
-	}
+				}
+			}
+				//log.Lvl1("will evaluate on ", finalRepliesAll[0].Check, finalRepliesAll[1].Check)
+				log.Lvl1("output is valid ? ", status.check.OutputIsValid(finalRepliesAll))
+			}
+		}
 	return p.Sum
 
 }

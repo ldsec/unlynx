@@ -208,6 +208,7 @@ func (c *Checker) OutShare( corIn *Cor, key *utils.PRGKey)(sol *OutShare) {
 	}
 
 	out.Check = c.randSum(key, shouldBeZero)
+
 	return out
 }
 

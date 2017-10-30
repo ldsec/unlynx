@@ -43,8 +43,9 @@ func ClientRequest(dataShared []*big.Int, leaderForReq int) ([]*Request,*circuit
 	//ckt.outputs is the value of inputs
 	ckt.Eval(inputs)
 	//we have more than 1 output, we have numberServ output, each are the share that the server will get
-	log.Lvl1("Ckt out is", ckt.Outputs()[0].WireValue)
+	log.Lvl1("there are ", len(ckt.Outputs()) , " outputs")
 	log.Lvl1("there are", len(ckt.MulGates()), " mul gates")
+
 
 	// Generate sharings of the input wires and the multiplication gate wires
 	log.Lvl1("before sharing wires ", prg)
@@ -63,14 +64,6 @@ func ClientRequest(dataShared []*big.Int, leaderForReq int) ([]*Request,*circuit
 		out[s].Hint = prg.Hints(s)
 		out[s].TripleShare = triples[s]
 	}
-
-	/*sum := big.NewInt(0)
-	for i := 0; i<len(out[0].Hint.Delta);i++  {
-		sum.Add(sum,out[0].Hint.Delta[i])
-		sum.Mod(sum,ckt.Modulus())
-
-		log.Lvl1(sum)
-	}*/
 
 	return out,ckt2
 }

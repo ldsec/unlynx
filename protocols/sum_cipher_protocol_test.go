@@ -17,8 +17,9 @@ import (
 
 var field = share.IntModulus
 var nbClient = 1
-var nbServ = 2
+var nbServ = 1
 var randomPoint = utils.RandInt(share.IntModulus)
+var req,ckt = prio_utils.ClientRequest(serv1Share, 0)
 
 //3 random number to test
 var serv1Secret = big.NewInt(int64(1))
@@ -87,9 +88,7 @@ func NewSumCipherTest(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error)
 
 	//req length = nb server
 
-
 	log.Lvl1(serv1Share)
-	req,ckt := prio_utils.ClientRequest(serv1Share, 0)
 
 	protocol.Request = req
 	//ckt = prio_utils.configToCircuit(dataShared)
