@@ -20,7 +20,7 @@ type Request struct {
 }
 
 //Create proof submission for one client
-func ClientRequest(dataShared []*big.Int, leaderForReq int) ([]*Request,*circuit.Circuit){
+func ClientRequest(dataShared []*big.Int, leaderForReq int) ([]*Request){
 	//utils.PrintTime("Initialize")
 	ns := len(dataShared)
 	prg := share.NewGenPRG(ns, leaderForReq)
@@ -31,19 +31,24 @@ func ClientRequest(dataShared []*big.Int, leaderForReq int) ([]*Request,*circuit
 		out[s] = new(Request)
 	}
 	//utils.PrintTime("ShareData")
+	testingData :=[]*big.Int{big.NewInt(1)}
 
 	inputs := make([]*big.Int,0)
-	for f := 0; f < ns; f++ {
-		inputs = append(inputs, toArrayBit(dataShared[f])...)
+	for f := 0; f < len(testingData); f++ {
+		inputs = append(inputs, toArrayBit(testingData[f])...)
 	}
 
 	// Evaluate the Valid() circuit
-	ckt := configToCircuit(dataShared)
-	ckt2 := configToCircuit(dataShared)
-	//ckt.outputs is the value of inputs
+	ckt := ConfigToCircuit(testingData)
+
+	//can only evaluate on bit values,
 	ckt.Eval(inputs)
+	log.Lvl1("inputs are ",testingData)
+	log.Lvl1("output 1 is", ckt.Outputs()[0].WireValue)
+	//log.Lvl1("output 2 is ", ckt.Outputs()[1].WireValue)
 	//we have more than 1 output, we have numberServ output, each are the share that the server will get
 	log.Lvl1("there are ", len(ckt.Outputs()) , " outputs")
+
 	log.Lvl1("there are", len(ckt.MulGates()), " mul gates")
 
 
@@ -65,7 +70,7 @@ func ClientRequest(dataShared []*big.Int, leaderForReq int) ([]*Request,*circuit
 		out[s].TripleShare = triples[s]
 	}
 
-	return out,ckt2
+	return out
 }
 
 
@@ -77,7 +82,7 @@ func toArrayBit(int *big.Int) []*big.Int {
 	return out
 }
 
-func configToCircuit(datas []*big.Int) *circuit.Circuit {
+func ConfigToCircuit(datas []*big.Int) *circuit.Circuit {
 
 	nf := len(datas)
 	ckts := make([]*circuit.Circuit, nf)
@@ -100,7 +105,7 @@ func sharePolynomials(ckt *circuit.Circuit, prg *share.GenPRG){
 	// Little n the number of points on the polynomials.
 	// The constant term is randomized, so it's (mulGates + 1).
 	n := len(mulGates) + 1
-	log.Lvl1("Mulgates: %v", n)
+	log.Lvl1("Mulgates: ", n)
 
 	// Big N is n rounded up to a power of two
 	N := utils.NextPowerOfTwo(n)

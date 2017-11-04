@@ -98,6 +98,35 @@ func NewCheckerPrecomp(ckt *circuit.Circuit) *CheckerPrecomp {
 	return pre
 }
 
+type CheckerPool struct {
+	ckt			*circuit.Circuit
+	serverIdx int
+	leaderIdx int
+	buffer    chan *Checker
+}
+
+func (p *CheckerPool) Get() *Checker {
+	select {
+	case out := <-p.buffer:
+		return out
+		//	default:
+		//		return mpc.NewChecker(p.cfg, p.serverIdx, p.leaderIdx)
+	}
+}
+
+func NewCheckerPool(ckt *circuit.Circuit, serverIdx int, leaderIdx int) *CheckerPool {
+	out := new(CheckerPool)
+	out.ckt = ckt
+	out.serverIdx = serverIdx
+	out.leaderIdx = leaderIdx
+
+	out.buffer = make(chan *Checker, 5)
+	for i := 0; i < 5; i++ {
+		out.buffer <- NewChecker(ckt, serverIdx, leaderIdx)
+	}
+	return out
+}
+
 type CorShare struct {
 	ShareD *big.Int
 	ShareE *big.Int
@@ -105,7 +134,6 @@ type CorShare struct {
 
 func (c *Checker) evalPoly(pre *CheckerPrecomp) {
 	mulGates := c.ckt.MulGates()
-
 	// Recover constant terms of the polynomials f, g, and h.
 	c.pointsF[0] = c.Prg.Get(c.mod)
 	c.pointsG[0] = c.Prg.Get(c.mod)

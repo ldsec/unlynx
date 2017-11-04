@@ -17,12 +17,12 @@ import (
 
 var field = share.IntModulus
 var nbClient = 1
-var nbServ = 1
+var nbServ = 2
+var req = prio_utils.ClientRequest(serv1Share, 0)
 var randomPoint = utils.RandInt(share.IntModulus)
-var req,ckt = prio_utils.ClientRequest(serv1Share, 0)
 
 //3 random number to test
-var serv1Secret = big.NewInt(int64(1))
+var serv1Secret = big.NewInt(int64(10))
 var serv2Secret = big.NewInt(int64(2))
 var serv3Secret = big.NewInt(int64(2))
 
@@ -88,14 +88,15 @@ func NewSumCipherTest(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error)
 
 	//req length = nb server
 
-	log.Lvl1(serv1Share)
-
-	protocol.Request = req
-	//ckt = prio_utils.configToCircuit(dataShared)
-	protocol.Checker = prio_utils.NewChecker(ckt,tni.Index(),0)
+	//log.Lvl1(serv1Share)
+	ckt := prio_utils.ConfigToCircuit([]*big.Int{big.NewInt(1)})
 	protocol.Modulus = ckt.Modulus()
-	log.Lvl1("Checker is ", protocol.Checker)
-
+	protocol.Request = req[tni.Index()]
+	//ckt = prio_utils.configToCircuit(dataShared)
+	protocol.CheckerPool = make([]*prio_utils.CheckerPool, nbServ)
+	for leaderIdx := 0; leaderIdx < nbServ; leaderIdx++ {
+		protocol.CheckerPool[leaderIdx] = prio_utils.NewCheckerPool(ckt,protocol.Index(),leaderIdx);
+	}
 
 	protocol.pre = prio_utils.NewCheckerPrecomp(ckt)
 	protocol.pre.SetCheckerPrecomp(randomPoint)

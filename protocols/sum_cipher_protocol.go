@@ -98,9 +98,9 @@ type SumCipherProtocol struct {
 
 	//for proofs
 	Proofs  bool
-	Request []*prio_utils.Request
+	Request *prio_utils.Request
 	pre		*prio_utils.CheckerPrecomp
-	Checker	*prio_utils.Checker
+	CheckerPool	[]*prio_utils.CheckerPool
 
 	//channel for proof
 	CorShareChannel	chan []StructCorShare
@@ -255,14 +255,14 @@ func (p *SumCipherProtocol) ascendingAggregationPhase() *big.Int {
 	if (p.Proofs) {
 		status := new(RequestStatus)
 
-		status.check = p.Checker
-
+		status.check = p.CheckerPool[0].Get()
 
 		log.Lvl1("request before is " , status.check.Prg)
-		status.check.SetReq(p.Request[p.Index()])
+
+		status.check.SetReq(p.Request)
+
 		log.Lvl1("N in checker is " ,status.check.N)
 		log.Lvl1("request is ", status.check)
-		log.Lvl1(p.Tree().Size())
 
 		evalReplies := make([]*prio_utils.CorShare, 1)
 		//need to do this for all shares so for all servers
@@ -319,7 +319,6 @@ func (p *SumCipherProtocol) ascendingAggregationPhase() *big.Int {
 					outShare := new(prio_utils.OutShare)
 					outShare.Check = big.NewInt(0).SetBytes(v.OutShare.Out)
 					finalRepliesAll = append(finalRepliesAll, outShare)
-
 				}
 			}
 				//log.Lvl1("will evaluate on ", finalRepliesAll[0].Check, finalRepliesAll[1].Check)
