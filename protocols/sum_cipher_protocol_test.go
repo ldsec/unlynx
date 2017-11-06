@@ -83,23 +83,22 @@ func NewSumCipherTest(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error)
 	//encoded[2] = Encode(serv3Share[tni.Index()])
 
 	protocol.Ciphers = encoded
-	//protocol.Modulus = field
+
 	protocol.Proofs = true
 
-	//req length = nb server
-
-	//log.Lvl1(serv1Share)
-	ckt := prio_utils.ConfigToCircuit([]*big.Int{big.NewInt(1)})
+	ckt := prio_utils.ConfigToCircuit(serv1Share)
 	protocol.Modulus = ckt.Modulus()
 	protocol.Request = req[tni.Index()]
-	//ckt = prio_utils.configToCircuit(dataShared)
-	protocol.CheckerPool = make([]*prio_utils.CheckerPool, nbServ)
-	for leaderIdx := 0; leaderIdx < nbServ; leaderIdx++ {
-		protocol.CheckerPool[leaderIdx] = prio_utils.NewCheckerPool(ckt,protocol.Index(),leaderIdx);
-	}
+	protocol.Checker = prio_utils.NewChecker(ckt,protocol.Index(),0)
 
 	protocol.pre = prio_utils.NewCheckerPrecomp(ckt)
 	protocol.pre.SetCheckerPrecomp(randomPoint)
+
+	if(protocol.Index()==0) {
+		protocol.Leader = true;
+	}
+
+
 
 	return protocol, err
 }

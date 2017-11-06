@@ -12,6 +12,7 @@ import (
 
 	"os"
 	"time"
+	"unlynx/prio_utils"
 )
 
 
@@ -42,7 +43,7 @@ func createCipherSet(numberClient, numberServer int) (map[*big.Int][]*big.Int,*b
 
 	//create the shares
 	for i,_ := range Secrets {
-		SecretsToShare[Secrets[i]] = protocols.Share(Modulus,numberServer,Secrets[i])
+		SecretsToShare[Secrets[i]] = prio_utils.Share(Modulus,numberServer,Secrets[i])
 	}
 	return SecretsToShare,Modulus
 }

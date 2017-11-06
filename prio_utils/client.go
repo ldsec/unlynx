@@ -30,40 +30,26 @@ func ClientRequest(dataShared []*big.Int, leaderForReq int) ([]*Request){
 	for s := 0; s < ns; s++ {
 		out[s] = new(Request)
 	}
-	//utils.PrintTime("ShareData")
-	testingData :=[]*big.Int{big.NewInt(1)}
 
 	inputs := make([]*big.Int,0)
-	for f := 0; f < len(testingData); f++ {
-		inputs = append(inputs, toArrayBit(testingData[f])...)
+	for f := 0; f < len(dataShared); f++ {
+		inputs = append(inputs, toArrayBit(dataShared[f])...)
 	}
 
 	// Evaluate the Valid() circuit
-	ckt := ConfigToCircuit(testingData)
+	ckt := ConfigToCircuit(dataShared)
 
 	//can only evaluate on bit values,
 	ckt.Eval(inputs)
-	log.Lvl1("inputs are ",testingData)
-	log.Lvl1("output 1 is", ckt.Outputs()[0].WireValue)
-	//log.Lvl1("output 2 is ", ckt.Outputs()[1].WireValue)
-	//we have more than 1 output, we have numberServ output, each are the share that the server will get
-	log.Lvl1("there are ", len(ckt.Outputs()) , " outputs")
-
-	log.Lvl1("there are", len(ckt.MulGates()), " mul gates")
-
 
 	// Generate sharings of the input wires and the multiplication gate wires
-	log.Lvl1("before sharing wires ", prg)
 	ckt.ShareWires(prg)
-	log.Lvl1(" After Sharing wire ", prg)
-	// log.Lvl1(len(Prg.Hints(0).Delta))
-	//test := (big.NewInt(0).Add(Prg.Hints(0).Delta[1],Prg.Hints(0).Delta[0]))
-	//log.Lvl1(test.Mod(test,ckt.Modulus()));
+
 
 	// Construct polynomials f, g, and h and share evaluations of h
 	sharePolynomials(ckt, prg)
-	log.Lvl1("After sharing polynomials", prg)
 
+	//generate share of beaver Triple
 	triples := triple.NewTriple(share.IntModulus, ns)
 	for s := 0; s < ns; s++ {
 		out[s].Hint = prg.Hints(s)

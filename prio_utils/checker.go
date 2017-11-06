@@ -120,8 +120,8 @@ func NewCheckerPool(ckt *circuit.Circuit, serverIdx int, leaderIdx int) *Checker
 	out.serverIdx = serverIdx
 	out.leaderIdx = leaderIdx
 
-	out.buffer = make(chan *Checker, 5)
-	for i := 0; i < 5; i++ {
+	out.buffer = make(chan *Checker, 10)
+	for i := 0; i < 10; i++ {
 		out.buffer <- NewChecker(ckt, serverIdx, leaderIdx)
 	}
 	return out

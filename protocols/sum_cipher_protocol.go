@@ -100,30 +100,16 @@ type SumCipherProtocol struct {
 	Proofs  bool
 	Request *prio_utils.Request
 	pre		*prio_utils.CheckerPrecomp
-	CheckerPool	[]*prio_utils.CheckerPool
-
+	Checker *prio_utils.Checker
+	Leader bool
 	//channel for proof
-	CorShareChannel	chan []StructCorShare
-	OutShareChannel		chan []StructOutShare
+	CorShareChannel	chan StructCorShare
+	OutShareChannel		chan StructOutShare
 
 }
 
 
 
-type StatusFlag int
-
-// Status of a client submission.
-const (
-	NotStarted    StatusFlag = iota
-	OpenedTriples StatusFlag = iota
-	Layer1        StatusFlag = iota
-	Finished      StatusFlag = iota
-)
-
-type RequestStatus struct {
-	check *prio_utils.Checker
-	flag  StatusFlag
-}
 /*
 _______________________________________________________________________________
  */
@@ -143,6 +129,7 @@ func NewSumCipherProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance,error
 		TreeNodeInstance: n,
 		Feedback:         make(chan *big.Int),
 		Sum:              big.NewInt(int64(0)),
+		Leader:				false,
 	}
 
 	//register the channel for announce
@@ -231,6 +218,7 @@ func (p *SumCipherProtocol) ascendingAggregationPhase() *big.Int {
 		}
 	}
 
+
 	//do the sum of ciphers
 
 	for _, v := range p.Ciphers {
@@ -248,83 +236,76 @@ func (p *SumCipherProtocol) ascendingAggregationPhase() *big.Int {
 		p.SendToParent(&ReplySumCipherBytes{p.Sum.Bytes()})
 	}
 
-	//finish by returning the sum of the root
-	p.Sum.Mod(p.Sum,p.Modulus)
-
-
+	//SNIP's proof
 	if (p.Proofs) {
-		status := new(RequestStatus)
 
-		status.check = p.CheckerPool[0].Get()
 
-		log.Lvl1("request before is " , status.check.Prg)
+		//each protocol has its checker and it's request ( 1 request per server per client request)
+		check := p.Checker
+		check.SetReq(p.Request)
 
-		status.check.SetReq(p.Request)
 
-		log.Lvl1("N in checker is " ,status.check.N)
-		log.Lvl1("request is ", status.check)
 
 		evalReplies := make([]*prio_utils.CorShare, 1)
-		//need to do this for all shares so for all servers
+		//here evalReplies filled by evaluating on a point ( same for all protocols for a single client )
+		evalReplies[0] = check.CorShare(p.pre)
+
+		//Each proto need to send to each others
+		log.Lvl1("Broadcasting")
+		p.Broadcast(&CorShare{evalReplies[0].ShareD.Bytes(), evalReplies[0].ShareE.Bytes()})
 
 
-		//here evalReplies filled
-		evalReplies[0] = status.check.CorShare(p.pre)
-
-		//From here need to wait all evalReplies
-		if !p.IsRoot() {
-			log.Lvl1("corshare is ",evalReplies[0])
-			p.SendTo(p.Root(),&CorShare{evalReplies[0].ShareD.Bytes(),evalReplies[0].ShareE.Bytes()})
-		}
-		if(p.IsRoot()) {
-			p.SendToChildren(&CorShare{evalReplies[0].ShareD.Bytes(),evalReplies[0].ShareE.Bytes()})
-		}
-
-
-		//actually they need to all send shares to each other so can all reconstruct core
-
+		//Now they need to all send shares to each other so can all reconstruct cor
 		evalRepliesFromAll := make([]*prio_utils.CorShare,1)
 		evalRepliesFromAll[0] = evalReplies[0]
-		log.Lvl1("CorShare D & E are", evalRepliesFromAll[0])
-		//when 1 share do not work else, wait on nothing
-		if(p.Tree().Size()>1) {
-			for _, v := range <-p.CorShareChannel {
-				corshare := new(prio_utils.CorShare)
-				corshare.ShareD = big.NewInt(0).SetBytes(v.CorShareD)
-				corshare.ShareE = big.NewInt(0).SetBytes(v.CorShareE)
-				evalRepliesFromAll = append(evalRepliesFromAll, corshare)
-			}
+
+		//for each server get the value broadcasted
+		for i:=0 ; i<  p.Tree().Size()-1 ; i++ {
+			v := <- p.CorShareChannel
+			corshare := new(prio_utils.CorShare)
+			corshare.ShareD = big.NewInt(0).SetBytes(v.CorShareD)
+			corshare.ShareE = big.NewInt(0).SetBytes(v.CorShareE)
+			evalRepliesFromAll = append(evalRepliesFromAll, corshare)
 		}
-		//log.Lvl1("will fuse corShare on :",evalRepliesFromAll[0], "and",evalRepliesFromAll[1])
 
 		//cor is same for all server you cannot transfer it that's why you transfer the shares
-		cor := status.check.Cor(evalRepliesFromAll)
+		cor := check.Cor(evalRepliesFromAll)
 
-		log.Lvl1("Cor is", cor)
-		//we need to do this on all servers
+
+		//we need to do this on all servers as they all have a part of the beaver triple
 		finalReplies := make([]*prio_utils.OutShare, 1)
-		log.Lvl1(randomKey)
-		finalReplies[0] = status.check.OutShare(cor, randomKey)
-		log.Lvl1("finalReplies should not be the same", finalReplies[0])
 
-		if(!p.IsRoot()) {
+		//random key is same for all
+		finalReplies[0] = check.OutShare(cor, randomKey)
+
+		if !p.IsRoot() {
 			p.SendTo(p.Root(),&OutShare{finalReplies[0].Check.Bytes()})
 		}
 
-		if(p.IsRoot()) {
+		//then the leader  do all the rest
+		if p.IsRoot() {
 			finalRepliesAll := make([]*prio_utils.OutShare, 1)
 			finalRepliesAll[0] = finalReplies[0]
 			if p.Tree().Size() > 1 {
-				for _, v := range <-p.OutShareChannel {
+				for i := 0; i < p.Tree().Size() - 1; i++ {
+					v :=  <-p.OutShareChannel
 					outShare := new(prio_utils.OutShare)
 					outShare.Check = big.NewInt(0).SetBytes(v.OutShare.Out)
 					finalRepliesAll = append(finalRepliesAll, outShare)
 				}
 			}
-				//log.Lvl1("will evaluate on ", finalRepliesAll[0].Check, finalRepliesAll[1].Check)
-				log.Lvl1("output is valid ? ", status.check.OutputIsValid(finalRepliesAll))
+			isValid := check.OutputIsValid(finalRepliesAll)
+			log.Lvl1("output is valid ? ", isValid)
+			if(!isValid) {
+				panic("Proof is NOT VALID")
 			}
 		}
+	}
+
+	//finish by returning the sum of the root
+	p.Sum.Mod(p.Sum,p.Modulus)
+
+
 	return p.Sum
 
 }
