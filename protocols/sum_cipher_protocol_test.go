@@ -17,9 +17,7 @@ import (
 
 var field = share.IntModulus
 var nbClient = 1
-var nbServ = 2
-var req = prio_utils.ClientRequest(serv1Share, 0)
-var randomPoint = utils.RandInt(share.IntModulus)
+var nbServ = 5
 
 //3 random number to test
 var serv1Secret = big.NewInt(int64(10))
@@ -30,6 +28,11 @@ var serv3Secret = big.NewInt(int64(2))
 var serv1Share = prio_utils.Share(field,nbServ,serv1Secret)
 var serv2Share = prio_utils.Share(field,nbServ,serv2Secret)
 var serv3Share = prio_utils.Share(field,nbServ,serv3Secret)
+
+
+
+var req = prio_utils.ClientRequest(serv1Share, 0)
+var randomPoint = utils.RandInt(share.IntModulus)
 
 func TestSumCipherProtocol(t *testing.T) {
 
@@ -76,13 +79,6 @@ func NewSumCipherTest(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error)
 	pi, err := NewSumCipherProtocol(tni)
 	protocol := pi.(*SumCipherProtocol)
 
-	//assign struct of cipher to each server
-	encoded := make([]Cipher,nbClient)
-	encoded[0] = Encode(serv1Share[tni.Index()])
-	//encoded[1] = Encode(serv2Share[tni.Index()])
-	//encoded[2] = Encode(serv3Share[tni.Index()])
-
-	protocol.Ciphers = encoded
 
 	protocol.Proofs = true
 
@@ -93,11 +89,6 @@ func NewSumCipherTest(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error)
 
 	protocol.pre = prio_utils.NewCheckerPrecomp(ckt)
 	protocol.pre.SetCheckerPrecomp(randomPoint)
-
-	if(protocol.Index()==0) {
-		protocol.Leader = true;
-	}
-
 
 
 	return protocol, err

@@ -69,12 +69,6 @@ type StructOutShare struct {
 	OutShare
 }
 
-type Cipher struct {
-	Share *big.Int
-
-	//for the moment put bit in int
-	Bits []uint
-}
 
 
 type AcceptReply struct {
@@ -92,7 +86,6 @@ type SumCipherProtocol struct {
 	AnnounceChannel chan StructAnnounce
 
 	//The data of the protocol
-	Ciphers []Cipher
 	Sum 	*big.Int
 	Modulus *big.Int
 
@@ -107,6 +100,8 @@ type SumCipherProtocol struct {
 	OutShareChannel		chan StructOutShare
 
 }
+
+
 
 
 
@@ -159,10 +154,7 @@ func NewSumCipherProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance,error
 
 //start called at the root
 func (p*SumCipherProtocol) Start() error {
-	if p.Ciphers == nil {
-		return errors.New("No Shares to collect")
-	}
-	log.Lvl1(p.ServerIdentity(), " started a Sum Cipher Protocol (", len(p.Ciphers), " different shares)")
+	log.Lvl1(p.ServerIdentity(), " started a Sum Cipher Protocol (", 1, " different shares)")
 
 	start := time.Now()
 	//send to the children of the root
@@ -203,42 +195,8 @@ func (p *SumCipherProtocol) sumCipherAnnouncementPhase() {
 func (p *SumCipherProtocol) ascendingAggregationPhase() *big.Int {
 
 
-	if p.Ciphers == nil {
-		p.Sum = big.NewInt(0)
-	}
-
-	if !p.IsLeaf() {
-		//wait on the channel for child to complete and add sum
-		for _, v := range <-p.ChildDataChannel {
-			//get the bytes and turn them back in big.Int
-			var sum big.Int
-			sum.SetBytes(v.Bytes)
-			p.Sum.Add(p.Sum, &sum)
-			p.Sum.Mod(p.Sum,p.Modulus)
-		}
-	}
-
-
-	//do the sum of ciphers
-
-	for _, v := range p.Ciphers {
-		if !Verify(v) {
-			log.Lvl1("Share refused, will not use it for the operation ")
-		} else {
-			p.Sum.Add(p.Sum, Decode(v))
-			p.Sum.Mod(p.Sum, p.Modulus)
-		}
-	}
-
-	//send to parent the sum to deblock channel wait
-	if !p.IsRoot() {
-		//send the big.Int in bytes
-		p.SendToParent(&ReplySumCipherBytes{p.Sum.Bytes()})
-	}
-
 	//SNIP's proof
 	if (p.Proofs) {
-
 
 		//each protocol has its checker and it's request ( 1 request per server per client request)
 		check := p.Checker
@@ -300,6 +258,31 @@ func (p *SumCipherProtocol) ascendingAggregationPhase() *big.Int {
 				panic("Proof is NOT VALID")
 			}
 		}
+
+		if !p.IsLeaf() {
+			//wait on the channel for child to complete and add sum
+			for _, v := range <-p.ChildDataChannel {
+				//get the bytes and turn them back in big.Int
+				var sum big.Int
+				sum.SetBytes(v.Bytes)
+				p.Sum.Add(p.Sum, &sum)
+				p.Sum.Mod(p.Sum, p.Modulus)
+			}
+		}
+
+
+		//do the sum of ciphers
+
+		for i := 0 ; i < len(check.Outputs()) ; i++ {
+			p.Sum.Add(p.Sum, check.Outputs()[i].WireValue)
+			p.Sum.Mod(p.Sum, p.Modulus)
+	}
+
+	//send to parent the sum to deblock channel wait
+	if !p.IsRoot() {
+		//send the big.Int in bytes
+		p.SendToParent(&ReplySumCipherBytes{p.Sum.Bytes()})
+	}
 	}
 
 	//finish by returning the sum of the root
@@ -308,41 +291,5 @@ func (p *SumCipherProtocol) ascendingAggregationPhase() *big.Int {
 
 	return p.Sum
 
-}
-
-
-
-
-func Encode(x *big.Int) (Cipher) {
-	length := x.BitLen()
-	resultBit := make([]uint,length)
-	for i := 0; i < length; i++ {
-		resultBit[i] = x.Bit(i)
-	}
-	cipher := Cipher{x,resultBit}
-	return cipher
-}
-
-func Verify(c Cipher) (bool) {
-	verify := big.NewInt(0)
-	for i,b := range c.Bits {
-		if b>1 || b<0 {
-			panic("Not bits form in the encoding")
-			return false
-		}
-		verify.Add(verify,big.NewInt(0).Mul(big.NewInt(int64(b)),big.NewInt(0).Exp(big.NewInt(2),big.NewInt(int64(i)),nil)))
-
-	}
-	difference := big.NewInt(int64(0))
-	difference.Sub(c.Share,verify)
-	if difference.Uint64()== uint64(0) {
-		return true
-	}
-	errors.New(" The share is not equal to it's bit form")
-	return false
-}
-
-func Decode(c Cipher)(x *big.Int) {
-	return c.Share
 }
 

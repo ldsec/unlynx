@@ -30,6 +30,9 @@ type Checker struct {
 	evalH *big.Int
 }
 
+func (c *Checker) Outputs() []*circuit.Gate {
+	return c.ckt.Outputs()
+}
 
 
 func NewChecker(ckt *circuit.Circuit, serverIdx int, leaderIdx int) *Checker {
