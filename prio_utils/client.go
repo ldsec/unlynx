@@ -31,19 +31,25 @@ func ClientRequest(dataShared []*big.Int, leaderForReq int) ([]*Request){
 		out[s] = new(Request)
 	}
 
+	log.Lvl1("Inputs are")
 	inputs := make([]*big.Int,0)
 	for f := 0; f < len(dataShared); f++ {
+		log.Lvl1(dataShared[f])
 		inputs = append(inputs, toArrayBit(dataShared[f])...)
 	}
 
 	// Evaluate the Valid() circuit
 	ckt := ConfigToCircuit(dataShared)
-
+	log.Lvl1("When evaluate request mod is ", ckt.Modulus())
 	//can only evaluate on bit values,
 	ckt.Eval(inputs)
-
+	log.Lvl1("Output of circuits are ")
+	for i:=0;i<len(ckt.Outputs()) ;i++  {
+		log.Lvl1(ckt.Outputs()[i].WireValue)
+	}
 	// Generate sharings of the input wires and the multiplication gate wires
 	ckt.ShareWires(prg)
+
 
 
 	// Construct polynomials f, g, and h and share evaluations of h
@@ -74,7 +80,7 @@ func ConfigToCircuit(datas []*big.Int) *circuit.Circuit {
 	ckts := make([]*circuit.Circuit, nf)
 	for f := 0; f < nf; f++ {
 		name := "circuit"
-		name+= datas[f].String()
+		name+= string(f)
 		ckts[f] = int_Circuit(name, int(datas[f].BitLen()))
 	}
 

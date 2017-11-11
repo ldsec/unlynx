@@ -7,6 +7,7 @@ import (
 	"github.com/henrycg/prio/utils"
 	"github.com/henrycg/prio/poly"
 
+	"gopkg.in/dedis/onet.v1/log"
 )
 
 // Checker holds all of the state needed to check the validity
@@ -284,9 +285,10 @@ func (c *Checker) OutputIsValid(sharesIn []*OutShare) bool {
 
 	for _, share := range sharesIn {
 		check.Add(check, share.Check)
+		check.Mod(check, c.mod)
 	}
-	check.Mod(check, c.mod)
-	//log.Printf("BIG Wanted 0 got %v", check)
+
+	log.Lvl1("BIG Wanted 0 got ", check)
 
 	return (check.Sign() == 0)
 }
