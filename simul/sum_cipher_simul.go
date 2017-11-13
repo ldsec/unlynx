@@ -25,7 +25,7 @@ var ckt [][]*circuit.Circuit
 var req [][]*prio_utils.Request
 var mod = share.IntModulus
 var randomPoint = utils.RandInt(mod)
-var secretValues = prio_utils.Share(share.IntModulus, 2, big.NewInt(1))
+var secretBitLen [][]int
 //function to generate random value and their splits
 
 func createCipherSet(numberClient, numberServer int) ([][]*prio_utils.Request,[][]*circuit.Circuit) {
@@ -34,12 +34,14 @@ func createCipherSet(numberClient, numberServer int) ([][]*prio_utils.Request,[]
 	secretValues := make([][]*big.Int, numberClient)
 	circuit := make([][]*circuit.Circuit,numberClient)
 	result := make([][]*prio_utils.Request,numberClient)
+	secretBitLen = make([][]int, numberClient)
 
 	for i := 0; i < len(secretValues); i++ {
 		secretValues[i] = prio_utils.Share(share.IntModulus, numberServer, randomBig(big.NewInt(2),big.NewInt(64)))
 		result[i] = prio_utils.ClientRequest(secretValues[i],0)
+		secretBitLen[i] = toBit(secretValues[i])
 		for j:=0;j<numberServer ;j++  {
-			test := prio_utils.ConfigToCircuit(secretValues[i])
+			test := prio_utils.ConfigToCircuitBit(secretBitLen[i])
 			circuit[i] = append(circuit[i],test)
 		}
 	}
@@ -181,4 +183,12 @@ func NewSumCipherProtocolSimul(tni *onet.TreeNodeInstance, sim *SumCipherSimulat
 	}
 
 	return protocol, err
+}
+
+func toBit(v []*big.Int)([]int) {
+	result := make([]int,len(v))
+	for i,k := range v {
+		result[i] = k.BitLen()
+	}
+	return result
 }

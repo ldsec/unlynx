@@ -7,7 +7,6 @@ import (
 	"github.com/henrycg/prio/utils"
 	"github.com/henrycg/prio/poly"
 
-	"gopkg.in/dedis/onet.v1/log"
 )
 
 // Checker holds all of the state needed to check the validity
