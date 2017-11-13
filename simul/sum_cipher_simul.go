@@ -13,39 +13,38 @@ import (
 	"os"
 	"time"
 	"unlynx/prio_utils"
+	"github.com/henrycg/prio/share"
+	"github.com/henrycg/prio/utils"
+	"github.com/henrycg/prio/circuit"
 )
 
 
 //variable to choose the secret once and split them, as you assume client have their secret already split
 //in  a vector of size #servers. Means the number of server is supposed to be public
-var dataTest map[*big.Int][]*big.Int
-var mod *big.Int
-var Secrets []* big.Int
-//var sum float64
-
+var ckt [][]*circuit.Circuit
+var req [][]*prio_utils.Request
+var mod = share.IntModulus
+var randomPoint = utils.RandInt(mod)
+var secretValues = prio_utils.Share(share.IntModulus, 2, big.NewInt(1))
 //function to generate random value and their splits
-func createCipherSet(numberClient, numberServer int) (map[*big.Int][]*big.Int,*big.Int) {
-	//secret value of clients, and the map of secret value to shares
-	Secrets = make([]*big.Int,numberClient)
-	SecretsToShare := make(map[*big.Int][]*big.Int)
 
-	//modulus is set in function of the whole data miust be > nbClient*2^b
-	Modulus := big.NewInt(0)
+func createCipherSet(numberClient, numberServer int) ([][]*prio_utils.Request,[][]*circuit.Circuit) {
 
-	//so here we set it a 2^64
-	helper := new(big.Int)
-	Modulus.Mul(big.NewInt(int64(numberClient)),helper.Exp(big.NewInt(int64(2)),big.NewInt(int64(64)),nil))
+	//secret value of clients
+	secretValues := make([][]*big.Int, numberClient)
+	circuit := make([][]*circuit.Circuit,numberClient)
+	result := make([][]*prio_utils.Request,numberClient)
 
-	for i :=0; i < numberClient ;i++ {
-		Secrets[i] = randomBig(big.NewInt(int64(2)),big.NewInt(int64(64)))
+	for i := 0; i < len(secretValues); i++ {
+		secretValues[i] = prio_utils.Share(share.IntModulus, numberServer, randomBig(big.NewInt(2),big.NewInt(64)))
+		result[i] = prio_utils.ClientRequest(secretValues[i],0)
+		for j:=0;j<numberServer ;j++  {
+			test := prio_utils.ConfigToCircuit(secretValues[i])
+			circuit[i] = append(circuit[i],test)
+		}
 	}
-	//create the modulus
 
-	//create the shares
-	for i,_ := range Secrets {
-		SecretsToShare[Secrets[i]] = prio_utils.Share(Modulus,numberServer,Secrets[i])
-	}
-	return SecretsToShare,Modulus
+	return result,circuit
 }
 
 //fucntion to generate a random big int between 0 and low^expo
@@ -106,7 +105,8 @@ func (sim *SumCipherSimulation) Run(config *onet.SimulationConfig) error {
 
 		log.Lvl1("Starting round", round)
 
-		dataTest,mod = createCipherSet(sim.NbrClient, config.Tree.Size())
+		req,ckt = createCipherSet(sim.NbrClient, config.Tree.Size())
+
 		rooti, err := config.Overlay.CreateProtocol("SumCipherSimul", config.Tree, onet.NilServiceID)
 
 		if err != nil {
@@ -114,15 +114,6 @@ func (sim *SumCipherSimulation) Run(config *onet.SimulationConfig) error {
 		}
 
 		root := rooti.(*protocols.SumCipherProtocol)
-
-		//need to duplicate code to assign to root
-		root.Modulus = mod
-		ciph := make([]protocols.Cipher,sim.NbrClient)
-		for i := range Secrets {
-			test := dataTest[Secrets[i]]
-			ciph[i] = protocols.Encode(test[0])
-		}
-		root.Ciphers = ciph
 
 		round := lib.StartTimer("_LocalAddRm(Simulation")
 		start := time.Now()
@@ -132,14 +123,14 @@ func (sim *SumCipherSimulation) Run(config *onet.SimulationConfig) error {
 		log.Lvl1(sum)
 		log.Lvl1("Aggregated result is : ", results)
 
-		expectedRes := big.NewInt(0)
-		for _,c := range Secrets {
+		//expectedRes := big.NewInt(0)
+		/*for _,c := range Secrets {
 			expectedRes.Add(expectedRes,c)
 			expectedRes.Mod(expectedRes,mod)
 		}
 		if !(expectedRes.Int64()==results.Int64()) {
 			panic("Result is not matching")
-		}
+		}*/
 		lib.EndTimer(round)
 		filename:="/home/max/Documents/go/src/unlynx/simul/time"
 		f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0600)
@@ -162,7 +153,6 @@ func (sim *SumCipherSimulation) Node(config *onet.SimulationConfig) error {
 		func(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 			return NewSumCipherProtocolSimul(tni, sim)
 		})
-	log.Lvl1(config.Server.ServerIdentity)
 	//time := time.Since(start)
 	//sum += time.Seconds()
 
@@ -176,12 +166,19 @@ func NewSumCipherProtocolSimul(tni *onet.TreeNodeInstance, sim *SumCipherSimulat
 	pap := protocol.(*protocols.SumCipherProtocol)
 
 	pap.Modulus = mod
-	ciph := make([]protocols.Cipher,sim.NbrClient)
-	for i := range Secrets {
-		test := dataTest[Secrets[i]]
-		ciph[i] = protocols.Encode(test[tni.Index()])
+	pap.Proofs = true
+	pap.Request = make([]*prio_utils.Request,len(req))
+	pap.Checker = make([]*prio_utils.Checker,len(req))
+	pap.Pre = make([]*prio_utils.CheckerPrecomp,len(req))
+
+	//simulate sending of client to protocol, !! each server must have a different circuit which has the same value for
+	//each client submission
+	for i:=0; i<len(pap.Checker); i++ {
+		pap.Request[i] = req[i][pap.Index()]
+		pap.Checker[i] = prio_utils.NewChecker(ckt[i][tni.Index()],pap.Index(),0)
+		pap.Pre[i] = prio_utils.NewCheckerPrecomp(ckt[i][tni.Index()])
+		pap.Pre[i].SetCheckerPrecomp(randomPoint)
 	}
 
-	pap.Ciphers = ciph
-	return pap, err
+	return protocol, err
 }

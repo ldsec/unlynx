@@ -98,7 +98,6 @@ func NewCheckerPrecomp(ckt *circuit.Circuit) *CheckerPrecomp {
 
 	pre.degN = poly.NewBatch(ckt.Modulus(), rootsN)
 	pre.deg2N = poly.NewBatch(ckt.Modulus(), roots2N[0:2*N-1])
-
 	return pre
 }
 
@@ -285,10 +284,9 @@ func (c *Checker) OutputIsValid(sharesIn []*OutShare) bool {
 
 	for _, share := range sharesIn {
 		check.Add(check, share.Check)
-		check.Mod(check, c.mod)
-	}
-
-	log.Lvl1("BIG Wanted 0 got ", check)
+		}
+	check.Mod(check, c.mod)
+	//log.Lvl1("BIG Wanted 0 got ", check)
 
 	return (check.Sign() == 0)
 }

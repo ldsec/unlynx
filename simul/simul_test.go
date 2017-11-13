@@ -1,7 +1,6 @@
 package main_test
 
 import (
-	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/simul"
 	"testing"
 )
