@@ -57,6 +57,8 @@ func TestServiceDDT(t *testing.T) {
 
 	wg := lib.StartParallelize(len(el.List))
 
+	serviceI2B2.NewUnLynxClient(el.List[0], strconv.Itoa(0))
+
 	// the first two threads execute the same operation (repetition) to check that in the end it yields the same result
 	go func() {
 		defer wg.Done()
