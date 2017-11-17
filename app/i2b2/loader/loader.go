@@ -422,11 +422,7 @@ func GenerateOntologyFiles(group *onet.Roster, entryPointIdx int, fOntClinical, 
 		return err
 	}
 
-	if err := writeMetadataSensitiveTagged(taggedValues, keyForSensitiveIDs); err != nil {
-		return err
-	}
-
-	return nil
+	return writeMetadataSensitiveTagged(taggedValues, keyForSensitiveIDs)
 }
 
 // GenerateDataFiles generates the .csv files that 'belong' to the dataset (demodata)
@@ -762,6 +758,7 @@ func GenerateRandomBytes(n int) ([]byte, error) {
 	return b, nil
 }
 
+// EncryptAndTag encrypts the query elements and tags them to allow for the comparison between elements
 func EncryptAndTag(list []int64, group *onet.Roster, entryPointIdx int) ([]lib.GroupingKey, error) {
 
 	// ENCRYPTION

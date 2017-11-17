@@ -2,12 +2,12 @@ package main
 
 import (
 	"errors"
+	"github.com/lca1/unlynx/app/i2b2/loader"
 	"gopkg.in/dedis/onet.v1/app"
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/urfave/cli.v1"
 	"os"
 	"strconv"
-	"github.com/lca1/unlynx/app/i2b2/loader"
 	"time"
 )
 
@@ -35,7 +35,7 @@ func computePerfFromApp(c *cli.Context) error {
 	}
 
 	// perform test
-	switch (perfType) {
+	switch perfType {
 	case "encryptAndTag":
 
 		// parameter
@@ -54,13 +54,13 @@ func computePerfFromApp(c *cli.Context) error {
 		// allocate array and run test
 		testValues := make([]int64, 0, nbElements)
 
-		for i := int64(0) ; i < nbElements ; i++ {
+		for i := int64(0); i < nbElements; i++ {
 			testValues = append(testValues, i)
 		}
 
 		start := time.Now()
 		loader.EncryptAndTag(testValues, el, entryPointIdx)
-		log.LLvl1("Encrypt and tag for " , nbElements , "... (", time.Since(start), ")")
+		log.LLvl1("Encrypt and tag for ", nbElements, "... (", time.Since(start), ")")
 
 	}
 

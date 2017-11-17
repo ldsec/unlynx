@@ -209,7 +209,6 @@ func main() {
 		},
 	}
 
-
 	querierFlags := []cli.Flag{
 		cli.StringFlag{
 			Name:  optionGroupFile + ", " + optionGroupFileShort,

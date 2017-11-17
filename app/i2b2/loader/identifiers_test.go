@@ -62,14 +62,14 @@ func TestEncodeAlleles(t *testing.T) {
 func TestGetVariantID(t *testing.T) {
 	res, err := loader.GetVariantID("1", int64(6), "AC", "ATTT")
 	assert.Nil(t, err)
-	assert.Equal(t, res, int64(288230382887780688))
+	assert.Equal(t, res, int64(-8935141653966995120))
 
 	res, err = loader.GetVariantID("10", int64(2300), "C", "T")
 	assert.Nil(t, err)
-	assert.Equal(t, res, int64(2882306231358198784))
+	assert.Equal(t, res, int64(-6341065805496577024))
 
 	res, err = loader.GetVariantID("1", int64(999999), "TAAAC", "G")
 	assert.Nil(t, err)
-	assert.Equal(t, res, int64(289304117607012352))
+	assert.Equal(t, res, int64(-8934067919247763456))
 
 }

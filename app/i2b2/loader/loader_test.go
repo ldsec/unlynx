@@ -97,6 +97,7 @@ func generateFiles(t *testing.T, el *onet.Roster, entryPointIdx int) {
 }
 
 func TestGenerateFilesLocalTest(t *testing.T) {
+	t.Skip()
 	el, local, err := getRoster("")
 	assert.True(t, err == nil, err)
 	generateFiles(t, el, 0)
@@ -104,7 +105,7 @@ func TestGenerateFilesLocalTest(t *testing.T) {
 }
 
 func TestGenerateFilesGroupFile(t *testing.T) {
-	//t.Skip()
+	t.Skip()
 	// todo: fix hardcoded path
 	el, _, err := getRoster("/Users/jagomes/Documents/EPFL/MedCo/i2b2/medco-deployment/configuration/keys/dev-3nodes-samehost/group.toml")
 	assert.True(t, err == nil, err)
@@ -118,6 +119,7 @@ func TestReplayDataset(t *testing.T) {
 }
 
 func TestGenerateLoadingScript(t *testing.T) {
+	t.Skip()
 	err := loader.GenerateLoadingScript(loader.DBSettings{DBhost: "localhost", DBport: 5434, DBname: "medcodeployment", DBuser: "postgres", DBpassword: "prigen2017"})
 	assert.True(t, err == nil)
 }
