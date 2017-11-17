@@ -67,7 +67,6 @@ func TestNullCipherVector(t *testing.T) {
 	secKey, pubKey := lib.GenKey()
 
 	nullVectEnc := *lib.NullCipherVector(10, pubKey)
-
 	nullVectDec := lib.DecryptIntVector(secKey, &nullVectEnc)
 
 	target := []int64{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}

@@ -440,7 +440,6 @@ func (s *Service) HandleSurveyAggRequest(sar *SurveyAggRequest) (network.Message
 
 		tr := castToSurveyAgg(s.MapSurveyAgg.Get((string)(sar.SurveyID))).TR
 
-		s.MapSurveyAgg.Remove((string)(sar.SurveyID))
 		return &ServiceResultAgg{Result: survey.Request.AggregateKSwitched[index].AggregatingAttributes[0], TR: tr}, nil
 
 		// (root = true - intra = true )
@@ -541,7 +540,8 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 		s.Mutex.Unlock()
 
 	case protocols.ShufflingProtocolName:
-		survey := castToSurveyAgg(s.MapSurveyAgg.Get(string(conf.Data)))
+		target := SurveyID(string(conf.Data))
+		survey := castToSurveyAgg(s.MapSurveyAgg.Get(string(target)))
 
 		pi, err := protocols.NewShufflingProtocol(tn)
 		if err != nil {
@@ -569,7 +569,8 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 		}
 		return pi, nil
 	case protocols.KeySwitchingProtocolName:
-		survey := castToSurveyAgg(s.MapSurveyAgg.Get(string(conf.Data)))
+		target := SurveyID(string(conf.Data))
+		survey := castToSurveyAgg(s.MapSurveyAgg.Get(string(target)))
 
 		pi, err = protocols.NewKeySwitchingProtocol(tn)
 		if err != nil {
@@ -688,7 +689,7 @@ func (s *Service) KeySwitchingPhase(targetSurvey SurveyID, roster *onet.Roster) 
 	survey := castToSurveyAgg(s.MapSurveyAgg.Get(string(targetSurvey)))
 	survey.TR.AggRequestTimeExec += keySTimeExec
 	survey.TR.AggRequestTimeCommun += keySTimeCommun
-	s.MapSurveyAgg.Put((string)(survey.SurveyID), survey)
+	s.MapSurveyAgg.Put((string)(targetSurvey), survey)
 
 	return keySwitchedAggregatedResponses, nil
 }
