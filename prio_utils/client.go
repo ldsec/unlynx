@@ -9,12 +9,14 @@ import (
 	"github.com/henrycg/prio/share"
 	"github.com/henrycg/prio/triple"
 
+	"math/rand"
 )
 
 //this should be run at client for proof start
 //a ClientRequest is sent to each server from one client, for all client
 
 type Request struct {
+	RequestID []byte
 	Hint *share.PRGHints
 	TripleShare *triple.Share
 }
@@ -25,10 +27,14 @@ func ClientRequest(dataShared []*big.Int, leaderForReq int) ([]*Request){
 	ns := len(dataShared)
 	prg := share.NewGenPRG(ns, leaderForReq)
 
+	pub := make([]byte,32)
+	rand.Read(pub)
+
 
 	out := make([]*Request, ns)
 	for s := 0; s < ns; s++ {
 		out[s] = new(Request)
+		out[s].RequestID = pub
 	}
 
 	//log.Lvl1("Inputs are")

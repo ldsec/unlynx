@@ -101,7 +101,7 @@ func NewSumCipherTest(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error)
 	protocol.Pre[0].SetCheckerPrecomp(randomPoint)
 
 	protocol.Pre[1] = prio_utils.NewCheckerPrecomp(ckt2)
-	protocol.Pre[1].SetCheckerPrecomp(randomPoint2)
+	protocol.Pre[1].SetCheckerPrecomp(randomPoint)
 
 
 	return protocol, err

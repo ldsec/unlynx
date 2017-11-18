@@ -8,6 +8,8 @@ import (
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"
+	"os"
+	"time"
 )
 
 func init() {
@@ -54,6 +56,7 @@ func (sim *LocalAggregationSimulation) Setup(dir string, hosts []string) (*onet.
 
 // Run starts the simulation.
 func (sim *LocalAggregationSimulation) Run(config *onet.SimulationConfig) error {
+
 	for round := 0; round < sim.Rounds; round++ {
 		log.Lvl1("Starting round", round)
 		rooti, err := config.Overlay.CreateProtocol("LocalAggregation", config.Tree, onet.NilServiceID)
@@ -101,8 +104,10 @@ func (sim *LocalAggregationSimulation) Run(config *onet.SimulationConfig) error 
 			}
 		}
 
+
 		log.Lvl1("starting protocol with ", len(detResponses), " responses")
 
+		start := time.Now()
 		root.ProtocolInstance().(*protocols.LocalAggregationProtocol).TargetOfAggregation = detResponses
 		root.ProtocolInstance().(*protocols.LocalAggregationProtocol).Proofs = sim.Proofs
 
@@ -112,9 +117,22 @@ func (sim *LocalAggregationSimulation) Run(config *onet.SimulationConfig) error 
 		results := <-root.ProtocolInstance().(*protocols.LocalAggregationProtocol).FeedbackChannel
 		log.Lvl1("Number of aggregated lines: ", len(results))
 
+		end := time.Since(start)
 		lib.EndTimer(round)
+		filename := "/home/max/Documents/go/src/unlynx/simul/time"
+		f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0600)
+		if err != nil {
+			panic(err)
+		}
 
+		defer f.Close()
+
+		//to put in ms
+		if _, err = f.WriteString(end.String()+"\n"); err != nil {
+			panic(err)
+		}
 	}
+
 
 	return nil
 }

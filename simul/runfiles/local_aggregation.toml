@@ -1,9 +1,9 @@
 Simulation = "LocalAggregation"
 Servers = 1
 Bf = 2
-Rounds = 1
+Rounds = 25
 RunWait = 6000000
 Bandwidth = 1000
 
 Hosts, NbrResponses, NbrGroups, NbrGroupAttributes, NbrAggrAttributes, Proofs
-1, 10, 10, 2, 10, true
+1, 100, 1, 0, 1, true

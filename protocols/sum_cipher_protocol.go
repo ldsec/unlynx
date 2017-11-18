@@ -6,8 +6,6 @@ import (
 	"errors"
 	"gopkg.in/dedis/onet.v1/log"
 	"math/big"
-	"time"
-
 	"unlynx/prio_utils"
 
 	"github.com/henrycg/prio/utils"
@@ -103,13 +101,10 @@ type SumCipherProtocol struct {
 	Checker []*prio_utils.Checker
 	Leader  bool
 	//channel for proof
-	CorShareChannel	chan StructCorShare
+	CorShareChannel chan StructCorShare
 	OutShareChannel		chan StructOutShare
 
 }
-
-
-
 
 
 /*
@@ -170,8 +165,8 @@ func (p*SumCipherProtocol) Start() error {
 
 
 	p.SendToChildren(&AnnounceSumCipher{})
-	start := time.Now()
-	log.Lvl1("time to send mesage to children of root ", time.Since(start))
+	//start := time.Now()
+	//log.Lvl1("time to send mesage to children of root ", time.Since(start))
 	return nil
 }
 //dispatch is called on the node and handle incoming messages
@@ -187,10 +182,10 @@ func (p*SumCipherProtocol) Dispatch() error {
 	p.waitOnSignal()
 
 	//Ascending aggreg
-	start := time.Now()
-	log.Lvl1(" Server p ",p.Index() , "start Aggreg")
+	//start := time.Now()
+	//log.Lvl1(" Server p ",p.Index() , "start Aggreg")
 	sum := p.ascendingAggregationPhase()
-	log.Lvl1(p.ServerIdentity(), " completed aggregation phase (", sum, " is the sum ) in ", time.Since(start))
+	//log.Lvl1(p.ServerIdentity(), " completed aggregation phase (", sum, " is the sum ) in ", time.Since(start))
 
 	//report result
 	if p.IsRoot() {
@@ -207,7 +202,7 @@ func (p *SumCipherProtocol)waitOnSignal() {
 
 		j := <- p.ResponsceChannel
 		//log.Lvl1("Send to parent" , p.Index())
-		log.Lvl1(j)
+		//log.Lvl1(j)
 		if (!p.IsRoot()) {
 			p.SendToParent(&j)
 		}
@@ -226,14 +221,10 @@ func (p *SumCipherProtocol) ascendingAggregationPhase() *big.Int {
 
 	//SNIP's proof
 	if (p.Proofs) {
+		//var sumTime time.Duration
+		//var start time.Time
 		for i := 0; i < len(p.Request); i++ {
-
-			//find solution for this
-			count := 0
-			for(count < 100000000) {
-				count++
-			}
-
+			//sumTime = 0
 			//each protocol has its checker and it's request ( 1 request per server per client request)
 			check := p.Checker[i]
 			check.SetReq(p.Request[i])
@@ -263,13 +254,12 @@ func (p *SumCipherProtocol) ascendingAggregationPhase() *big.Int {
 			//cor is same for all server you cannot transfer it that's why you transfer the shares
 			cor := check.Cor(evalRepliesFromAll)
 
-			log.Lvl1(p.ServerIdentity(), " All cor should be the same",cor)
+			log.Lvl1(p.Index(), " All cor should be the same", cor)
 			//we need to do this on all servers as they all have a part of the beaver triple
 			finalReplies := make([]*prio_utils.OutShare, 1)
 
 			//random key is same for all
 			finalReplies[0] = check.OutShare(cor, randomKey)
-
 
 			if !p.IsRoot() {
 				p.SendTo(p.Root(), &OutShare{finalReplies[0].Check.Bytes()})
@@ -286,16 +276,19 @@ func (p *SumCipherProtocol) ascendingAggregationPhase() *big.Int {
 					finalRepliesAll = append(finalRepliesAll, outShare)
 				}
 
-
 				isValid := check.OutputIsValid(finalRepliesAll)
 				log.Lvl1("output is valid ? ", isValid)
-				if (!isValid) {
+				/*if (!isValid) {
 					panic("Proof is NOT VALID")
-				}
+				}*/
 			}
 
 			if !p.IsLeaf() {
 				//wait on the channel for child to complete and add sum
+				//take time only at the root
+				/*if p.IsRoot() {
+					start = time.Now()
+				}*/
 				for _, v := range <-p.ChildDataChannel {
 					//get the bytes and turn them back in big.Int
 					var sum big.Int
@@ -318,12 +311,31 @@ func (p *SumCipherProtocol) ascendingAggregationPhase() *big.Int {
 				p.SendToParent(&ReplySumCipherBytes{p.Sum.Bytes()})
 				p.Sum = big.NewInt(0)
 			}
-		}
 
+			/*
+			if(p.IsRoot()) {
+				time := time.Since(start)
+				sumTime += time
+			}*/
+		}
+		/*
+		if(p.IsRoot()) {
+			filename := "/home/max/Documents/go/src/unlynx/simul/time"
+			f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0600)
+			if err != nil {
+				panic(err)
+			}
+
+			defer f.Close()
+
+			if _, err = f.WriteString(sumTime.String() + "\n"); err != nil {
+				panic(err)
+			}
+		}*/
 		//finish by returning the sum of the root
 		p.Sum.Mod(p.Sum, p.Modulus)
-	}
 
+	}
 	return p.Sum
 
 }

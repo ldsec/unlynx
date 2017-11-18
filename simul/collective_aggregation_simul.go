@@ -10,13 +10,14 @@ import (
 
 	"time"
 	"strconv"
+	"os"
 )
 
 //var suite = network.Suite
 //var grpattr = lib.DeterministCipherText{Point: suite.Point().Base()}
 //var clientPrivate = suite.Scalar().One() //one -> to have the same for each node
 //var clientPublic = suite.Point().Mul(suite.Point().Base(), clientPrivate)
-var sum = 0.0
+var sum time.Duration
 
 
 func createDataSet(numberGroups, numberAttributes, numberGroupAttr int) map[lib.GroupingKey]lib.FilteredResponse {
@@ -117,12 +118,9 @@ func (sim *CollectiveAggregationSimulation) Run(config *onet.SimulationConfig) e
 			root.Start()
 			<-root.ProtocolInstance().(*protocols.CollectiveAggregationProtocol).FeedbackChannel
 			time := time.Since(start)
-			sum += time.Seconds()
+
 			lib.EndTimer(round)
-
-		}
-
-		/*filename := "/home/max/Documents/go/src/unlynx/simul/time"
+		filename := "/home/max/Documents/go/src/unlynx/simul/time"
 		f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0600)
 		if err != nil {
 			panic(err)
@@ -131,10 +129,13 @@ func (sim *CollectiveAggregationSimulation) Run(config *onet.SimulationConfig) e
 		defer f.Close()
 
 		//to put in ms
-		if _, err = f.WriteString(FloatToString(sum * 1000)+"\n"); err != nil {
+		if _, err = f.WriteString(time.String()+"\n"); err != nil {
 			panic(err)
-		}*/
+		}
+
+		}
 	return nil
+
 }
 
 func FloatToString(input_num float64) string {

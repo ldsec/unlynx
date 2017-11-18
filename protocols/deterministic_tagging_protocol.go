@@ -191,7 +191,6 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 			}
 		}
 	}
-
 	lib.EndParallelize(wg)
 	log.Lvl1(p.ServerIdentity(), " preparation round for deterministic tagging")
 

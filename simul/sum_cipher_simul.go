@@ -10,12 +10,13 @@ import (
 	"errors"
 	"unlynx/lib"
 
-	"os"
-	"time"
 	"unlynx/prio_utils"
 	"github.com/henrycg/prio/share"
 	"github.com/henrycg/prio/utils"
 	"github.com/henrycg/prio/circuit"
+
+	"os"
+	"time"
 )
 
 
@@ -71,7 +72,8 @@ func init() {
 type SumCipherSimulation struct {
 	onet.SimulationBFTree
 
-	NbrClient          int
+	NbrRequestByProto  int
+	NbrValidation	   int
 	Proofs             bool
 }
 
@@ -104,47 +106,45 @@ func (sim *SumCipherSimulation) Setup(dir string, hosts []string) (*onet.Simulat
 // Run starts the simulation.
 func (sim *SumCipherSimulation) Run(config *onet.SimulationConfig) error {
 	for round := 0; round < sim.Rounds; round++ {
-
 		log.Lvl1("Starting round", round)
 
-		req,ckt = createCipherSet(sim.NbrClient, config.Tree.Size())
+		req, ckt = createCipherSet(sim.NbrRequestByProto, config.Tree.Size())
 
-		rooti, err := config.Overlay.CreateProtocol("SumCipherSimul", config.Tree, onet.NilServiceID)
-
-		if err != nil {
-			return err
-		}
-
-		root := rooti.(*protocols.SumCipherProtocol)
-
-		round := lib.StartTimer("_LocalAddRm(Simulation")
+		roundTime := lib.StartTimer("_LocalAddRm(Simulation")
+		//new variable for nbValidation
+		wg := lib.StartParallelize(sim.NbrValidation)
 		start := time.Now()
-		root.Start()
-		results := <-root.ProtocolInstance().(*protocols.SumCipherProtocol).Feedback
+		for i := 0; i<sim.NbrValidation;i++ {
+			go func() {
+				defer wg.Done()
+				rooti, err := config.Overlay.CreateProtocol("SumCipherSimul", config.Tree, onet.NilServiceID)
+				if err != nil {
+					return
+				}
+				root := rooti.(*protocols.SumCipherProtocol)
+
+				root.Start()
+				<-root.ProtocolInstance().(*protocols.SumCipherProtocol).Feedback
+				root.Shutdown()
+			}()
+
+		}
+		lib.EndParallelize(wg)
 		time := time.Since(start)
-		log.Lvl1(sum)
-		log.Lvl1("Aggregated result is : ", results)
+		lib.EndTimer(roundTime)
 
-		//expectedRes := big.NewInt(0)
-		/*for _,c := range Secrets {
-			expectedRes.Add(expectedRes,c)
-			expectedRes.Mod(expectedRes,mod)
-		}
-		if !(expectedRes.Int64()==results.Int64()) {
-			panic("Result is not matching")
-		}*/
-		lib.EndTimer(round)
-		filename:="/home/max/Documents/go/src/unlynx/simul/time"
-		f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0600)
-		if err != nil {
-			panic(err)
-		}
+			filename := "/home/max/Documents/go/src/unlynx/simul/time"
+			f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0600)
+			if err != nil {
+				panic(err)
+			}
 
-		defer f.Close()
+			defer f.Close()
 
-		if _, err = f.WriteString(time.String()+"\n"); err != nil {
-			panic(err)
-		}
+			if _, err = f.WriteString(time.String() + "\n"); err != nil {
+				panic(err)
+			}
+
 	}
 	return nil
 }
