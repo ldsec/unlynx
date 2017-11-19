@@ -1,24 +1,28 @@
 package protocols
 
+/*
 import (
-	"gopkg.in/dedis/onet.v1"
-	"gopkg.in/dedis/onet.v1/network"
-	"errors"
-	"gopkg.in/dedis/onet.v1/log"
-	"math/big"
-	"unlynx/prio_utils"
+"gopkg.in/dedis/onet.v1"
+"gopkg.in/dedis/onet.v1/network"
+"errors"
+"gopkg.in/dedis/onet.v1/log"
+"math/big"
+"unlynx/prio_utils"
 
-	"github.com/henrycg/prio/utils"
+"github.com/henrycg/prio/utils"
 
+"time"
+"os"
+"strconv"
 )
 
 
 const SumCipherProtocolName = "SumCipher"
 
 
-/*Messages
+
 ____________________________________________________________________________________________________________________
- */
+
 
 //structure to announce start of protocol
 type AnnounceSumCipher struct {
@@ -44,9 +48,9 @@ type CorShare struct {
 type OutShare struct {
 	Out		[]byte
 }
-/*Structs
+
 _________________________________________________________________________________________________________________________
-*/
+
 
 type StructAnnounce struct {
 	*onet.TreeNode
@@ -107,9 +111,7 @@ type SumCipherProtocol struct {
 }
 
 
-/*
-_______________________________________________________________________________
- */
+
 var randomKey = utils.RandomPRGKey()
 
 func init() {
@@ -161,7 +163,7 @@ func NewSumCipherProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance,error
 
 //start called at the root
 func (p*SumCipherProtocol) Start() error {
-	log.Lvl1(p.ServerIdentity(), " started a Sum Cipher Protocol (", len(p.Request), " different shares)")
+	// log.Lvl1(p.ServerIdentity(), " started a Sum Cipher Protocol (", len(p.Request), " different shares)")
 
 
 	p.SendToChildren(&AnnounceSumCipher{})
@@ -221,10 +223,11 @@ func (p *SumCipherProtocol) ascendingAggregationPhase() *big.Int {
 
 	//SNIP's proof
 	if (p.Proofs) {
-		//var sumTime time.Duration
-		//var start time.Time
+		var sumTime time.Duration
+		var start time.Time
+
 		for i := 0; i < len(p.Request); i++ {
-			//sumTime = 0
+			sumTime = 0
 			//each protocol has its checker and it's request ( 1 request per server per client request)
 			check := p.Checker[i]
 			check.SetReq(p.Request[i])
@@ -254,7 +257,7 @@ func (p *SumCipherProtocol) ascendingAggregationPhase() *big.Int {
 			//cor is same for all server you cannot transfer it that's why you transfer the shares
 			cor := check.Cor(evalRepliesFromAll)
 
-			log.Lvl1(p.Index(), " All cor should be the same", cor)
+			//log.Lvl1(p.Index(), " All cor should be the same", cor)
 			//we need to do this on all servers as they all have a part of the beaver triple
 			finalReplies := make([]*prio_utils.OutShare, 1)
 
@@ -280,15 +283,13 @@ func (p *SumCipherProtocol) ascendingAggregationPhase() *big.Int {
 				log.Lvl1("output is valid ? ", isValid)
 				/*if (!isValid) {
 					panic("Proof is NOT VALID")
-				}*/
+				}
 			}
 
+			start = time.Now()
 			if !p.IsLeaf() {
 				//wait on the channel for child to complete and add sum
 				//take time only at the root
-				/*if p.IsRoot() {
-					start = time.Now()
-				}*/
 				for _, v := range <-p.ChildDataChannel {
 					//get the bytes and turn them back in big.Int
 					var sum big.Int
@@ -312,26 +313,25 @@ func (p *SumCipherProtocol) ascendingAggregationPhase() *big.Int {
 				p.Sum = big.NewInt(0)
 			}
 
-			/*
-			if(p.IsRoot()) {
-				time := time.Since(start)
-				sumTime += time
-			}*/
+
+			time := time.Since(start)
+			sumTime += time
+
 		}
-		/*
-		if(p.IsRoot()) {
-			filename := "/home/max/Documents/go/src/unlynx/simul/time"
-			f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0600)
-			if err != nil {
-				panic(err)
-			}
 
-			defer f.Close()
 
-			if _, err = f.WriteString(sumTime.String() + "\n"); err != nil {
-				panic(err)
-			}
-		}*/
+		filename := "/home/unlynx/go/src/unlynx/simul/time"
+		f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0600)
+		if err != nil {
+			panic(err)
+		}
+
+		defer f.Close()
+
+		if _, err = f.WriteString(sumTime.String()+ strconv.Itoa(p.Index()) + "\n"); err != nil {
+			panic(err)
+		}
+
 		//finish by returning the sum of the root
 		p.Sum.Mod(p.Sum, p.Modulus)
 
@@ -340,3 +340,4 @@ func (p *SumCipherProtocol) ascendingAggregationPhase() *big.Int {
 
 }
 
+*/

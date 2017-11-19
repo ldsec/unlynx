@@ -1,5 +1,5 @@
 package protocols
-
+/*
 import (
 	"testing"
 	"gopkg.in/dedis/onet.v1"
@@ -105,4 +105,4 @@ func NewSumCipherTest(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error)
 
 
 	return protocol, err
-}
+}*/

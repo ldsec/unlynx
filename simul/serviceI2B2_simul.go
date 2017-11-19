@@ -1,5 +1,5 @@
 package main
-
+/*
 import (
 	"github.com/BurntSushi/toml"
 	"github.com/lca1/unlynx/lib"
@@ -127,7 +127,7 @@ func (sim *SimulationUnLynxI2B2) Run(config *onet.SimulationConfig) error {
 			sim.NbrWhereClear, sim.NbrWhereEncrypted, sim.NbrAggrClear, sim.NbrAggrEncrypted, []int64{}, true)
 
 		/*log.Lvl1("Saving test data...")
-		data.WriteDataToFile("unlynx_test_data.txt", testData)*/
+		data.WriteDataToFile("unlynx_test_data.txt", testData)
 
 		finalResult := make([]int64, 0)
 		mutex := &sync.Mutex{}

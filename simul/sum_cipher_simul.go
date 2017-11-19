@@ -15,8 +15,6 @@ import (
 	"github.com/henrycg/prio/utils"
 	"github.com/henrycg/prio/circuit"
 
-	"os"
-	"time"
 )
 
 
@@ -113,7 +111,7 @@ func (sim *SumCipherSimulation) Run(config *onet.SimulationConfig) error {
 		roundTime := lib.StartTimer("_LocalAddRm(Simulation")
 		//new variable for nbValidation
 		wg := lib.StartParallelize(sim.NbrValidation)
-		start := time.Now()
+		//start := time.Now()
 		for i := 0; i<sim.NbrValidation;i++ {
 			go func() {
 				defer wg.Done()
@@ -125,15 +123,14 @@ func (sim *SumCipherSimulation) Run(config *onet.SimulationConfig) error {
 
 				root.Start()
 				<-root.ProtocolInstance().(*protocols.SumCipherProtocol).Feedback
-				root.Shutdown()
 			}()
 
 		}
 		lib.EndParallelize(wg)
-		time := time.Since(start)
+		//time := time.Since(start)
 		lib.EndTimer(roundTime)
 
-			filename := "/home/max/Documents/go/src/unlynx/simul/time"
+			/*filename := "/home/unlynx/go/src/unlynx/simul/time"
 			f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0600)
 			if err != nil {
 				panic(err)
@@ -143,7 +140,7 @@ func (sim *SumCipherSimulation) Run(config *onet.SimulationConfig) error {
 
 			if _, err = f.WriteString(time.String() + "\n"); err != nil {
 				panic(err)
-			}
+			}*/
 
 	}
 	return nil
