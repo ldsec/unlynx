@@ -49,9 +49,8 @@ func TestPrioVerificationProtocol(t *testing.T) {
 	protocol.Start()
 
 	//timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*5*2) * time.Millisecond
-
 	if (protocol.IsRoot()) {
-		Result := <- protocol.IsOkay
+		Result :=  protocol.IsOkay
 		log.Lvl1("time elapsed is ", time.Since(start))
 		assert.Equal(t, true, Result)
 	}

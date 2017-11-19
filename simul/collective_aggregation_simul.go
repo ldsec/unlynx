@@ -9,7 +9,6 @@ import (
 	"gopkg.in/dedis/onet.v1/network"
 
 	"time"
-	"strconv"
 	"os"
 )
 
@@ -138,10 +137,6 @@ func (sim *CollectiveAggregationSimulation) Run(config *onet.SimulationConfig) e
 
 }
 
-func FloatToString(input_num float64) string {
-	// to convert a float number to a string
-	return strconv.FormatFloat(input_num, 'f', 6, 64)
-}
 // NewAggregationProtocolSimul is a simulation specific protocol instance constructor that injects test data.
 func NewAggregationProtocolSimul(tni *onet.TreeNodeInstance, sim *CollectiveAggregationSimulation) (onet.ProtocolInstance, error) {
 

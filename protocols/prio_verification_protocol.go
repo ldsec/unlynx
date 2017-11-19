@@ -10,7 +10,6 @@ import (
 
 	"github.com/henrycg/prio/utils"
 
-	"github.com/henrycg/prio/share"
 )
 
 
@@ -74,7 +73,7 @@ type PrioVerificationProtocol struct {
 	Request *prio_utils.Request
 	Pre     *prio_utils.CheckerPrecomp
 	Checker *prio_utils.Checker
-	IsOkay  chan bool
+	IsOkay   bool
 
 	//channel for proof
 	CorShareChannel chan StructCorShare
@@ -101,7 +100,6 @@ func NewPrioVerifcationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance
 	st := &PrioVerificationProtocol{
 		TreeNodeInstance: n,
 		AggregateData:         make(chan []*big.Int,1),
-		IsOkay:  			make(chan bool),
 
 	}
 
@@ -152,16 +150,11 @@ func (p*PrioVerificationProtocol) Dispatch() error {
 	//start := time.Now()
 	//log.Lvl1(" Server p ",p.Index() , "start Aggreg")
 	datas := p.collectiveVerificationPhase()
-	//log.Lvl1(p.ServerIdentity(), " completed aggregation phase (", sum, " is the sum ) in ", time.Since(start))
-
-	//report result
-	p.AggregateData <- datas
-	sum:= big.NewInt(0)
-	for _,v := range datas {
-		sum.Add(sum,v)
+	if p.IsRoot() {
+		log.Lvl1(datas)
 	}
-	sum.Mod(sum,share.IntModulus)
-	log.Lvl1("Sum is ", sum)
+	//log.Lvl1(p.ServerIdentity(), " completed aggregation phase (", sum, " is the sum ) in ", time.Since(start))
+	//report result
 	return nil
 }
 
@@ -248,7 +241,7 @@ func (p *PrioVerificationProtocol) collectiveVerificationPhase() []*big.Int {
 
 		isValid := check.OutputIsValid(finalRepliesAll)
 		log.Lvl1("output is valid ? ", isValid)
-		p.IsOkay <- true
+		p.IsOkay = true
 
 	}
 
@@ -257,8 +250,7 @@ func (p *PrioVerificationProtocol) collectiveVerificationPhase() []*big.Int {
 	for i := 0; i < len(check.Outputs()); i++ {
 		result[i] = check.Outputs()[i].WireValue
 	}
-
-
+	p.AggregateData <- result
 
 
 	return result
