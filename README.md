@@ -36,4 +36,4 @@ You can contact any of the developers for more information or any other member o
 * [David Froelicher](https://github.com/froelich) (PHD student) - david.froelicher@epfl.ch
 * [Patricia Egger](https://github.com/pegger) (Security Consultant at Deloitte) - patricia.egger@epfl.ch
 * [Joao Andre Sa](https://github.com/JoaoAndreSa) (Software Engineer) - joao.gomesdesaesousa@epfl.ch
-* [Christian Mouchet](https://github.com/ChristianMct) (MSC student) - christian.mouchet@epfl.ch
+* [Christian Mouchet](https://github.com/ChristianMct) (PHD student) - christian.mouchet@epfl.ch
