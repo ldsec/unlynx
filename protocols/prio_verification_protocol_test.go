@@ -63,13 +63,13 @@ func NewPrioVerificationTest(tni *onet.TreeNodeInstance) (onet.ProtocolInstance,
 	pi, err := NewPrioVerifcationProtocol(tni)
 	protocol := pi.(*PrioVerificationProtocol)
 
-
+	//set circuit
 	ckt := prio_utils.ConfigToCircuit(serv1Share)
 
+	//set request, checker and preChecker
 	protocol.Request = new(prio_utils.Request)
-
 	protocol.Request = req[tni.Index()]
-	//protocol.Request = req2[tni.Index()]
+
 
 	protocol.Checker = new(prio_utils.Checker)
 	protocol.Checker = prio_utils.NewChecker(ckt,protocol.Index(),0)
@@ -78,10 +78,7 @@ func NewPrioVerificationTest(tni *onet.TreeNodeInstance) (onet.ProtocolInstance,
 
 	protocol.Pre = prio_utils.NewCheckerPrecomp(ckt)
 	protocol.Pre.SetCheckerPrecomp(randomPoint)
-	/*
-	protocol.Pre[1] = prio_utils.NewCheckerPrecomp(ckt2)
-	protocol.Pre[1].SetCheckerPrecomp(randomPoint)
-	*/
+
 
 	return protocol, err
 }

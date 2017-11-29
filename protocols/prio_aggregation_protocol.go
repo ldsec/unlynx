@@ -23,12 +23,6 @@ type ReplySumCipherBytes struct {
 	Bytes []byte
 }
 
-type ReplySumCipherLength struct {
-	BigIntLen int
-	BitLen int
-}
-
-
 type AnnounceAggregation struct {}
 
 
@@ -134,26 +128,6 @@ func (p*PrioAggregationProtocol) Dispatch() error {
 	return nil
 }
 
-/*
-func (p *PrioAggregationProtocol)waitOnSignal() {
-	//log.Lvl1("server enter in WaitOnSigal")
-	if !p.IsLeaf() {
-		//log.Lvl1(p.Index() , " waits to receive response on Resp chnnel")
-
-		j := <- p.ResponsceChannel
-		//log.Lvl1("Send to parent" , p.Index())
-		//log.Lvl1(j)
-		if (!p.IsRoot()) {
-			p.SendToParent(&j)
-		}
-
-	}
-	if !p.IsRoot() {
-		//log.Lvl1("Leaf send to parent")
-		p.SendToParent(&ResponseSumCipher{})
-	}
-
-}*/
 
 // Results pushing up the tree containing aggregation results.
 func (p *PrioAggregationProtocol) ascendingAggregationPhase() *big.Int {

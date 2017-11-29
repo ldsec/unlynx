@@ -24,11 +24,13 @@ ________________________________________________________________________________
 type AnnounceVerification struct {}
 type ResponseVerification struct {}
 
+//share broadcasted by each client to reconstrut d & e for Beaver MPC
 type CorShare struct {
 	CorShareD []byte
 	CorShareE []byte
 }
 
+// Evaluation of each share of the polynomial all send to leader to check if valid
 type OutShare struct {
 	Out		[]byte
 }
@@ -138,6 +140,7 @@ func (p*PrioVerificationProtocol) Start() error {
 
 func (p*PrioVerificationProtocol) Dispatch() error {
 
+	//wakeUp all server
 	if(!p.IsRoot()) {
 		if (!p.IsLeaf()) {
 			p.SendToChildren(&AnnounceVerification{})
@@ -146,10 +149,11 @@ func (p*PrioVerificationProtocol) Dispatch() error {
 	//log.Lvl1("Server p" ,p.Index() ," wait on ")
 	p.waitOnSignal()
 
-	//Ascending aggreg
+	//Do the proof, send back the shares to aggregate
 	//start := time.Now()
 	//log.Lvl1(" Server p ",p.Index() , "start Aggreg")
 	datas := p.collectiveVerificationPhase()
+
 	if p.IsRoot() {
 		log.Lvl1(datas)
 	}
@@ -159,6 +163,7 @@ func (p*PrioVerificationProtocol) Dispatch() error {
 }
 
 
+//function to avoid broadcasting with server not launched, so wait for everyone to say it is awake
 func (p *PrioVerificationProtocol)waitOnSignal() {
 	//log.Lvl1("server enter in WaitOnSigal")
 	if !p.IsLeaf() {
@@ -179,7 +184,7 @@ func (p *PrioVerificationProtocol)waitOnSignal() {
 
 }
 
-// Results pushing up the tree containing aggregation results.
+// Do the validation given a request from a Client, return the share that are supposed to be aggregated by each server
 func (p *PrioVerificationProtocol) collectiveVerificationPhase() []*big.Int {
 
 
@@ -211,24 +216,24 @@ func (p *PrioVerificationProtocol) collectiveVerificationPhase() []*big.Int {
 		evalRepliesFromAll = append(evalRepliesFromAll, corshare)
 	}
 
-	//cor is same for all server you cannot transfer it that's why you transfer the shares
+	//cor is same for all server you cannot be transfered it that's why you transfer the shares
 	cor := check.Cor(evalRepliesFromAll)
 
 	//log.Lvl1(p.Index(), " All cor should be the same", cor)
 	//we need to do this on all servers as they all have a part of the beaver triple
 	finalReplies := make([]*prio_utils.OutShare, 1)
 
-	//random key is same for all
+	//random key is same for all, evaluate cor on a randomKey
 	finalReplies[0] = check.OutShare(cor, randomKey)
 
 
-
+	//send to Root all evaluation
 	if !p.IsRoot() {
 		p.SendTo(p.Root(), &OutShare{finalReplies[0].Check.Bytes()})
 	}
 
 
-	//then the leader  do all the rest
+	//then the leader  do all the rest, check if its valid
 	if p.IsRoot() {
 		finalRepliesAll := make([]*prio_utils.OutShare, 1)
 		finalRepliesAll[0] = finalReplies[0]
@@ -250,6 +255,7 @@ func (p *PrioVerificationProtocol) collectiveVerificationPhase() []*big.Int {
 	for i := 0; i < len(check.Outputs()); i++ {
 		result[i] = check.Outputs()[i].WireValue
 	}
+
 	p.AggregateData <- result
 
 
