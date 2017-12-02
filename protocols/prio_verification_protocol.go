@@ -189,7 +189,8 @@ func (p *PrioVerificationProtocol) collectiveVerificationPhase() []*big.Int {
 
 
 	//SNIP's proof
-
+	log.Lvl1(p.Request)
+	log.Lvl1(p.ServerIdentity())
 	//each protocol has its checker and it's request ( 1 request per server per client request)
 	check := p.Checker
 	check.SetReq(p.Request)

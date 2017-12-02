@@ -311,7 +311,6 @@ func (s *Service) HandleDDTfinished(recq *DDTfinished) (network.Message, onet.Cl
 // NewProtocol creates a protocol instance executed by all nodes
 func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfig) (onet.ProtocolInstance, error) {
 	tn.SetConfig(conf)
-
 	var pi onet.ProtocolInstance
 	var err error
 

@@ -79,13 +79,13 @@ func toArrayBit(int *big.Int) []*big.Int {
 	}
 	return out
 }
-func ConfigToCircuitBit(datas []int) *circuit.Circuit {
+func ConfigToCircuitBit(datas []int64) *circuit.Circuit {
 	nf := len(datas)
 	ckts := make([]*circuit.Circuit, nf)
 	for f := 0; f < nf; f++ {
 		name := "circuit"
 		name+= string(f)
-		ckts[f] = int_Circuit(name, datas[f])
+		ckts[f] = int_Circuit(name, int(datas[f]))
 	}
 
 	ckt := circuit.AndCircuits(ckts)

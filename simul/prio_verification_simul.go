@@ -26,7 +26,7 @@ var ckt []*circuit.Circuit
 var req []*prio_utils.Request
 var mod = share.IntModulus
 var randomPoint = utils.RandInt(mod)
-var secretBitLen []int
+var secretBitLen []int64
 //function to generate random value and their splits
 
 func createCipherSet(numberClient, numberServer int) ([]*prio_utils.Request,[]*circuit.Circuit) {
@@ -35,7 +35,7 @@ func createCipherSet(numberClient, numberServer int) ([]*prio_utils.Request,[]*c
 	secretValues := make([]*big.Int, numberServer)
 	circuit := make([]*circuit.Circuit,0)
 	result := make([]*prio_utils.Request,numberServer)
-	secretBitLen = make([]int, numberServer)
+	secretBitLen = make([]int64, numberServer)
 
 		secretValues = prio_utils.Share(share.IntModulus, numberServer, randomBig(big.NewInt(2),big.NewInt(64)))
 		result = prio_utils.ClientRequest(secretValues,0)
@@ -181,10 +181,10 @@ func NewPrioVerificationProtocolSimul(tni *onet.TreeNodeInstance, sim *PrioVerif
 	return protocol, err
 }
 
-func toBit(v []*big.Int)([]int) {
-	result := make([]int,len(v))
+func toBit(v []*big.Int)([]int64) {
+	result := make([]int64,len(v))
 	for i,k := range v {
-		result[i] = k.BitLen()
+		result[i] = int64(k.BitLen())
 	}
 	return result
 }
