@@ -10,6 +10,7 @@ import (
 
 	"github.com/henrycg/prio/utils"
 
+	"github.com/henrycg/prio/share"
 )
 
 
@@ -156,6 +157,12 @@ func (p*PrioVerificationProtocol) Dispatch() error {
 
 	if p.IsRoot() {
 		log.Lvl1(datas)
+		sum := big.NewInt(0)
+		for _,v := range datas   {
+			sum.Add(sum,v)
+			sum.Mod(sum,share.IntModulus)
+		}
+		log.Lvl1(sum)
 	}
 	//log.Lvl1(p.ServerIdentity(), " completed aggregation phase (", sum, " is the sum ) in ", time.Since(start))
 	//report result
@@ -189,8 +196,8 @@ func (p *PrioVerificationProtocol) collectiveVerificationPhase() []*big.Int {
 
 
 	//SNIP's proof
-	log.Lvl1(p.Request)
-	log.Lvl1(p.ServerIdentity())
+	//log.Lvl1(p.Request)
+	//log.Lvl1(p.ServerIdentity())
 	//each protocol has its checker and it's request ( 1 request per server per client request)
 	check := p.Checker
 	check.SetReq(p.Request)
@@ -201,7 +208,7 @@ func (p *PrioVerificationProtocol) collectiveVerificationPhase() []*big.Int {
 
 	//Each proto need to send to each others
 	//log.Lvl1("Broadcasting from", p.Index())
-	//log.Lvl1("Broadcasting share", evalReplies[0])
+	//log.Lvl1("Broadcasting share", evalReplies)
 	p.Broadcast(&CorShare{evalReplies.ShareD.Bytes(), evalReplies.ShareE.Bytes()})
 
 	//Now they need to all send shares to each other so can all reconstruct cor
@@ -221,6 +228,8 @@ func (p *PrioVerificationProtocol) collectiveVerificationPhase() []*big.Int {
 	cor := check.Cor(evalRepliesFromAll)
 
 	//log.Lvl1(p.Index(), " All cor should be the same", cor)
+	//
+	// log.Lvl1(p.IsRoot())
 	//we need to do this on all servers as they all have a part of the beaver triple
 	finalReplies := make([]*prio_utils.OutShare, 1)
 

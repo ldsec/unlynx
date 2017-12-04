@@ -8,30 +8,43 @@ import (
 	"unlynx/protocols"
 	"gopkg.in/dedis/onet.v1/log"
 	"github.com/fanliao/go-concurrentMap"
+	"github.com/henrycg/prio/utils"
+	"github.com/henrycg/prio/triple"
+	"github.com/henrycg/prio/share"
 )
 
 const ServiceName = "Prio"
-
-var tree *onet.Tree
-var root *network.ServerIdentity = nil
-
 
 // ServiceResult will contain final results aggregation.
 type ServiceResult struct {
 	Results string
 }
 
+//structure that the client send
 type DataSentClient struct {
 	Leader *network.ServerIdentity
 	Roster *onet.Roster
-	Request *prio_utils.Request
 	CircuitConfig []int64
+	Key   utils.PRGKey
+	RequestID []byte
 	RandomPoint []byte
+	Hint [][]byte
+	ShareA []byte
+	ShareB []byte
+	ShareC []byte
 }
 
 type ExecRequest struct {
 	ID string
 
+}
+
+type ExecAgg struct {
+	ID string
+}
+
+type AggResult struct {
+	Result []byte
 }
 
 type RequestResult struct {
@@ -40,6 +53,7 @@ type RequestResult struct {
 type MsgTypes struct {
 	msgProofDoing network.MessageTypeID
 	msgProofExec network.MessageTypeID
+	msgAgg network.MessageTypeID
 }
 
 var msgTypes = MsgTypes{}
@@ -48,7 +62,9 @@ func init() {
 	onet.RegisterNewService(ServiceName, NewService)
 	msgTypes.msgProofDoing = network.RegisterMessage(&DataSentClient{})
 	msgTypes.msgProofExec = network.RegisterMessage(&ExecRequest{})
+	msgTypes.msgAgg = network.RegisterMessage(ExecAgg{})
 	network.RegisterMessage(&ServiceResult{})
+	network.RegisterMessage(&AggResult{})
 }
 
 type Service struct {
@@ -58,6 +74,7 @@ type Service struct {
 	//
 	Request *concurrent.ConcurrentMap
 	aggData [][]*big.Int
+	Test *protocols.PrioVerificationProtocol
 }
 
 
@@ -76,6 +93,11 @@ func NewService(c *onet.Context) onet.Service {
 		log.Fatal("Wrong Handler.", cerr)
 	}
 
+	if cerr := newPrioInstance.RegisterHandler(newPrioInstance.ExecuteAggregation); cerr != nil {
+		log.Fatal("Wrong Handler.", cerr)
+	}
+
+
 	return newPrioInstance
 }
 
@@ -84,44 +106,59 @@ func NewService(c *onet.Context) onet.Service {
 
 func (s *Service) HandleRequest(requestFromClient *DataSentClient)(network.Message, onet.ClientError) {
 
-	//log.Lvl1(requestFromClient)
-	//log.Lvl1(s.ServerIdentity())
-
 	if requestFromClient == nil {
 		return nil, nil
 	}
 
-	s.Request.Put(string(requestFromClient.Request.RequestID),requestFromClient)
-	log.Lvl1(s.ServerIdentity(), " uploaded response data for survey ", requestFromClient.Request.RequestID)
+	s.Request.Put(string(requestFromClient.RequestID),requestFromClient)
+	log.Lvl1(s.ServerIdentity(), " uploaded response data for Request ", string(requestFromClient.RequestID))
 
 
-	return &ServiceResult{Results:string(requestFromClient.Request.RequestID)},nil
+	return &ServiceResult{Results:string(requestFromClient.RequestID)},nil
 }
 
 func (s *Service) ExecuteRequest(exe *ExecRequest)(network.Message, onet.ClientError) {
 	//req := castToRequest(s.Request.Get(exe.ID))
-	log.Lvl1(s.ServerIdentity(), " starts a Prio Protocol")
+	log.Lvl1(s.ServerIdentity(), " starts a Prio Verification Protocol")
 
 	err := s.VerifyPhase(exe.ID)
 	if err != nil {
-		log.Fatal("Error in the Shuffling Phase")
+		log.Fatal("Error in the Verify Phase")
 	}
-	log.Lvl1("Finish")
+	log.Lvl1("Finish verification")
 	return nil,nil
 }
 
 func (s *Service) VerifyPhase(requestID string) (error) {
-	pi, err := s.StartProtocol(protocols.PrioVerificationProtocolName,requestID )
-	if err != nil {
-		return err
-	}
-	cothorityAggregatedData := <-pi.(*protocols.PrioVerificationProtocol).AggregateData
+	tmp := castToRequest(s.Request.Get(requestID))
 
-	log.Lvl1(cothorityAggregatedData)
+	if(s.ServerIdentity().Equal(tmp.Leader)) {
+		pi, err := s.StartProtocol(protocols.PrioVerificationProtocolName,requestID )
+		log.Lvl1(pi)
+		if err != nil {
+			return err
+		}
+	}
+
+	cothorityAggregatedData := <- s.Test.AggregateData
+	s.aggData = append(s.aggData, cothorityAggregatedData)
+	//log.Lvl1(s.aggData)
+
 	return nil
 }
 
+func (s *Service) ExecuteAggregation(exe *ExecAgg)(network.Message, onet.ClientError) {
+	pi, err := s.StartProtocol(protocols.PrioAggregationProtocolName, exe.ID )
+
+	if err != nil {
+		log.Fatal("Error in the Aggregation Phase")
+	}
+	log.Lvl1(<-pi.(*protocols.PrioAggregationProtocol).Feedback)
+	return nil,nil
+}
+
 func (s *Service) StartProtocol(name string, targetRequest string) (onet.ProtocolInstance, error) {
+
 	tmp := castToRequest(s.Request.Get((string)(targetRequest)))
 
 
@@ -131,7 +168,6 @@ func (s *Service) StartProtocol(name string, targetRequest string) (onet.Protoco
 	tn = s.NewTreeNodeInstance(tree, tree.Root, name)
 
 	conf := onet.GenericConfig{Data: []byte(string(targetRequest))}
-
 	pi, err := s.NewProtocol(tn, &conf)
 	if err != nil {
 		log.Fatal("Error running" + name)
@@ -154,6 +190,8 @@ func castToRequest(object interface{}, err error) *DataSentClient {
 }
 
 func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfig) (onet.ProtocolInstance, error) {
+
+
 	tn.SetConfig(conf)
 	var pi onet.ProtocolInstance
 	var err error
@@ -161,15 +199,33 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 	//target := string(string(conf.Data))
 	request := castToRequest(s.Request.Get(string(conf.Data)))
 
+
 	switch tn.ProtocolName() {
 	case protocols.PrioVerificationProtocolName:
 		pi, err = protocols.NewPrioVerifcationProtocol(tn)
 
 		ckt := prio_utils.ConfigToCircuitBit(request.CircuitConfig)
-		pi.(*protocols.PrioVerificationProtocol).Request = request.Request
+
+		tripleShareReq := new(triple.Share)
+		tripleShareReq.ShareA = big.NewInt(0).SetBytes(request.ShareA)
+		tripleShareReq.ShareB = big.NewInt(0).SetBytes(request.ShareB)
+		tripleShareReq.ShareC = big.NewInt(0).SetBytes(request.ShareC)
+
+		hintReq := new(share.PRGHints)
+		hintReq.Key = request.Key
+		hintReq.Delta = make([]*big.Int,0)
+		for _,v := range request.Hint {
+			hintReq.Delta = append(hintReq.Delta,big.NewInt(0).SetBytes(v))
+		}
+
+		protoReq := prio_utils.Request{RequestID:request.RequestID,TripleShare:tripleShareReq,Hint:hintReq}
+		pi.(*protocols.PrioVerificationProtocol).Request = &protoReq
 		pi.(*protocols.PrioVerificationProtocol).Checker = prio_utils.NewChecker(ckt,tn.Index(),0)
 		pi.(*protocols.PrioVerificationProtocol).Pre = prio_utils.NewCheckerPrecomp(ckt)
-		pi.(*protocols.PrioVerificationProtocol).Pre.SetCheckerPrecomp(big.NewInt(0).SetBytes(request.RandomPoint))
+		rdm := big.NewInt(0).SetBytes(request.RandomPoint)
+		pi.(*protocols.PrioVerificationProtocol).Pre.SetCheckerPrecomp(rdm)
+		s.Test = pi.(*protocols.PrioVerificationProtocol)
+
 		if err != nil {
 			log.Lvl1("Error")
 			return nil, err
@@ -177,6 +233,15 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 
 	case protocols.PrioAggregationProtocolName:
 		pi, err = protocols.NewPrioAggregationProtocol(tn)
+
+		pi.(*protocols.PrioAggregationProtocol).Modulus = share.IntModulus
+		shares := make([]*big.Int,0)
+		for _,v := range s.aggData {
+			for _,u := range v {
+				shares = append(shares,u)
+			}
+		}
+		pi.(*protocols.PrioAggregationProtocol).Shares = shares
 		if err != nil {
 			log.Lvl1("Error")
 			return nil, err

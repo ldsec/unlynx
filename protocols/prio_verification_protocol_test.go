@@ -19,7 +19,7 @@ var field = share.IntModulus
 var nbServ = 5
 
 //3 random number to test
-var serv1Secret = big.NewInt(int64(55189642165))
+var serv1Secret = big.NewInt(int64(55))
 
 //the share of them
 var serv1Share = prio_utils.Share(field,nbServ,serv1Secret)

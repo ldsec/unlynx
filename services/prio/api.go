@@ -4,10 +4,10 @@ import (
 	"gopkg.in/dedis/onet.v1"
 	"math/big"
 	"unlynx/prio_utils"
-	"prio/share"
-	"gopkg.in/dedis/onet.v1/log"
+	"github.com/henrycg/prio/share"
 )
 
+//client in prio represented as its secret value ID and modulus
 type API struct {
 	*onet.Client
 	ClientID   string
@@ -21,41 +21,59 @@ func NewPrioClient(clientID string) *API {
 	newClient := &API{
 		Client:     onet.NewClient(ServiceName),
 		ClientID:   clientID,
-		secretValue: prio_utils.RandInt(share.IntModulus),
+		secretValue: big.NewInt(285),
 		modulus: share.IntModulus,
 	}
 	return newClient
 }
 
-func (c *API) SendRequest(entities *onet.Roster)(string, error) {
 
+//To send the data you split it and then send each request for 1 client submission to each server.
+//ProtoBuf do not support big.Int, we need to transform to []byte and transfer like this, reconstruction done at
+//server/
+func (c *API) SendRequest(entities *onet.Roster)(string, error) {
 	numServer := len(entities.List)
 	dataSplited := prio_utils.Share(c.modulus,numServer,c.secretValue)
 
+
 	requests := prio_utils.ClientRequest(dataSplited,0)
+
 	circuitConfig := make([]int64,numServer)
 
 	for i, _:= range requests {
 		circuitConfig[i] = int64(dataSplited[i].BitLen())
 	}
 
-	// Is the list ordered ?
+	// The list is ordered first == root
 	servList := entities.List
 
 	resp := ServiceResult{}
 	randomPoint := prio_utils.RandInt(c.modulus).Bytes()
 
-	//send what to who still need to be precised here
 	for i:=0;i<len(servList) ;i++  {
+
+		req := requests[i]
+		shareA := req.TripleShare.ShareA.Bytes()
+		shareB := req.TripleShare.ShareB.Bytes()
+		shareC := req.TripleShare.ShareC.Bytes()
+		hint := make([][]byte,0)
+		for _,v := range req.Hint.Delta  {
+			hint = append(hint,v.Bytes())
+		}
+
 		dsc := DataSentClient{
 			Leader : servList[0],
 			Roster:entities,
-			Request:requests[i],
 			CircuitConfig: circuitConfig,
 			RandomPoint:randomPoint,
+			ShareA:shareA,
+			ShareB:shareB,
+			ShareC:shareC,
+			Hint:hint,
+			Key:req.Hint.Key,
+			RequestID:req.RequestID,
 		}
-		log.Lvl1(servList[i])
-		log.Lvl1(dsc)
+
 		err := c.SendProtobuf(servList[i],&dsc,&resp)
 
 		if err != nil {
@@ -63,15 +81,32 @@ func (c *API) SendRequest(entities *onet.Roster)(string, error) {
 		}
 
 	}
+	//return the id of the request in the concurrent map of service if successful
 	return resp.Results, nil
 }
 
- func (c *API) ExecuteRequest(entities *onet.Roster,id string)(*big.Int, error) {
-	 result := RequestResult{}
-	 err := c.SendProtobuf(entities.List[0], &ExecRequest{id}, &result)
+//function to execute the client submission verification
+func (c *API) ExecuteRequest(entities *onet.Roster,id string)(error) {
+	result := RequestResult{}
+	//send to the root the execution message
+	for _,v := range entities.List {
+		err := c.SendProtobuf(v, &ExecRequest{id}, &result)
 
-	 if err != nil {
-		 return nil, err
-	 }
-	 return nil, nil
- }
+		if err != nil {
+			return  err
+		}
+	}
+	return nil
+}
+
+func (c *API) Aggregate(entities *onet.Roster,id string)([]byte,error) {
+
+	result := AggResult{}
+	err := c.SendProtobuf(entities.List[0],&ExecAgg{id} , &result)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return result.Result, nil
+}
