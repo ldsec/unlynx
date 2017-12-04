@@ -88,7 +88,7 @@ func (c *API) SendRequest(entities *onet.Roster)(string, error) {
 //function to execute the client submission verification
 func (c *API) ExecuteRequest(entities *onet.Roster,id string)(error) {
 	result := RequestResult{}
-	//send to the root the execution message
+
 	for _,v := range entities.List {
 		err := c.SendProtobuf(v, &ExecRequest{id}, &result)
 
@@ -99,7 +99,7 @@ func (c *API) ExecuteRequest(entities *onet.Roster,id string)(error) {
 	return nil
 }
 
-func (c *API) Aggregate(entities *onet.Roster,id string)([]byte,error) {
+func (c *API) Aggregate(entities *onet.Roster,id string)(*big.Int,error) {
 
 	result := AggResult{}
 	err := c.SendProtobuf(entities.List[0],&ExecAgg{id} , &result)
@@ -108,5 +108,5 @@ func (c *API) Aggregate(entities *onet.Roster,id string)([]byte,error) {
 		return nil, err
 	}
 
-	return result.Result, nil
+	return big.NewInt(0).SetBytes(result.Result), nil
 }

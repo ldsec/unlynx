@@ -16,11 +16,19 @@ func TestServicePrio(t *testing.T) {
 	defer local.CloseAll()
 
 	client := NewPrioClient("TestClient")
+	client2 := NewPrioClient("Client2")
 	log.Lvl1("Secret value is ", client.secretValue)
 
 	res,_ := client.SendRequest(el)
 	client.ExecuteRequest(el,res)
 
-	log.Lvl1(client.Aggregate(el,res))
+	agg,_ := client.Aggregate(el,res)
+	log.Lvl1("Agg is ",agg)
 
+	res,_ = client2.SendRequest(el)
+	client2.ExecuteRequest(el,res)
+
+
+	agg,_ = client.Aggregate(el,res)
+	log.Lvl1("Agg is ",agg)
 }

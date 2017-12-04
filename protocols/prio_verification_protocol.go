@@ -10,7 +10,6 @@ import (
 
 	"github.com/henrycg/prio/utils"
 
-	"github.com/henrycg/prio/share"
 )
 
 
@@ -153,17 +152,8 @@ func (p*PrioVerificationProtocol) Dispatch() error {
 	//Do the proof, send back the shares to aggregate
 	//start := time.Now()
 	//log.Lvl1(" Server p ",p.Index() , "start Aggreg")
-	datas := p.collectiveVerificationPhase()
+	p.AggregateData <- p.collectiveVerificationPhase()
 
-	if p.IsRoot() {
-		log.Lvl1(datas)
-		sum := big.NewInt(0)
-		for _,v := range datas   {
-			sum.Add(sum,v)
-			sum.Mod(sum,share.IntModulus)
-		}
-		log.Lvl1(sum)
-	}
 	//log.Lvl1(p.ServerIdentity(), " completed aggregation phase (", sum, " is the sum ) in ", time.Since(start))
 	//report result
 	return nil
@@ -265,9 +255,6 @@ func (p *PrioVerificationProtocol) collectiveVerificationPhase() []*big.Int {
 	for i := 0; i < len(check.Outputs()); i++ {
 		result[i] = check.Outputs()[i].WireValue
 	}
-
-	p.AggregateData <- result
-
 
 	return result
 }

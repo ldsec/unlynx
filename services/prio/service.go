@@ -74,7 +74,7 @@ type Service struct {
 	//
 	Request *concurrent.ConcurrentMap
 	aggData [][]*big.Int
-	Test *protocols.PrioVerificationProtocol
+	Proto *protocols.PrioVerificationProtocol
 }
 
 
@@ -101,8 +101,6 @@ func NewService(c *onet.Context) onet.Service {
 	return newPrioInstance
 }
 
-//this need to handle request sent by client meanign do the verification
-//TODO : for aggregation do every x sec or do after x seconds ?
 
 func (s *Service) HandleRequest(requestFromClient *DataSentClient)(network.Message, onet.ClientError) {
 
@@ -121,30 +119,33 @@ func (s *Service) ExecuteRequest(exe *ExecRequest)(network.Message, onet.ClientE
 	//req := castToRequest(s.Request.Get(exe.ID))
 	log.Lvl1(s.ServerIdentity(), " starts a Prio Verification Protocol")
 
-	err := s.VerifyPhase(exe.ID)
+	acc,err := s.VerifyPhase(exe.ID)
 	if err != nil {
 		log.Fatal("Error in the Verify Phase")
+	}
+	if !acc {
+		log.LLvl2("Data have not been accepted for request ID", exe.ID)
 	}
 	log.Lvl1("Finish verification")
 	return nil,nil
 }
 
-func (s *Service) VerifyPhase(requestID string) (error) {
+func (s *Service) VerifyPhase(requestID string) (bool,error) {
 	tmp := castToRequest(s.Request.Get(requestID))
+	accepted := true
 
 	if(s.ServerIdentity().Equal(tmp.Leader)) {
 		pi, err := s.StartProtocol(protocols.PrioVerificationProtocolName,requestID )
-		log.Lvl1(pi)
+		accepted = pi.(*protocols.PrioVerificationProtocol).IsOkay
 		if err != nil {
-			return err
+			return accepted,err
 		}
 	}
 
-	cothorityAggregatedData := <- s.Test.AggregateData
+	cothorityAggregatedData := <- s.Proto.AggregateData
 	s.aggData = append(s.aggData, cothorityAggregatedData)
-	//log.Lvl1(s.aggData)
 
-	return nil
+	return accepted,nil
 }
 
 func (s *Service) ExecuteAggregation(exe *ExecAgg)(network.Message, onet.ClientError) {
@@ -153,8 +154,9 @@ func (s *Service) ExecuteAggregation(exe *ExecAgg)(network.Message, onet.ClientE
 	if err != nil {
 		log.Fatal("Error in the Aggregation Phase")
 	}
-	log.Lvl1(<-pi.(*protocols.PrioAggregationProtocol).Feedback)
-	return nil,nil
+	aggRes := <-pi.(*protocols.PrioAggregationProtocol).Feedback
+
+	return &AggResult{aggRes.Bytes()},nil
 }
 
 func (s *Service) StartProtocol(name string, targetRequest string) (onet.ProtocolInstance, error) {
@@ -224,7 +226,7 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 		pi.(*protocols.PrioVerificationProtocol).Pre = prio_utils.NewCheckerPrecomp(ckt)
 		rdm := big.NewInt(0).SetBytes(request.RandomPoint)
 		pi.(*protocols.PrioVerificationProtocol).Pre.SetCheckerPrecomp(rdm)
-		s.Test = pi.(*protocols.PrioVerificationProtocol)
+		s.Proto = pi.(*protocols.PrioVerificationProtocol)
 
 		if err != nil {
 			log.Lvl1("Error")
