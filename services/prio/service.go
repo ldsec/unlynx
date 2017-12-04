@@ -73,8 +73,9 @@ type Service struct {
 	*onet.ServiceProcessor
 	//
 	Request *concurrent.ConcurrentMap
-	aggData [][]*big.Int
+	AggData [][]*big.Int
 	Proto *protocols.PrioVerificationProtocol
+	Count int64
 }
 
 
@@ -117,7 +118,7 @@ func (s *Service) HandleRequest(requestFromClient *DataSentClient)(network.Messa
 
 func (s *Service) ExecuteRequest(exe *ExecRequest)(network.Message, onet.ClientError) {
 	//req := castToRequest(s.Request.Get(exe.ID))
-	log.Lvl1(s.ServerIdentity(), " starts a Prio Verification Protocol")
+	//log.Lvl1(s.ServerIdentity(), " starts a Prio Verification Protocol")
 
 	acc,err := s.VerifyPhase(exe.ID)
 	if err != nil {
@@ -126,26 +127,31 @@ func (s *Service) ExecuteRequest(exe *ExecRequest)(network.Message, onet.ClientE
 	if !acc {
 		log.LLvl2("Data have not been accepted for request ID", exe.ID)
 	}
-	log.Lvl1("Finish verification")
+	//log.Lvl1("Finish verification")
 	return nil,nil
 }
 
 func (s *Service) VerifyPhase(requestID string) (bool,error) {
 	tmp := castToRequest(s.Request.Get(requestID))
-	accepted := true
-
+	isAccepted := false
 	if(s.ServerIdentity().Equal(tmp.Leader)) {
 		pi, err := s.StartProtocol(protocols.PrioVerificationProtocolName,requestID )
-		accepted = pi.(*protocols.PrioVerificationProtocol).IsOkay
+		log.Lvl1(pi.(*protocols.PrioVerificationProtocol).ServerIdentity())
+
 		if err != nil {
-			return accepted,err
+			return isAccepted,err
 		}
+
 	}
 
 	cothorityAggregatedData := <- s.Proto.AggregateData
-	s.aggData = append(s.aggData, cothorityAggregatedData)
+	if len(cothorityAggregatedData)>0 {
+		s.Count++
+		isAccepted = true
+	}
+	s.AggData = append(s.AggData, cothorityAggregatedData)
 
-	return accepted,nil
+	return isAccepted,nil
 }
 
 func (s *Service) ExecuteAggregation(exe *ExecAgg)(network.Message, onet.ClientError) {
@@ -238,7 +244,7 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 
 		pi.(*protocols.PrioAggregationProtocol).Modulus = share.IntModulus
 		shares := make([]*big.Int,0)
-		for _,v := range s.aggData {
+		for _,v := range s.AggData {
 			for _,u := range v {
 				shares = append(shares,u)
 			}

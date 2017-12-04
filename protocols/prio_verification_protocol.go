@@ -75,7 +75,6 @@ type PrioVerificationProtocol struct {
 	Request *prio_utils.Request
 	Pre     *prio_utils.CheckerPrecomp
 	Checker *prio_utils.Checker
-	IsOkay   bool
 
 	//channel for proof
 	CorShareChannel chan StructCorShare
@@ -232,7 +231,6 @@ func (p *PrioVerificationProtocol) collectiveVerificationPhase() []*big.Int {
 		p.SendTo(p.Root(), &OutShare{finalReplies[0].Check.Bytes()})
 	}
 
-
 	//then the leader  do all the rest, check if its valid
 	if p.IsRoot() {
 		finalRepliesAll := make([]*prio_utils.OutShare, 1)
@@ -243,12 +241,12 @@ func (p *PrioVerificationProtocol) collectiveVerificationPhase() []*big.Int {
 			outShare.Check = big.NewInt(0).SetBytes(v.OutShare.Out)
 			finalRepliesAll = append(finalRepliesAll, outShare)
 		}
-
 		isValid := check.OutputIsValid(finalRepliesAll)
 		log.Lvl1("output is valid ? ", isValid)
-		p.IsOkay = true
+		if !isValid {return make([]*big.Int,0)}
 
 	}
+
 
 	result := make([]*big.Int,len(check.Outputs()))
 
