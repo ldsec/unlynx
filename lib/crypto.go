@@ -10,7 +10,6 @@ import (
 	"gopkg.in/dedis/onet.v1/network"
 	"strings"
 	"sync"
-	"unlynx/pairing"
 )
 
 // MaxHomomorphicInt is upper bound for integers used in messages, a failed decryption will return this value.
@@ -20,7 +19,7 @@ const MaxHomomorphicInt int64 = 100000
 var PointToInt = make(map[string]int64, MaxHomomorphicInt)
 var currentGreatestM abstract.Point
 var currentGreatestInt int64
-var suite = pairing.Suite
+var suite = network.Suite
 
 // CipherText is an ElGamal encrypted point.
 type CipherText struct {

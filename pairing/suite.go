@@ -1,8 +1,8 @@
 package pairing
 
 import (
-	"github.com/dedis/drand/pbc"
-	"github.com/dedis/kyber"
+	"github.com/dedis/paper_17_dfinity/pbc"
+	"gopkg.in/dedis/crypto.v0/abstract"
 )
 
 
@@ -53,9 +53,9 @@ var Suite = NewAES128SHA256Ed25519(false)
 var Pairing = NewAES128SHA256Ed25519P(false)
 
 // Ciphersuite based on AES-128, SHA-256, and the Ed25519 curve.
-func NewAES128SHA256Ed25519(fullGroup bool) (kyber.Group)  {
+func NewAES128SHA256Ed25519(fullGroup bool) (abstract.Suite)  {
 	suite := pbc.NewPairingFp254BNb()
-	return suite.G1()
+	return suite.G2()
 }
 
 func NewAES128SHA256Ed25519P(fullGroup bool) *pbc.Pairing {
