@@ -614,3 +614,7 @@ func DetTagAdditionProofVerification(psap PublishedDetTagAdditionProof) bool {
 	cv := network.Suite.Point().Add(psap.C1, psap.C2)
 	return partProof && reflect.DeepEqual(cv, psap.R)
 }
+
+func RangeProofVerification(commitment abstract.Point,u int64, l int64,) bool {
+
+}

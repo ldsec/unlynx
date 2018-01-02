@@ -3,6 +3,7 @@ package pairing
 import (
 	"github.com/dedis/paper_17_dfinity/pbc"
 	"gopkg.in/dedis/crypto.v0/abstract"
+	"crypto/cipher"
 )
 
 
@@ -48,6 +49,19 @@ func (s *suiteEd25519) NewKey(stream cipher.Stream) abstract.Scalar {
 }
 
 */
+
+type PairingSuite interface {
+	G1() abstract.Suite
+	G2() abstract.Suite
+	GT() pbc.PairingGroup
+}
+
+func NewKeyPair(s PairingSuite, r cipher.Stream) (abstract.Scalar, abstract.Point) {
+	sk := s.G2().Scalar().Pick(r)
+	pk := s.G2().Point().Mul(nil, sk)
+	return sk, pk
+}
+
 
 var Suite = NewAES128SHA256Ed25519(false)
 var Pairing = NewAES128SHA256Ed25519P(false)
