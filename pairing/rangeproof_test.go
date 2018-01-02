@@ -13,10 +13,11 @@ import (
 	"github.com/dedis/kyber/xof/blake"
 	"gopkg.in/dedis/onet.v1/log"
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/dedis/onet.v1/network"
 )
 
 // Range will be [0,2^l)
-//var suite = network.Suite
+var suite = network.Suite
 var pairing = pbc.NewPairingFp254BNb()
 var suite = pairing.G2()
 
@@ -111,7 +112,7 @@ func TestRangeProof(t *testing.T) {
 
 		ap[j] = pairing.GT().PointGT().Pairing(V[j],suite.Point().Mul(y,c))
 		ap[j].Add(ap[j],pairing.GT().PointGT().Pairing(V[j],suite.Point().Mul(B,suite.Scalar().Neg(Zphi[j]))))
-		ap[j].Add(ap[j],pairing.GT().PointGT().Pairin(pairing.G1().Point().Base(),suite.Point().Mul(B,ZV[j])))
+		ap[j].Add(ap[j],pairing.GT().PointGT().Pairing(pairing.G1().Point().Base(),suite.Point().Mul(B,ZV[j])))
 		assert.Equal(t,ap[j],a[j])
 		}
 
