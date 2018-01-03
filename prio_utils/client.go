@@ -10,6 +10,8 @@ import (
 	"github.com/henrycg/prio/triple"
 
 	"math/rand"
+	"prio/config"
+	"github.com/henrycg/prio/mpc"
 )
 
 //this should be run at client for proof start
@@ -21,10 +23,11 @@ type Request struct {
 	TripleShare *triple.Share
 }
 
+
 //Create proof submission for one client
-func ClientRequest(dataShared []*big.Int, leaderForReq int) ([]*Request){
+func ClientRequest(datas []config.Field, leaderForReq int) ([]*Request){
 	//utils.PrintTime("Initialize")
-	ns := len(dataShared)
+	ns := len(datas)
 	prg := share.NewGenPRG(ns, leaderForReq)
 
 	pub := make([]byte,32)
@@ -39,9 +42,31 @@ func ClientRequest(dataShared []*big.Int, leaderForReq int) ([]*Request){
 
 	//log.Lvl1("Inputs are")
 	inputs := make([]*big.Int,0)
+	for f := 0; f < nf; f++ {
+	field := datas[f]
+	switch field.Type {
+	default:
+		panic("Unexpected type!")
+	case config.TypeInt:
+		inputs = append(inputs, int_NewRandom(int(field.IntBits))...)
+	case config.TypeIntPow:
+		inputs = append(inputs, intPow_NewRandom(int(field.IntBits), int(field.IntPow))...)
+	case config.TypeIntUnsafe:
+		inputs = append(inputs, intUnsafe_NewRandom(int(field.IntBits))...)
+	case config.TypeBoolOr:
+		inputs = append(inputs, bool_NewRandom()...)
+	case config.TypeBoolAnd:
+		inputs = append(inputs, bool_NewRandom()...)
+	case config.TypeCountMin:
+		inputs = append(inputs, countMin_NewRandom(int(field.CountMinHashes), int(field.CountMinBuckets))...)
+	case config.TypeLinReg:
+		inputs = append(inputs, linReg_NewRandom(field)...)
+	}
+	/*
 		for f := 0; f < len(dataShared); f++ {
 		//log.Lvl1(dataShared[f])
 		inputs = append(inputs, toArrayBit(dataShared[f])...)
+	*/
 	}
 
 	// Evaluate the Valid() circuit
