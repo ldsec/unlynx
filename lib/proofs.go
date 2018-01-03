@@ -8,7 +8,11 @@ import (
 	"gopkg.in/dedis/onet.v1/network"
 	"reflect"
 	"sync"
+	"github.com/dedis/paper_17_dfinity/pbc"
+
+	"math"
 )
+
 
 // SwitchKeyProof proof for key switching
 type SwitchKeyProof struct {
@@ -615,6 +619,75 @@ func DetTagAdditionProofVerification(psap PublishedDetTagAdditionProof) bool {
 	return partProof && reflect.DeepEqual(cv, psap.R)
 }
 
-func RangeProofVerification(commitment abstract.Point,u int64, l int64,) bool {
 
+type RangeProofDatas struct {
+	//Key from Server
+	Y abstract.Point
+	//Public key over which data are encrypted
+	P abstract.Point
+	//Data from DP
+	Commitment abstract.Point
+	Challenge abstract.Scalar
+	V	[]abstract.Point
+	Zv []abstract.Scalar
+	Zphi []abstract.Scalar
+	Zr abstract.Scalar
+	//Pairing
+	Pairing *pbc.Pairing
+	//value to check equality with
+	D abstract.Point
+	A []abstract.Point
+	}
+
+//function that is executed at the server, when he receive the value from the Data Provider
+func RangeProofVerification(data RangeProofDatas,u int64, l int64,) bool {
+
+	//check that indeed each value was filled with the good number of value in the base
+	if int(4*l) - len(data.Zphi) - len(data.Zv) - len(data.A) - len(data.V)!= 0 {
+		//not same size
+		log.LLvl3("Not same size")
+		return false
+	}
+	B := data.Pairing.G2().Point().Base()
+	ap := make([]abstract.Point,len(data.Zphi))
+
+	//Dp = Cc + PZr + Sum(p)(in for)
+	Dp := suite.Point().Add(suite.Point().Mul(data.Commitment,data.Challenge),suite.Point().Mul(data.P,data.Zr))
+	for j:=0;j<len(data.Zphi);j++  {
+
+		//p = Bu^jZphi_j
+		point := suite.Point().Mul(B,suite.Scalar().SetInt64(int64(math.Pow(float64(u),(float64(j))))))
+		point.Mul(point,data.Zphi[j])
+		Dp.Add(Dp,point)
+
+		//check bipairing
+		//a_j = e(Vj,y)(c)+e(Vj,B)(-Zphi_j) + e(B,B)(Zv_j)
+		ap[j] = data.Pairing.GT().PointGT().Pairing(data.V[j],suite.Point().Mul(data.Y,data.Challenge))
+		ap[j].Add(ap[j],data.Pairing.GT().PointGT().Pairing(data.V[j],suite.Point().Mul(B,suite.Scalar().Neg(data.Zphi[j]))))
+		ap[j].Add(ap[j],data.Pairing.GT().PointGT().Pairing(data.Pairing.G1().Point().Base(),suite.Point().Mul(B,data.Zv[j])))
+
+		if !ap[j].Equal(data.A[j]) {
+			return false
+		}
+	}
+
+	if !Dp.Equal(data.D) {
+		return false
+	}
+
+	return true
+}
+
+//transform n in base 10 to array in base b
+func ToBase(n int64 , b int64, l int) ([]int64){
+	digits := make([]int64,0)
+	for(n > 0) {
+		digits = append(digits,n%b)
+		n = n / b
+	}
+	for(len(digits)<l) {
+		digits = append(digits, 0)
+	}
+
+	return digits
 }

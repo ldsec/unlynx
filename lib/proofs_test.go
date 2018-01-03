@@ -1,13 +1,18 @@
 package lib_test
 
 import (
-	"github.com/lca1/unlynx/lib"
+
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/crypto.v0/random"
 	"gopkg.in/dedis/onet.v1/network"
 	"strconv"
 	"testing"
+	"unlynx/lib"
+	"github.com/dedis/paper_17_dfinity/pbc"
+
+	"math"
+	"gopkg.in/dedis/onet.v1/log"
 )
 
 //create variables
@@ -347,4 +352,85 @@ func TestShufflingProof(t *testing.T) {
 
 	PublishedShufflingProof = lib.ShufflingProofCreation(responses, responses, nil, pubKey, beta, pi)
 	assert.False(t, lib.ShufflingProofVerification(PublishedShufflingProof, pubKey))
+}
+
+func TestRangeProofVerification(t *testing.T) {
+	toSend := lib.RangeProofDatas{}
+
+	pairing := pbc.NewPairingFp254BNb()
+	toSend.Pairing = pairing
+	u := 2.0
+	l := 6.0
+
+	A := make([]abstract.Point,int(u))
+	x, y := lib.GenKey()
+	toSend.Y = y
+
+	//signature from private key done by server
+	for i := 0; int64(i) < int64(u) ; i++ {
+		scalar := pairing.G1().Scalar().SetInt64(int64(i))
+		invert := pairing.G1().Scalar().Add(x,scalar)
+		A[i] = pairing.G1().Point().Mul(pairing.G1().Point().Base(),pairing.G1().Scalar().Inv(invert))
+	}
+	//toSend.A = A
+	//______________________________________________________________________________________
+	//FROM HERE IT FOR DPS
+	//Value want to check
+	value := 120
+	cipher := suite.Scalar().SetInt64(int64(value))
+	base := lib.ToBase(int64(value),int64(u),int(l))
+	p, P := lib.GenKey()
+	p.Equal(p)
+	r := suite.Scalar().Pick(random.Stream)
+	B := pairing.G2().Point().Base()
+
+	CommitT := suite.Point().Add(suite.Point().Mul(B,cipher),suite.Point().Mul(P,r))
+	toSend.Commitment = CommitT
+	toSend.P = P
+	//value to pick and calculate
+	a := make([]abstract.Point,int(len(base)))
+	D := suite.Point().Null()
+	Zphi := make([]abstract.Scalar,int(len(base)))
+	ZV := make([]abstract.Scalar,int(int(len(base))))
+	v := make([]abstract.Scalar,int(len(base)))
+	V := make([]abstract.Point,int(len(base)))
+	m := suite.Scalar()
+	c := suite.Scalar().Pick(random.Stream)
+	log.LLvl1(base)
+	for j:=0;j<len(base) ; j++ {
+		v[j] = pairing.G1().Scalar().Pick(random.Stream)
+		///V_j = B(x+phi_j)^-1(v_j)
+		V[j] = pairing.G1().Point().Mul(A[base[j]],v[j])
+
+		//
+		sj := suite.Scalar().Pick(random.Stream)
+		tj := suite.Scalar().Pick(random.Stream)
+		mj := suite.Scalar().Pick(random.Stream)
+		m.Add(m,mj)
+		//Compute D
+		//Bu^js_j
+		firstT := suite.Point().Mul(B,suite.Scalar().Mul(sj,suite.Scalar().SetInt64(int64(math.Pow(u,float64(j))))))
+		D.Add(D,firstT)
+		secondT := suite.Point().Mul(P,mj)
+		D.Add(D,secondT)
+		//Compute a_j
+		a[j] = pairing.GT().PointGT().Pairing(V[j],suite.Point().Mul(suite.Point().Base(),suite.Scalar().Neg(sj)))
+		a[j].Add(a[j],pairing.GT().PointGT().Pairing(pairing.G1().Point().Base(),suite.Point().Mul(B,tj)))
+		log.LLvl1(j)
+		Zphi[j] = suite.Scalar().Sub(sj,suite.Scalar().Mul(suite.Scalar().SetInt64(int64(base[j])),c))
+		ZV[j] = suite.Scalar().Sub(tj,suite.Scalar().Mul(v[j],c))
+
+	}
+	toSend.D = D
+	toSend.Zr = suite.Scalar().Sub(m,suite.Scalar().Mul(r,c))
+	toSend.Challenge = c
+	toSend.V = V
+	toSend.A = a
+	toSend.Zv = ZV
+	toSend.Zphi = Zphi
+
+	log.Lvl1(Zphi)
+	result := lib.RangeProofVerification(toSend,int64(u), int64(l))
+
+	assert.True(t,result)
 }

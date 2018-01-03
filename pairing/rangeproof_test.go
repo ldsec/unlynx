@@ -13,13 +13,18 @@ import (
 	"github.com/dedis/kyber/xof/blake"
 	"gopkg.in/dedis/onet.v1/log"
 	"github.com/stretchr/testify/assert"
+	//"gopkg.in/dedis/onet.v1/network"
 	"gopkg.in/dedis/onet.v1/network"
 )
+
+//THIS IS AN HARDCODED TEST. The goal was to experiment how was working the pairing over the elliptic curve
+//and verify the math and formula computations.
+//The real protocol will be in the package lib/proofs
 
 // Range will be [0,2^l)
 var suite = network.Suite
 var pairing = pbc.NewPairingFp254BNb()
-var suite = pairing.G2()
+//var suite = pairing.G2()
 
 
 var p, P = genPair()
@@ -118,6 +123,5 @@ func TestRangeProof(t *testing.T) {
 
 	result := Dp.Equal(D)
 	assert.True(t,result)
-	p := pairing.GT().PointGT().Pairing(pairing.G1().Point().Base(),pairing.G2().Point().Base())
 
 }
