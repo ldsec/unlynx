@@ -11,6 +11,8 @@ import (
 	"github.com/henrycg/prio/utils"
 	"github.com/henrycg/prio/triple"
 	"github.com/henrycg/prio/share"
+
+	"github.com/henrycg/prio/config"
 )
 
 const ServiceName = "Prio"
@@ -24,7 +26,7 @@ type ServiceResult struct {
 type DataSentClient struct {
 	Leader *network.ServerIdentity
 	Roster *onet.Roster
-	CircuitConfig []int64
+	CircuitConfig []ConfigByte
 	Key   utils.PRGKey
 	RequestID []byte
 	RandomPoint []byte
@@ -212,7 +214,15 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 	case protocols.PrioVerificationProtocolName:
 		pi, err = protocols.NewPrioVerifcationProtocol(tn)
 
-		ckt := prio_utils.ConfigToCircuitBit(request.CircuitConfig)
+		circConf := make([]*config.Field,0)
+		for i:=0;i< len(request.CircuitConfig);i++  {
+			linReg := make([]int,0)
+			for j:=0;j<len(request.CircuitConfig[i].LinRegBits);j++  {
+				linReg = append(linReg, int(request.CircuitConfig[i].LinRegBits[j]))
+			}
+			circConf = append(circConf, &config.Field{Name:request.CircuitConfig[i].Name,Type:config.FieldType(request.CircuitConfig[i].Type),IntBits:int(request.CircuitConfig[i].IntBits), LinRegBits:linReg,IntPow:int(request.CircuitConfig[i].IntPow),CountMinBuckets:int(request.CircuitConfig[i].CountMinBuckets),CountMinHashes:int(request.CircuitConfig[i].CountMinHashes)})
+		}
+		ckt := prio_utils.ConfigToCircuit(circConf)
 
 		tripleShareReq := new(triple.Share)
 		tripleShareReq.ShareA = big.NewInt(0).SetBytes(request.ShareA)

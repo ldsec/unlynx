@@ -31,7 +31,7 @@ func createAggData(numberClient, numberServer int) ([][]*big.Int) {
 	secretValues := make([][]*big.Int, numberClient)
 	for i:= 0;i < numberClient ; i++ {
 		secretValues[i] = prio_utils.Share(share.IntModulus, numberServer, randomBig(big.NewInt(2), big.NewInt(64)))
-		log.LLvl1(secretValues[i])
+		log.LLvl1(secretValues)
 		for j := 0; j < len(secretValues[i]); j++ {
 			sumCipher.Add(sumCipher,secretValues[i][j])
 			sumCipher.Mod(sumCipher,share.IntModulus)

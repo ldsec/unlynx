@@ -5,14 +5,34 @@ import (
 	"math/big"
 	"unlynx/prio_utils"
 	"github.com/henrycg/prio/share"
+	"github.com/henrycg/prio/config"
+	"gopkg.in/dedis/onet.v1/log"
 )
 
 //client in prio represented as its secret value ID and modulus
 type API struct {
 	*onet.Client
 	ClientID   string
-	secretValue *big.Int
+	secretValue []*config.Field
 	modulus *big.Int
+}
+
+type ConfigByte struct {
+	Name string
+	Type int64
+	IntBits int64
+	IntPow  int64
+
+	CountMinHashes  int64
+	CountMinBuckets int64
+
+	// Each client training example has the form:
+	//    (y, x_1, x_2, ..., x_n)
+	// where the data has dimension n.
+	//
+	// The 0th entry is the number of bits in the y value.
+	// The rest of the entries represent the number of bits in each x_i.
+	LinRegBits []int64
 }
 
 // NewPrioClient constructor of a client.
@@ -21,7 +41,7 @@ func NewPrioClient(clientID string) *API {
 	newClient := &API{
 		Client:     onet.NewClient(ServiceName),
 		ClientID:   clientID,
-		secretValue: big.NewInt(285),
+		secretValue:  []*config.Field{&config.Field{Name:"Simul",Type:config.FieldType(byte(0)),IntBits:2}},
 		modulus: share.IntModulus,
 	}
 	return newClient
@@ -33,15 +53,19 @@ func NewPrioClient(clientID string) *API {
 //server/
 func (c *API) SendRequest(entities *onet.Roster)(string, error) {
 	numServer := len(entities.List)
-	dataSplited := prio_utils.Share(c.modulus,numServer,c.secretValue)
+	//dataSplited := prio_utils.Share(c.modulus,numServer,c.secretValue)
 
+	requests := prio_utils.ClientRequest(c.secretValue,numServer,0)
 
-	requests := prio_utils.ClientRequest(dataSplited,0)
-
-	circuitConfig := make([]int64,numServer)
-
-	for i, _:= range requests {
-		circuitConfig[i] = int64(dataSplited[i].BitLen())
+	//Conversion of field as protoBuf do not take int only int64
+	circuitConfig := make([]ConfigByte,len(c.secretValue))
+	for i:=0; i< len(c.secretValue) ; i++ {
+		field := c.secretValue[i]
+		linReg := make([]int64,0)
+		for j:=0;j<len(field.LinRegBits);j++  {
+			linReg = append(linReg, int64(field.LinRegBits[j]))
+		}
+		circuitConfig[i] = ConfigByte{Name:field.Name,IntBits:int64(field.IntBits),Type:int64(field.Type) ,LinRegBits:linReg,IntPow:int64(field.IntPow),CountMinBuckets:int64(field.CountMinBuckets),CountMinHashes:int64(field.CountMinHashes)}
 	}
 
 	// The list is ordered first == root
@@ -75,7 +99,7 @@ func (c *API) SendRequest(entities *onet.Roster)(string, error) {
 		}
 
 		err := c.SendProtobuf(servList[i],&dsc,&resp)
-
+		log.Lvl1(err)
 		if err != nil {
 			return resp.Results, err
 		}

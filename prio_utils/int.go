@@ -13,7 +13,6 @@ func bigToBits(nBits int, value *big.Int) []*big.Int {
 	for i := 0; i < nBits; i++ {
 		bits[i] = big.NewInt(int64(value.Bit(i)))
 	}
-
 	return bits
 }
 

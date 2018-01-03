@@ -5,6 +5,9 @@ import (
 	"github.com/BurntSushi/toml"
 	"gopkg.in/dedis/onet.v1/log"
 	"unlynx/protocols"
+	"math/big"
+	"crypto/rand"
+	"errors"
 	"unlynx/lib"
 
 	"unlynx/prio_utils"
@@ -51,6 +54,20 @@ func createCipherSet(numberClient, numberServer int) ([]*prio_utils.Request,[]*c
 
 	return result,circuit
 }
+
+//fucntion to generate a random big int between 0 and low^expo
+func randomBig (low,expo *big.Int)(int *big.Int){
+	max := new(big.Int)
+	max.Exp(low, expo, nil).Sub(max, big.NewInt(1))
+
+	//Generate cryptographically strong pseudo-random between 0 - max
+	n, err := rand.Int(rand.Reader, max)
+	if err != nil {
+		errors.New("Could not create random Big int ")
+	}
+	return n
+}
+
 
 
 

@@ -17,7 +17,7 @@ func TestServicePrio(t *testing.T) {
 
 	client := NewPrioClient("TestClient")
 	client2 := NewPrioClient("Client2")
-	log.Lvl1("Secret value is ", client.secretValue)
+	log.Lvl1("Secret value is ", (client.secretValue[0].IntBits) ,"bits")
 
 	res,_ := client.SendRequest(el)
 	client.ExecuteRequest(el,res)
