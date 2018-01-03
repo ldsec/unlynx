@@ -10,8 +10,7 @@ import (
 	"github.com/henrycg/prio/triple"
 
 	"math/rand"
-	"prio/config"
-	"github.com/henrycg/prio/mpc"
+	"github.com/henrycg/prio/config"
 )
 
 //this should be run at client for proof start
@@ -25,9 +24,9 @@ type Request struct {
 
 
 //Create proof submission for one client
-func ClientRequest(datas []config.Field, leaderForReq int) ([]*Request){
+func ClientRequest(datas []*config.Field, ns int, leaderForReq int) ([]*Request){
 	//utils.PrintTime("Initialize")
-	ns := len(datas)
+
 	prg := share.NewGenPRG(ns, leaderForReq)
 
 	pub := make([]byte,32)
@@ -42,7 +41,7 @@ func ClientRequest(datas []config.Field, leaderForReq int) ([]*Request){
 
 	//log.Lvl1("Inputs are")
 	inputs := make([]*big.Int,0)
-	for f := 0; f < nf; f++ {
+	for f := 0; f < len(datas); f++ {
 	field := datas[f]
 	switch field.Type {
 	default:
@@ -70,7 +69,7 @@ func ClientRequest(datas []config.Field, leaderForReq int) ([]*Request){
 	}
 
 	// Evaluate the Valid() circuit
-	ckt := ConfigToCircuit(dataShared)
+	ckt := ConfigToCircuit(datas)
 	//log.Lvl1("When evaluate request mod is ", ckt.Modulus())
 	//can only evaluate on bit values,
 	ckt.Eval(inputs)
@@ -114,14 +113,30 @@ func ConfigToCircuitBit(datas []int64) *circuit.Circuit {
 	return ckt
 }
 
-func ConfigToCircuit(datas []*big.Int) *circuit.Circuit {
+func ConfigToCircuit(datas []*config.Field) *circuit.Circuit {
 
 	nf := len(datas)
 	ckts := make([]*circuit.Circuit, nf)
 	for f := 0; f < nf; f++ {
-		name := "circuit"
-		name+= string(f)
-		ckts[f] = int_Circuit(name, int(datas[f].BitLen()))
+		field := datas[f]
+		switch field.Type {
+		default:
+			panic("Unexpected type!")
+		case config.TypeInt:
+			ckts[f] = int_Circuit(field.Name, int(field.IntBits))
+		case config.TypeIntPow:
+			ckts[f] = intPow_Circuit(field.Name, int(field.IntBits), int(field.IntPow))
+		case config.TypeIntUnsafe:
+			ckts[f] = intUnsafe_Circuit(field.Name)
+		case config.TypeBoolOr:
+			ckts[f] = bool_Circuit(field.Name)
+		case config.TypeBoolAnd:
+			ckts[f] = bool_Circuit(field.Name)
+		case config.TypeCountMin:
+			ckts[f] = countMin_Circuit(field.Name, int(field.CountMinHashes), int(field.CountMinBuckets))
+		case config.TypeLinReg:
+			ckts[f] = linReg_Circuit(field)
+		}
 	}
 
 	ckt := circuit.AndCircuits(ckts)

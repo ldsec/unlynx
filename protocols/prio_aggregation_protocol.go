@@ -7,8 +7,14 @@ import (
 
 	"math/big"
 
+	"gopkg.in/dedis/onet.v1/log"
 )
 
+/**
+This is a simple protocol that collect and aggregate by notifying the tree structure until
+leaf are reached. Then they locally aggregate the sahre they have and send to the parent.
+The root recolt all the data and publish the final aggregations
+ */
 
 const PrioAggregationProtocolName = "PrioAggregation"
 
@@ -31,30 +37,31 @@ type AnnounceAggregation struct {}
 _________________________________________________________________________________________________________________________
 */
 
+//Structure containing reply of node
 type StructReply struct {
 	*onet.TreeNode
 	ReplySumCipherBytes
 }
 
-
+//Structure containing announce of node
 type StructAnnounceAggregation struct {
 	*onet.TreeNode
 	AnnounceAggregation
 }
 
-
+//Basic structure representing the protocol, the Feedback channel contains the
+//result of the aggregation
 type PrioAggregationProtocol struct {
 	*onet.TreeNodeInstance
 
 	//the feedback final
 	Feedback chan *big.Int
 
-	//Channel for up and down communication
+	//Channel for up and down communication respectively
 	ChildDataChannel chan []StructReply
-
 	AnnounceChannel chan StructAnnounceAggregation
 
-	//The data of the protocol
+	//The data of the protocol : shares from server, local sum and Modulus
 	Shares  []*big.Int
 	Sum 	*big.Int
 	Modulus *big.Int
@@ -62,7 +69,7 @@ type PrioAggregationProtocol struct {
 
 }
 
-
+//Tell which message are gonna be used in the protocol
 func init() {
 	network.RegisterMessage(AnnounceAggregation{})
 	network.RegisterMessage(ReplySumCipherBytes{})
@@ -71,7 +78,7 @@ func init() {
 
 
 func NewPrioAggregationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance,error) {
-
+	//initialize the local sum to 0 and channel
 	st := &PrioAggregationProtocol{
 		TreeNodeInstance: n,
 		Feedback:         make(chan *big.Int),
@@ -103,10 +110,11 @@ func (p*PrioAggregationProtocol) Start() error {
 	//log.Lvl1("time to send mesage to children of root ", time.Since(start))
 	return nil
 }
-//dispatch is called on the node and handle incoming messages
 
+//dispatch is called on the node and handle incoming messages
 func (p*PrioAggregationProtocol) Dispatch() error {
 
+	//send if you're not the root (done in start), and only if you have children
 	if(!p.IsRoot()) {
 		if (!p.IsLeaf()) {
 			p.SendToChildren(&AnnounceAggregation{})
@@ -146,7 +154,7 @@ func (p *PrioAggregationProtocol) ascendingAggregationPhase() *big.Int {
 	}
 
 	//do the sum of ciphers
-
+	log.Lvl1(p.Shares)
 	for i := 0; i < len(p.Shares); i++ {
 		p.Sum.Add(p.Sum, p.Shares[i])
 		p.Sum.Mod(p.Sum, p.Modulus)

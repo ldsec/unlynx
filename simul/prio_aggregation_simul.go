@@ -31,6 +31,7 @@ func createAggData(numberClient, numberServer int) ([][]*big.Int) {
 	secretValues := make([][]*big.Int, numberClient)
 	for i:= 0;i < numberClient ; i++ {
 		secretValues[i] = prio_utils.Share(share.IntModulus, numberServer, randomBig(big.NewInt(2), big.NewInt(64)))
+		log.LLvl1(secretValues[i])
 		for j := 0; j < len(secretValues[i]); j++ {
 			sumCipher.Add(sumCipher,secretValues[i][j])
 			sumCipher.Mod(sumCipher,share.IntModulus)
@@ -125,7 +126,7 @@ func (sim *PrioAggregationSimulation) Run(config *onet.SimulationConfig) error {
 		lib.EndTimer(roundTime)
 		time := time.Since(start)
 		lib.EndTimer(roundTime)
-		filename := "/home/unlynx/go/src/unlynx/simul/time"
+		filename := "/home/max/Documents/go/src/unlynx/simul/time"
 		f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0600)
 		if err != nil {
 			panic(err)

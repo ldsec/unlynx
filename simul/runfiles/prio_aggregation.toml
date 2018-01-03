@@ -1,9 +1,9 @@
 Simulation = "PrioAggregation"
-Servers = 25
+Servers = 5
 Bf = 2
 Rounds = 1
 RunWait = 60000000
 Bandwidth = 1000
 
 Hosts, NbrRequestByProto, Proofs
-50,  10, true
+5,  10, true

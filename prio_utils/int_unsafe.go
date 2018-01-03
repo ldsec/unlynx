@@ -1,4 +1,4 @@
-package mpc
+package prio_utils
 
 import (
 	"log"

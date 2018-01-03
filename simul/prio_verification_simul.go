@@ -5,9 +5,6 @@ import (
 	"github.com/BurntSushi/toml"
 	"gopkg.in/dedis/onet.v1/log"
 	"unlynx/protocols"
-	"math/big"
-	"crypto/rand"
-	"errors"
 	"unlynx/lib"
 
 	"unlynx/prio_utils"
@@ -17,6 +14,7 @@ import (
 
 	"time"
 	"os"
+	"github.com/henrycg/prio/config"
 )
 
 
@@ -32,34 +30,28 @@ var secretBitLen []int64
 func createCipherSet(numberClient, numberServer int) ([]*prio_utils.Request,[]*circuit.Circuit) {
 
 	//secret value of clients
-	secretValues := make([]*big.Int, numberServer)
+//	secretValues := make([]*big.Int, numberServer)
 	circuit := make([]*circuit.Circuit,0)
 	result := make([]*prio_utils.Request,numberServer)
 	secretBitLen = make([]int64, numberServer)
 
-		secretValues = prio_utils.Share(share.IntModulus, numberServer, randomBig(big.NewInt(2),big.NewInt(64)))
-		result = prio_utils.ClientRequest(secretValues,0)
-		secretBitLen = toBit(secretValues)
+		//secretValues = prio_utils.Share(share.IntModulus, numberServer, randomBig(big.NewInt(2),big.NewInt(64)))
+		secret := config.LoadFile("/home/max/Documents/go/src/prio/eval/cell-geneva.conf")
+		fields := make([]*config.Field,0)
+		for j := 0; j<len(secret.Fields);j++  {
+			fields = append(fields, &(secret.Fields[j]))
+		}
+		result = prio_utils.ClientRequest(fields,numberServer,0)
+		//secretBitLen = toBit(secretValues)
 		for j:=0;j<numberServer ;j++  {
-			test := prio_utils.ConfigToCircuitBit(secretBitLen)
+			//test := prio_utils.ConfigToCircuitBit(secretBitLen)
+			test := prio_utils.ConfigToCircuit(fields)
 			circuit = append(circuit,test)
 		}
 
 	return result,circuit
 }
 
-//fucntion to generate a random big int between 0 and low^expo
-func randomBig (low,expo *big.Int)(int *big.Int){
-	max := new(big.Int)
-	max.Exp(low, expo, nil).Sub(max, big.NewInt(1))
-
-	//Generate cryptographically strong pseudo-random between 0 - max
-	n, err := rand.Int(rand.Reader, max)
-	if err != nil {
-		errors.New("Could not create random Big int ")
-	}
-	return n
-}
 
 
 func init() {
@@ -143,7 +135,7 @@ func (sim *PrioVerificationSimulation) Run(config *onet.SimulationConfig) error 
 		lib.EndParallelize(wg)
 		time := time.Since(start)
 		lib.EndTimer(roundTime)
-		filename := "/home/unlynx/go/src/unlynx/simul/time"
+		filename := "/home/max/Documents/go/src/unlynx/simul/time"
 		f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0600)
 		if err != nil {
 			panic(err)
@@ -181,10 +173,12 @@ func NewPrioVerificationProtocolSimul(tni *onet.TreeNodeInstance, sim *PrioVerif
 	return protocol, err
 }
 
+/*
+
 func toBit(v []*big.Int)([]int64) {
 	result := make([]int64,len(v))
 	for i,k := range v {
 		result[i] = int64(k.BitLen())
 	}
 	return result
-}
+}*/

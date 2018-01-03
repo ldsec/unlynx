@@ -4,28 +4,31 @@ import (
 	"testing"
 	"gopkg.in/dedis/onet.v1"
 	"time"
-	"math/big"
+//	"math/big"
 
 	"gopkg.in/dedis/onet.v1/log"
 	"unlynx/prio_utils"
 	"github.com/henrycg/prio/share"
 	"github.com/henrycg/prio/utils"
 	"github.com/stretchr/testify/assert"
+	"github.com/henrycg/prio/config"
 )
 //the field cardinality must be superior to nbclient*2^b where b is the maximum number of bit a client need to encode its value
 
 var field = share.IntModulus
 
-var nbServ = 5
+var nbServ = 2
 
 //3 random number to test
-var serv1Secret = big.NewInt(int64(55))
+//var serv1Secret = big.NewInt(int64(55))
 
 //the share of them
-var serv1Share = prio_utils.Share(field,nbServ,serv1Secret)
+//var serv1Share = prio_utils.Share(field,nbServ,serv1Secret)
 
 
-var req = prio_utils.ClientRequest(serv1Share, 0)
+//var req = prio_utils.ClientRequest(serv1Share, 0)
+var datas = []*config.Field{&config.Field{Name:"test",Type:config.FieldType(byte(5)),LinRegBits:[]int{14,7,1,2,7,8,1,3,8,1,8,4,4,1}},&config.Field{Name:"Test2",Type:config.FieldType(byte(5)),LinRegBits:[]int{1,2,5,2,7,3,8,1,8,1,8,3,6,12}}}
+var req = prio_utils.ClientRequest(datas, nbServ,0)
 var randomPoint = utils.RandInt(share.IntModulus)
 
 
@@ -64,7 +67,7 @@ func NewPrioVerificationTest(tni *onet.TreeNodeInstance) (onet.ProtocolInstance,
 	protocol := pi.(*PrioVerificationProtocol)
 
 	//set circuit
-	ckt := prio_utils.ConfigToCircuit(serv1Share)
+	ckt := prio_utils.ConfigToCircuit(datas)
 
 	//set request, checker and preChecker
 	protocol.Request = new(prio_utils.Request)
