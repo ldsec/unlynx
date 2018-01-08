@@ -17,21 +17,15 @@ type API struct {
 	modulus *big.Int
 }
 
+//This is just used because Protobuff cannot handle int...
+
 type ConfigByte struct {
 	Name string
 	Type int64
 	IntBits int64
 	IntPow  int64
-
 	CountMinHashes  int64
 	CountMinBuckets int64
-
-	// Each client training example has the form:
-	//    (y, x_1, x_2, ..., x_n)
-	// where the data has dimension n.
-	//
-	// The 0th entry is the number of bits in the y value.
-	// The rest of the entries represent the number of bits in each x_i.
 	LinRegBits []int64
 }
 
@@ -55,6 +49,7 @@ func (c *API) SendRequest(entities *onet.Roster)(string, error) {
 	numServer := len(entities.List)
 	//dataSplited := prio_utils.Share(c.modulus,numServer,c.secretValue)
 
+	//For the moment for almost all type, they are chosen randomly in function of the number of bits passed
 	requests := prio_utils.ClientRequest(c.secretValue,numServer,0)
 
 	//Conversion of field as protoBuf do not take int only int64
