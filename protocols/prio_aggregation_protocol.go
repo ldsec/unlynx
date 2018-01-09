@@ -8,6 +8,7 @@ import (
 	"math/big"
 
 	"gopkg.in/dedis/onet.v1/log"
+
 )
 
 /**
@@ -27,6 +28,7 @@ const PrioAggregationProtocolName = "PrioAggregation"
 //Reply from the children
 type ReplySumCipherBytes struct {
 	Bytes []byte
+	Index int64
 }
 
 //structure to announce start of protocol
@@ -56,15 +58,15 @@ type PrioAggregationProtocol struct {
 	*onet.TreeNodeInstance
 
 	//the feedback final
-	Feedback chan *big.Int
+	Feedback chan []*big.Int
 
 	//Channel for up and down communication respectively
 	ChildDataChannel chan []StructReply
 	AnnounceChannel chan StructAnnounceAggregation
 
 	//The data of the protocol : shares from server, local sum and Modulus
-	Shares  []*big.Int
-	Sum 	*big.Int
+	Shares  [][]*big.Int
+	Sum 	[]*big.Int
 	Modulus *big.Int
 
 
@@ -82,8 +84,8 @@ func NewPrioAggregationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance
 	//initialize the local sum to 0 and channel
 	st := &PrioAggregationProtocol{
 		TreeNodeInstance: n,
-		Feedback:         make(chan *big.Int),
-		Sum:              big.NewInt(int64(0)),
+		Feedback:         make(chan []*big.Int),
+		Sum:              make([]*big.Int,0),
 	}
 
 	//register the channel for announce
@@ -139,37 +141,56 @@ func (p*PrioAggregationProtocol) Dispatch() error {
 
 
 // Results pushing up the tree containing aggregation results.
-func (p *PrioAggregationProtocol) ascendingAggregationPhase() *big.Int {
+func (p *PrioAggregationProtocol) ascendingAggregationPhase() []*big.Int {
+	p.Sum = make([]*big.Int,len(p.Shares[0]))
 
+	for j := 0; j < len(p.Sum); j++ {
+		p.Sum[j] = big.NewInt(0)
+	}
 
 	if !p.IsLeaf() {
 		//wait on the channel for child to complete and add sum
 		//take time only at the root
-		for _, v := range <-p.ChildDataChannel {
-			//get the bytes and turn them back in big.Int
-			var sum big.Int
-			sum.SetBytes(v.Bytes)
-			p.Sum.Add(p.Sum, &sum)
-			p.Sum.Mod(p.Sum, p.Modulus)
+		for i:=0 ; i<len(p.Sum)  ; i++ {
+
+			for _, v := range <-p.ChildDataChannel {
+
+				//get the bytes and turn them back in big.Int
+				var sum big.Int
+				sum.SetBytes(v.Bytes)
+
+				index := int(v.Index)
+
+				p.Sum[index].Add(p.Sum[index], &sum)
+				p.Sum[index].Mod(p.Sum[index], p.Modulus)
+			}
 		}
 	}
 
 	//do the sum of ciphers
 	log.Lvl1(p.Shares)
 	for i := 0; i < len(p.Shares); i++ {
-		p.Sum.Add(p.Sum, p.Shares[i])
-		p.Sum.Mod(p.Sum, p.Modulus)
+		for j := 0; j < len(p.Sum); j++ {
+
+			p.Sum[j].Add(p.Sum[j], p.Shares[i][j])
+			p.Sum[j].Mod(p.Sum[j], p.Modulus)
+		}
 	}
 
 	//send to parent the sum to deblock channel wait
 	if !p.IsRoot() {
 		//send the big.Int in bytes
-		p.SendToParent(&ReplySumCipherBytes{p.Sum.Bytes()})
-		p.Sum = big.NewInt(0)
+		for j:= 0; j < len(p.Sum) ; j++ {
+			p.SendToParent(&ReplySumCipherBytes{p.Sum[j].Bytes(), int64(j)})
+			p.Sum[j] = big.NewInt(0)
+		}
+
 	}
 
 	//finish by returning the sum of the root
-	p.Sum.Mod(p.Sum, p.Modulus)
+	for j:= 0; j < len(p.Sum) ; j++ {
+		p.Sum[j].Mod(p.Sum[j], p.Modulus)
+	}
 
 	return p.Sum
 

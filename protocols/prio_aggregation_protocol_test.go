@@ -12,6 +12,7 @@ import (
 	"github.com/henrycg/prio/share"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/dedis/onet.v1/network"
+
 )
 //the field cardinality must be superior to nbclient*2^b where b is the maximum number of bit a client need to encode its value
 
@@ -59,7 +60,7 @@ func TestPrioAggregationProtocol(t *testing.T) {
 	select {
 	case Result := <- protocol.Feedback:
 		log.Lvl1("time elapsed is ",time.Since(start))
-		assert.Equal(t, expectedResults, Result)
+		assert.Equal(t, expectedResults, Result[0])
 	case <-time.After(timeout):
 		t.Fatal("Didn't finish in time")
 	}
@@ -76,9 +77,22 @@ func NewPrioAggregationTest(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, 
 	//here assign a share of each secret to the server. Meaning if 2 server, secret1 = [share1,share2] each of them goes to different server (1 and 2 respectively even if order does not matter)
 
 	protocol.Modulus = share.IntModulus
-	protocol.Shares = make([]*big.Int,0)
-	protocol.Shares = append(protocol.Shares,secret1Share[tni.Index()])
-	protocol.Shares = append(protocol.Shares,secret2Share[tni.Index()])
+	protocol.Shares = make([][]*big.Int,0)
+	protocol.Shares = append(protocol.Shares,Encode(secret1Share[tni.Index()]))
+	protocol.Shares = append(protocol.Shares,Encode(secret2Share[tni.Index()]))
 
 	return protocol, err
 }
+
+func Encode(x *big.Int)([]*big.Int) {
+	result := make([]*big.Int,1)
+	result[0] = x
+	for j:= 0 ;j < x.BitLen() ; j++ {
+		result = append(result,big.NewInt(int64(x.Bit(j))))
+	}
+	for (len(result)<64) {
+		result = append(result,big.NewInt(0))
+	}
+	return result
+}
+
