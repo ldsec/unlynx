@@ -116,7 +116,6 @@ type ServiceResult struct {
 // Service defines a service in unlynx with a survey.
 type Service struct {
 	*onet.ServiceProcessor
-
 	Survey *concurrent.ConcurrentMap
 }
 

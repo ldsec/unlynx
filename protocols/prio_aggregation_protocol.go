@@ -7,7 +7,6 @@ import (
 
 	"math/big"
 
-	"gopkg.in/dedis/onet.v1/log"
 
 )
 
@@ -168,7 +167,6 @@ func (p *PrioAggregationProtocol) ascendingAggregationPhase() []*big.Int {
 	}
 
 	//do the sum of ciphers
-	log.Lvl1(p.Shares)
 	for i := 0; i < len(p.Shares); i++ {
 		for j := 0; j < len(p.Sum); j++ {
 

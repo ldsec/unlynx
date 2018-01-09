@@ -1,5 +1,13 @@
 package prio
 
+/**
+This service instantiate a Prio Protocol, where DP awnser server querry. The part where a querier
+ask server for data is not depicted. For each client submission, data are splitted, encoded
+verified and aggregated.
+We use the AFE of a sum directly implemented in prio_aggregation_protocol
+but any other can be used.
+ */
+
 import (
 	"gopkg.in/dedis/onet.v1"
 	"math/big"
@@ -36,15 +44,17 @@ type DataSentClient struct {
 	ShareC []byte
 }
 
+//The id of the request to execute
 type ExecRequest struct {
 	ID string
-
 }
 
+//The id of the last request before aggregating
 type ExecAgg struct {
 	ID string
 }
 
+//The result of an aggregation in bytes
 type AggResult struct {
 	Result []byte
 }
@@ -52,6 +62,8 @@ type AggResult struct {
 type RequestResult struct {
 
 }
+
+//The type of message exchanged
 type MsgTypes struct {
 	msgProofDoing network.MessageTypeID
 	msgProofExec network.MessageTypeID
@@ -104,7 +116,7 @@ func NewService(c *onet.Context) onet.Service {
 	return newPrioInstance
 }
 
-
+//Handle a request from a client by registering it
 func (s *Service) HandleRequest(requestFromClient *DataSentClient)(network.Message, onet.ClientError) {
 
 	if requestFromClient == nil {
@@ -118,6 +130,7 @@ func (s *Service) HandleRequest(requestFromClient *DataSentClient)(network.Messa
 	return &ServiceResult{Results:string(requestFromClient.RequestID)},nil
 }
 
+//Execute the verification of a request
 func (s *Service) ExecuteRequest(exe *ExecRequest)(network.Message, onet.ClientError) {
 	//req := castToRequest(s.Request.Get(exe.ID))
 	//log.Lvl1(s.ServerIdentity(), " starts a Prio Verification Protocol")
@@ -133,6 +146,7 @@ func (s *Service) ExecuteRequest(exe *ExecRequest)(network.Message, onet.ClientE
 	return nil,nil
 }
 
+//The verification phase of a request given it's ID
 func (s *Service) VerifyPhase(requestID string) (bool,error) {
 	tmp := castToRequest(s.Request.Get(requestID))
 	isAccepted := false
@@ -156,6 +170,7 @@ func (s *Service) VerifyPhase(requestID string) (bool,error) {
 	return isAccepted,nil
 }
 
+//Execute the aggregation if you have more than 2 datas
 func (s *Service) ExecuteAggregation(exe *ExecAgg)(network.Message, onet.ClientError) {
 	pi, err := s.StartProtocol(protocols.PrioAggregationProtocolName, exe.ID )
 
@@ -166,13 +181,14 @@ func (s *Service) ExecuteAggregation(exe *ExecAgg)(network.Message, onet.ClientE
 
 		aggRes := <-pi.(*protocols.PrioAggregationProtocol).Feedback
 
-		return &AggResult{aggRes.Bytes()}, nil
+		return &AggResult{aggRes[0].Bytes()}, nil
 	} else {
 		log.Lvl2("You cannot aggregate less than 5 data points")
 		return &AggResult{[]byte{byte(0)}},nil
 	}
 }
 
+//method used to create a protocol given the name
 func (s *Service) StartProtocol(name string, targetRequest string) (onet.ProtocolInstance, error) {
 
 	tmp := castToRequest(s.Request.Get((string)(targetRequest)))
@@ -259,13 +275,7 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 		pi, err = protocols.NewPrioAggregationProtocol(tn)
 
 		pi.(*protocols.PrioAggregationProtocol).Modulus = share.IntModulus
-		shares := make([]*big.Int,0)
-		for _,v := range s.AggData {
-			for _,u := range v {
-				shares = append(shares,u)
-			}
-		}
-		pi.(*protocols.PrioAggregationProtocol).Shares = shares
+		pi.(*protocols.PrioAggregationProtocol).Shares = s.AggData
 		if err != nil {
 			log.Lvl1("Error")
 			return nil, err
