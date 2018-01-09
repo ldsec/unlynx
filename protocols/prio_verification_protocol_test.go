@@ -27,7 +27,8 @@ var nbServ = 2
 
 
 //var req = prio_utils.ClientRequest(serv1Share, 0)
-var datas = []*config.Field{&config.Field{Name:"test",Type:config.FieldType(byte(5)),LinRegBits:[]int{14,7,1,2,7,8,1,3,8,1,8,4,4,1}},&config.Field{Name:"Test2",Type:config.FieldType(byte(5)),LinRegBits:[]int{1,2,5,2,7,3,8,1,8,1,8,3,6,12}}}
+//var datas = []*config.Field{&config.Field{Name:"test",Type:config.FieldType(byte(5)),LinRegBits:[]int{14,7,1,2,7,8,1,3,8,1,8,4,4,1}},&config.Field{Name:"Test2",Type:config.FieldType(byte(5)),LinRegBits:[]int{1,2,5,2,7,3,8,1,8,1,8,3,6,12}}}
+var datas = []*config.Field{&config.Field{Name:"Int1",Type:config.FieldType(byte(0)),IntBits:2}}
 var req = prio_utils.ClientRequest(datas, nbServ,0)
 var randomPoint = utils.RandInt(share.IntModulus)
 

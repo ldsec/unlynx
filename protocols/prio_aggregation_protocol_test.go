@@ -18,7 +18,7 @@ import (
 
 var nbS = 5
 
-//3 random number to test
+//2 random number to test, you can test it with smaller number to see the sum yourself
 var secret1 = big.NewInt(int64(55189642165))
 var secret2= big.NewInt(int64(5518495792165))
 
@@ -72,6 +72,8 @@ func NewPrioAggregationTest(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, 
 
 	pi, err := NewPrioAggregationProtocol(tni)
 	protocol := pi.(*PrioAggregationProtocol)
+
+	//here assign a share of each secret to the server. Meaning if 2 server, secret1 = [share1,share2] each of them goes to different server (1 and 2 respectively even if order does not matter)
 
 	protocol.Modulus = share.IntModulus
 	protocol.Shares = make([]*big.Int,0)

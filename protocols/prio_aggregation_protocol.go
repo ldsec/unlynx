@@ -12,8 +12,8 @@ import (
 
 /**
 This is a simple protocol that collect and aggregate by notifying the tree structure until
-leaf are reached. Then they locally aggregate the sahre they have and send to the parent.
-The root recolt all the data and publish the final aggregations
+leaf are reached. Then they locally aggregate the shares they have and send to the parent.
+The root recolt all the data and publish the final aggregation
  */
 
 const PrioAggregationProtocolName = "PrioAggregation"
@@ -23,12 +23,13 @@ const PrioAggregationProtocolName = "PrioAggregation"
 /*_________________________________________________________________________________________________________________
 */
 
-//structure to announce start of protocol
+
 //Reply from the children
 type ReplySumCipherBytes struct {
 	Bytes []byte
 }
 
+//structure to announce start of protocol
 type AnnounceAggregation struct {}
 
 
@@ -104,8 +105,9 @@ func NewPrioAggregationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance
 func (p*PrioAggregationProtocol) Start() error {
 	// log.Lvl1(p.ServerIdentity(), " started a Sum Cipher Protocol (", len(p.Request), " different shares)")
 
-
+	//The root announce to its children that we start the protocol
 	p.SendToChildren(&AnnounceAggregation{})
+
 	//start := time.Now()
 	//log.Lvl1("time to send mesage to children of root ", time.Since(start))
 	return nil
@@ -124,7 +126,6 @@ func (p*PrioAggregationProtocol) Dispatch() error {
 	//p.waitOnSignal()
 
 	//Ascending aggreg
-	//start := time.Now()
 	//log.Lvl1(" Server p ",p.Index() , "start Aggreg")
 	sum := p.ascendingAggregationPhase()
 	//log.Lvl1(p.ServerIdentity(), " completed aggregation phase (", sum, " is the sum ) in ", time.Since(start))

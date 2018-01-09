@@ -73,7 +73,7 @@ func ClientRequest(datas []*config.Field, ns int, leaderForReq int) ([]*Request)
 	//log.Lvl1("When evaluate request mod is ", ckt.Modulus())
 	//can only evaluate on bit values,
 	ckt.Eval(inputs)
-
+	log.Lvl1("value is ", ckt.Outputs()[0].WireValue)
 	// Generate sharings of the input wires and the multiplication gate wires
 	ckt.ShareWires(prg)
 

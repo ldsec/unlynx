@@ -11,7 +11,18 @@ import (
 	"github.com/henrycg/prio/utils"
 
 )
+/**
+This protocol is used to verify that a Prio request from a Client is Valid.
+At the end it output an array of integer for each protocol ( it is not shared) that represent the share
+tha can be used to calculate the final aggregation.
+At the beginning we had a request represented by PRG hints and shares of the MPC triple. This is an optimization
+done by the Prio creator to send PRG key linked to hash instead of big int directly.
+The protocol collectivelly verify if the circuit is Valid (which is available to anyone), on the share inputs.
 
+Note: You cannot check that the output aggregate back to the result needed as you need the data from all
+protocol (not only root), but this can be done in the Services/prio. You can be conviced that if the protocol
+return True, the protocol has verify correctly and data were correct.
+*/
 
 const PrioVerificationProtocolName = "PrioVerification"
 
@@ -38,22 +49,25 @@ type OutShare struct {
 _________________________________________________________________________________________________________________________
 */
 
+//Announce of protocol
 type StructAnnounce struct {
 	*onet.TreeNode
 	AnnounceVerification
 }
 
-
+//Reply from node to say they are ready to go (to avoid strarting without some server as there is a broadcast)
 type StructResponse struct {
 	*onet.TreeNode
 	ResponseVerification
 }
 
+//Share exchanged by server to reconstruct the d & e MPC.
 type StructCorShare struct {
 	*onet.TreeNode
 	CorShare
 }
 
+//The evaluation of server
 type StructOutShare struct {
 	*onet.TreeNode
 	OutShare
@@ -86,6 +100,7 @@ type PrioVerificationProtocol struct {
 /*
 _______________________________________________________________________________
  */
+
 var randomKey = utils.RandomPRGKey()
 
 func init() {
@@ -171,8 +186,8 @@ func (p *PrioVerificationProtocol)waitOnSignal() {
 		if (!p.IsRoot()) {
 			p.SendToParent(&j)
 		}
-
 	}
+
 	if !p.IsRoot() {
 		//log.Lvl1("Leaf send to parent")
 		p.SendToParent(&ResponseVerification{})
@@ -195,12 +210,12 @@ func (p *PrioVerificationProtocol) collectiveVerificationPhase() []*big.Int {
 	//here evalReplies filled by evaluating on a point ( same for all protocols for a single client )
 	evalReplies = check.CorShare(p.Pre)
 
-	//Each proto need to send to each others
+	//Each proto need to send to each others their share to reconstruct the D & E
 	//log.Lvl1("Broadcasting from", p.Index())
 	//log.Lvl1("Broadcasting share", evalReplies)
 	p.Broadcast(&CorShare{evalReplies.ShareD.Bytes(), evalReplies.ShareE.Bytes()})
 
-	//Now they need to all send shares to each other so can all reconstruct cor
+	//Now they need to reconstruct it
 	evalRepliesFromAll := make([]*prio_utils.CorShare, 1)
 	evalRepliesFromAll[0] = evalReplies
 
@@ -213,7 +228,7 @@ func (p *PrioVerificationProtocol) collectiveVerificationPhase() []*big.Int {
 		evalRepliesFromAll = append(evalRepliesFromAll, corshare)
 	}
 
-	//cor is same for all server you cannot be transfered it that's why you transfer the shares
+	//cor is same for all server and cannot be transfered it that's why you transfer the shares
 	cor := check.Cor(evalRepliesFromAll)
 
 	//log.Lvl1(p.Index(), " All cor should be the same", cor)
@@ -250,6 +265,7 @@ func (p *PrioVerificationProtocol) collectiveVerificationPhase() []*big.Int {
 
 	result := make([]*big.Int,len(check.Outputs()))
 
+	//This are the actual shares you will need to aggregate
 	for i := 0; i < len(check.Outputs()); i++ {
 		result[i] = check.Outputs()[i].WireValue
 	}

@@ -162,9 +162,15 @@ func (s *Service) ExecuteAggregation(exe *ExecAgg)(network.Message, onet.ClientE
 	if err != nil {
 		log.Fatal("Error in the Aggregation Phase")
 	}
-	aggRes := <-pi.(*protocols.PrioAggregationProtocol).Feedback
+	if len(pi.(*protocols.PrioAggregationProtocol).Shares) >= 2  {
 
-	return &AggResult{aggRes.Bytes()},nil
+		aggRes := <-pi.(*protocols.PrioAggregationProtocol).Feedback
+
+		return &AggResult{aggRes.Bytes()}, nil
+	} else {
+		log.Lvl2("You cannot aggregate less than 5 data points")
+		return &AggResult{[]byte{byte(0)}},nil
+	}
 }
 
 func (s *Service) StartProtocol(name string, targetRequest string) (onet.ProtocolInstance, error) {
