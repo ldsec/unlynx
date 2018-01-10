@@ -627,7 +627,6 @@ func DetTagAdditionProofVerification(psap PublishedDetTagAdditionProof) bool {
 
 //******************************************************************RANGE VALIDATION***********************************
 type PublishSignature struct {
-	Pairing *pbc.Pairing
 	Public abstract.Point //y
 	Signature []abstract.Point 		  // A_i
 }
@@ -640,8 +639,6 @@ type PublishRangeProof struct {
 	Zv []abstract.Scalar
 	Zphi []abstract.Scalar
 	Zr abstract.Scalar
-	//Pairing
-	Pairing *pbc.Pairing
 	//value to check equality with
 	D abstract.Point
 	A []abstract.Point
@@ -661,17 +658,18 @@ func InitRangeProofSignature(u int64) (PublishSignature) {
 		invert := pairing.G1().Scalar().Add(x,scalar)
 		A[i] = pairing.G1().Point().Mul(pairing.G1().Point().Base(),pairing.G1().Scalar().Inv(invert))
 	}
-	return PublishSignature{Pairing:pairing,Signature:A,Public:y}
+	return PublishSignature{Signature:A,Public:y}
 }
 
 // createPredicateRangeProof creates predicate for secret range validation by the data provider
 //THIS MUST BE DONE AT DATA PROVIDER ONLY
 func CreatePredicateRangeProof(sig PublishSignature,u int64, l int64, secret int64, caPub abstract.Point ) (PublishRangeProof) {
 	//Base
-	B := sig.Pairing.G2().Point().Base()
+	pairing := pbc.NewPairingFp254BNb()
+	B := pairing.G2().Point().Base()
 	//value to pick and calculate
 	base := ToBase(int64(secret),int64(u),int(l))
-	cipher := sig.Pairing.G2().Point().Set(lib.IntToPoint(int64(secret)))
+	cipher := pairing .G2().Point().Set(lib.IntToPoint(int64(secret)))
 	r := suite.Scalar().Pick(random.Stream)
 
 	//Encryption is E = (C1,C2) , C1 = rB C2 = m + Pr the commit
@@ -711,9 +709,9 @@ func CreatePredicateRangeProof(sig PublishSignature,u int64, l int64, secret int
 
 
 	for j:=0;j<len(base) ; j++ {
-		v[j] = sig.Pairing.G1().Scalar().Pick(random.Stream)
+		v[j] = pairing.G1().Scalar().Pick(random.Stream)
 		///V_j = B(x+phi_j)^-1(v_j)
-		V[j] = sig.Pairing.G1().Point().Mul(sig.Signature[base[j]],v[j])
+		V[j] = pairing.G1().Point().Mul(sig.Signature[base[j]],v[j])
 
 		//
 		sj := suite.Scalar().Pick(random.Stream)
@@ -727,15 +725,15 @@ func CreatePredicateRangeProof(sig PublishSignature,u int64, l int64, secret int
 		secondT := suite.Point().Mul(caPub,mj)
 		D.Add(D,secondT)
 		//Compute a_j
-		a[j] = sig.Pairing.GT().PointGT().Pairing(V[j],suite.Point().Mul(suite.Point().Base(),suite.Scalar().Neg(sj)))
-		a[j].Add(a[j],sig.Pairing.GT().PointGT().Pairing(sig.Pairing.G1().Point().Base(),suite.Point().Mul(B,tj)))
+		a[j] = pairing.GT().PointGT().Pairing(V[j],suite.Point().Mul(suite.Point().Base(),suite.Scalar().Neg(sj)))
+		a[j].Add(a[j],pairing.GT().PointGT().Pairing(pairing.G1().Point().Base(),suite.Point().Mul(B,tj)))
 		log.LLvl1(j)
 		Zphi[j] = suite.Scalar().Sub(sj,suite.Scalar().Mul(suite.Scalar().SetInt64(int64(base[j])),c))
 		ZV[j] = suite.Scalar().Sub(tj,suite.Scalar().Mul(v[j],c))
 
 	}
 	Zr := suite.Scalar().Sub(m,suite.Scalar().Mul(r,c))
-	return PublishRangeProof{Pairing:sig.Pairing,Commit:commit,D:D,A:a,Challenge:c,V:V,Zphi:Zphi,Zv:ZV,Zr:Zr}
+	return PublishRangeProof{Commit:commit,D:D,A:a,Challenge:c,V:V,Zphi:Zphi,Zv:ZV,Zr:Zr}
 
 }
 
@@ -747,8 +745,9 @@ func RangeProofVerification(rangeProof PublishRangeProof, u int64, l int64, y ab
 		log.LLvl3("Not same size")
 		return false
 	}
+	pairing := pbc.NewPairingFp254BNb()
 	//The base
-	B := rangeProof.Pairing.G2().Point().Base()
+	B := pairing.G2().Point().Base()
 	//The a_j
 	ap := make([]abstract.Point,len(rangeProof.A))
 
@@ -766,11 +765,11 @@ func RangeProofVerification(rangeProof PublishRangeProof, u int64, l int64, y ab
 		//check bipairing
 		//a_j = e(Vj,y)(c)+e(Vj,B)(-Zphi_j) + e(B,B)(Zv_j)
 		//e(Vj,y*c)
-		ap[j] = rangeProof.Pairing.GT().PointGT().Pairing(rangeProof.V[j],suite.Point().Mul(y,rangeProof.Challenge))
+		ap[j] = pairing.GT().PointGT().Pairing(rangeProof.V[j],suite.Point().Mul(y,rangeProof.Challenge))
 		//e(Vj,y*c) + e(Vj,B)(Zphi_j)
-		ap[j].Add(ap[j],rangeProof.Pairing.GT().PointGT().Pairing(rangeProof.V[j],suite.Point().Mul(B,suite.Scalar().Neg(rangeProof.Zphi[j]))))
+		ap[j].Add(ap[j],pairing.GT().PointGT().Pairing(rangeProof.V[j],suite.Point().Mul(B,suite.Scalar().Neg(rangeProof.Zphi[j]))))
 		////e(Vj,y*c) + e(Vj,B)(Zphi_j) + e(B,B)(Zv_j)
-		ap[j].Add(ap[j],rangeProof.Pairing.GT().PointGT().Pairing(rangeProof.Pairing.G1().Point().Base(),suite.Point().Mul(B,rangeProof.Zv[j])))
+		ap[j].Add(ap[j],pairing.GT().PointGT().Pairing(pairing.G1().Point().Base(),suite.Point().Mul(B,rangeProof.Zv[j])))
 
 		if !ap[j].Equal(rangeProof.A[j]) {
 			return false

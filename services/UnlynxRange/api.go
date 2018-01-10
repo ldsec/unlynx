@@ -2,8 +2,7 @@ package UnlynxRange
 
 import (
 	"gopkg.in/dedis/onet.v1"
-
-	"unlynx/prio_utils"
+	"gopkg.in/dedis/onet.v1/log"
 )
 
 //data provider in prio represented as its secret value ID and modulus
@@ -25,60 +24,34 @@ func NewUnlynxRangeClient(clientID string) *API {
 
 
 func (c *API) SendRequest(entities *onet.Roster)(string, error) {
-	numServer := len(entities.List)
-	//dataSplited := prio_utils.Share(c.modulus,numServer,c.secretValue)
-
-	//For the moment for almost all type, they are chosen randomly in function of the number of bits passed
-	requests := prio_utils.ClientRequest(c.secretValue,numServer,0)
-
-	//Conversion of field as protoBuf do not take int only int64
-	circuitConfig := make([]ConfigByte,len(c.secretValue))
-	for i:=0; i< len(c.secretValue) ; i++ {
-		field := c.secretValue[i]
-		linReg := make([]int64,0)
-		for j:=0;j<len(field.LinRegBits);j++  {
-			linReg = append(linReg, int64(field.LinRegBits[j]))
-		}
-		circuitConfig[i] = ConfigByte{Name:field.Name,IntBits:int64(field.IntBits),Type:int64(field.Type) ,LinRegBits:linReg,IntPow:int64(field.IntPow),CountMinBuckets:int64(field.CountMinBuckets),CountMinHashes:int64(field.CountMinHashes)}
-	}
-
-	// The list is ordered first == root
 	servList := entities.List
-
-	resp := ServiceResult{}
-	randomPoint := prio_utils.RandInt(c.modulus).Bytes()
-
+	sig := ServiceSig{}
 	for i:=0;i<len(servList) ;i++  {
+		c.SendProtobuf(servList[i],&DataDP{Roster:entities,RequestID:[]byte("test")},&sig)
+		log.Lvl1("Receiving ", sig)
+		//here need to compute the things for each signature
+		//signatureStruct := lib.PublishSignature{Pairing:sig.Signature.Pairing,Public:sig.Signature.Public,Signature:make([]abstract.Point,len(sig.Signature.Signature))}
 
-		req := requests[i]
-		shareA := req.TripleShare.ShareA.Bytes()
-		shareB := req.TripleShare.ShareB.Bytes()
-		shareC := req.TripleShare.ShareC.Bytes()
-		hint := make([][]byte,0)
-		for _,v := range req.Hint.Delta  {
-			hint = append(hint,v.Bytes())
-		}
-
-		dsc := DataSentClient{
-			Leader : servList[0],
-			Roster:entities,
-			CircuitConfig: circuitConfig,
-			RandomPoint:randomPoint,
-			ShareA:shareA,
-			ShareB:shareB,
-			ShareC:shareC,
-			Hint:hint,
-			Key:req.Hint.Key,
-			RequestID:req.RequestID,
-		}
-
-		err := c.SendProtobuf(servList[i],&dsc,&resp)
-		log.Lvl1(err)
-		if err != nil {
-			return resp.Results, err
-		}
-
+		//signatureStruct.Signature = lib.BytesToAbstractPoints(sig.Signature.Signature)
+		//oPublishFromDp := lib.CreatePredicateRangeProof(signatureStruct,sig.U,sig.L,c.secretValue[0],signatureStruct.Public)
+		//log.Lvl1(toPublishFromDp)
 	}
 	//return the id of the request in the concurrent map of service if successful
-	return resp.Results, nil
+	//log.Lvl1(lib.BytesToAbstractPoints(sig.Signature.Signature))
+	//lib.CreatePredicateRangeProof(sig.Signature,sig.U,sig.L,c.secretValue[0],sig.Signature.Public)
+	return string(sig.RequestID), nil
 }
+
+
+/*
+func (c *API) ExecuteRequest(entities *onet.Roster,id string)(error) {
+
+	for _,v := range entities.List {
+		err := c.SendProtobuf(v, &ExecRequest{id}, &result)
+
+		if err != nil {
+			return  err
+		}
+	}
+	return nil
+}*/
