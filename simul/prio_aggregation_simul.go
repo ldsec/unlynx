@@ -161,7 +161,7 @@ func NewPrioAggregationProtocolSimul(tni *onet.TreeNodeInstance, sim *PrioAggreg
 	pap := protocol.(*protocols.PrioAggregationProtocol)
 
 	pap.Modulus = share.IntModulus
-	pap.Shares = aggData[tni.Index()]
+	pap.Shares = aggData
 
 
 	return protocol, err

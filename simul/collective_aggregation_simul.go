@@ -115,7 +115,7 @@ func (sim *CollectiveAggregationSimulation) Run(config *onet.SimulationConfig) e
 			start := time.Now()
 			log.Lvl1("Start protocol")
 			root.Start()
-			<-root.ProtocolInstance().(*protocols.CollectiveAggregationProtocol).FeedbackChannel
+			log.Lvl1(<-root.ProtocolInstance().(*protocols.CollectiveAggregationProtocol).FeedbackChannel)
 			time := time.Since(start)
 
 			lib.EndTimer(round)

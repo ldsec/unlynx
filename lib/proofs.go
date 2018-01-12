@@ -633,7 +633,7 @@ type PublishSignature struct {
 
 type PublishRangeProof struct {
 	//Data from DP
-	Commit abstract.Point
+	Cipher lib.CipherText
 	Challenge abstract.Scalar
 	V	[]abstract.Point
 	Zv []abstract.Scalar
@@ -675,6 +675,9 @@ func CreatePredicateRangeProof(sig PublishSignature,u int64, l int64, secret int
 	//Encryption is E = (C1,C2) , C1 = rB C2 = m + Pr the commit
 	//C = m + Pr
 	commit := suite.Point().Add(suite.Point().Mul(caPub,r),cipher)
+	C1 := suite.Point().Mul(B,r)
+
+	cipherText := lib.CipherText{K:C1,C:commit}
 
 	a := make([]abstract.Point,int(len(base)))
 	D := suite.Point().Null()
@@ -727,13 +730,14 @@ func CreatePredicateRangeProof(sig PublishSignature,u int64, l int64, secret int
 		//Compute a_j
 		a[j] = pairing.GT().PointGT().Pairing(V[j],suite.Point().Mul(suite.Point().Base(),suite.Scalar().Neg(sj)))
 		a[j].Add(a[j],pairing.GT().PointGT().Pairing(pairing.G1().Point().Base(),suite.Point().Mul(B,tj)))
-		log.LLvl1(j)
+
 		Zphi[j] = suite.Scalar().Sub(sj,suite.Scalar().Mul(suite.Scalar().SetInt64(int64(base[j])),c))
 		ZV[j] = suite.Scalar().Sub(tj,suite.Scalar().Mul(v[j],c))
 
 	}
 	Zr := suite.Scalar().Sub(m,suite.Scalar().Mul(r,c))
-	return PublishRangeProof{Commit:commit,D:D,A:a,Challenge:c,V:V,Zphi:Zphi,Zv:ZV,Zr:Zr}
+
+	return PublishRangeProof{Cipher:cipherText,D:D,A:a,Challenge:c,V:V,Zphi:Zphi,Zv:ZV,Zr:Zr}
 
 }
 
@@ -742,6 +746,10 @@ func RangeProofVerification(rangeProof PublishRangeProof, u int64, l int64, y ab
 	//check that indeed each value was filled with the good number of value in the base
 	if int(4*l) - len(rangeProof.Zphi) - len(rangeProof.Zv) - len(rangeProof.A) - len(rangeProof.V)!= 0 {
 		//not same size
+		log.Lvl1(len(rangeProof.Zphi))
+		log.Lvl1(len(rangeProof.Zv))
+		log.Lvl1(len(rangeProof.A))
+		log.Lvl1(len(rangeProof.V))
 		log.LLvl3("Not same size")
 		return false
 	}
@@ -751,9 +759,8 @@ func RangeProofVerification(rangeProof PublishRangeProof, u int64, l int64, y ab
 	//The a_j
 	ap := make([]abstract.Point,len(rangeProof.A))
 
-	//Dp = CcB + PZr + Sum(p)(in for)
-
-	Dp := suite.Point().Add(suite.Point().Mul(rangeProof.Commit,rangeProof.Challenge),suite.Point().Mul(P,rangeProof.Zr))
+	//Dp = Cc + PZr + Sum(p)(in for)
+	Dp := suite.Point().Add(suite.Point().Mul(rangeProof.Cipher.C,rangeProof.Challenge),suite.Point().Mul(P,rangeProof.Zr))
 	for j:=0;j<len(rangeProof.Zphi);j++  {
 
 		//p = B*u^j*Zphi_j
@@ -772,6 +779,7 @@ func RangeProofVerification(rangeProof PublishRangeProof, u int64, l int64, y ab
 		ap[j].Add(ap[j],pairing.GT().PointGT().Pairing(pairing.G1().Point().Base(),suite.Point().Mul(B,rangeProof.Zv[j])))
 
 		if !ap[j].Equal(rangeProof.A[j]) {
+
 			return false
 		}
 	}

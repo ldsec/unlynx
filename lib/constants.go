@@ -9,6 +9,8 @@ import (
 // Global Variables
 //______________________________________________________________________________________________________________________
 
+//Global key used to test protocols
+
 // TIME is true if we use protocols with time measurements of computations.
 const TIME = false
 
