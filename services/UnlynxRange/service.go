@@ -7,10 +7,11 @@ import (
 	"gopkg.in/dedis/onet.v1/log"
 	"unlynx/lib"
 	"gopkg.in/dedis/crypto.v0/abstract"
-	//	"github.com/dedis/paper_17_dfinity/pbc"
 	"github.com/dedis/paper_17_dfinity/pbc"
 	"github.com/lca1/unlynx/protocols"
+	//this import are here because some modfi added in local
 	lib2 "github.com/lca1/unlynx/lib"
+	proto2 "unlynx/protocols"
 	"errors"
 )
 
@@ -213,7 +214,7 @@ func (s *Service) StartProtocol(name string, targetData string) (onet.ProtocolIn
 	conf := onet.GenericConfig{Data: []byte(string(targetData))}
 	pi, err := s.NewProtocol(tn, &conf)
 	if err != nil {
-		log.Fatal("Error running" + name)
+		log.Fatal("Error running" + name , err)
 	}
 
 	s.RegisterProtocolInstance(pi)
@@ -250,12 +251,12 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 		pi.(*protocols.CollectiveAggregationProtocol).GroupedData = &testCVMap
 		pi.(*protocols.CollectiveAggregationProtocol).Proofs = true
 
-	case protocols.KeySwitchingProtocolName:
-		pi, err = protocols.NewKeySwitchingProtocol(tn)
+	case proto2.KeySwitchingNoByteProtocolName:
+		pi, err = proto2.NewKeySwitchingNoByteProtocol(tn)
 		if err != nil {
 			return nil, err
 		}
-		keySwitch := pi.(*protocols.KeySwitchingProtocol)
+		keySwitch := pi.(*proto2.KeySwitchingNoByteProtocol)
 		keySwitch.Proofs = true
 		if tn.IsRoot() {
 			coaggr := []lib2.FilteredResponse{}
@@ -288,11 +289,11 @@ func (s *Service) AggregationPhase(targetID string)(error) {
 }
 
 func (s *Service) KeySwitchingPhase(targetID string) error {
-	pi, err := s.StartProtocol(protocols.KeySwitchingProtocolName, targetID)
+	pi, err := s.StartProtocol(proto2.KeySwitchingNoByteProtocolName, targetID)
 	if err != nil {
 		return err
 	}
-	keySwitchedAggregatedResponses := <-pi.(*protocols.KeySwitchingProtocol).FeedbackChannel
+	keySwitchedAggregatedResponses := <-pi.(*proto2.KeySwitchingNoByteProtocol).FeedbackChannel
 
 	log.Lvl1(keySwitchedAggregatedResponses)
 	return err
