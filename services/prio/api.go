@@ -39,7 +39,7 @@ func NewPrioClient(clientID string) *API {
 	newClient := &API{
 		Client:     onet.NewClient(ServiceName),
 		ClientID:   clientID,
-		secretValue:  []*config.Field{&config.Field{Name:"Simul",Type:config.FieldType(byte(0)),IntBits:2}},
+		secretValue:  []*config.Field{&config.Field{Name:"Simul",Type:config.FieldType(byte(0)),IntBits:64}},
 		modulus: share.IntModulus,
 	}
 	return newClient

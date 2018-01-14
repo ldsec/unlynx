@@ -10,10 +10,11 @@ import (
 "gopkg.in/dedis/onet.v1/network"
 
 "time"
+	"os"
 )
 
 // KeySwitchingProtocolName is the registered name for the key switching protocol.
-const KeySwitchingNoByteProtocolName = "KeySwitching"
+const KeySwitchingNoByteProtocolName = "KeySwitchingNoByte"
 
 func init() {
 	network.RegisterMessage(KeySwitchedCipherMessage{})
@@ -88,7 +89,6 @@ func NewKeySwitchingNoByteProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInsta
 func (p *KeySwitchingNoByteProtocol) Start() error {
 
 	startRound := lib.StartTimer(p.Name() + "_KeySwitching(START)")
-
 	if p.TargetOfSwitch == nil {
 		return errors.New("No ciphertext given as key switching target")
 	}
@@ -140,7 +140,7 @@ func (p *KeySwitchingNoByteProtocol) Start() error {
 
 // Dispatch is called on each node. It waits for incoming messages and handles them.
 func (p *KeySwitchingNoByteProtocol) Dispatch() error {
-
+	//start := time.Now()
 	//length := <-p.LengthNodeChannel
 	//keySwitchingTargetBytes := (<-p.PreviousNodeInPathChannel).KeySwitchedCipherBytesMessage.Data
 	keySwitchingTarget := (<-p.PreviousNodeInPathChannel)
@@ -175,12 +175,26 @@ func (p *KeySwitchingNoByteProtocol) Dispatch() error {
 		for i, v := range keySwitchingTarget.DataKey {
 			result[i] = v.Response
 		}
+		/*
+		timeN := time.Since(start)
+		filename := "/home/unlynx/go/src/unlynx/services/timeSwitch"
+		f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0600)
+		if err != nil {
+			panic(err)
+		}
+
+		defer f.Close()
+
+		if _, err = f.WriteString(timeN.String() + "\n"); err != nil {
+			panic(err)
+		}*/
 		p.ExecTime += time.Since(startT)
 		p.FeedbackChannel <- result
 	} else {
 		log.Lvl1(p.ServerIdentity(), " carried on key switching on ", len(keySwitchingTarget.DataKey), " .")
 		sendingNoBytes(p, &keySwitchingTarget.KeySwitchedCipherMessage)
 	}
+
 
 	return nil
 }

@@ -106,6 +106,7 @@ func (s *Service) HandleRequest(requestFromDP *DataDP)(network.Message, onet.Cli
 	if(requestFromDP.ClientPublic != nil) {
 		s.ClientPub = requestFromDP.ClientPublic
 	}
+
 	signature := lib.InitRangeProofSignature(s.U)
 	sigStruct := PublishSignatureByte{Public: signature.Public, Signature: make([][]byte, len(signature.Signature))}
 	for i := 0; i < len(signature.Signature); i++ {
@@ -134,6 +135,7 @@ func (s *Service)ExecuteProof(proofFromDP *StructProofRangeByte)(network.Message
 	pairing := pbc.NewPairingFp254BNb()
 	parameterToValidate := lib.PublishRangeProof{Zv:proofFromDP.Zv,D:proofFromDP.D,Zr:proofFromDP.Zr,Challenge:proofFromDP.Challenge,Cipher:proofFromDP.Commit,Zphi:proofFromDP.Zphi}
 	V,A := make([]abstract.Point,len(proofFromDP.V)),make([]abstract.Point,len(proofFromDP.A))
+
 
 	for i:=0 ; i<len(proofFromDP.V); i++ {
 		pointV := pairing.G1().Point().Null()
@@ -166,12 +168,11 @@ func (s *Service)ExecuteProof(proofFromDP *StructProofRangeByte)(network.Message
 	}
 
 	if(proofFromDP.EntryPoint){
-		log.Lvl1("Put at ", proofFromDP.RequestID)
+
 		s.Request.Put(proofFromDP.RequestID,&ResultStored{Ciphers:parameterToValidate.Cipher,Roster:proofFromDP.Roster})
-		log.Lvl1("ID is " ,proofFromDP.RequestID)
-		log.Lvl1(castToData(s.Request.Get((string)(proofFromDP.RequestID))))
+
 		//if you have more than x datas, aggregate, change as you wish (in function of # clients)
-		if(s.Count>=2) {
+		if(s.Count>=10) {
 			log.Lvl1("Launch Service")
 			s.StartService(proofFromDP.RequestID, true)
 		}
@@ -283,12 +284,14 @@ func (s *Service) AggregationPhase(targetID string)(error) {
 		return err
 	}
 
+
 	cothorityAggregatedData := <-pi.(*protocols.CollectiveAggregationProtocol).FeedbackChannel
 	s.AggData = cothorityAggregatedData.GroupedData
 	return nil
 }
 
 func (s *Service) KeySwitchingPhase(targetID string) error {
+
 	pi, err := s.StartProtocol(proto2.KeySwitchingNoByteProtocolName, targetID)
 	if err != nil {
 		return err

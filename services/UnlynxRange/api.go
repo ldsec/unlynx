@@ -8,7 +8,11 @@ import (
 	"github.com/dedis/paper_17_dfinity/pbc"
 	"gopkg.in/dedis/onet.v1/network"
 	lib2 "github.com/lca1/unlynx/lib"
+
+	"time"
+	"os"
 )
+
 
 //data provider in prio represented as its secret value ID and modulus
 type API struct {
@@ -63,6 +67,8 @@ func (c *API) SendRequest(entities *onet.Roster,key abstract.Point)(string, erro
 
 
 	}
+
+
 	//return the id of the request in the concurrent map of service if successful
 	return string(sig.RequestID), nil
 }
@@ -89,6 +95,7 @@ type VerifResult struct {
 func (c *API) ExecuteProof(entities *onet.Roster,id string)(int64,error) {
 	servList := entities.List
 	verifResultFin := VerifResult{0}
+//	start := time.Now()
 	for i,v := range servList {
 		verifResult := VerifResult{0}
 		//the data you'll send for proof verification
@@ -116,14 +123,27 @@ func (c *API) ExecuteProof(entities *onet.Roster,id string)(int64,error) {
 			Abyte[j] = dataA
 		}
 		rangeProofs.V,rangeProofs.A = Vbyte,Abyte
-
 		//Send to each server for verification, return a boolean for each
 		err := c.SendProtobuf(v, &rangeProofs, &verifResult)
+
 		if err != nil {
 			return  1,err
 		}
 		verifResultFin.Res+=verifResult.Res
 	}
+	/*time := time.Since(start)
+	filename := "/home/unlynx/go/src/unlynx/services/timeVerif"
+	f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0600)
+	if err != nil {
+		panic(err)
+	}
+
+	defer f.Close()
+
+	if _, err = f.WriteString(time.String() + "\n"); err != nil {
+		panic(err)
+	}
+*/
 	return verifResultFin.Res,nil
 }
 

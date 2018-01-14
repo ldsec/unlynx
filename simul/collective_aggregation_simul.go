@@ -101,38 +101,24 @@ func (sim *CollectiveAggregationSimulation) Run(config *onet.SimulationConfig) e
 
 	for round := 0; round < sim.Rounds; round++ {
 		sum = 0
-			log.Lvl1("Starting round", round)
-			rooti, err := config.Overlay.CreateProtocol("CollectiveAggregationSimul", config.Tree, onet.NilServiceID)
-			if err != nil {
-				log.Lvl1("error Run")
-				return err
-			}
-
-			root := rooti.(*protocols.CollectiveAggregationProtocol)
-
-			//time measurement
-			round := lib.StartTimer("CollectiveAggregation(SIMULATION)")
-			start := time.Now()
-			log.Lvl1("Start protocol")
-			root.Start()
-			log.Lvl1(<-root.ProtocolInstance().(*protocols.CollectiveAggregationProtocol).FeedbackChannel)
-			time := time.Since(start)
-
-			lib.EndTimer(round)
-		filename := "/home/max/Documents/go/src/unlynx/simul/time"
-		f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0600)
+		log.Lvl1("Starting round", round)
+		rooti, err := config.Overlay.CreateProtocol("CollectiveAggregationSimul", config.Tree, onet.NilServiceID)
 		if err != nil {
-			panic(err)
+			log.Lvl1("error Run")
+			return err
 		}
 
-		defer f.Close()
+		root := rooti.(*protocols.CollectiveAggregationProtocol)
 
-		//to put in ms
-		if _, err = f.WriteString(time.String()+"\n"); err != nil {
-			panic(err)
-		}
+		//time measurement
+		round := lib.StartTimer("CollectiveAggregation(SIMULATION)")
+		log.Lvl1("Start protocol")
+		root.Start()
+		log.Lvl1(<-root.ProtocolInstance().(*protocols.CollectiveAggregationProtocol).FeedbackChannel)
 
-		}
+		lib.EndTimer(round)
+
+	}
 	return nil
 
 }

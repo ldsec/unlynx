@@ -5,7 +5,12 @@ import (
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
 	"unlynx/lib"
+	"gopkg.in/dedis/crypto.v0/abstract"
 )
+
+var nbHost = 10
+var nbServ = 50
+type empty string
 
 func TestServiceUnlynxRange(t *testing.T) {
 	//log.SetDebugVisible(3)
@@ -13,27 +18,42 @@ func TestServiceUnlynxRange(t *testing.T) {
 
 	// generate 5 hosts, they don't connect, they process messages, and they
 	// don't register the tree or entitylist
-	_, el, _ := local.GenTree(5, false)
+	_, el, _ := local.GenTree(nbServ, false)
 	defer local.CloseAll()
 
+	//Client private and public for keyswitch
 	FinalDecrypterp,FinalDecrypterP := lib.GenKey()
 	log.Lvl1(FinalDecrypterP,FinalDecrypterp)
 
-	client := NewUnlynxRangeClient("Client")
-	client2 := NewUnlynxRangeClient("Client")
-	_,client.CAPublic = lib.GenKey()
-	client.EntryPoint = el.List[0]
-	client2.CAPublic = client.CAPublic
-	client2.EntryPoint = el.List[1]
+	//the CA public which is supposed to be sum of private of Serv
+	_,CAPublic := lib.GenKey()
 
-	res,_ := client.SendRequest(el,FinalDecrypterP)
-	log.Lvl1(res)
-	resu,err := client.ExecuteProof(el,res)
-	log.Lvl1(resu,err)
-	res2,_ := client2.SendRequest(el,FinalDecrypterP)
-	log.Lvl1(res2)
-	resu2,err := client2.ExecuteProof(el,res2)
-	log.Lvl1(resu2)
-	//client.ExecuteRequest(el,res)
+	dataPro := make([]*API,nbHost)
 
+	//init the clients
+	for i,v:= range dataPro  {
+		v = NewUnlynxRangeClient("DP")
+		v.CAPublic = CAPublic
+		v.EntryPoint = el.List[i%nbServ]
+		dataPro[i] = v
+	}
+
+	sem := make(chan empty, len(dataPro))
+	sem2 := make(chan empty, len(dataPro))
+
+	for _,v := range dataPro {
+		go func(roster *onet.Roster, point abstract.Point) {
+			res, _ := v.SendRequest(roster, point)
+			sem <- empty(res)
+		}(el, FinalDecrypterP)
+
+
+		go func(roster *onet.Roster, point abstract.Point) {
+			res, _ := v.ExecuteProof(roster,string(<-sem))
+			log.Lvl1(res)
+			sem2 <- ""
+		}(el, FinalDecrypterP)
+			<-sem2
+
+	}
 }

@@ -1,5 +1,5 @@
 package main
-
+/*
 import (
 	"github.com/BurntSushi/toml"
 	"github.com/lca1/unlynx/lib"
@@ -215,3 +215,4 @@ func (sim *SimulationUnLynxI2B2) Run(config *onet.SimulationConfig) error {
 	}
 	return nil
 }
+*/

@@ -6,29 +6,35 @@ import (
 	"gopkg.in/dedis/onet.v1/log"
 )
 
+var nbHost = 5
+var nbServ = 5
+
 func TestServicePrio(t *testing.T) {
 	//log.SetDebugVisible(3)
 	local := onet.NewLocalTest()
 
 	// generate 5 hosts, they don't connect, they process messages, and they
 	// don't register the tree or entitylist
-	_, el, _ := local.GenTree(5, false)
+	_, el, _ := local.GenTree(nbServ, false)
 	defer local.CloseAll()
 
-	client := NewPrioClient("TestClient")
-	client2 := NewPrioClient("Client2")
-	log.Lvl1("Secret value is ", (client.secretValue[0].IntBits) ,"bits")
+	dataPro := make([]*API,nbHost)
 
-	res,_ := client.SendRequest(el)
-	client.ExecuteRequest(el,res)
+	//init
+	for i,_:= range dataPro  {
+		dataPro[i] = NewPrioClient("DP"+string(i))
+	}
 
-	agg,_ := client.Aggregate(el,res)
-	log.Lvl1("Agg is ",agg)
+	//log.Lvl1("Secret value is ", (client.secretValue[0].IntBits) ,"bits")
 
-	res,_ = client2.SendRequest(el)
-	client2.ExecuteRequest(el,res)
+	for i,v:= range dataPro  {
+		res,_ := v.SendRequest(el)
+		v.ExecuteRequest(el,res)
+		if(i==len(dataPro)-1) {
+			final,_ := dataPro[i].Aggregate(el,res)
+			log.Lvl1(final)
+		}
+	}
 
 
-	agg,_ = client.Aggregate(el,res)
-	log.Lvl1("Agg is ",agg)
 }

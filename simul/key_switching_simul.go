@@ -3,10 +3,12 @@ package main
 import (
 	"github.com/BurntSushi/toml"
 	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/protocols"
+//	"github.com/lca1/unlynx/protocols"
 	"gopkg.in/dedis/crypto.v0/random"
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
+
+	protocols2 "unlynx/protocols"
 )
 
 func init() {
@@ -54,12 +56,12 @@ func (sim *KeySwitchingSimulation) Setup(dir string, hosts []string) (*onet.Simu
 func (sim *KeySwitchingSimulation) Run(config *onet.SimulationConfig) error {
 	for round := 0; round < sim.Rounds; round++ {
 		log.Lvl1("Starting round", round)
-		rooti, err := config.Overlay.CreateProtocol("KeySwitching", config.Tree, onet.NilServiceID)
+		rooti, err := config.Overlay.CreateProtocol("KeySwitchingNoByte", config.Tree, onet.NilServiceID)
 		if err != nil {
 			return err
 		}
 
-		root := rooti.(*protocols.KeySwitchingProtocol)
+		root := rooti.(*protocols2.KeySwitchingNoByteProtocol)
 		suite := root.Suite()
 		aggregateKey := root.Roster().Aggregate
 
@@ -79,15 +81,14 @@ func (sim *KeySwitchingSimulation) Run(config *onet.SimulationConfig) error {
 		clientSecret := suite.Scalar().Pick(random.Stream)
 		clientPublic := suite.Point().Mul(suite.Point().Base(), clientSecret)
 
-		root.ProtocolInstance().(*protocols.KeySwitchingProtocol).TargetPublicKey = &clientPublic
+		root.ProtocolInstance().(*protocols2.KeySwitchingNoByteProtocol).TargetPublicKey = &clientPublic
 		log.Lvl1("Number of respones to key switch ", len(responses))
-		root.ProtocolInstance().(*protocols.KeySwitchingProtocol).TargetOfSwitch = &responses
-		root.ProtocolInstance().(*protocols.KeySwitchingProtocol).Proofs = sim.Proofs
+		root.ProtocolInstance().(*protocols2.KeySwitchingNoByteProtocol).TargetOfSwitch = &responses
+		root.ProtocolInstance().(*protocols2.KeySwitchingNoByteProtocol).Proofs = sim.Proofs
 
 		round := lib.StartTimer("_KeySwitching(SIMULATION)")
-
 		root.Start()
-		<-root.ProtocolInstance().(*protocols.KeySwitchingProtocol).FeedbackChannel
+		<-root.ProtocolInstance().(*protocols2.KeySwitchingNoByteProtocol).FeedbackChannel
 
 		lib.EndTimer(round)
 
