@@ -40,8 +40,9 @@ func NewUnLynxClient(entryPoint *network.ServerIdentity, clientID string) *API {
 func (c *API) SendSurveyDDTRequestTerms(entities *onet.Roster, surveyID SurveyID, terms lib.CipherVector, proofs bool, testing bool) (*SurveyID, []lib.GroupingKey, TimeResults, error) {
 	log.Lvl1("Client", c.ClientID, "is creating a DDT survey with ID:", surveyID)
 
+	rndUUID, _ := uuid.NewV4()
 	sdq := SurveyDDTRequest{
-		SurveyID: SurveyID(uuid.NewV4().String()),
+		SurveyID: SurveyID(rndUUID.String()),
 		Roster:   *entities,
 		Proofs:   proofs,
 		Testing:  testing,
