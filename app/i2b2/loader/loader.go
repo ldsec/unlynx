@@ -32,7 +32,7 @@ type DBSettings struct {
 var (
 	Tablenames = [...]string{"shrine_ont.clinical_sensitive",
 		"shrine_ont.clinical_non_sensitive",
-		"shrine_ont.genomic_annotations",
+		"genomic_annotations.genomic_annotations",
 		"i2b2metadata.sensitive_tagged",
 		"i2b2metadata.non_sensitive_clear",
 		"i2b2demodata.concept_dimension",
