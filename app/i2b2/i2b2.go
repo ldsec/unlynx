@@ -5,6 +5,7 @@ import (
 
 	"gopkg.in/dedis/onet.v1/app"
 	"gopkg.in/dedis/onet.v1/log"
+	"gopkg.in/dedis/onet.v1/network"
 	"gopkg.in/urfave/cli.v1"
 )
 
@@ -98,6 +99,9 @@ Return system error codes signification
 2: error in the XML query parsing or during query
 */
 func main() {
+	// increase maximum in onet.v1.tcp.go to allow for big packets (for now is the max value for uint32)
+	network.MaxPacketSize = network.Size(^uint32(0))
+
 	cliApp := cli.NewApp()
 	cliApp.Name = "unlynxI2B2"
 	cliApp.Usage = "Query medical information securely and privately"
