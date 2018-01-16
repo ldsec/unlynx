@@ -29,11 +29,10 @@ type DBSettings struct {
 }
 
 // The different paths and handlers for all the .sql files
-// todo: loading of table shrine_ont.genomic_annotations disabled to accomodate the new format designed by niccolo, loading with this format should be implemented
 var (
 	Tablenames = [...]string{"shrine_ont.clinical_sensitive",
 		"shrine_ont.clinical_non_sensitive",
-//		"shrine_ont.genomic_annotations",
+		"shrine_ont.genomic_annotations",
 		"i2b2metadata.sensitive_tagged",
 		"i2b2metadata.non_sensitive_clear",
 		"i2b2demodata.concept_dimension",
@@ -48,7 +47,7 @@ var (
 
 	FilePaths = [...]string{"files/SHRINE_ONT_CLINICAL_SENSITIVE.csv",
 		"files/SHRINE_ONT_CLINICAL_NON_SENSITIVE.csv",
-//		"files/SHRINE_ONT_GENOMIC_ANNOTATIONS.csv",
+		"files/SHRINE_ONT_GENOMIC_ANNOTATIONS.csv",
 		"files/I2B2METADATA_SENSITIVE_TAGGED.csv",
 		"files/I2B2METADATA_NON_SENSITIVE_CLEAR.csv",
 		"files/I2B2DEMODATA_CONCEPT_DIMENSION.csv",
@@ -232,7 +231,10 @@ func GenerateLoadingScript(databaseS DBSettings) error {
 	for i := 0; i < len(Tablenames); i++ {
 		tokens := strings.Split(FilePaths[i], "/")
 
-		loading += `\copy ` + Tablenames[i] + ` FROM 'files/` + tokens[1] + `' ESCAPE '"' DELIMITER ',' CSV;` + "\n"
+		// todo: loading of table shrine_ont.genomic_annotations disabled to accomodate the new format designed by niccolo, loading with this format should be implemented
+		if Tablenames[i] != "shrine_ont.genomic_annotations" {
+			loading += `\copy ` + Tablenames[i] + ` FROM 'files/` + tokens[1] + `' ESCAPE '"' DELIMITER ',' CSV;` + "\n"
+		}
 	}
 	loading += "COMMIT;\n"
 	loading += "EOSQL"
