@@ -1,4 +1,4 @@
-package serviceI2B2
+package serviceMedCo
 
 import (
 	"github.com/lca1/unlynx/lib"

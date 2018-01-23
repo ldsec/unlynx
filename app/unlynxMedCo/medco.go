@@ -11,7 +11,7 @@ import (
 
 const (
 	// BinaryName is the name of the binary
-	BinaryName = "unlynxI2B2"
+	BinaryName = "unlynxMedCo"
 
 	// Version of the binary
 	Version = "1.00"
@@ -103,7 +103,7 @@ func main() {
 	network.MaxPacketSize = network.Size(^uint32(0))
 
 	cliApp := cli.NewApp()
-	cliApp.Name = "unlynxI2B2"
+	cliApp.Name = "unlynxMedCo"
 	cliApp.Usage = "Query medical information securely and privately"
 	cliApp.Version = Version
 
@@ -300,7 +300,7 @@ func main() {
 		// BEGIN SERVER --------
 		{
 			Name:  "server",
-			Usage: "Start medco server",
+			Usage: "Start unlynx MedCo server",
 			Action: func(c *cli.Context) error {
 				runServer(c)
 				return nil

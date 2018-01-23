@@ -7,7 +7,7 @@ import (
 	"encoding/csv"
 	"errors"
 	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/services/i2b2"
+	"github.com/lca1/unlynx/services/unlynxMedCo"
 	"gopkg.in/dedis/crypto.v0/base64"
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
@@ -160,6 +160,12 @@ func LoadClient(el *onet.Roster, entryPointIdx int, fOntClinical, fOntGenomic, f
 	OntValues = make(map[ConceptPath]ConceptID)
 	Testing = testing
 	TextSearchIndex = int64(1) // needed for the observation_fact table (counter)
+
+	// create files directory
+	mkdirErr := os.MkdirAll("files/", os.ModeDir)
+	if mkdirErr != nil {
+		log.Fatal("Cannot create directory.")
+	}
 
 	for _, f := range FilePaths {
 		fp, err := os.Create(f)
@@ -775,11 +781,11 @@ func EncryptAndTag(list []int64, group *onet.Roster, entryPointIdx int) ([]lib.G
 
 	// TAGGING
 	start = time.Now()
-	client := serviceI2B2.NewUnLynxClient(group.List[entryPointIdx], strconv.Itoa(entryPointIdx))
+	client := serviceMedCo.NewUnLynxClient(group.List[entryPointIdx], strconv.Itoa(entryPointIdx))
 	_, result, tr, err := client.SendSurveyDDTRequestTerms(
 		group, // Roster
-		serviceI2B2.SurveyID("tagging_loading_phase"), // SurveyID
-		listEncryptedElements,                         // Encrypted query terms to tag
+		serviceMedCo.SurveyID("tagging_loading_phase"), // SurveyID
+		listEncryptedElements,                          // Encrypted query terms to tag
 		false, // compute proofs?
 		Testing,
 	)

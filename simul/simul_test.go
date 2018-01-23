@@ -1,9 +1,9 @@
 package main_test
 
 import (
-"gopkg.in/dedis/onet.v1/log"
-"gopkg.in/dedis/onet.v1/simul"
-"testing"
+	"gopkg.in/dedis/onet.v1/log"
+	"gopkg.in/dedis/onet.v1/simul"
+	"testing"
 )
 
 func TestMain(m *testing.M) {

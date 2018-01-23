@@ -1,4 +1,0 @@
-[[servers]]
-  Address = "tcp://172.16.205.12:2005"
-  Public = "5loqdN2/oXEhkrIEhwc0WCKYm9+c9zs10Y4TZgF6490="
-  Description = "Unlynx Server 5"

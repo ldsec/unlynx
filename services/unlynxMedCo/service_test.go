@@ -1,8 +1,8 @@
-package serviceI2B2_test
+package serviceMedCo_test
 
 import (
 	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/services/i2b2"
+	"github.com/lca1/unlynx/services/unlynxMedCo"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/onet.v1"
@@ -24,10 +24,10 @@ func getParam(nbHosts int) (*onet.Roster, *onet.LocalTest) {
 	return el, local
 }
 
-func getClients(nbHosts int, el *onet.Roster) []*serviceI2B2.API {
-	clients := make([]*serviceI2B2.API, nbHosts)
+func getClients(nbHosts int, el *onet.Roster) []*serviceMedCo.API {
+	clients := make([]*serviceMedCo.API, nbHosts)
 	for i := 0; i < nbHosts; i++ {
-		clients[i] = serviceI2B2.NewUnLynxClient(el.List[i], strconv.Itoa(i))
+		clients[i] = serviceMedCo.NewUnLynxClient(el.List[i], strconv.Itoa(i))
 	}
 
 	return clients
@@ -57,14 +57,14 @@ func TestServiceDDT(t *testing.T) {
 
 	wg := lib.StartParallelize(len(el.List))
 
-	serviceI2B2.NewUnLynxClient(el.List[0], strconv.Itoa(0))
+	serviceMedCo.NewUnLynxClient(el.List[0], strconv.Itoa(0))
 
 	// the first two threads execute the same operation (repetition) to check that in the end it yields the same result
 	go func() {
 		defer wg.Done()
 
 		var err error
-		_, result_node1, _, err = clients[0].SendSurveyDDTRequestTerms(el, serviceI2B2.SurveyID("testDDTSurvey_node1"), qt, proofs, true)
+		_, result_node1, _, err = clients[0].SendSurveyDDTRequestTerms(el, serviceMedCo.SurveyID("testDDTSurvey_node1"), qt, proofs, true)
 
 		if err != nil {
 			t.Fatal("Client", clients[0], " service did not start: ", err)
@@ -74,7 +74,7 @@ func TestServiceDDT(t *testing.T) {
 		defer wg.Done()
 
 		var err error
-		_, result_node1_repeated, _, err = clients[0].SendSurveyDDTRequestTerms(el, serviceI2B2.SurveyID("testDDTSurvey_node1_repeated"), qt, proofs, true)
+		_, result_node1_repeated, _, err = clients[0].SendSurveyDDTRequestTerms(el, serviceMedCo.SurveyID("testDDTSurvey_node1_repeated"), qt, proofs, true)
 
 		if err != nil {
 			t.Fatal("Client", clients[0], " service did not start: ", err)
@@ -84,7 +84,7 @@ func TestServiceDDT(t *testing.T) {
 		defer wg.Done()
 
 		var err error
-		_, result_node2, _, err = clients[1].SendSurveyDDTRequestTerms(el, serviceI2B2.SurveyID("testDDTSurvey_node2"), qt, proofs, true)
+		_, result_node2, _, err = clients[1].SendSurveyDDTRequestTerms(el, serviceMedCo.SurveyID("testDDTSurvey_node2"), qt, proofs, true)
 
 		if err != nil {
 			t.Fatal("Client", clients[1], " service did not start: ", err)
@@ -92,7 +92,7 @@ func TestServiceDDT(t *testing.T) {
 	}()
 
 	var err error
-	_, result_node3, _, err = clients[2].SendSurveyDDTRequestTerms(el, serviceI2B2.SurveyID("testDDTSurvey_node3"), qt, proofs, true)
+	_, result_node3, _, err = clients[2].SendSurveyDDTRequestTerms(el, serviceMedCo.SurveyID("testDDTSurvey_node3"), qt, proofs, true)
 
 	if err != nil {
 		t.Fatal("Client", clients[2], " service did not start: ", err)
@@ -138,7 +138,7 @@ func TestServiceAgg(t *testing.T) {
 		defer wg.Done()
 
 		var err error
-		_, result_node1, _, err = clients1[0].SendSurveyAggRequest(el, serviceI2B2.SurveyID("testAggSurvey1"), pubKey1, *aggregate1, proofs)
+		_, result_node1, _, err = clients1[0].SendSurveyAggRequest(el, serviceMedCo.SurveyID("testAggSurvey1"), pubKey1, *aggregate1, proofs)
 
 		if err != nil {
 			t.Fatal("Client", clients1[0], " service did not start: ", err)
@@ -148,7 +148,7 @@ func TestServiceAgg(t *testing.T) {
 		defer wg.Done()
 
 		var err error
-		_, result_node2, _, err = clients1[1].SendSurveyAggRequest(el, serviceI2B2.SurveyID("testAggSurvey1"), pubKey2, *aggregate2, proofs)
+		_, result_node2, _, err = clients1[1].SendSurveyAggRequest(el, serviceMedCo.SurveyID("testAggSurvey1"), pubKey2, *aggregate2, proofs)
 
 		if err != nil {
 			t.Fatal("Client", clients1[1], " service did not start: ", err)
@@ -158,7 +158,7 @@ func TestServiceAgg(t *testing.T) {
 		defer wg.Done()
 
 		var err error
-		_, result_node3, _, err = clients1[2].SendSurveyAggRequest(el, serviceI2B2.SurveyID("testAggSurvey1"), pubKey3, *aggregate3, proofs)
+		_, result_node3, _, err = clients1[2].SendSurveyAggRequest(el, serviceMedCo.SurveyID("testAggSurvey1"), pubKey3, *aggregate3, proofs)
 
 		if err != nil {
 			t.Fatal("Client", clients1[2], " service did not start: ", err)
@@ -169,7 +169,7 @@ func TestServiceAgg(t *testing.T) {
 		defer wg.Done()
 
 		var err error
-		_, result_node4, _, err = clients2[0].SendSurveyAggRequest(el, serviceI2B2.SurveyID("testAggSurvey2"), pubKey1, *aggregate4, proofs)
+		_, result_node4, _, err = clients2[0].SendSurveyAggRequest(el, serviceMedCo.SurveyID("testAggSurvey2"), pubKey1, *aggregate4, proofs)
 
 		if err != nil {
 			t.Fatal("Client", clients2[0], " service did not start: ", err)
@@ -179,7 +179,7 @@ func TestServiceAgg(t *testing.T) {
 		defer wg.Done()
 
 		var err error
-		_, result_node5, _, err = clients2[1].SendSurveyAggRequest(el, serviceI2B2.SurveyID("testAggSurvey2"), pubKey2, *aggregate5, proofs)
+		_, result_node5, _, err = clients2[1].SendSurveyAggRequest(el, serviceMedCo.SurveyID("testAggSurvey2"), pubKey2, *aggregate5, proofs)
 
 		if err != nil {
 			t.Fatal("Client", clients2[1], " service did not start: ", err)
@@ -189,7 +189,7 @@ func TestServiceAgg(t *testing.T) {
 		defer wg.Done()
 
 		var err error
-		_, result_node6, _, err = clients2[2].SendSurveyAggRequest(el, serviceI2B2.SurveyID("testAggSurvey2"), pubKey3, *aggregate6, proofs)
+		_, result_node6, _, err = clients2[2].SendSurveyAggRequest(el, serviceMedCo.SurveyID("testAggSurvey2"), pubKey3, *aggregate6, proofs)
 
 		if err != nil {
 			t.Fatal("Client", clients2[2], " service did not start: ", err)
@@ -217,14 +217,14 @@ func TestServiceAgg(t *testing.T) {
 
 func TestCheckDDTSecrets(t *testing.T) {
 	addr := network.NewLocalAddress("local://127.0.0.1:2020")
-	_, err := serviceI2B2.CheckDDTSecrets("secrets.toml", addr)
+	_, err := serviceMedCo.CheckDDTSecrets("secrets.toml", addr)
 	assert.Nil(t, err, "Error while writing the secrets to the TOML file")
 
 	addr = network.NewLocalAddress("local://127.0.0.1:2010")
-	_, err = serviceI2B2.CheckDDTSecrets("secrets.toml", addr)
+	_, err = serviceMedCo.CheckDDTSecrets("secrets.toml", addr)
 	assert.Nil(t, err, "Error while writing the secrets to the TOML file")
 
 	addr = network.NewLocalAddress("local://127.0.0.1:2000")
-	_, err = serviceI2B2.CheckDDTSecrets("secrets.toml", addr)
+	_, err = serviceMedCo.CheckDDTSecrets("secrets.toml", addr)
 	assert.Nil(t, err, "Error while writing the secrets to the TOML file")
 }

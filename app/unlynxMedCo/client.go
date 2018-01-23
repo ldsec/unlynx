@@ -1,14 +1,14 @@
 package main
 
-// I2b2 Unlynx client
+// MedCo Unlynx client
 
 import (
 	"database/sql"
 	"encoding/xml"
 	"fmt"
-	"github.com/lca1/unlynx/app/i2b2/loader"
+	"github.com/lca1/unlynx/app/unlynxMedCo/loader"
 	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/services/i2b2"
+	"github.com/lca1/unlynx/services/unlynxMedCo"
 	_ "github.com/lib/pq"
 	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/onet.v1"
@@ -225,13 +225,13 @@ func unlynxDDTRequest(input []byte, output io.Writer, el *onet.Roster, entryPoin
 	// launch query
 	start = time.Now()
 
-	client := serviceI2B2.NewUnLynxClient(el.List[entryPointIdx], strconv.Itoa(entryPointIdx))
+	client := serviceMedCo.NewUnLynxClient(el.List[entryPointIdx], strconv.Itoa(entryPointIdx))
 	_, result, tr, err := client.SendSurveyDDTRequestTerms(
 		el, // Roster
-		serviceI2B2.SurveyID(id), // SurveyID
-		encQueryTerms,            // Encrypted query terms to tag
-		proofs,                   // compute proofs?
-		testing,                  // it's for testing
+		serviceMedCo.SurveyID(id), // SurveyID
+		encQueryTerms,             // Encrypted query terms to tag
+		proofs,                    // compute proofs?
+		testing,                   // it's for testing
 	)
 
 	totalTime := time.Since(start)
@@ -261,7 +261,7 @@ func unlynxDDTRequest(input []byte, output io.Writer, el *onet.Roster, entryPoin
 }
 
 // output result xml on a writer (if result_err != nil, the error is sent)
-func writeDDTResponseXML(output io.Writer, xmlQuery *lib.XMLMedCoDTTRequest, result []lib.GroupingKey, tr *serviceI2B2.TimeResults, err error) error {
+func writeDDTResponseXML(output io.Writer, xmlQuery *lib.XMLMedCoDTTRequest, result []lib.GroupingKey, tr *serviceMedCo.TimeResults, err error) error {
 
 	/*
 		<unlynx_ddt_response>
@@ -371,10 +371,10 @@ func unlynxAggRequest(input []byte, output io.Writer, el *onet.Roster, entryPoin
 		return err
 	}
 
-	client := serviceI2B2.NewUnLynxClient(el.List[entryPointIdx], strconv.Itoa(entryPointIdx))
+	client := serviceMedCo.NewUnLynxClient(el.List[entryPointIdx], strconv.Itoa(entryPointIdx))
 	_, result, tr, err := client.SendSurveyAggRequest(
 		el, // Roster
-		serviceI2B2.SurveyID(id), // SurveyID
+		serviceMedCo.SurveyID(id), // SurveyID
 		cPK,        // client public key
 		*aggregate, // Encrypted local aggregation result
 		proofs,     // compute proofs?
@@ -418,7 +418,7 @@ func LocalAggregate(encDummyFlags lib.CipherVector, pubKey abstract.Point) *lib.
 }
 
 // output result xml on a writer (if result_err != nil, the error is sent)
-func writeAggResponseXML(output io.Writer, xmlQuery *lib.XMLMedCoAggRequest, aggregate *lib.CipherText, tr *serviceI2B2.TimeResults, err error) error {
+func writeAggResponseXML(output io.Writer, xmlQuery *lib.XMLMedCoAggRequest, aggregate *lib.CipherText, tr *serviceMedCo.TimeResults, err error) error {
 
 	/*
 		<unlynx_agg_response>

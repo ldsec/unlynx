@@ -31,7 +31,7 @@ _testmain.go
 .idea/
 
 services/data/*.txt
-services/i2b2/*.toml
+services/unlynxMedCo/*.toml
 
 simul/test_data/*.csv
 simul/test_data/graphs/*.pdf
@@ -44,14 +44,15 @@ simul/deter.toml
 app/default/*.toml
 app/default/test
 app/default/service_storage
-app/i2b2/*.toml
-app/i2b2/loader/files/*.sql
-app/i2b2/loader/files/*.csv
-app/i2b2/loader/*.toml
-app/i2b2/graphs/*.pdf
+app/unlynxMedCo/*.toml
+app/unlynxMedCo/loader/files/*
+app/unlynxMedCo/loader/26-load-data.sh
+app/unlynxMedCo/loader/*.toml
+app/unlynxMedCo/loader/*.txt
+app/unlynxMedCo/graphs/*.pdf
 
 unlynx
-unlynxI2B2
+#unlynxMedCo
 server_list
 
 pre_compute_multiplications.gob

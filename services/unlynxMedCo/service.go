@@ -1,4 +1,4 @@
-package serviceI2B2
+package serviceMedCo
 
 import (
 	"github.com/BurntSushi/toml"
@@ -19,7 +19,7 @@ import (
 )
 
 // ServiceName is the registered name for the unlynx service.
-const ServiceName = "UnLynxI2B2"
+const ServiceName = "unlynxMedCo"
 
 // DDTSecretsPath filename
 const DDTSecretsPath = "secrets"

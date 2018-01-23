@@ -2,7 +2,7 @@ package main
 
 import (
 	"errors"
-	"github.com/lca1/unlynx/app/i2b2/loader"
+	"github.com/lca1/unlynx/app/unlynxMedCo/loader"
 	"gopkg.in/dedis/onet.v1/app"
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/urfave/cli.v1"
