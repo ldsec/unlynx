@@ -90,6 +90,20 @@ const (
 
 	optionDBpassword      = "dbPassword"
 	optionDBpasswordShort = "dbPw"
+
+	// setup options
+	optionServerBinding = "serverBinding"
+	optionServerBindingShort = "sb"
+
+	optionDescription = "description"
+	optionDescriptionShort = "desc"
+
+	optionPrivateTomlPath = "privateTomlPath"
+	optionPrivateTomlPathShort = "priv"
+
+	optionPublicTomlPath = "publicTomlPath"
+	optionPublicTomlPathShort = "pub"
+
 )
 
 /*
@@ -237,6 +251,26 @@ func main() {
 			Usage: "Configuration file of the server",
 		},
 	}
+
+	nonInteractiveSetupFlags := []cli.Flag{
+		cli.StringFlag{
+			Name:  optionServerBinding + ", " + optionServerBindingShort,
+			Usage: "Server binding address in the form of address:port",
+		},
+		cli.StringFlag{
+			Name:  optionDescription + ", " + optionDescriptionShort,
+			Usage: "Description of the node for the toml files",
+		},
+		cli.StringFlag{
+			Name:  optionPrivateTomlPath + ", " + optionPrivateTomlPathShort,
+			Usage: "Private toml file path",
+		},
+		cli.StringFlag{
+			Name:  optionPublicTomlPath + ", " + optionPublicTomlPathShort,
+			Usage: "Public toml file path",
+		},
+	}
+
 	cliApp.Commands = []cli.Command{
 		// BEGIN CLIENT: DATA ENCRYPTION ----------
 		{
@@ -321,6 +355,13 @@ func main() {
 						app.InteractiveConfig(BinaryName)
 						return nil
 					},
+				},
+				{
+					Name:    "setupNonInteractive",
+					Aliases: []string{"sni"},
+					Usage:   "Setup server configuration (non-interactive)",
+					Action: NonInteractiveSetup,
+					Flags: nonInteractiveSetupFlags,
 				},
 			},
 		},
