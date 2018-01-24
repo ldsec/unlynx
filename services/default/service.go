@@ -180,7 +180,8 @@ func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.
 
 	// if this server is the one receiving the query from the client
 	if recq.SurveyID == "" {
-		newID := SurveyID(uuid.NewV4().String())
+		id, _ := uuid.NewV4()
+		newID := SurveyID(id.String())
 		recq.SurveyID = newID
 
 		log.Lvl1(s.ServerIdentity().String(), " handles this new survey ", recq.SurveyID)

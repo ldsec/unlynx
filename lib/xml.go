@@ -3,104 +3,132 @@ package lib
 
 import (
 	"encoding/xml"
-	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
 )
 
 // Input XML definition and methods
 //______________________________________________________________________________________________________________________
 
-// example of the input XML format
+// example of the input XML format for the DDT request
 /*
-<medco_query>
-	<id>query ID</id>
-	<predicate>some predicate</predicate>
-	<enc_where_values>encrypted where query values</enc_where_values>
-
-	<enc_patients_data>
-		<patient>
-			<enc_data>enc</enc_data>
-			<enc_data>enc</enc_data>
-			<enc_data>enc</enc_data>
-		</patient>
-		<patient>
-			<enc_data>enc</enc_data>
-			<enc_data>enc</enc_data>
-			<enc_data>enc</enc_data>
-		</patient>
-	</enc_patients_data>
-
-	<client_public_key>base64 encoded key</client_public_key>
-	<result_mode> result mode (0 or 1)</result_mode>
-</medco_query>
+<unlynx_ddt_request>
+    <id>request ID</id>
+    <enc_values>
+        <enc_value>adfw25e4f85as4fas57f=</enc_value>
+        <enc_value>ADA5D4D45ESAFD5FDads=</enc_value>
+    </enc_values>
+</unlynx_ddt_request>
 */
 
-// XMLMedCoQuery is a parsed XML definition
-type XMLMedCoQuery struct {
-	XMLName            xml.Name            `xml:"medco_query"`
-	QueryID            string              `xml:"id"`
-	Predicate          string              `xml:"predicate"`
-	EncWhereValues     string              `xml:"enc_where_values"`
-	EncPatientsData    []XMLEncPatientData `xml:"enc_patients_data>patient"`
-	ClientPublicKeyB64 string              `xml:"client_public_key"`
-	ResultMode         string              `xml:"result_mode"`
+// XMLMedCoDTTRequest is a parsed XML definition for the DDT request
+type XMLMedCoDTTRequest struct {
+	XMLName          xml.Name `xml:"unlynx_ddt_request"`
+	QueryID          string   `xml:"id"`
+	XMLEncQueryTerms []string `xml:"enc_values>enc_value"`
 }
 
-// XMLEncPatientData is a parsed patient data in XML
-type XMLEncPatientData struct {
-	EncData []string `xml:"enc_data"`
-}
+// DDTRequestToUnlynxFormat parses and decodes the base64-encoded values in the XML, returns a slice of encrypted query terms ready to be inputed in UnLynx
+func (xml *XMLMedCoDTTRequest) DDTRequestToUnlynxFormat() (CipherVector, string, error) {
 
-// PatientsDataToUnlynxFormat parses and decodes the base64-encoded values in the XML, returns slice of patients ready for input to unlynx
-func (xml *XMLMedCoQuery) PatientsDataToUnlynxFormat(el *onet.Roster) ([]ProcessResponse, error) {
+	// iterate over the query paremeters
+	encQueryTerms := make(CipherVector, 0)
 
-	// iter over patients
-	patientsProcessResponse := make([]ProcessResponse, len(xml.EncPatientsData))
-	for patientIdx, patient := range xml.EncPatientsData {
+	for _, term := range xml.XMLEncQueryTerms {
+		aux := CipherText{}
 
-		// iter over each row of the patient and deserialize
-		patientsProcessResponse[patientIdx].WhereEnc = make(CipherVector, len(patient.EncData))
-		for encDataIdx, encData := range patient.EncData {
-
-			err := patientsProcessResponse[patientIdx].WhereEnc[encDataIdx].Deserialize(encData)
-			if err != nil {
-				log.Error("Error while decoding CipherVector.")
-				return nil, err
-			}
+		err := aux.Deserialize(term)
+		if err != nil {
+			log.Error("Error while deserializing a CipherText.")
+			return nil, "", err
 		}
 
-		// TODO: here is generated the encrypted aggregating attribute, hardcoded to 1
-		// TODO: this attribute is either 1 or 0 according to the dummy status
-		// TODO: thus, this part is to be changed to support dummies in the future
-		nbrAggr := 1
-		aggr := make(CipherVector, nbrAggr)
-		for j := 0; j < nbrAggr; j++ {
-			aggr[j] = *EncryptInt(el.Aggregate, int64(1))
-		}
-		patientsProcessResponse[patientIdx].AggregatingAttributes = aggr
+		encQueryTerms = append(encQueryTerms, aux)
 	}
 
-	return patientsProcessResponse, nil
+	return encQueryTerms, xml.QueryID, nil
+}
+
+// example of the input XML format for aggregation request
+/*
+<unlynx_agg_request>
+    <id>request ID</id>
+    <client_public_key>5D4D45ESAFD5FDads==</client_public_key>
+    <enc_dummy_flags>
+        <enc_dummy_flag>adfw25e4f85as4fas57f=</enc_dummy_flag>
+        <enc_dummy_flag>ADA5D4D45ESAFD5FDads=</enc_dummy_flag>
+    </enc_dummy_flags>
+</unlynx_agg_request>
+*/
+
+// XMLMedCoAggRequest is a parsed XML definition for the aggregation request
+type XMLMedCoAggRequest struct {
+	XMLName          xml.Name `xml:"unlynx_agg_request"`
+	QueryID          string   `xml:"id"`
+	ClientPubKey     string   `xml:"client_public_key"`
+	XMLEncDummyFlags []string `xml:"enc_dummy_flags>enc_dummy_flag"`
+}
+
+// AggRequestToUnlynxFormat parses and decodes the base64-encoded values in the XML, returns a slice of encrypted values to be aggregated by UnLynx
+func (xml *XMLMedCoAggRequest) AggRequestToUnlynxFormat() (CipherVector, string, error) {
+
+	// iterate over the encrypted flag values
+	encDummyFlags := make(CipherVector, 0)
+
+	for _, encFlag := range xml.XMLEncDummyFlags {
+		aux := CipherText{}
+
+		err := aux.Deserialize(encFlag)
+		if err != nil {
+			log.Error("Error while deserializing a CipherText.")
+			return nil, "", err
+		}
+
+		encDummyFlags = append(encDummyFlags, aux)
+	}
+
+	return encDummyFlags, xml.QueryID, nil
 }
 
 // Output XML definition and methods
 //______________________________________________________________________________________________________________________
 
-// example of the input XML format
+// example of the input XML format definition for the DDT response
 /*
-<medco_query_result>
-	<id>query ID</id>
-	<result_mode> result mode (0 or 1)</result_mode>
-	<enc_result>encrypted result</enc_result>
-	<error>a message error (only if error, the enc_result will be empty)</error>
-</medco_query_result>
+<unlynx_ddt_response>
+    <id>request ID</id>
+    <times unit="ms">{xx: 13, etc}</times>
+    <tagged_values>
+        <tagged_value>adfw25e457f=</tagged_value>
+        <tagged_value>ADfFD5FDads=</tagged_value>
+    </tagged_values>
+    <error></error>
+</unlynx_ddt_response>
 */
 
-// XMLMedCoQueryResult is a parsed XML definition
-type XMLMedCoQueryResult struct {
-	XMLName    xml.Name `xml:"medco_query_result"`
+// XMLMedCoDTTResponse is a parsed XML definition
+type XMLMedCoDTTResponse struct {
+	XMLName      xml.Name `xml:"unlynx_ddt_response"`
+	QueryID      string   `xml:"id"`
+	Times        string   `xml:"times"`
+	TaggedValues []string `xml:"tagged_values>tagged_value"`
+	Error        string   `xml:"error"`
+}
+
+// example of the input XML format definition for the aggregation response
+/*
+<unlynx_agg_response>
+    <id>request ID</id>
+    <times>{cc: 55}</times>
+    <aggregate>f85as4fas57f=</aggregate>
+    <error></error>
+</unlynx_agg_response>
+*/
+
+// XMLMedCoAggResponse is a parsed XML definition
+type XMLMedCoAggResponse struct {
+	XMLName    xml.Name `xml:"unlynx_agg_response"`
 	QueryID    string   `xml:"id"`
-	ResultMode string   `xml:"result_mode"`
-	EncResult  string   `xml:"enc_result"`
+	Times      string   `xml:"times"`
+	AggregateV string   `xml:"aggregate"`
 	Error      string   `xml:"error"`
 }

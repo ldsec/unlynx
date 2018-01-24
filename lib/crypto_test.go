@@ -45,12 +45,28 @@ func TestEncryption(t *testing.T) {
 	}
 }
 
+// TestDecryptionConcurrent test the multiple encryptions/decryptions at the same time
+func TestDecryptionConcurrent(t *testing.T) {
+	numThreads := 5
+
+	sec, pubKey := lib.GenKey()
+
+	lib.StartParallelize(numThreads)
+
+	for i := 0; i < numThreads; i++ {
+		go func() {
+			ct := lib.EncryptInt(pubKey, 0)
+			val := lib.DecryptInt(sec, *ct)
+			assert.Equal(t, val, int64(0))
+		}()
+	}
+}
+
 // TestNullCipherText verifies encryption, decryption and behavior of null cipherVectors.
 func TestNullCipherVector(t *testing.T) {
 	secKey, pubKey := lib.GenKey()
 
 	nullVectEnc := *lib.NullCipherVector(10, pubKey)
-
 	nullVectDec := lib.DecryptIntVector(secKey, &nullVectEnc)
 
 	target := []int64{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}

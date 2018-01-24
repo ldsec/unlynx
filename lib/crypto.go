@@ -4,6 +4,7 @@ import (
 	"encoding"
 	"encoding/base64"
 	"fmt"
+	"github.com/fanliao/go-concurrentMap"
 	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/crypto.v0/random"
 	"gopkg.in/dedis/onet.v1/log"
@@ -16,10 +17,12 @@ import (
 const MaxHomomorphicInt int64 = 100000
 
 // PointToInt creates a map between EC points and integers.
-var PointToInt = make(map[string]int64, MaxHomomorphicInt)
+//var PointToInt = make(map[string]int64, MaxHomomorphicInt)
+var PointToInt = concurrent.NewConcurrentMap()
 var currentGreatestM abstract.Point
 var currentGreatestInt int64
 var suite = network.Suite
+var mutex = sync.Mutex{}
 
 // CipherText is an ElGamal encrypted point.
 type CipherText struct {
@@ -204,27 +207,30 @@ func discreteLog(P abstract.Point) int64 {
 	B := suite.Point().Base()
 	var Bi abstract.Point
 	var m int64
-	var ok bool
 
-	if m, ok = PointToInt[P.String()]; ok {
-		return m
+	object, ok := PointToInt.Get(P.String())
+	if ok == nil && object != nil {
+		return object.(int64)
 	}
 
+	mutex.Lock()
 	if currentGreatestInt == 0 {
 		currentGreatestM = suite.Point().Null()
 	}
 
 	for Bi, m = currentGreatestM, currentGreatestInt; !Bi.Equal(P) && m < MaxHomomorphicInt; Bi, m = Bi.Add(Bi, B), m+1 {
-		PointToInt[Bi.String()] = m
+		PointToInt.Put(Bi.String(), m)
 	}
 	currentGreatestM = Bi
-	PointToInt[Bi.String()] = m
+	PointToInt.Put(Bi.String(), m)
 	currentGreatestInt = m
 
 	//no negative responses
 	if m == MaxHomomorphicInt {
 		return 0
 	}
+	mutex.Unlock()
+
 	return m
 }
 

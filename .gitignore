@@ -26,11 +26,12 @@ _testmain.go
 *.cov
 *.gob
 
-*.DS_Store
+.DS_Store
 
 .idea/
 
 services/data/*.txt
+services/unlynxMedCo/*.toml
 
 simul/test_data/*.csv
 simul/test_data/graphs/*.pdf
@@ -43,9 +44,15 @@ simul/deter.toml
 app/default/*.toml
 app/default/test
 app/default/service_storage
+app/unlynxMedCo/*.toml
+app/unlynxMedCo/loader/files/*
+app/unlynxMedCo/loader/26-load-data.sh
+app/unlynxMedCo/loader/*.toml
+app/unlynxMedCo/loader/*.txt
+app/unlynxMedCo/graphs/*.pdf
 
 unlynx
-skipchain
+#unlynxMedCo
 server_list
 
 pre_compute_multiplications.gob

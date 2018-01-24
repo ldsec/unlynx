@@ -35,7 +35,7 @@ func TestPrecomputationWritingForShuffling(t *testing.T) {
 
 }
 
-func TestFilterResponsesI2b2(t *testing.T) {
+func TestFilterResponsesMedCo(t *testing.T) {
 	// TODO: add case result == 0 (need to set the public key)
 
 	// ****************************************
@@ -57,14 +57,14 @@ func TestFilterResponsesI2b2(t *testing.T) {
 	data = append(data, lib.ProcessResponseDet{PR: lib.ProcessResponse{}, DetTagGroupBy: "", DetTagWhere: whereTrue[:]})
 	data = append(data, lib.ProcessResponseDet{PR: lib.ProcessResponse{}, DetTagGroupBy: "", DetTagWhere: whereFalse[:]})
 
-	result := services.FilterResponsesI2b2(predicate, whereAttributes, data, nil)
+	result := services.FilterResponsesMedCo(predicate, whereAttributes, data, nil)
 
 	// 1 result(s) are true
 	assert.Equal(t, len(result), 1)
 
 	data = append(data, lib.ProcessResponseDet{PR: lib.ProcessResponse{}, DetTagGroupBy: "", DetTagWhere: whereTrue[:]})
 
-	result = services.FilterResponsesI2b2(predicate, whereAttributes, data, nil)
+	result = services.FilterResponsesMedCo(predicate, whereAttributes, data, nil)
 
 	// 2 result(s) are true
 	assert.Equal(t, len(result), 2)
@@ -96,7 +96,7 @@ func TestFilterResponsesI2b2(t *testing.T) {
 	data = append(data, lib.ProcessResponseDet{PR: lib.ProcessResponse{}, DetTagGroupBy: "", DetTagWhere: whereTrue2[:]})
 	data = append(data, lib.ProcessResponseDet{PR: lib.ProcessResponse{}, DetTagGroupBy: "", DetTagWhere: whereTrue2[:]})
 
-	result = services.FilterResponsesI2b2(predicate, whereAttributes, data, nil)
+	result = services.FilterResponsesMedCo(predicate, whereAttributes, data, nil)
 
 	fmt.Println(result)
 

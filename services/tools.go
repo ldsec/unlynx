@@ -19,7 +19,7 @@ func SendISMOthers(s *onet.ServiceProcessor, el *onet.Roster, msg interface{}) e
 	var errStrs []string
 	for _, e := range el.List {
 		if !e.ID.Equal(s.ServerIdentity().ID) {
-			log.LLvl3("Sending to", e)
+			log.Lvl3("Sending to", e)
 			err := s.SendRaw(e, msg)
 			if err != nil {
 				errStrs = append(errStrs, err.Error())
@@ -88,11 +88,11 @@ func ReadPrecomputedFile(fileName string) []lib.CipherVectorScalar {
 	return precomputeShuffle
 }
 
-// FilterResponsesI2b2 evaluates the predicate and keeps the entries that satisfy the conditions
+// FilterResponsesMedCo evaluates the predicate and keeps the entries that satisfy the conditions
 // arguments examples
 // pred: (exists(v1, r)) && (exists(v2, r) || exists(v3, r))
 // whereQueryValues: [v1_enc_value, v2_enc_value, v3_enc_value]
-func FilterResponsesI2b2(pred string, whereQueryValues []lib.WhereQueryAttributeTagged, responsesToFilter []lib.ProcessResponseDet, pubKey abstract.Point) []lib.FilteredResponseDet {
+func FilterResponsesMedCo(pred string, whereQueryValues []lib.WhereQueryAttributeTagged, responsesToFilter []lib.ProcessResponseDet, pubKey abstract.Point) []lib.FilteredResponseDet {
 	// TODO: whereQueryValues.Name not used anymore
 
 	result := []lib.FilteredResponseDet{}

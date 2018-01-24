@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Source: https://github.com/h12w/gosweep/blob/master/gosweep.sh
 
-DIR_EXCLUDE="$@"
-DIR_SOURCE="$(find . -maxdepth 10 -type f -not -path '*/vendor*' -name '*.go' | xargs -I {} dirname {} | sort | uniq)"
+DIR_EXCLUDE=""
+DIR_SOURCE="$(find . -maxdepth 10 -type f -not -path '*/vendor*' -not -path './app/*' -name '*.go' | xargs -I {} dirname {} | sort | uniq)"
 
 if [ "$TRAVIS_BUILD_DIR" ]; then
   cd $TRAVIS_BUILD_DIR
@@ -13,6 +13,7 @@ all_tests_passed=true
 
 echo "mode: atomic" > profile.cov
 for dir in $DIR_SOURCE; do
+    echo $dir
 	if ! echo $DIR_EXCLUDE | grep -q $dir; then
 	    #go test -short -race -p=1 -covermode=atomic -coverprofile=$dir/profile.tmp $dir
 	    go test -short -p=1 -covermode=atomic -coverprofile=$dir/profile.tmp $dir
