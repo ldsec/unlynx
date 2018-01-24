@@ -1,4 +1,4 @@
-package protocols
+package prio
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 //	"math/big"
 
 	"gopkg.in/dedis/onet.v1/log"
-	"unlynx/prio_utils"
+	"unlynx/lib/prio_utils"
 	"github.com/henrycg/prio/share"
 	"github.com/henrycg/prio/utils"
 	"github.com/stretchr/testify/assert"

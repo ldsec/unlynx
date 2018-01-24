@@ -13,8 +13,29 @@ import (
 	"os"
 )
 
+//Structs_______________________________________________________________________________________________
 
-//data provider in prio represented as its secret value ID and modulus
+//Proof sending
+type StructProofRangeByte struct {
+	Roster *onet.Roster
+	RequestID	string
+	EntryPoint 	bool
+	Commit 		lib2.CipherText
+	Challenge 	abstract.Scalar
+	Zr 			abstract.Scalar
+	D 			abstract.Point
+	Zv 			[]abstract.Scalar
+	Zphi 		[]abstract.Scalar
+	V 			[][]byte
+	A 			[][]byte
+
+}
+
+type VerifResult struct {
+	Res		int64
+}
+
+//data provider
 type API struct {
 	*onet.Client
 	ClientID   string
@@ -34,7 +55,7 @@ func NewUnlynxRangeClient(clientID string) *API {
 	return newClient
 }
 
-
+//Send request to get signature from a server. Also compute the proof from the signatures.
 func (c *API) SendRequest(entities *onet.Roster,key abstract.Point)(string, error) {
 	servList := entities.List
 	//structure response and pairing used
@@ -73,25 +94,8 @@ func (c *API) SendRequest(entities *onet.Roster,key abstract.Point)(string, erro
 	return string(sig.RequestID), nil
 }
 
-type StructProofRangeByte struct {
-	Roster *onet.Roster
-	RequestID	string
-	EntryPoint 	bool
-	Commit 		lib2.CipherText
-	Challenge 	abstract.Scalar
-	Zr 			abstract.Scalar
-	D 			abstract.Point
-	Zv 			[]abstract.Scalar
-	Zphi 		[]abstract.Scalar
-	V 			[][]byte
-	A 			[][]byte
 
-}
-
-type VerifResult struct {
-	Res		int64
-}
-
+//Send proof to server. Return aggreg if service was launched. 0 if all verify succesfully.
 func (c *API) ExecuteProof(entities *onet.Roster,id string)(int64,error) {
 	servList := entities.List
 	verifResultFin := VerifResult{0}

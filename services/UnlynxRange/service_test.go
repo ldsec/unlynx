@@ -41,6 +41,7 @@ func TestServiceUnlynxRange(t *testing.T) {
 	sem := make(chan empty, len(dataPro))
 	sem2 := make(chan empty, len(dataPro))
 
+	// to parrallelize the sending and execution
 	for _,v := range dataPro {
 		go func(roster *onet.Roster, point abstract.Point) {
 			res, _ := v.SendRequest(roster, point)

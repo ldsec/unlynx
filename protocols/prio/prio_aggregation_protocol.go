@@ -1,4 +1,4 @@
-package protocols
+package prio
 
 import (
 	"gopkg.in/dedis/onet.v1"
@@ -67,7 +67,6 @@ type PrioAggregationProtocol struct {
 	Shares  [][]*big.Int
 	Sum 	[]*big.Int
 	Modulus *big.Int
-
 
 }
 

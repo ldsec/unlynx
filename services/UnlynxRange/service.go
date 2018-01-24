@@ -16,7 +16,7 @@ import (
 )
 
 const ServiceName = "UnlynxRange"
-
+//Structs _______________________________________________________________________________________________
 type PublishSignatureByte struct {
 	Public abstract.Point
 	Signature [][]byte
@@ -36,11 +36,16 @@ type ServiceSig struct {
 	L			int64
 }
 
+
+type ResultStored struct {
+	Roster *onet.Roster
+	Ciphers lib2.CipherText
+}
+//messages_________________________________________________________________________________________________
 //The type of message exchanged
 type MsgTypes struct {
 	msgSig network.MessageTypeID
 	msgProof network.MessageTypeID
-	//msgAgg network.MessageTypeID
 }
 
 var msgTypes = MsgTypes{}
@@ -49,12 +54,13 @@ func init() {
 	onet.RegisterNewService(ServiceName, NewService)
 	msgTypes.msgSig = network.RegisterMessage(&DataDP{})
 	msgTypes.msgProof = network.RegisterMessage(&StructProofRangeByte{})
-	//msgTypes.msgAgg = network.RegisterMessage(ExecAgg{})
+
 	network.RegisterMessage(&ServiceSig{})
 	network.RegisterMessage(&lib.PublishRangeProof{})
 	network.RegisterMessage(&VerifResult{})
 }
 
+//The service strucute
 type Service struct {
 	// We need to embed the ServiceProcessor, so that incoming messages
 	// are correctly handled.
@@ -124,12 +130,8 @@ func (s *Service) HandleRequest(requestFromDP *DataDP)(network.Message, onet.Cli
 	return &ServiceSig{RequestID:requestFromDP.RequestID,U:s.U,L:s.L,Signature:s.Signatures,PublicCA:s.CAPublic},nil
 }
 
-
-type ResultStored struct {
-	Roster *onet.Roster
-	Ciphers lib2.CipherText
-}
-
+// execute the proof validation. If number of request executed pass a threshold
+//We launch aggregation and key switch
 func (s *Service)ExecuteProof(proofFromDP *StructProofRangeByte)(network.Message, onet.ClientError){
 
 	pairing := pbc.NewPairingFp254BNb()
@@ -158,6 +160,7 @@ func (s *Service)ExecuteProof(proofFromDP *StructProofRangeByte)(network.Message
 	parameterToValidate.A = A
 	parameterToValidate.V = V
 
+	//verification of the result received
 	res := VerifResult{}
 	if((lib.RangeProofVerification(parameterToValidate,s.U,s.L,s.Signatures.Public,s.CAPublic))) {
 		res.Res = 0
@@ -167,11 +170,10 @@ func (s *Service)ExecuteProof(proofFromDP *StructProofRangeByte)(network.Message
 		res.Res = 1
 	}
 
+	//If the cipher was originaly for this server save it on the server, else discard
 	if(proofFromDP.EntryPoint){
-
 		s.Request.Put(proofFromDP.RequestID,&ResultStored{Ciphers:parameterToValidate.Cipher,Roster:proofFromDP.Roster})
-
-		//if you have more than x datas, aggregate, change as you wish (in function of # clients)
+		//if you have more than x datas, aggregate, change as you wish (in function of # clients
 		if(s.Count>=10) {
 			log.Lvl1("Launch Service")
 			s.StartService(proofFromDP.RequestID, true)
@@ -181,6 +183,7 @@ func (s *Service)ExecuteProof(proofFromDP *StructProofRangeByte)(network.Message
 	return &res,nil
 }
 
+//Start the service aggregation + key switch
 func (s *Service) StartService(targetDataID string, root bool) error {
 
 	if root == true {

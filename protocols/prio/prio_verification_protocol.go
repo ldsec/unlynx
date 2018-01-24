@@ -1,4 +1,4 @@
-package protocols
+package prio
 
 import (
 	"gopkg.in/dedis/onet.v1"
@@ -6,7 +6,7 @@ import (
 	"errors"
 	"gopkg.in/dedis/onet.v1/log"
 	"math/big"
-	"unlynx/prio_utils"
+	"unlynx/lib/prio_utils"
 
 	"github.com/henrycg/prio/utils"
 

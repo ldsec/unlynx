@@ -1,4 +1,4 @@
-package protocols
+package prio
 
 import (
 	"testing"
@@ -8,13 +8,14 @@ import (
 	"gopkg.in/dedis/onet.v1/log"
 
 	"math/big"
-	"unlynx/prio_utils"
+	"unlynx/lib/prio_utils"
 	"github.com/henrycg/prio/share"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/dedis/onet.v1/network"
 
 )
-//the field cardinality must be superior to nbclient*2^b where b is the maximum number of bit a client need to encode its value
+//the field cardinality must be superior to nbclient*2^b
+// where b is the maximum number of bit a client need to encode its value
 
 
 var nbS = 5
@@ -74,7 +75,10 @@ func NewPrioAggregationTest(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, 
 	pi, err := NewPrioAggregationProtocol(tni)
 	protocol := pi.(*PrioAggregationProtocol)
 
-	//here assign a share of each secret to the server. Meaning if 2 server, secret1 = [share1,share2] each of them goes to different server (1 and 2 respectively even if order does not matter)
+	//here assign a share of each secret to the server.
+	// Meaning if 2 server, secret1 = [share1,share2] each of them goes to different server
+	// (1 and 2 respectively even if order does not matter)
+	//You use AFE encoding to encode the shares.
 
 	protocol.Modulus = share.IntModulus
 	protocol.Shares = make([][]*big.Int,0)
@@ -84,6 +88,8 @@ func NewPrioAggregationTest(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, 
 	return protocol, err
 }
 
+
+//Encoding of simple Sum AFE
 func Encode(x *big.Int)([]*big.Int) {
 	result := make([]*big.Int,1)
 	result[0] = x

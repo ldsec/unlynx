@@ -10,7 +10,7 @@ import (
 	"errors"
 	"unlynx/lib"
 
-	"unlynx/prio_utils"
+	"unlynx/lib/prio_utils"
 	"github.com/henrycg/prio/share"
 	"github.com/henrycg/prio/utils"
 	"github.com/henrycg/prio/circuit"
