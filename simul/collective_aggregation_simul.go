@@ -9,7 +9,6 @@ import (
 	"gopkg.in/dedis/onet.v1/network"
 
 	"time"
-	"os"
 )
 
 //var suite = network.Suite

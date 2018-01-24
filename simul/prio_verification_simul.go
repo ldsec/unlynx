@@ -4,7 +4,7 @@ import (
 	"gopkg.in/dedis/onet.v1"
 	"github.com/BurntSushi/toml"
 	"gopkg.in/dedis/onet.v1/log"
-	"unlynx/protocols"
+
 	"math/big"
 	"crypto/rand"
 	"errors"
@@ -18,6 +18,7 @@ import (
 	"time"
 	"os"
 	"github.com/henrycg/prio/config"
+	"unlynx/protocols/prio"
 )
 
 
@@ -141,7 +142,7 @@ func (sim *PrioVerificationSimulation) Run(config *onet.SimulationConfig) error 
 				if err != nil {
 					return
 				}
-				root := rooti.(*protocols.PrioVerificationProtocol)
+				root := rooti.(*prio.PrioVerificationProtocol)
 
 				root.Start()
 				<- root.AggregateData
@@ -171,8 +172,8 @@ func (sim *PrioVerificationSimulation) Run(config *onet.SimulationConfig) error 
 //function called on each node to send data
 func NewPrioVerificationProtocolSimul(tni *onet.TreeNodeInstance, sim *PrioVerificationSimulation) (onet.ProtocolInstance, error) {
 
-	protocol, err := protocols.NewPrioVerifcationProtocol(tni)
-	pap := protocol.(*protocols.PrioVerificationProtocol)
+	protocol, err := prio.NewPrioVerifcationProtocol(tni)
+	pap := protocol.(*prio.PrioVerificationProtocol)
 
 
 	pap.Request = new(prio_utils.Request)

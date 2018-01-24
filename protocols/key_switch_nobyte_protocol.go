@@ -10,7 +10,6 @@ import (
 "gopkg.in/dedis/onet.v1/network"
 
 "time"
-	"os"
 )
 
 // KeySwitchingProtocolName is the registered name for the key switching protocol.
