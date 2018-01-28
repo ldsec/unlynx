@@ -7,7 +7,7 @@ to signify the communication way but it's data provider !
 import (
 	"gopkg.in/dedis/onet.v1"
 	"math/big"
-	"unlynx/prio_utils"
+	"unlynx/lib/prio_utils"
 	"github.com/henrycg/prio/share"
 	"github.com/henrycg/prio/config"
 	"gopkg.in/dedis/onet.v1/log"
@@ -122,6 +122,8 @@ func (c *API) ExecuteRequest(entities *onet.Roster,id string)(error) {
 	return nil
 }
 
+//For now DPs send request to aggregate even if not wanted, was to simplify simulation. However, servers do not aggregate
+//if there are less than 2 data points.
 func (c *API) Aggregate(entities *onet.Roster,id string)(*big.Int,error) {
 
 	result := AggResult{}

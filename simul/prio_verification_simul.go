@@ -31,51 +31,6 @@ var randomPoint = utils.RandInt(mod)
 var secretBitLen []int64
 //function to generate random value and their splits
 
-func createCipherSet(numberClient, numberServer int) ([]*prio_utils.Request,[]*circuit.Circuit) {
-
-	//secret value of clients
-//	secretValues := make([]*big.Int, numberServer)
-	circuit := make([]*circuit.Circuit,0)
-	result := make([]*prio_utils.Request,numberServer)
-	secretBitLen = make([]int64, numberServer)
-
-		//secretValues = prio_utils.Share(share.IntModulus, numberServer, randomBig(big.NewInt(2),big.NewInt(64)))
-		secret := config.LoadFile("/home/max/Documents/go/src/prio/eval/cell-geneva.conf")
-		fields := make([]*config.Field,0)
-		for j := 0; j<len(secret.Fields);j++  {
-			fields = append(fields, &(secret.Fields[j]))
-		}
-		result = prio_utils.ClientRequest(fields,numberServer,0)
-		//secretBitLen = toBit(secretValues)
-		for j:=0;j<numberServer ;j++  {
-			//test := prio_utils.ConfigToCircuitBit(secretBitLen)
-			test := prio_utils.ConfigToCircuit(fields)
-			circuit = append(circuit,test)
-		}
-
-	return result,circuit
-}
-
-//fucntion to generate a random big int between 0 and low^expo
-func randomBig (low,expo *big.Int)(int *big.Int){
-	max := new(big.Int)
-	max.Exp(low, expo, nil).Sub(max, big.NewInt(1))
-
-	//Generate cryptographically strong pseudo-random between 0 - max
-	n, err := rand.Int(rand.Reader, max)
-	if err != nil {
-		errors.New("Could not create random Big int ")
-	}
-	return n
-}
-
-
-
-
-func init() {
-	onet.SimulationRegister("PrioVerification", NewPrioVerificationSimulation)
-}
-
 // CollectiveAggregationSimulation holds the state of a simulation.
 type PrioVerificationSimulation struct {
 	onet.SimulationBFTree
@@ -83,6 +38,11 @@ type PrioVerificationSimulation struct {
 	NbrRequestByProto  int
 	NbrValidation	   int
 	Proofs             bool
+}
+
+
+func init() {
+	onet.SimulationRegister("PrioVerification", NewPrioVerificationSimulation)
 }
 
 
@@ -191,12 +151,39 @@ func NewPrioVerificationProtocolSimul(tni *onet.TreeNodeInstance, sim *PrioVerif
 	return protocol, err
 }
 
-/*
+//create cipher text for test from a config file in Prio
+func createCipherSet(numberClient, numberServer int) ([]*prio_utils.Request,[]*circuit.Circuit) {
 
-func toBit(v []*big.Int)([]int64) {
-	result := make([]int64,len(v))
-	for i,k := range v {
-		result[i] = int64(k.BitLen())
+
+	circuit := make([]*circuit.Circuit,0)
+	result := make([]*prio_utils.Request,numberServer)
+	secretBitLen = make([]int64, numberServer)
+
+	secret := config.LoadFile("/home/max/Documents/go/src/prio/eval/cell-geneva.conf")
+	fields := make([]*config.Field,0)
+	for j := 0; j<len(secret.Fields);j++  {
+		fields = append(fields, &(secret.Fields[j]))
 	}
-	return result
-}*/
+	result = prio_utils.ClientRequest(fields,numberServer,0)
+
+	for j:=0;j<numberServer ;j++  {
+
+		test := prio_utils.ConfigToCircuit(fields)
+		circuit = append(circuit,test)
+	}
+
+	return result,circuit
+}
+
+//fucntion to generate a random big int between 0 and low^expo
+func randomBig (low,expo *big.Int)(int *big.Int){
+	max := new(big.Int)
+	max.Exp(low, expo, nil).Sub(max, big.NewInt(1))
+
+	//Generate cryptographically strong pseudo-random between 0 - max
+	n, err := rand.Int(rand.Reader, max)
+	if err != nil {
+		errors.New("Could not create random Big int ")
+	}
+	return n
+}

@@ -16,37 +16,9 @@ import (
 )
 
 
-//variable to choose the secret once and split them, as you assume client have their secret already split
-//in  a vector of size #servers. Means the number of server is supposed to be public
 
-//function to generate random value and their splits
 var aggData [][]*big.Int
 var sumCipher *big.Int
-
-func createAggData(numberClient, numberServer int) ([][]*big.Int) {
-
-	//secret value of clients
-	sumCipher = big.NewInt(0)
-	result := make([][]*big.Int,numberServer)
-	secretValues := make([][]*big.Int, numberClient)
-	for i:= 0;i < numberClient ; i++ {
-		secretValues[i] = prio_utils.Share(share.IntModulus, numberServer, randomBig(big.NewInt(2), big.NewInt(64)))
-		log.LLvl1(secretValues)
-		for j := 0; j < len(secretValues[i]); j++ {
-			sumCipher.Add(sumCipher,secretValues[i][j])
-			sumCipher.Mod(sumCipher,share.IntModulus)
-		}
-	}
-	for k:=0;k<numberServer;k++ {
-		for l:=0 ; l < numberClient;l++ {
-			result[k] = append(result[k], secretValues[l][k])
-		}
-	}
-	sumCipher.Mod(sumCipher,share.IntModulus)
-	return result
-}
-
-
 
 
 func init() {
@@ -165,4 +137,28 @@ func NewPrioAggregationProtocolSimul(tni *onet.TreeNodeInstance, sim *PrioAggreg
 
 
 	return protocol, err
+}
+
+
+func createAggData(numberClient, numberServer int) ([][]*big.Int) {
+
+	//secret value of clients
+	sumCipher = big.NewInt(0)
+	result := make([][]*big.Int,numberServer)
+	secretValues := make([][]*big.Int, numberClient)
+	for i:= 0;i < numberClient ; i++ {
+		secretValues[i] = prio_utils.Share(share.IntModulus, numberServer, randomBig(big.NewInt(2), big.NewInt(64)))
+		log.LLvl1(secretValues)
+		for j := 0; j < len(secretValues[i]); j++ {
+			sumCipher.Add(sumCipher,secretValues[i][j])
+			sumCipher.Mod(sumCipher,share.IntModulus)
+		}
+	}
+	for k:=0;k<numberServer;k++ {
+		for l:=0 ; l < numberClient;l++ {
+			result[k] = append(result[k], secretValues[l][k])
+		}
+	}
+	sumCipher.Mod(sumCipher,share.IntModulus)
+	return result
 }

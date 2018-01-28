@@ -9,8 +9,6 @@ import (
 	"gopkg.in/dedis/onet.v1/network"
 	lib2 "github.com/lca1/unlynx/lib"
 
-	"time"
-	"os"
 )
 
 //Structs_______________________________________________________________________________________________

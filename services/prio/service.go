@@ -12,8 +12,7 @@ import (
 	"gopkg.in/dedis/onet.v1"
 	"math/big"
 	"gopkg.in/dedis/onet.v1/network"
-	"unlynx/prio_utils"
-	"unlynx/protocols"
+	"unlynx/lib/prio_utils"
 	"gopkg.in/dedis/onet.v1/log"
 	"github.com/fanliao/go-concurrentMap"
 	"github.com/henrycg/prio/utils"
@@ -21,6 +20,7 @@ import (
 	"github.com/henrycg/prio/share"
 
 	"github.com/henrycg/prio/config"
+	"unlynx/protocols/prio"
 )
 
 const ServiceName = "Prio"
@@ -88,7 +88,7 @@ type Service struct {
 	//
 	Request *concurrent.ConcurrentMap
 	AggData [][]*big.Int
-	Proto *protocols.PrioVerificationProtocol
+	Proto *prio.PrioVerificationProtocol
 	Count int64
 }
 
@@ -132,7 +132,7 @@ func (s *Service) HandleRequest(requestFromClient *DataSentClient)(network.Messa
 
 //Execute the verification of a request
 func (s *Service) ExecuteRequest(exe *ExecRequest)(network.Message, onet.ClientError) {
-	//req := castToRequest(s.Request.Get(exe.ID))
+
 	//log.Lvl1(s.ServerIdentity(), " starts a Prio Verification Protocol")
 
 	acc,err := s.VerifyPhase(exe.ID)
@@ -151,8 +151,8 @@ func (s *Service) VerifyPhase(requestID string) (bool,error) {
 	tmp := castToRequest(s.Request.Get(requestID))
 	isAccepted := false
 	if(s.ServerIdentity().Equal(tmp.Leader)) {
-		pi, err := s.StartProtocol(protocols.PrioVerificationProtocolName,requestID )
-		log.Lvl1(pi.(*protocols.PrioVerificationProtocol).ServerIdentity())
+		pi, err := s.StartProtocol(prio.PrioVerificationProtocolName,requestID )
+		log.Lvl1(pi.(*prio.PrioVerificationProtocol).ServerIdentity())
 
 		if err != nil {
 			return isAccepted,err
@@ -172,14 +172,14 @@ func (s *Service) VerifyPhase(requestID string) (bool,error) {
 
 //Execute the aggregation if you have more than 2 datas
 func (s *Service) ExecuteAggregation(exe *ExecAgg)(network.Message, onet.ClientError) {
-	pi, err := s.StartProtocol(protocols.PrioAggregationProtocolName, exe.ID )
+	pi, err := s.StartProtocol(prio.PrioAggregationProtocolName, exe.ID )
 
 	if err != nil {
 		log.Fatal("Error in the Aggregation Phase")
 	}
-	if len(pi.(*protocols.PrioAggregationProtocol).Shares) >= 2  {
+	if len(pi.(*prio.PrioAggregationProtocol).Shares) >= 2  {
 
-		aggRes := <-pi.(*protocols.PrioAggregationProtocol).Feedback
+		aggRes := <-pi.(*prio.PrioAggregationProtocol).Feedback
 
 		return &AggResult{aggRes[0].Bytes()}, nil
 	} else {
@@ -233,8 +233,8 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 
 
 	switch tn.ProtocolName() {
-	case protocols.PrioVerificationProtocolName:
-		pi, err = protocols.NewPrioVerifcationProtocol(tn)
+	case prio.PrioVerificationProtocolName:
+		pi, err = prio.NewPrioVerifcationProtocol(tn)
 
 		circConf := make([]*config.Field,0)
 		for i:=0;i< len(request.CircuitConfig);i++  {
@@ -259,23 +259,23 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 		}
 
 		protoReq := prio_utils.Request{RequestID:request.RequestID,TripleShare:tripleShareReq,Hint:hintReq}
-		pi.(*protocols.PrioVerificationProtocol).Request = &protoReq
-		pi.(*protocols.PrioVerificationProtocol).Checker = prio_utils.NewChecker(ckt,tn.Index(),0)
-		pi.(*protocols.PrioVerificationProtocol).Pre = prio_utils.NewCheckerPrecomp(ckt)
+		pi.(*prio.PrioVerificationProtocol).Request = &protoReq
+		pi.(*prio.PrioVerificationProtocol).Checker = prio_utils.NewChecker(ckt,tn.Index(),0)
+		pi.(*prio.PrioVerificationProtocol).Pre = prio_utils.NewCheckerPrecomp(ckt)
 		rdm := big.NewInt(0).SetBytes(request.RandomPoint)
-		pi.(*protocols.PrioVerificationProtocol).Pre.SetCheckerPrecomp(rdm)
-		s.Proto = pi.(*protocols.PrioVerificationProtocol)
+		pi.(*prio.PrioVerificationProtocol).Pre.SetCheckerPrecomp(rdm)
+		s.Proto = pi.(*prio.PrioVerificationProtocol)
 
 		if err != nil {
 			log.Lvl1("Error")
 			return nil, err
 		}
 
-	case protocols.PrioAggregationProtocolName:
-		pi, err = protocols.NewPrioAggregationProtocol(tn)
+	case prio.PrioAggregationProtocolName:
+		pi, err = prio.NewPrioAggregationProtocol(tn)
 
-		pi.(*protocols.PrioAggregationProtocol).Modulus = share.IntModulus
-		pi.(*protocols.PrioAggregationProtocol).Shares = s.AggData
+		pi.(*prio.PrioAggregationProtocol).Modulus = share.IntModulus
+		pi.(*prio.PrioAggregationProtocol).Shares = s.AggData
 		if err != nil {
 			log.Lvl1("Error")
 			return nil, err

@@ -14,6 +14,10 @@ import (
 	proto2 "unlynx/protocols"
 	"errors"
 )
+/*
+Unlynx key switch is not working at the end because of serialization/deserialization problems.
+This Service was used as a time measurement pipeline and bandwidth.
+ */
 
 const ServiceName = "UnlynxRange"
 //Structs _______________________________________________________________________________________________
@@ -207,6 +211,7 @@ func (s *Service) StartService(targetDataID string, root bool) error {
 	return nil
 }
 
+//If enough data, servers launch and aggregate + key switch
 func (s *Service) StartProtocol(name string, targetData string) (onet.ProtocolInstance, error) {
 
 	tmp := castToData(s.Request.Get((string)(targetData)))
@@ -245,7 +250,6 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 			log.Lvl1("No data exist ", err)
 		}
 
-		log.Lvl1(target)
 		testCVMap := make(map[lib2.GroupingKey]lib2.FilteredResponse)
 		if(target != nil) {
 			vec := []lib2.CipherText{target.Ciphers}
@@ -268,7 +272,6 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 			coaggr = s.getAggr(false,lib2.CipherText{})
 
 			keySwitch.TargetOfSwitch = &coaggr
-//			tmp := survey.Query.ClientPubKey
 			keySwitch.TargetPublicKey = &s.ClientPub
 
 		}
@@ -324,8 +327,6 @@ func (s *Service) getAggr(diffPri bool, noise lib2.CipherText) []lib2.FilteredRe
 		aggregatedResults[count] = value
 		count++
 	}
-
-	//GroupedDeterministicFilteredResponses = make(map[lib2.GroupingKey]lib2.FilteredResponse)
 
 	if diffPri == true {
 		for _, v := range aggregatedResults {
