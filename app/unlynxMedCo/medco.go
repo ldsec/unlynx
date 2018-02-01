@@ -92,18 +92,17 @@ const (
 	optionDBpasswordShort = "dbPw"
 
 	// setup options
-	optionServerBinding = "serverBinding"
+	optionServerBinding      = "serverBinding"
 	optionServerBindingShort = "sb"
 
-	optionDescription = "description"
+	optionDescription      = "description"
 	optionDescriptionShort = "desc"
 
-	optionPrivateTomlPath = "privateTomlPath"
+	optionPrivateTomlPath      = "privateTomlPath"
 	optionPrivateTomlPathShort = "priv"
 
-	optionPublicTomlPath = "publicTomlPath"
+	optionPublicTomlPath      = "publicTomlPath"
 	optionPublicTomlPathShort = "pub"
-
 )
 
 /*
@@ -360,8 +359,8 @@ func main() {
 					Name:    "setupNonInteractive",
 					Aliases: []string{"sni"},
 					Usage:   "Setup server configuration (non-interactive)",
-					Action: NonInteractiveSetup,
-					Flags: nonInteractiveSetupFlags,
+					Action:  NonInteractiveSetup,
+					Flags:   nonInteractiveSetupFlags,
 				},
 			},
 		},

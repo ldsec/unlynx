@@ -1,11 +1,11 @@
 package prio_utils
 
 import (
-"log"
-"math/big"
+	"log"
+	"math/big"
 
-"github.com/henrycg/prio/circuit"
-"github.com/henrycg/prio/utils"
+	"github.com/henrycg/prio/circuit"
+	"github.com/henrycg/prio/utils"
 )
 
 func bigToBits(nBits int, value *big.Int) []*big.Int {

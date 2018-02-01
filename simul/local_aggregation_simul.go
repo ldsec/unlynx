@@ -104,7 +104,6 @@ func (sim *LocalAggregationSimulation) Run(config *onet.SimulationConfig) error 
 			}
 		}
 
-
 		log.Lvl1("starting protocol with ", len(detResponses), " responses")
 
 		start := time.Now()
@@ -128,11 +127,10 @@ func (sim *LocalAggregationSimulation) Run(config *onet.SimulationConfig) error 
 		defer f.Close()
 
 		//to put in ms
-		if _, err = f.WriteString(end.String()+"\n"); err != nil {
+		if _, err = f.WriteString(end.String() + "\n"); err != nil {
 			panic(err)
 		}
 	}
-
 
 	return nil
 }

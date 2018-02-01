@@ -47,4 +47,4 @@ func NewAES128SHA256Ed25519(fullGroup bool) abstract.Suite {
 	return suite.G2()
 }
 
- */
+*/

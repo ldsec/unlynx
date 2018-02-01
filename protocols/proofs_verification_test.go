@@ -5,12 +5,12 @@ import (
 	"time"
 
 	"github.com/lca1/unlynx/lib"
-	"unlynx/protocols"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/crypto.v0/random"
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/network"
+	"unlynx/protocols"
 )
 
 func TestProofsVerification(t *testing.T) {

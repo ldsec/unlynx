@@ -17,7 +17,6 @@ import (
 //var clientPublic = suite.Point().Mul(suite.Point().Base(), clientPrivate)
 var sum time.Duration
 
-
 func createDataSet(numberGroups, numberAttributes, numberGroupAttr int) map[lib.GroupingKey]lib.FilteredResponse {
 	var secContrib = network.Suite.Scalar().One()
 	var clientPrivate = network.Suite.Scalar().One() //one -> to have the same for each node
@@ -96,7 +95,6 @@ func (sim *CollectiveAggregationSimulation) Node(config *onet.SimulationConfig) 
 
 // Run starts the simulation of the protocol and measures its runtime.
 func (sim *CollectiveAggregationSimulation) Run(config *onet.SimulationConfig) error {
-
 
 	for round := 0; round < sim.Rounds; round++ {
 		sum = 0

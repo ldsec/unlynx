@@ -1,15 +1,16 @@
 package UnlynxRange
 
 import (
-	"testing"
+	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
+	"testing"
 	"unlynx/lib"
-	"gopkg.in/dedis/crypto.v0/abstract"
 )
 
 var nbHost = 10
 var nbServ = 50
+
 type empty string
 
 func TestServiceUnlynxRange(t *testing.T) {
@@ -22,16 +23,16 @@ func TestServiceUnlynxRange(t *testing.T) {
 	defer local.CloseAll()
 
 	//Client private and public for keyswitch
-	FinalDecrypterp,FinalDecrypterP := lib.GenKey()
-	log.Lvl1(FinalDecrypterP,FinalDecrypterp)
+	FinalDecrypterp, FinalDecrypterP := lib.GenKey()
+	log.Lvl1(FinalDecrypterP, FinalDecrypterp)
 
 	//the CA public which is supposed to be sum of private of Serv
-	_,CAPublic := lib.GenKey()
+	_, CAPublic := lib.GenKey()
 
-	dataPro := make([]*API,nbHost)
+	dataPro := make([]*API, nbHost)
 
 	//init the clients
-	for i,v:= range dataPro  {
+	for i, v := range dataPro {
 		v = NewUnlynxRangeClient("DP")
 		v.CAPublic = CAPublic
 		v.EntryPoint = el.List[i%nbServ]
@@ -42,19 +43,18 @@ func TestServiceUnlynxRange(t *testing.T) {
 	sem2 := make(chan empty, len(dataPro))
 
 	// to parrallelize the sending and execution
-	for _,v := range dataPro {
+	for _, v := range dataPro {
 		go func(roster *onet.Roster, point abstract.Point) {
 			res, _ := v.SendRequest(roster, point)
 			sem <- empty(res)
 		}(el, FinalDecrypterP)
 
-
 		go func(roster *onet.Roster, point abstract.Point) {
-			res, _ := v.ExecuteProof(roster,string(<-sem))
+			res, _ := v.ExecuteProof(roster, string(<-sem))
 			log.Lvl1(res)
 			sem2 <- ""
 		}(el, FinalDecrypterP)
-			<-sem2
+		<-sem2
 
 	}
 }

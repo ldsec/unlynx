@@ -1,37 +1,35 @@
 package prio_utils
 
 import (
-	"math/big"
 	"github.com/henrycg/prio/circuit"
 	"github.com/henrycg/prio/poly"
-	"github.com/henrycg/prio/utils"
-	"gopkg.in/dedis/onet.v1/log"
 	"github.com/henrycg/prio/share"
 	"github.com/henrycg/prio/triple"
+	"github.com/henrycg/prio/utils"
+	"gopkg.in/dedis/onet.v1/log"
+	"math/big"
 
-	"math/rand"
 	"github.com/henrycg/prio/config"
+	"math/rand"
 )
 
 //this should be run at client for proof start
 //a ClientRequest is sent to each server from one client, for all client
 
 type Request struct {
-	RequestID []byte
-	Hint *share.PRGHints
+	RequestID   []byte
+	Hint        *share.PRGHints
 	TripleShare *triple.Share
 }
 
-
 //Create proof submission for one client
-func ClientRequest(datas []*config.Field, ns int, leaderForReq int) ([]*Request){
+func ClientRequest(datas []*config.Field, ns int, leaderForReq int) []*Request {
 	//utils.PrintTime("Initialize")
 
 	prg := share.NewGenPRG(ns, leaderForReq)
 
-	pub := make([]byte,32)
+	pub := make([]byte, 32)
 	rand.Read(pub)
-
 
 	out := make([]*Request, ns)
 	for s := 0; s < ns; s++ {
@@ -40,32 +38,32 @@ func ClientRequest(datas []*config.Field, ns int, leaderForReq int) ([]*Request)
 	}
 
 	//log.Lvl1("Inputs are")
-	inputs := make([]*big.Int,0)
+	inputs := make([]*big.Int, 0)
 	for f := 0; f < len(datas); f++ {
-	field := datas[f]
-	switch field.Type {
-	default:
-		panic("Unexpected type!")
-	case config.TypeInt:
-		inputs = append(inputs, int_NewRandom(int(field.IntBits))...)
-	case config.TypeIntPow:
-		inputs = append(inputs, intPow_NewRandom(int(field.IntBits), int(field.IntPow))...)
-	case config.TypeIntUnsafe:
-		inputs = append(inputs, intUnsafe_NewRandom(int(field.IntBits))...)
-	case config.TypeBoolOr:
-		inputs = append(inputs, bool_NewRandom()...)
-	case config.TypeBoolAnd:
-		inputs = append(inputs, bool_NewRandom()...)
-	case config.TypeCountMin:
-		inputs = append(inputs, countMin_NewRandom(int(field.CountMinHashes), int(field.CountMinBuckets))...)
-	case config.TypeLinReg:
-		inputs = append(inputs, linReg_NewRandom(field)...)
-	}
-	/*
-		for f := 0; f < len(dataShared); f++ {
-		//log.Lvl1(dataShared[f])
-		inputs = append(inputs, toArrayBit(dataShared[f])...)
-	*/
+		field := datas[f]
+		switch field.Type {
+		default:
+			panic("Unexpected type!")
+		case config.TypeInt:
+			inputs = append(inputs, int_NewRandom(int(field.IntBits))...)
+		case config.TypeIntPow:
+			inputs = append(inputs, intPow_NewRandom(int(field.IntBits), int(field.IntPow))...)
+		case config.TypeIntUnsafe:
+			inputs = append(inputs, intUnsafe_NewRandom(int(field.IntBits))...)
+		case config.TypeBoolOr:
+			inputs = append(inputs, bool_NewRandom()...)
+		case config.TypeBoolAnd:
+			inputs = append(inputs, bool_NewRandom()...)
+		case config.TypeCountMin:
+			inputs = append(inputs, countMin_NewRandom(int(field.CountMinHashes), int(field.CountMinBuckets))...)
+		case config.TypeLinReg:
+			inputs = append(inputs, linReg_NewRandom(field)...)
+		}
+		/*
+			for f := 0; f < len(dataShared); f++ {
+			//log.Lvl1(dataShared[f])
+			inputs = append(inputs, toArrayBit(dataShared[f])...)
+		*/
 	}
 
 	// Evaluate the Valid() circuit
@@ -76,8 +74,6 @@ func ClientRequest(datas []*config.Field, ns int, leaderForReq int) ([]*Request)
 	log.Lvl1("value is ", ckt.Outputs()[0].WireValue)
 	// Generate sharings of the input wires and the multiplication gate wires
 	ckt.ShareWires(prg)
-
-
 
 	// Construct polynomials f, g, and h and share evaluations of h
 	sharePolynomials(ckt, prg)
@@ -92,10 +88,9 @@ func ClientRequest(datas []*config.Field, ns int, leaderForReq int) ([]*Request)
 	return out
 }
 
-
 func toArrayBit(int *big.Int) []*big.Int {
-	out := make([]*big.Int,int.BitLen())
-	for i := 0; i<int.BitLen(); i++  {
+	out := make([]*big.Int, int.BitLen())
+	for i := 0; i < int.BitLen(); i++ {
 		out[i] = big.NewInt(int64(int.Bit(i)))
 	}
 	return out
@@ -105,7 +100,7 @@ func ConfigToCircuitBit(datas []int64) *circuit.Circuit {
 	ckts := make([]*circuit.Circuit, nf)
 	for f := 0; f < nf; f++ {
 		name := "circuit"
-		name+= string(f)
+		name += string(f)
 		ckts[f] = int_Circuit(name, int(datas[f]))
 	}
 
@@ -143,9 +138,7 @@ func ConfigToCircuit(datas []*config.Field) *circuit.Circuit {
 	return ckt
 }
 
-
-
-func sharePolynomials(ckt *circuit.Circuit, prg *share.GenPRG){
+func sharePolynomials(ckt *circuit.Circuit, prg *share.GenPRG) {
 	mulGates := ckt.MulGates()
 	mod := ckt.Modulus()
 
@@ -164,7 +157,6 @@ func sharePolynomials(ckt *circuit.Circuit, prg *share.GenPRG){
 	for i := 0; i < N; i++ {
 		zeros[i] = utils.Zero
 	}
-
 
 	// Compute f(x) and g(x)
 	pointsF[0] = prg.ShareRand(mod)

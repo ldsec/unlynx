@@ -1,26 +1,25 @@
 package main
 
 import (
-	"gopkg.in/dedis/onet.v1"
 	"github.com/BurntSushi/toml"
+	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
 
-	"math/big"
 	"crypto/rand"
 	"errors"
+	"math/big"
 	"unlynx/lib"
 
-	"unlynx/lib/prio_utils"
+	"github.com/henrycg/prio/circuit"
 	"github.com/henrycg/prio/share"
 	"github.com/henrycg/prio/utils"
-	"github.com/henrycg/prio/circuit"
+	"unlynx/lib/prio_utils"
 
-	"time"
-	"os"
 	"github.com/henrycg/prio/config"
+	"os"
+	"time"
 	"unlynx/protocols/prio"
 )
-
 
 //variable to choose the secret once and split them, as you assume client have their secret already split
 //in  a vector of size #servers. Means the number of server is supposed to be public
@@ -29,22 +28,21 @@ var req []*prio_utils.Request
 var mod = share.IntModulus
 var randomPoint = utils.RandInt(mod)
 var secretBitLen []int64
+
 //function to generate random value and their splits
 
 // CollectiveAggregationSimulation holds the state of a simulation.
 type PrioVerificationSimulation struct {
 	onet.SimulationBFTree
 
-	NbrRequestByProto  int
-	NbrValidation	   int
-	Proofs             bool
+	NbrRequestByProto int
+	NbrValidation     int
+	Proofs            bool
 }
-
 
 func init() {
 	onet.SimulationRegister("PrioVerification", NewPrioVerificationSimulation)
 }
-
 
 func NewPrioVerificationSimulation(config string) (onet.Simulation, error) {
 	sim := &PrioVerificationSimulation{}
@@ -82,8 +80,6 @@ func (sim *PrioVerificationSimulation) Node(config *onet.SimulationConfig) error
 	return sim.SimulationBFTree.Node(config)
 }
 
-
-
 // Run starts the simulation.
 func (sim *PrioVerificationSimulation) Run(config *onet.SimulationConfig) error {
 	for round := 0; round < sim.Rounds; round++ {
@@ -95,7 +91,7 @@ func (sim *PrioVerificationSimulation) Run(config *onet.SimulationConfig) error 
 		//new variable for nbValidation
 		wg := lib.StartParallelize(sim.NbrValidation)
 		start := time.Now()
-		for i := 0; i<sim.NbrValidation;i++ {
+		for i := 0; i < sim.NbrValidation; i++ {
 			go func() {
 				defer wg.Done()
 				rooti, err := config.Overlay.CreateProtocol("PrioVerificationSimul", config.Tree, onet.NilServiceID)
@@ -105,7 +101,7 @@ func (sim *PrioVerificationSimulation) Run(config *onet.SimulationConfig) error 
 				root := rooti.(*prio.PrioVerificationProtocol)
 
 				root.Start()
-				<- root.AggregateData
+				<-root.AggregateData
 
 			}()
 
@@ -135,7 +131,6 @@ func NewPrioVerificationProtocolSimul(tni *onet.TreeNodeInstance, sim *PrioVerif
 	protocol, err := prio.NewPrioVerifcationProtocol(tni)
 	pap := protocol.(*prio.PrioVerificationProtocol)
 
-
 	pap.Request = new(prio_utils.Request)
 	pap.Checker = new(prio_utils.Checker)
 	pap.Pre = new(prio_utils.CheckerPrecomp)
@@ -144,7 +139,7 @@ func NewPrioVerificationProtocolSimul(tni *onet.TreeNodeInstance, sim *PrioVerif
 	//each client submission
 
 	pap.Request = req[pap.Index()]
-	pap.Checker = prio_utils.NewChecker(ckt[tni.Index()],pap.Index(),0)
+	pap.Checker = prio_utils.NewChecker(ckt[tni.Index()], pap.Index(), 0)
 	pap.Pre = prio_utils.NewCheckerPrecomp(ckt[tni.Index()])
 	pap.Pre.SetCheckerPrecomp(randomPoint)
 
@@ -152,31 +147,30 @@ func NewPrioVerificationProtocolSimul(tni *onet.TreeNodeInstance, sim *PrioVerif
 }
 
 //create cipher text for test from a config file in Prio
-func createCipherSet(numberClient, numberServer int) ([]*prio_utils.Request,[]*circuit.Circuit) {
+func createCipherSet(numberClient, numberServer int) ([]*prio_utils.Request, []*circuit.Circuit) {
 
-
-	circuit := make([]*circuit.Circuit,0)
-	result := make([]*prio_utils.Request,numberServer)
+	circuit := make([]*circuit.Circuit, 0)
+	result := make([]*prio_utils.Request, numberServer)
 	secretBitLen = make([]int64, numberServer)
 
 	secret := config.LoadFile("/home/max/Documents/go/src/prio/eval/cell-geneva.conf")
-	fields := make([]*config.Field,0)
-	for j := 0; j<len(secret.Fields);j++  {
+	fields := make([]*config.Field, 0)
+	for j := 0; j < len(secret.Fields); j++ {
 		fields = append(fields, &(secret.Fields[j]))
 	}
-	result = prio_utils.ClientRequest(fields,numberServer,0)
+	result = prio_utils.ClientRequest(fields, numberServer, 0)
 
-	for j:=0;j<numberServer ;j++  {
+	for j := 0; j < numberServer; j++ {
 
 		test := prio_utils.ConfigToCircuit(fields)
-		circuit = append(circuit,test)
+		circuit = append(circuit, test)
 	}
 
-	return result,circuit
+	return result, circuit
 }
 
 //fucntion to generate a random big int between 0 and low^expo
-func randomBig (low,expo *big.Int)(int *big.Int){
+func randomBig(low, expo *big.Int) (int *big.Int) {
 	max := new(big.Int)
 	max.Exp(low, expo, nil).Sub(max, big.NewInt(1))
 

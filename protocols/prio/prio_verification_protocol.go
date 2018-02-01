@@ -1,16 +1,16 @@
 package prio
 
 import (
-	"gopkg.in/dedis/onet.v1"
-	"gopkg.in/dedis/onet.v1/network"
 	"errors"
+	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
+	"gopkg.in/dedis/onet.v1/network"
 	"math/big"
 	"unlynx/lib/prio_utils"
 
 	"github.com/henrycg/prio/utils"
-
 )
+
 /**
 This protocol is used to verify that a Prio request from a Client is Valid.
 At the end it output an array of integer for each protocol ( it is not shared) that represent the share
@@ -26,14 +26,13 @@ return True, the protocol has verify correctly and data were correct.
 
 const PrioVerificationProtocolName = "PrioVerification"
 
-
 /*Messages
 ____________________________________________________________________________________________________________________
- */
+*/
 
 //structure to announce start of protocol
-type AnnounceVerification struct {}
-type ResponseVerification struct {}
+type AnnounceVerification struct{}
+type ResponseVerification struct{}
 
 //share broadcasted by each client to reconstrut d & e for Beaver MPC
 type CorShare struct {
@@ -43,8 +42,9 @@ type CorShare struct {
 
 // Evaluation of each share of the polynomial all send to leader to check if valid
 type OutShare struct {
-	Out		[]byte
+	Out []byte
 }
+
 /*Structs
 _________________________________________________________________________________________________________________________
 */
@@ -73,16 +73,14 @@ type StructOutShare struct {
 	OutShare
 }
 
-
 type PrioVerificationProtocol struct {
 	*onet.TreeNodeInstance
 
 	//the Data to aggregate
 	AggregateData chan []*big.Int
 
-
 	//Channel for waking up all
-	AnnounceChannel chan StructAnnounce
+	AnnounceChannel  chan StructAnnounce
 	ResponsceChannel chan StructResponse
 
 	//Data structure to perform range proofs
@@ -92,14 +90,12 @@ type PrioVerificationProtocol struct {
 
 	//channel for proof
 	CorShareChannel chan StructCorShare
-	OutShareChannel		chan StructOutShare
-
+	OutShareChannel chan StructOutShare
 }
-
 
 /*
 _______________________________________________________________________________
- */
+*/
 
 var randomKey = utils.RandomPRGKey()
 
@@ -107,18 +103,15 @@ func init() {
 	network.RegisterMessage(AnnounceVerification{})
 	network.RegisterMessage(ResponseVerification{})
 	network.RegisterMessage(CorShare{})
-	onet.GlobalProtocolRegister(PrioVerificationProtocolName,NewPrioVerifcationProtocol)
+	onet.GlobalProtocolRegister(PrioVerificationProtocolName, NewPrioVerifcationProtocol)
 }
 
-
-func NewPrioVerifcationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance,error) {
+func NewPrioVerifcationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 
 	st := &PrioVerificationProtocol{
 		TreeNodeInstance: n,
-		AggregateData:         make(chan []*big.Int,1),
-
+		AggregateData:    make(chan []*big.Int, 1),
 	}
-
 
 	//register the channel for announce
 	err := st.RegisterChannel(&st.AnnounceChannel)
@@ -132,31 +125,32 @@ func NewPrioVerifcationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance
 	}
 
 	err = st.RegisterChannel(&st.OutShareChannel)
-	if err !=nil {
-		return nil,errors.New("Couldn't register OutShare channel" + err.Error())
+	if err != nil {
+		return nil, errors.New("Couldn't register OutShare channel" + err.Error())
 	}
 
 	err = st.RegisterChannel(&st.ResponsceChannel)
-	if err !=nil {
-		return nil,errors.New("Couldn't register response wake up channel" + err.Error())
+	if err != nil {
+		return nil, errors.New("Couldn't register response wake up channel" + err.Error())
 	}
 
-	return st,nil
+	return st, nil
 }
 
 //start called at the root
-func (p*PrioVerificationProtocol) Start() error {
+func (p *PrioVerificationProtocol) Start() error {
 	p.SendToChildren(&AnnounceVerification{})
 
 	return nil
 }
+
 //dispatch is called on the node and handle incoming messages
 
-func (p*PrioVerificationProtocol) Dispatch() error {
+func (p *PrioVerificationProtocol) Dispatch() error {
 
 	//wakeUp all server
-	if(!p.IsRoot()) {
-		if (!p.IsLeaf()) {
+	if !p.IsRoot() {
+		if !p.IsLeaf() {
 			p.SendToChildren(&AnnounceVerification{})
 		}
 	}
@@ -173,17 +167,16 @@ func (p*PrioVerificationProtocol) Dispatch() error {
 	return nil
 }
 
-
 //function to avoid broadcasting with server not launched, so wait for everyone to say it is awake
-func (p *PrioVerificationProtocol)waitOnSignal() {
+func (p *PrioVerificationProtocol) waitOnSignal() {
 	//log.Lvl1("server enter in WaitOnSigal")
 	if !p.IsLeaf() {
 		//log.Lvl1(p.Index() , " waits to receive response on Resp chnnel")
 
-		j := <- p.ResponsceChannel
+		j := <-p.ResponsceChannel
 		//log.Lvl1("Send to parent" , p.Index())
 		//log.Lvl1(j)
-		if (!p.IsRoot()) {
+		if !p.IsRoot() {
 			p.SendToParent(&j)
 		}
 	}
@@ -197,7 +190,6 @@ func (p *PrioVerificationProtocol)waitOnSignal() {
 
 // Do the validation given a request from a Client, return the share that are supposed to be aggregated by each server
 func (p *PrioVerificationProtocol) collectiveVerificationPhase() []*big.Int {
-
 
 	//SNIP's proof
 	//log.Lvl1(p.Request)
@@ -240,7 +232,6 @@ func (p *PrioVerificationProtocol) collectiveVerificationPhase() []*big.Int {
 	//random key is same for all, evaluate cor on a randomKey
 	finalReplies[0] = check.OutShare(cor, randomKey)
 
-
 	//send to Root all evaluation
 	if !p.IsRoot() {
 		p.SendTo(p.Root(), &OutShare{finalReplies[0].Check.Bytes()})
@@ -258,12 +249,13 @@ func (p *PrioVerificationProtocol) collectiveVerificationPhase() []*big.Int {
 		}
 		isValid := check.OutputIsValid(finalRepliesAll)
 		log.Lvl1("output is valid ? ", isValid)
-		if !isValid {return make([]*big.Int,0)}
+		if !isValid {
+			return make([]*big.Int, 0)
+		}
 
 	}
 
-
-	result := make([]*big.Int,len(check.Outputs()))
+	result := make([]*big.Int, len(check.Outputs()))
 
 	//This are the actual shares you will need to aggregate
 	for i := 0; i < len(check.Outputs()); i++ {
@@ -272,4 +264,3 @@ func (p *PrioVerificationProtocol) collectiveVerificationPhase() []*big.Int {
 
 	return result
 }
-

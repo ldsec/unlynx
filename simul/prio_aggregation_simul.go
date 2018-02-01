@@ -1,25 +1,22 @@
 package main
 
 import (
-	"gopkg.in/dedis/onet.v1"
 	"github.com/BurntSushi/toml"
+	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
 	"math/big"
 	"unlynx/lib"
 
-	"unlynx/lib/prio_utils"
 	"github.com/henrycg/prio/share"
+	"unlynx/lib/prio_utils"
 
-	"time"
 	"os"
+	"time"
 	"unlynx/protocols/prio"
 )
 
-
-
 var aggData [][]*big.Int
 var sumCipher *big.Int
-
 
 func init() {
 	onet.SimulationRegister("PrioAggregation", NewPrioAggregationSimulation)
@@ -29,10 +26,9 @@ func init() {
 type PrioAggregationSimulation struct {
 	onet.SimulationBFTree
 
-	NbrRequestByProto  int
-	Proofs             bool
+	NbrRequestByProto int
+	Proofs            bool
 }
-
 
 func NewPrioAggregationSimulation(config string) (onet.Simulation, error) {
 	sim := &PrioAggregationSimulation{}
@@ -70,8 +66,6 @@ func (sim *PrioAggregationSimulation) Node(config *onet.SimulationConfig) error 
 	return sim.SimulationBFTree.Node(config)
 }
 
-
-
 // Run starts the simulation.
 func (sim *PrioAggregationSimulation) Run(config *onet.SimulationConfig) error {
 	for round := 0; round < sim.Rounds; round++ {
@@ -83,7 +77,6 @@ func (sim *PrioAggregationSimulation) Run(config *onet.SimulationConfig) error {
 		//new variable for nbValidation
 		//start := time.Now()
 
-
 		rooti, err := config.Overlay.CreateProtocol("PrioAggregationSimul", config.Tree, onet.NilServiceID)
 		if err != nil {
 			return nil
@@ -91,8 +84,8 @@ func (sim *PrioAggregationSimulation) Run(config *onet.SimulationConfig) error {
 		start := time.Now()
 		root := rooti.(*prio.PrioAggregationProtocol)
 		root.Start()
-		result := <- root.Feedback
-		log.Lvl1("res is " ,result)
+		result := <-root.Feedback
+		log.Lvl1("res is ", result)
 		log.Lvl1(sumCipher)
 		//time := time.Since(start)
 		lib.EndTimer(roundTime)
@@ -135,30 +128,28 @@ func NewPrioAggregationProtocolSimul(tni *onet.TreeNodeInstance, sim *PrioAggreg
 	pap.Modulus = share.IntModulus
 	pap.Shares = aggData
 
-
 	return protocol, err
 }
 
-
-func createAggData(numberClient, numberServer int) ([][]*big.Int) {
+func createAggData(numberClient, numberServer int) [][]*big.Int {
 
 	//secret value of clients
 	sumCipher = big.NewInt(0)
-	result := make([][]*big.Int,numberServer)
+	result := make([][]*big.Int, numberServer)
 	secretValues := make([][]*big.Int, numberClient)
-	for i:= 0;i < numberClient ; i++ {
+	for i := 0; i < numberClient; i++ {
 		secretValues[i] = prio_utils.Share(share.IntModulus, numberServer, randomBig(big.NewInt(2), big.NewInt(64)))
 		log.LLvl1(secretValues)
 		for j := 0; j < len(secretValues[i]); j++ {
-			sumCipher.Add(sumCipher,secretValues[i][j])
-			sumCipher.Mod(sumCipher,share.IntModulus)
+			sumCipher.Add(sumCipher, secretValues[i][j])
+			sumCipher.Mod(sumCipher, share.IntModulus)
 		}
 	}
-	for k:=0;k<numberServer;k++ {
-		for l:=0 ; l < numberClient;l++ {
+	for k := 0; k < numberServer; k++ {
+		for l := 0; l < numberClient; l++ {
 			result[k] = append(result[k], secretValues[l][k])
 		}
 	}
-	sumCipher.Mod(sumCipher,share.IntModulus)
+	sumCipher.Mod(sumCipher, share.IntModulus)
 	return result
 }

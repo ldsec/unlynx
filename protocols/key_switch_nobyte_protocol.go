@@ -1,15 +1,15 @@
 package protocols
 
 import (
-"errors"
+	"errors"
 
-"github.com/lca1/unlynx/lib"
-"gopkg.in/dedis/crypto.v0/abstract"
-"gopkg.in/dedis/onet.v1"
-"gopkg.in/dedis/onet.v1/log"
-"gopkg.in/dedis/onet.v1/network"
+	"github.com/lca1/unlynx/lib"
+	"gopkg.in/dedis/crypto.v0/abstract"
+	"gopkg.in/dedis/onet.v1"
+	"gopkg.in/dedis/onet.v1/log"
+	"gopkg.in/dedis/onet.v1/network"
 
-"time"
+	"time"
 )
 
 // KeySwitchingProtocolName is the registered name for the key switching protocol.
@@ -67,7 +67,7 @@ func NewKeySwitchingNoByteProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInsta
 		return nil, errors.New("couldn't register data reference channel: " + err.Error())
 	}
 
-/*	if err := ksp.RegisterChannel(&ksp.LengthNodeChannel); err != nil {
+	/*	if err := ksp.RegisterChannel(&ksp.LengthNodeChannel); err != nil {
 		return nil, errors.New("couldn't register data reference channel: " + err.Error())
 	}*/
 
@@ -136,7 +136,6 @@ func (p *KeySwitchingNoByteProtocol) Start() error {
 	return nil
 }
 
-
 // Dispatch is called on each node. It waits for incoming messages and handles them.
 func (p *KeySwitchingNoByteProtocol) Dispatch() error {
 	//start := time.Now()
@@ -175,25 +174,24 @@ func (p *KeySwitchingNoByteProtocol) Dispatch() error {
 			result[i] = v.Response
 		}
 		/*
-		timeN := time.Since(start)
-		filename := "/home/unlynx/go/src/unlynx/services/timeSwitch"
-		f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0600)
-		if err != nil {
-			panic(err)
-		}
+			timeN := time.Since(start)
+			filename := "/home/unlynx/go/src/unlynx/services/timeSwitch"
+			f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0600)
+			if err != nil {
+				panic(err)
+			}
 
-		defer f.Close()
+			defer f.Close()
 
-		if _, err = f.WriteString(timeN.String() + "\n"); err != nil {
-			panic(err)
-		}*/
+			if _, err = f.WriteString(timeN.String() + "\n"); err != nil {
+				panic(err)
+			}*/
 		p.ExecTime += time.Since(startT)
 		p.FeedbackChannel <- result
 	} else {
 		log.Lvl1(p.ServerIdentity(), " carried on key switching on ", len(keySwitchingTarget.DataKey), " .")
 		sendingNoBytes(p, &keySwitchingTarget.KeySwitchedCipherMessage)
 	}
-
 
 	return nil
 }

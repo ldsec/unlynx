@@ -1,12 +1,11 @@
 package prio_utils
 
 import (
-	"math/big"
-	"github.com/henrycg/prio/share"
 	"github.com/henrycg/prio/circuit"
-	"github.com/henrycg/prio/utils"
 	"github.com/henrycg/prio/poly"
-
+	"github.com/henrycg/prio/share"
+	"github.com/henrycg/prio/utils"
+	"math/big"
 )
 
 // Checker holds all of the state needed to check the validity
@@ -33,7 +32,6 @@ type Checker struct {
 func (c *Checker) Outputs() []*circuit.Gate {
 	return c.ckt.Outputs()
 }
-
 
 func NewChecker(ckt *circuit.Circuit, serverIdx int, leaderIdx int) *Checker {
 	c := new(Checker)
@@ -75,13 +73,11 @@ type CheckerPrecomp struct {
 	x2N *poly.PreX
 }
 
-
 func (pre *CheckerPrecomp) SetCheckerPrecomp(x *big.Int) {
 	pre.x = x
 	pre.xN = pre.degN.NewEvalPoint(x)
 	pre.x2N = pre.deg2N.NewEvalPoint(x)
 }
-
 
 func NewCheckerPrecomp(ckt *circuit.Circuit) *CheckerPrecomp {
 	pre := new(CheckerPrecomp)
@@ -101,7 +97,7 @@ func NewCheckerPrecomp(ckt *circuit.Circuit) *CheckerPrecomp {
 }
 
 type CheckerPool struct {
-	ckt			*circuit.Circuit
+	ckt       *circuit.Circuit
 	serverIdx int
 	leaderIdx int
 	buffer    chan *Checker
@@ -171,7 +167,7 @@ func (c *Checker) evalPoly(pre *CheckerPrecomp) {
 	c.evalH.Mod(c.evalH, c.mod)
 }
 
-func (c *Checker) CorShare (pre *CheckerPrecomp) (*CorShare) {
+func (c *Checker) CorShare(pre *CheckerPrecomp) *CorShare {
 	c.evalPoly(pre)
 
 	out := new(CorShare)
@@ -202,7 +198,7 @@ type Cor struct {
 	E *big.Int
 }
 
-func (c *Checker) OutShare( corIn *Cor, key *utils.PRGKey)(sol *OutShare) {
+func (c *Checker) OutShare(corIn *Cor, key *utils.PRGKey) (sol *OutShare) {
 	// We have shares of a bunch of values (v1, v2, ..., vK) that should
 	// all be zero. To check them, the servers sample random values
 	// (r1, r2, ..., rK) and compute the inner product:
@@ -276,14 +272,13 @@ func (c *Checker) Cor(sharesIn []*CorShare) *Cor {
 	return cor
 }
 
-
 func (c *Checker) OutputIsValid(sharesIn []*OutShare) bool {
 
 	check := new(big.Int)
 
 	for _, share := range sharesIn {
 		check.Add(check, share.Check)
-		}
+	}
 	check.Mod(check, c.mod)
 	//log.Lvl1("BIG Wanted 0 got ", check)
 

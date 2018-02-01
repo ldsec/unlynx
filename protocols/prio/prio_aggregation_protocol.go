@@ -1,28 +1,23 @@
 package prio
 
 import (
+	"errors"
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/network"
-	"errors"
 
 	"math/big"
-
-
 )
 
 /**
 This is a simple protocol that collect and aggregate by notifying the tree structure until
 leaf are reached. Then they locally aggregate the shares they have and send to the parent.
 The root recolt all the data and publish the final aggregation
- */
+*/
 
 const PrioAggregationProtocolName = "PrioAggregation"
 
-
-
 /*_________________________________________________________________________________________________________________
-*/
-
+ */
 
 //Reply from the children
 type ReplySumCipherBytes struct {
@@ -31,9 +26,7 @@ type ReplySumCipherBytes struct {
 }
 
 //structure to announce start of protocol
-type AnnounceAggregation struct {}
-
-
+type AnnounceAggregation struct{}
 
 /*
 _________________________________________________________________________________________________________________________
@@ -61,29 +54,27 @@ type PrioAggregationProtocol struct {
 
 	//Channel for up and down communication respectively
 	ChildDataChannel chan []StructReply
-	AnnounceChannel chan StructAnnounceAggregation
+	AnnounceChannel  chan StructAnnounceAggregation
 
 	//The data of the protocol : shares from server, local sum and Modulus
 	Shares  [][]*big.Int
-	Sum 	[]*big.Int
+	Sum     []*big.Int
 	Modulus *big.Int
-
 }
 
 //Tell which message are gonna be used in the protocol
 func init() {
 	network.RegisterMessage(AnnounceAggregation{})
 	network.RegisterMessage(ReplySumCipherBytes{})
-	onet.GlobalProtocolRegister(PrioAggregationProtocolName,NewPrioAggregationProtocol)
+	onet.GlobalProtocolRegister(PrioAggregationProtocolName, NewPrioAggregationProtocol)
 }
 
-
-func NewPrioAggregationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance,error) {
+func NewPrioAggregationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 	//initialize the local sum to 0 and channel
 	st := &PrioAggregationProtocol{
 		TreeNodeInstance: n,
 		Feedback:         make(chan []*big.Int),
-		Sum:              make([]*big.Int,0),
+		Sum:              make([]*big.Int, 0),
 	}
 
 	//register the channel for announce
@@ -98,11 +89,11 @@ func NewPrioAggregationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance
 		return nil, errors.New("couldn't register Child Response channel" + err.Error())
 	}
 
-	return st,nil
+	return st, nil
 }
 
 //start called at the root
-func (p*PrioAggregationProtocol) Start() error {
+func (p *PrioAggregationProtocol) Start() error {
 	// log.Lvl1(p.ServerIdentity(), " started a Sum Cipher Protocol (", len(p.Request), " different shares)")
 
 	//The root announce to its children that we start the protocol
@@ -114,11 +105,11 @@ func (p*PrioAggregationProtocol) Start() error {
 }
 
 //dispatch is called on the node and handle incoming messages
-func (p*PrioAggregationProtocol) Dispatch() error {
+func (p *PrioAggregationProtocol) Dispatch() error {
 
 	//send if you're not the root (done in start), and only if you have children
-	if(!p.IsRoot()) {
-		if (!p.IsLeaf()) {
+	if !p.IsRoot() {
+		if !p.IsLeaf() {
 			p.SendToChildren(&AnnounceAggregation{})
 		}
 	}
@@ -132,15 +123,14 @@ func (p*PrioAggregationProtocol) Dispatch() error {
 
 	//report result
 	if p.IsRoot() {
-		p.Feedback <-sum
+		p.Feedback <- sum
 	}
 	return nil
 }
 
-
 // Results pushing up the tree containing aggregation results.
 func (p *PrioAggregationProtocol) ascendingAggregationPhase() []*big.Int {
-	p.Sum = make([]*big.Int,len(p.Shares[0]))
+	p.Sum = make([]*big.Int, len(p.Shares[0]))
 
 	for j := 0; j < len(p.Sum); j++ {
 		p.Sum[j] = big.NewInt(0)
@@ -149,7 +139,7 @@ func (p *PrioAggregationProtocol) ascendingAggregationPhase() []*big.Int {
 	if !p.IsLeaf() {
 		//wait on the channel for child to complete and add sum
 		//take time only at the root
-		for i:=0 ; i<len(p.Sum)  ; i++ {
+		for i := 0; i < len(p.Sum); i++ {
 
 			for _, v := range <-p.ChildDataChannel {
 
@@ -177,7 +167,7 @@ func (p *PrioAggregationProtocol) ascendingAggregationPhase() []*big.Int {
 	//send to parent the sum to deblock channel wait
 	if !p.IsRoot() {
 		//send the big.Int in bytes
-		for j:= 0; j < len(p.Sum) ; j++ {
+		for j := 0; j < len(p.Sum); j++ {
 			p.SendToParent(&ReplySumCipherBytes{p.Sum[j].Bytes(), int64(j)})
 			p.Sum[j] = big.NewInt(0)
 		}
@@ -185,11 +175,10 @@ func (p *PrioAggregationProtocol) ascendingAggregationPhase() []*big.Int {
 	}
 
 	//finish by returning the sum of the root
-	for j:= 0; j < len(p.Sum) ; j++ {
+	for j := 0; j < len(p.Sum); j++ {
 		p.Sum[j].Mod(p.Sum[j], p.Modulus)
 	}
 
 	return p.Sum
 
 }
-

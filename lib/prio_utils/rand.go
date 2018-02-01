@@ -25,7 +25,6 @@ func RandInt(mod *big.Int) *big.Int {
 	return out
 }
 
-
 // We use the AES-CTR to generate pseudo-random  numbers using a
 // stream cipher. Go's native rand.Reader is extremely slow because
 // it makes tons of system calls to generate a small number of

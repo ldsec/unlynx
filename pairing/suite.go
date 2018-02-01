@@ -1,11 +1,10 @@
 package pairing
 
 import (
+	"crypto/cipher"
 	"github.com/dedis/paper_17_dfinity/pbc"
 	"gopkg.in/dedis/crypto.v0/abstract"
-	"crypto/cipher"
 )
-
 
 // XXX non-NIST ciphers?
 
@@ -62,12 +61,11 @@ func NewKeyPair(s PairingSuite, r cipher.Stream) (abstract.Scalar, abstract.Poin
 	return sk, pk
 }
 
-
 var Suite = NewAES128SHA256Ed25519(false)
 var Pairing = NewAES128SHA256Ed25519P(false)
 
 // Ciphersuite based on AES-128, SHA-256, and the Ed25519 curve.
-func NewAES128SHA256Ed25519(fullGroup bool) (abstract.Suite)  {
+func NewAES128SHA256Ed25519(fullGroup bool) abstract.Suite {
 	suite := pbc.NewPairingFp254BNb()
 	return suite.G2()
 }
@@ -76,4 +74,3 @@ func NewAES128SHA256Ed25519P(fullGroup bool) *pbc.Pairing {
 	suite := pbc.NewPairingFp254BNb()
 	return suite
 }
-

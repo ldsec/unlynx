@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/BurntSushi/toml"
 	"github.com/lca1/unlynx/lib"
-//	"github.com/lca1/unlynx/protocols"
+	//	"github.com/lca1/unlynx/protocols"
 	"gopkg.in/dedis/crypto.v0/random"
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"

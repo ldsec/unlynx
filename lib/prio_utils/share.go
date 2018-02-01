@@ -24,4 +24,3 @@ func Share(mod *big.Int, nPieces int, secret *big.Int) []*big.Int {
 
 	return out
 }
-
