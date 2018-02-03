@@ -8,10 +8,11 @@ import (
 	"gopkg.in/dedis/onet.v1/log"
 
 	"github.com/henrycg/prio/share"
+	"github.com/henrycg/prio/utils"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/dedis/onet.v1/network"
 	"math/big"
-	"unlynx/lib/prio_utils"
+	"unlynx/lib/prioUtils"
 )
 
 //the field cardinality must be superior to nbclient*2^b
@@ -24,8 +25,8 @@ var secret1 = big.NewInt(int64(55189642165))
 var secret2 = big.NewInt(int64(5518495792165))
 
 //the share of them
-var secret1Share = prio_utils.Share(share.IntModulus, nbS, secret1)
-var secret2Share = prio_utils.Share(share.IntModulus, nbS, secret2)
+var secret1Share = share.Share(share.IntModulus, nbS, secret1)
+var secret2Share = share.Share(share.IntModulus, nbS, secret2)
 
 func TestPrioAggregationProtocol(t *testing.T) {
 

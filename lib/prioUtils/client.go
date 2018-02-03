@@ -1,4 +1,4 @@
-package prio_utils
+package prioUtils
 
 import (
 	"github.com/henrycg/prio/circuit"
@@ -16,13 +16,14 @@ import (
 //this should be run at client for proof start
 //a ClientRequest is sent to each server from one client, for all client
 
+//Request represent the Shares of the circuit and of the Beaver MPC triples
 type Request struct {
 	RequestID   []byte
 	Hint        *share.PRGHints
 	TripleShare *triple.Share
 }
 
-//Create proof submission for one client
+//ClientRequest creates proof submission for one client
 func ClientRequest(datas []*config.Field, ns int, leaderForReq int) []*Request {
 	//utils.PrintTime("Initialize")
 
@@ -45,19 +46,19 @@ func ClientRequest(datas []*config.Field, ns int, leaderForReq int) []*Request {
 		default:
 			panic("Unexpected type!")
 		case config.TypeInt:
-			inputs = append(inputs, int_NewRandom(int(field.IntBits))...)
+			inputs = append(inputs, intNewRandom(int(field.IntBits))...)
 		case config.TypeIntPow:
-			inputs = append(inputs, intPow_NewRandom(int(field.IntBits), int(field.IntPow))...)
+			inputs = append(inputs, intPowNewRandom(int(field.IntBits), int(field.IntPow))...)
 		case config.TypeIntUnsafe:
-			inputs = append(inputs, intUnsafe_NewRandom(int(field.IntBits))...)
+			inputs = append(inputs, intUnsafeNewRandom(int(field.IntBits))...)
 		case config.TypeBoolOr:
-			inputs = append(inputs, bool_NewRandom()...)
+			inputs = append(inputs, boolNewRandom()...)
 		case config.TypeBoolAnd:
-			inputs = append(inputs, bool_NewRandom()...)
+			inputs = append(inputs, boolNewRandom()...)
 		case config.TypeCountMin:
-			inputs = append(inputs, countMin_NewRandom(int(field.CountMinHashes), int(field.CountMinBuckets))...)
+			inputs = append(inputs, countMinNewRandom(int(field.CountMinHashes), int(field.CountMinBuckets))...)
 		case config.TypeLinReg:
-			inputs = append(inputs, linReg_NewRandom(field)...)
+			inputs = append(inputs, linRegNewRandom(field)...)
 		}
 		/*
 			for f := 0; f < len(dataShared); f++ {
@@ -95,19 +96,8 @@ func toArrayBit(int *big.Int) []*big.Int {
 	}
 	return out
 }
-func ConfigToCircuitBit(datas []int64) *circuit.Circuit {
-	nf := len(datas)
-	ckts := make([]*circuit.Circuit, nf)
-	for f := 0; f < nf; f++ {
-		name := "circuit"
-		name += string(f)
-		ckts[f] = int_Circuit(name, int(datas[f]))
-	}
 
-	ckt := circuit.AndCircuits(ckts)
-	return ckt
-}
-
+//ConfigToCircuit configures a circuit from input data.
 func ConfigToCircuit(datas []*config.Field) *circuit.Circuit {
 
 	nf := len(datas)
@@ -118,19 +108,19 @@ func ConfigToCircuit(datas []*config.Field) *circuit.Circuit {
 		default:
 			panic("Unexpected type!")
 		case config.TypeInt:
-			ckts[f] = int_Circuit(field.Name, int(field.IntBits))
+			ckts[f] = intCircuit(field.Name, int(field.IntBits))
 		case config.TypeIntPow:
-			ckts[f] = intPow_Circuit(field.Name, int(field.IntBits), int(field.IntPow))
+			ckts[f] = intPowCircuit(field.Name, int(field.IntBits), int(field.IntPow))
 		case config.TypeIntUnsafe:
-			ckts[f] = intUnsafe_Circuit(field.Name)
+			ckts[f] = intUnsafeCircuit(field.Name)
 		case config.TypeBoolOr:
-			ckts[f] = bool_Circuit(field.Name)
+			ckts[f] = boolCircuit(field.Name)
 		case config.TypeBoolAnd:
-			ckts[f] = bool_Circuit(field.Name)
+			ckts[f] = boolCircuit(field.Name)
 		case config.TypeCountMin:
-			ckts[f] = countMin_Circuit(field.Name, int(field.CountMinHashes), int(field.CountMinBuckets))
+			ckts[f] = countMinCircuit(field.Name, int(field.CountMinHashes), int(field.CountMinBuckets))
 		case config.TypeLinReg:
-			ckts[f] = linReg_Circuit(field)
+			ckts[f] = linRegCircuit(field)
 		}
 	}
 

@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-// KeySwitchingProtocolName is the registered name for the key switching protocol.
+//KeySwitchingNoByteProtocolName is the registered name for the key switching protocol without byte transfer.
 const KeySwitchingNoByteProtocolName = "KeySwitchingNoByte"
 
 func init() {
@@ -28,7 +28,7 @@ func init() {
 // Structs
 //______________________________________________________________________________________________________________________
 
-// keySwitchedCipherBytesStruct is the a key switching message structure in bytes
+//KeySwitchedCipherNoBytesStruct is the a key switching message structure in bytes
 type keySwitchedCipherNoBytesStruct struct {
 	*onet.TreeNode
 	KeySwitchedCipherMessage
@@ -37,7 +37,7 @@ type keySwitchedCipherNoBytesStruct struct {
 // Protocol
 //______________________________________________________________________________________________________________________
 
-// KeySwitchingProtocol is a struct holding the state of a protocol instance.
+//KeySwitchingNoByteProtocol is a struct holding the state of a protocol instance.
 type KeySwitchingNoByteProtocol struct {
 	*onet.TreeNodeInstance
 
@@ -56,7 +56,7 @@ type KeySwitchingNoByteProtocol struct {
 	Proofs            bool
 }
 
-// NewKeySwitchingProtocol is constructor of Key Switching protocol instances.
+//NewKeySwitchingNoByteProtocol is constructor of Key Switching protocol instances.
 func NewKeySwitchingNoByteProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 	ksp := &KeySwitchingNoByteProtocol{
 		TreeNodeInstance: n,
@@ -84,7 +84,7 @@ func NewKeySwitchingNoByteProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInsta
 	return ksp, nil
 }
 
-// Start is called at the root to start the execution of the key switching.
+//Start is called at the root to start the execution of the key switching.
 func (p *KeySwitchingNoByteProtocol) Start() error {
 
 	startRound := lib.StartTimer(p.Name() + "_KeySwitching(START)")
@@ -136,7 +136,7 @@ func (p *KeySwitchingNoByteProtocol) Start() error {
 	return nil
 }
 
-// Dispatch is called on each node. It waits for incoming messages and handles them.
+//Dispatch is called on each node. It waits for incoming messages and handles them.
 func (p *KeySwitchingNoByteProtocol) Dispatch() error {
 	//start := time.Now()
 	//length := <-p.LengthNodeChannel

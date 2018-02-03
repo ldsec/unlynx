@@ -1,4 +1,4 @@
-package prio_utils
+package prioUtils
 
 import (
 	"fmt"
@@ -10,7 +10,10 @@ import (
 	"github.com/henrycg/prio/utils"
 )
 
-func linReg_Circuit(field *config.Field) *circuit.Circuit {
+//File originally in Prio repository.
+//Copied here to show whate can be done with each type.
+
+func linRegCircuit(field *config.Field) *circuit.Circuit {
 	nTerms := len(field.LinRegBits)
 	// Check x_i's
 	xCkts := make([]*circuit.Circuit, nTerms)
@@ -28,9 +31,9 @@ func linReg_Circuit(field *config.Field) *circuit.Circuit {
 				name := fmt.Sprintf("%v-prod[%v*%v]", field.Name, i, j)
 				prod := circuit.UncheckedInput(name)
 
-				x_i := xCkts[i].Outputs()[0]
-				x_j := xCkts[j].Outputs()[0]
-				prodMulCkts = append(prodMulCkts, circuit.CheckMul(x_i, x_j, prod.Outputs()[0]))
+				xI := xCkts[i].Outputs()[0]
+				xJ := xCkts[j].Outputs()[0]
+				prodMulCkts = append(prodMulCkts, circuit.CheckMul(xI, xJ, prod.Outputs()[0]))
 				prodCkts = append(prodCkts, prod)
 			}
 		}
@@ -44,7 +47,7 @@ func linReg_Circuit(field *config.Field) *circuit.Circuit {
 	return circuit.AndCircuits(ckts)
 }
 
-func linReg_NewRandom(field *config.Field) []*big.Int {
+func linRegNewRandom(field *config.Field) []*big.Int {
 	nTerms := len(field.LinRegBits)
 	max := new(big.Int)
 	values := make([]*big.Int, nTerms)
@@ -54,10 +57,10 @@ func linReg_NewRandom(field *config.Field) []*big.Int {
 		values[t] = utils.RandInt(max)
 	}
 
-	return linReg_New(field, values)
+	return linRegNew(field, values)
 }
 
-func linReg_New(field *config.Field, values []*big.Int) []*big.Int {
+func linRegNew(field *config.Field, values []*big.Int) []*big.Int {
 
 	nTerms := len(field.LinRegBits)
 	out := make([]*big.Int, 0)

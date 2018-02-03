@@ -1,7 +1,6 @@
 package lib_test
 
 import (
-
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/crypto.v0/random"
@@ -11,7 +10,6 @@ import (
 	"unlynx/lib"
 
 	"gopkg.in/dedis/onet.v1/log"
-
 )
 
 //create variables
@@ -353,8 +351,8 @@ func TestShufflingProof(t *testing.T) {
 	assert.False(t, lib.ShufflingProofVerification(PublishedShufflingProof, pubKey))
 }
 
-func TestThings(t *testing.T){
-	B:= suite.Point().Add(suite.Point().Mul(lib.IntToPoint(2),suite.Scalar().SetInt64(3)),suite.Point().Mul(lib.IntToPoint(4),suite.Scalar().SetInt64(2)))
+func TestThings(t *testing.T) {
+	B := suite.Point().Add(suite.Point().Mul(lib.IntToPoint(2), suite.Scalar().SetInt64(3)), suite.Point().Mul(lib.IntToPoint(4), suite.Scalar().SetInt64(2)))
 	log.LLvl1(B.Equal(lib.IntToPoint(14)))
 
 }
@@ -365,13 +363,13 @@ func TestRangeProofVerification(t *testing.T) {
 	l := int64(6.0)
 	p, P := lib.GenKey()
 	log.LLvl1(p)
-	sig := make([]lib.PublishSignature,5)
-	publishArgs := make([]lib.PublishRangeProof,5)
-	for i := 0 ; i < 5 ; i++ {
+	sig := make([]lib.PublishSignature, 5)
+	publishArgs := make([]lib.PublishRangeProof, 5)
+	for i := 0; i < 5; i++ {
 		sig[i] = lib.InitRangeProofSignature(u)
-		publishArgs[i] = lib.CreatePredicateRangeProof(sig[i],u,l,int64(25),P)
+		publishArgs[i] = lib.CreatePredicateRangeProof(sig[i], u, l, int64(25), P)
 		//publishArgsFalse := lib.CreatePredicateRangeProof(sig[i],u,l,int64(65),P)
-		log.Lvl1(lib.RangeProofVerification(publishArgs[i],u,l,sig[i].Public,P))
+		log.Lvl1(lib.RangeProofVerification(publishArgs[i], u, l, sig[i].Public, P))
 	}
 
 	//______________________________________________________________________________________
@@ -379,9 +377,8 @@ func TestRangeProofVerification(t *testing.T) {
 
 	//_______________________________________________________________________________________
 
-
 	//result2 := lib.RangeProofVerification(publishArgsFalse,u,l,sig.Public,P)
-/*
-	assert.True(t,result)
-	assert.False(t,result2)*/
+	/*
+		assert.True(t,result)
+		assert.False(t,result2)*/
 }

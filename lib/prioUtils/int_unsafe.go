@@ -1,4 +1,4 @@
-package prio_utils
+package prioUtils
 
 import (
 	"log"
@@ -8,18 +8,21 @@ import (
 	"github.com/henrycg/prio/utils"
 )
 
-func intUnsafe_Circuit(name string) *circuit.Circuit {
+//File originally in Prio repository.
+//Copied here to show whate can be done with each type.
+
+func intUnsafeCircuit(name string) *circuit.Circuit {
 	return circuit.UncheckedInput(name)
 }
 
-func intUnsafe_NewRandom(nBits int) []*big.Int {
+func intUnsafeNewRandom(nBits int) []*big.Int {
 	max := big.NewInt(1)
 	max.Lsh(max, uint(nBits))
 	v := utils.RandInt(max)
-	return intUnsafe_New(nBits, v)
+	return intUnsafeNew(nBits, v)
 }
 
-func intUnsafe_New(nBits int, value *big.Int) []*big.Int {
+func intUnsafeNew(nBits int, value *big.Int) []*big.Int {
 	if nBits < 1 {
 		log.Fatal("nBits must have value >= 1")
 	}

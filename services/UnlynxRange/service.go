@@ -20,20 +20,25 @@ Unlynx key switch is not working at the end because of serialization/deserializa
 This Service was used as a time measurement pipeline and bandwidth.
 */
 
+//ServiceName is the name for Unlynx Range validation service
 const ServiceName = "UnlynxRange"
 
 //Structs _______________________________________________________________________________________________
+
+//PublishSignatureByte is the version in bytes of PublishSignature
 type PublishSignatureByte struct {
 	Public    abstract.Point
 	Signature [][]byte
 }
 
+//DataDP is the data contained in the DP
 type DataDP struct {
 	ClientPublic abstract.Point
 	CAPublic     abstract.Point
 	RequestID    []byte
 }
 
+//ServiceSig is the
 type ServiceSig struct {
 	PublicCA  abstract.Point
 	RequestID []byte
@@ -42,13 +47,15 @@ type ServiceSig struct {
 	L         int64
 }
 
+//ResultStored are the parametes stored for the service
 type ResultStored struct {
 	Roster  *onet.Roster
 	Ciphers lib2.CipherText
 }
 
 //messages_________________________________________________________________________________________________
-//The type of message exchanged
+
+//MsgTypes are the type of message exchanged
 type MsgTypes struct {
 	msgSig   network.MessageTypeID
 	msgProof network.MessageTypeID
@@ -66,7 +73,7 @@ func init() {
 	network.RegisterMessage(&VerifResult{})
 }
 
-//The service strucute
+//Service is the service structure
 type Service struct {
 	// We need to embed the ServiceProcessor, so that incoming messages
 	// are correctly handled.
@@ -83,6 +90,7 @@ type Service struct {
 	Count      int64
 }
 
+//NewService creates a new RangeValidation Service
 func NewService(c *onet.Context) onet.Service {
 	newUnlynxRange := &Service{
 		ServiceProcessor: onet.NewServiceProcessor(c),
@@ -106,7 +114,7 @@ func NewService(c *onet.Context) onet.Service {
 	return newUnlynxRange
 }
 
-//Handle a request from a client by registering it and computing each the hash and sending them
+//HandleRequest handles a request from a client by registering it and computing each the hash and sending them
 func (s *Service) HandleRequest(requestFromDP *DataDP) (network.Message, onet.ClientError) {
 
 	if requestFromDP == nil {
@@ -135,7 +143,7 @@ func (s *Service) HandleRequest(requestFromDP *DataDP) (network.Message, onet.Cl
 	return &ServiceSig{RequestID: requestFromDP.RequestID, U: s.U, L: s.L, Signature: s.Signatures, PublicCA: s.CAPublic}, nil
 }
 
-// execute the proof validation. If number of request executed pass a threshold
+//ExecuteProof executes the proof validation. If number of request executed pass a threshold
 //We launch aggregation and key switch
 func (s *Service) ExecuteProof(proofFromDP *StructProofRangeByte) (network.Message, onet.ClientError) {
 
@@ -187,7 +195,7 @@ func (s *Service) ExecuteProof(proofFromDP *StructProofRangeByte) (network.Messa
 	return &res, nil
 }
 
-//Start the service aggregation + key switch
+//StartService starts the service aggregation + key switch
 func (s *Service) StartService(targetDataID string, root bool) error {
 
 	if root == true {
@@ -211,7 +219,7 @@ func (s *Service) StartService(targetDataID string, root bool) error {
 	return nil
 }
 
-//If enough data, servers launch and aggregate + key switch
+//StartProtocol if there is enough data.
 func (s *Service) StartProtocol(name string, targetData string) (onet.ProtocolInstance, error) {
 
 	tmp := castToData(s.Request.Get((string)(targetData)))
@@ -233,6 +241,7 @@ func (s *Service) StartProtocol(name string, targetData string) (onet.ProtocolIn
 	return pi, err
 }
 
+//NewProtocol is used to Launch a new Protocol given a name.
 func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfig) (onet.ProtocolInstance, error) {
 	tn.SetConfig(conf)
 	var pi onet.ProtocolInstance
@@ -282,6 +291,7 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 	return pi, err
 }
 
+//AggregationPhase launches the AggregationProtocol
 func (s *Service) AggregationPhase(targetID string) error {
 
 	pi, err := s.StartProtocol(protocols.CollectiveAggregationProtocolName, targetID)
@@ -294,6 +304,7 @@ func (s *Service) AggregationPhase(targetID string) error {
 	return nil
 }
 
+//KeySwitchingPhase launches the keySwitchProtocol
 func (s *Service) KeySwitchingPhase(targetID string) error {
 
 	pi, err := s.StartProtocol(proto2.KeySwitchingNoByteProtocolName, targetID)

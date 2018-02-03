@@ -1,4 +1,4 @@
-package prio_utils
+package prioUtils
 
 import (
 	"fmt"
@@ -8,6 +8,9 @@ import (
 	"github.com/henrycg/prio/circuit"
 	"github.com/henrycg/prio/utils"
 )
+
+//File originally in Prio repository.
+//Copied here to show whate can be done with each type.
 
 func bucketToIndex(nBuckets, hash, bucket int) int {
 	return hash*nBuckets + bucket
@@ -41,7 +44,7 @@ func rowCircuit(nHashes, nBuckets, row int, bits *circuit.Circuit) *circuit.Circ
 	return ckt
 }
 
-func countMin_Circuit(name string, nHashes, nBuckets int) *circuit.Circuit {
+func countMinCircuit(name string, nHashes, nBuckets int) *circuit.Circuit {
 	total := nHashes * nBuckets
 
 	// Ensure that each value in the sketch is a 0/1 value
@@ -61,7 +64,7 @@ func countMin_Circuit(name string, nHashes, nBuckets int) *circuit.Circuit {
 	return circuit.AndCircuits(ckts)
 }
 
-func countMin_NewRandom(nHashes, nBuckets int) []*big.Int {
+func countMinNewRandom(nHashes, nBuckets int) []*big.Int {
 	total := nHashes * nBuckets
 	values := make([]bool, total)
 
@@ -71,10 +74,10 @@ func countMin_NewRandom(nHashes, nBuckets int) []*big.Int {
 		values[bucketToIndex(nBuckets, h, idx)] = true
 	}
 
-	return countMin_New(nHashes, nBuckets, values)
+	return countMinNew(nHashes, nBuckets, values)
 }
 
-func countMin_New(nHashes, nBuckets int, values []bool) []*big.Int {
+func countMinNew(nHashes, nBuckets int, values []bool) []*big.Int {
 	if nBuckets < 1 || nHashes < 1 {
 		log.Fatal("nBuckets and nHashes must have value >= 1")
 	}

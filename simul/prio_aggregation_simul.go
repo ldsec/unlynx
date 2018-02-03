@@ -8,8 +8,9 @@ import (
 	"unlynx/lib"
 
 	"github.com/henrycg/prio/share"
-	"unlynx/lib/prio_utils"
+	"unlynx/lib/prioUtils"
 
+	"github.com/henrycg/prio/utils"
 	"os"
 	"time"
 	"unlynx/protocols/prio"
@@ -22,7 +23,7 @@ func init() {
 	onet.SimulationRegister("PrioAggregation", NewPrioAggregationSimulation)
 }
 
-// CollectiveAggregationSimulation holds the state of a simulation.
+//PrioAggregationSimulation holds the state of a simulation.
 type PrioAggregationSimulation struct {
 	onet.SimulationBFTree
 
@@ -30,6 +31,7 @@ type PrioAggregationSimulation struct {
 	Proofs            bool
 }
 
+//NewPrioAggregationSimulation creates a new prioAggregation simulation
 func NewPrioAggregationSimulation(config string) (onet.Simulation, error) {
 	sim := &PrioAggregationSimulation{}
 	_, err := toml.Decode(config, sim)
@@ -40,6 +42,7 @@ func NewPrioAggregationSimulation(config string) (onet.Simulation, error) {
 	return sim, nil
 }
 
+//Setup create the local roster for simulation
 func (sim *PrioAggregationSimulation) Setup(dir string, hosts []string) (*onet.SimulationConfig, error) {
 	sc := &onet.SimulationConfig{}
 	sim.CreateRoster(sc, hosts, 2000)
@@ -54,6 +57,7 @@ func (sim *PrioAggregationSimulation) Setup(dir string, hosts []string) (*onet.S
 	return sc, nil
 }
 
+//Node creates the protocol at each nodes.
 func (sim *PrioAggregationSimulation) Node(config *onet.SimulationConfig) error {
 	//start := time.Now()
 	config.Server.ProtocolRegister("PrioAggregationSimul",
@@ -66,7 +70,7 @@ func (sim *PrioAggregationSimulation) Node(config *onet.SimulationConfig) error 
 	return sim.SimulationBFTree.Node(config)
 }
 
-// Run starts the simulation.
+//Run starts the simulation.
 func (sim *PrioAggregationSimulation) Run(config *onet.SimulationConfig) error {
 	for round := 0; round < sim.Rounds; round++ {
 		log.Lvl1("Starting round", round)
@@ -119,7 +123,7 @@ func (sim *PrioAggregationSimulation) Run(config *onet.SimulationConfig) error {
 	return nil
 }
 
-//function called on each node to send data
+//NewPrioAggregationProtocolSimul is called on each node to send data
 func NewPrioAggregationProtocolSimul(tni *onet.TreeNodeInstance, sim *PrioAggregationSimulation) (onet.ProtocolInstance, error) {
 
 	protocol, err := prio.NewPrioAggregationProtocol(tni)
@@ -138,7 +142,7 @@ func createAggData(numberClient, numberServer int) [][]*big.Int {
 	result := make([][]*big.Int, numberServer)
 	secretValues := make([][]*big.Int, numberClient)
 	for i := 0; i < numberClient; i++ {
-		secretValues[i] = prio_utils.Share(share.IntModulus, numberServer, randomBig(big.NewInt(2), big.NewInt(64)))
+		secretValues[i] = share.Share(share.IntModulus, numberServer, randomBig(big.NewInt(2), big.NewInt(64)))
 		log.LLvl1(secretValues)
 		for j := 0; j < len(secretValues[i]); j++ {
 			sumCipher.Add(sumCipher, secretValues[i][j])

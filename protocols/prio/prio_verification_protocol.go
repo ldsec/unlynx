@@ -6,7 +6,7 @@ import (
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"
 	"math/big"
-	"unlynx/lib/prio_utils"
+	"unlynx/lib/prioUtils"
 
 	"github.com/henrycg/prio/utils"
 )
@@ -24,23 +24,26 @@ protocol (not only root), but this can be done in the Services/prio. You can be 
 return True, the protocol has verify correctly and data were correct.
 */
 
+//PrioVerificationProtocolName is the name for Prio's Verification
 const PrioVerificationProtocolName = "PrioVerification"
 
 /*Messages
 ____________________________________________________________________________________________________________________
 */
 
-//structure to announce start of protocol
+//AnnounceVerification is the structure to announce start of protocol/
 type AnnounceVerification struct{}
+
+//ResponseVerification is the structure to notify that server is awake.
 type ResponseVerification struct{}
 
-//share broadcasted by each client to reconstrut d & e for Beaver MPC
+//CorShare is the share broadcasted by each client to reconstrut d & e for Beaver MPC
 type CorShare struct {
 	CorShareD []byte
 	CorShareE []byte
 }
 
-// Evaluation of each share of the polynomial all send to leader to check if valid
+//OutShare is the evaluation of each share of the polynomial all send to leader to check if valid
 type OutShare struct {
 	Out []byte
 }
@@ -49,30 +52,31 @@ type OutShare struct {
 _________________________________________________________________________________________________________________________
 */
 
-//Announce of protocol
+//StructAnnounce announces the protocol
 type StructAnnounce struct {
 	*onet.TreeNode
 	AnnounceVerification
 }
 
-//Reply from node to say they are ready to go (to avoid strarting without some server as there is a broadcast)
+//StructResponse is the reply from node to say they are ready to go (to avoid strarting without some server as there is a broadcast)
 type StructResponse struct {
 	*onet.TreeNode
 	ResponseVerification
 }
 
-//Share exchanged by server to reconstruct the d & e MPC.
+//StructCorShare is the share exchanged by server to reconstruct the d & e MPC.
 type StructCorShare struct {
 	*onet.TreeNode
 	CorShare
 }
 
-//The evaluation of server
+//StructOutShare is the evaluation of server
 type StructOutShare struct {
 	*onet.TreeNode
 	OutShare
 }
 
+//PrioVerificationProtocol is the protocol structure
 type PrioVerificationProtocol struct {
 	*onet.TreeNodeInstance
 
@@ -84,9 +88,9 @@ type PrioVerificationProtocol struct {
 	ResponsceChannel chan StructResponse
 
 	//Data structure to perform range proofs
-	Request *prio_utils.Request
-	Pre     *prio_utils.CheckerPrecomp
-	Checker *prio_utils.Checker
+	Request *prioUtils.Request
+	Pre     *prioUtils.CheckerPrecomp
+	Checker *prioUtils.Checker
 
 	//channel for proof
 	CorShareChannel chan StructCorShare
@@ -106,6 +110,7 @@ func init() {
 	onet.GlobalProtocolRegister(PrioVerificationProtocolName, NewPrioVerifcationProtocol)
 }
 
+//NewPrioVerifcationProtocol creates a new Protocol to verify
 func NewPrioVerifcationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 
 	st := &PrioVerificationProtocol{
@@ -137,15 +142,14 @@ func NewPrioVerifcationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance
 	return st, nil
 }
 
-//start called at the root
+//Start called at the root
 func (p *PrioVerificationProtocol) Start() error {
 	p.SendToChildren(&AnnounceVerification{})
 
 	return nil
 }
 
-//dispatch is called on the node and handle incoming messages
-
+//Dispatch is called on the node and handle incoming messages
 func (p *PrioVerificationProtocol) Dispatch() error {
 
 	//wakeUp all server
@@ -198,7 +202,7 @@ func (p *PrioVerificationProtocol) collectiveVerificationPhase() []*big.Int {
 	check := p.Checker
 	check.SetReq(p.Request)
 
-	evalReplies := new(prio_utils.CorShare)
+	evalReplies := new(prioUtils.CorShare)
 	//here evalReplies filled by evaluating on a point ( same for all protocols for a single client )
 	evalReplies = check.CorShare(p.Pre)
 
@@ -208,13 +212,13 @@ func (p *PrioVerificationProtocol) collectiveVerificationPhase() []*big.Int {
 	p.Broadcast(&CorShare{evalReplies.ShareD.Bytes(), evalReplies.ShareE.Bytes()})
 
 	//Now they need to reconstruct it
-	evalRepliesFromAll := make([]*prio_utils.CorShare, 1)
+	evalRepliesFromAll := make([]*prioUtils.CorShare, 1)
 	evalRepliesFromAll[0] = evalReplies
 
 	//for each server get the value broadcasted
 	for i := 0; i < p.Tree().Size()-1; i++ {
 		v := <-p.CorShareChannel
-		corshare := new(prio_utils.CorShare)
+		corshare := new(prioUtils.CorShare)
 		corshare.ShareD = big.NewInt(0).SetBytes(v.CorShareD)
 		corshare.ShareE = big.NewInt(0).SetBytes(v.CorShareE)
 		evalRepliesFromAll = append(evalRepliesFromAll, corshare)
@@ -227,7 +231,7 @@ func (p *PrioVerificationProtocol) collectiveVerificationPhase() []*big.Int {
 	//
 	// log.Lvl1(p.IsRoot())
 	//we need to do this on all servers as they all have a part of the beaver triple
-	finalReplies := make([]*prio_utils.OutShare, 1)
+	finalReplies := make([]*prioUtils.OutShare, 1)
 
 	//random key is same for all, evaluate cor on a randomKey
 	finalReplies[0] = check.OutShare(cor, randomKey)
@@ -239,11 +243,11 @@ func (p *PrioVerificationProtocol) collectiveVerificationPhase() []*big.Int {
 
 	//then the leader  do all the rest, check if its valid
 	if p.IsRoot() {
-		finalRepliesAll := make([]*prio_utils.OutShare, 1)
+		finalRepliesAll := make([]*prioUtils.OutShare, 1)
 		finalRepliesAll[0] = finalReplies[0]
 		for i := 0; i < p.Tree().Size()-1; i++ {
 			v := <-p.OutShareChannel
-			outShare := new(prio_utils.OutShare)
+			outShare := new(prioUtils.OutShare)
 			outShare.Check = big.NewInt(0).SetBytes(v.OutShare.Out)
 			finalRepliesAll = append(finalRepliesAll, outShare)
 		}

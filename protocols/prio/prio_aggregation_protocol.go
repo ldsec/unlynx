@@ -14,37 +14,39 @@ leaf are reached. Then they locally aggregate the shares they have and send to t
 The root recolt all the data and publish the final aggregation
 */
 
+//PrioAggregationProtocolName is the name of Prio's aggregation protocol.
 const PrioAggregationProtocolName = "PrioAggregation"
 
 /*_________________________________________________________________________________________________________________
  */
 
-//Reply from the children
+//ReplySumCipherBytes is the reply from the children
 type ReplySumCipherBytes struct {
 	Bytes []byte
 	Index int64
 }
 
-//structure to announce start of protocol
+//AnnounceAggregation is the structure to announce start of protocol
 type AnnounceAggregation struct{}
 
 /*
 _________________________________________________________________________________________________________________________
 */
 
-//Structure containing reply of node
+//StructReply is the structure containing reply of node
 type StructReply struct {
 	*onet.TreeNode
 	ReplySumCipherBytes
 }
 
-//Structure containing announce of node
+//StructAnnounceAggregation is the structure containing announce of node
 type StructAnnounceAggregation struct {
 	*onet.TreeNode
 	AnnounceAggregation
 }
 
-//Basic structure representing the protocol, the Feedback channel contains the
+//
+//PrioAggregationProtocol is the structure representing the protocol, the Feedback channel contains the
 //result of the aggregation
 type PrioAggregationProtocol struct {
 	*onet.TreeNodeInstance
@@ -69,6 +71,7 @@ func init() {
 	onet.GlobalProtocolRegister(PrioAggregationProtocolName, NewPrioAggregationProtocol)
 }
 
+//NewPrioAggregationProtocol creates a new protocol instance
 func NewPrioAggregationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 	//initialize the local sum to 0 and channel
 	st := &PrioAggregationProtocol{
@@ -92,7 +95,7 @@ func NewPrioAggregationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance
 	return st, nil
 }
 
-//start called at the root
+//Start called at the root
 func (p *PrioAggregationProtocol) Start() error {
 	// log.Lvl1(p.ServerIdentity(), " started a Sum Cipher Protocol (", len(p.Request), " different shares)")
 
@@ -104,7 +107,7 @@ func (p *PrioAggregationProtocol) Start() error {
 	return nil
 }
 
-//dispatch is called on the node and handle incoming messages
+//Dispatch is called on the node and handle incoming messages
 func (p *PrioAggregationProtocol) Dispatch() error {
 
 	//send if you're not the root (done in start), and only if you have children

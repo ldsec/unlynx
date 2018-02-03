@@ -17,12 +17,13 @@ import (
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"
 	"math/big"
-	"unlynx/lib/prio_utils"
+	"unlynx/lib/prioUtils"
 
 	"github.com/henrycg/prio/config"
 	"unlynx/protocols/prio"
 )
 
+//ServiceName is the name for Prio Service
 const ServiceName = "Prio"
 
 // ServiceResult will contain final results aggregation.
@@ -30,7 +31,7 @@ type ServiceResult struct {
 	Results string
 }
 
-//structure that the client send
+//DataSentClient is the structure that the client send
 type DataSentClient struct {
 	Leader        *network.ServerIdentity
 	Roster        *onet.Roster
@@ -44,25 +45,26 @@ type DataSentClient struct {
 	ShareC        []byte
 }
 
-//The id of the request to execute
+//ExecRequest is the id of the request to execute
 type ExecRequest struct {
 	ID string
 }
 
-//The id of the last request before aggregating
+//ExecAgg is the id of the last request before aggregating
 type ExecAgg struct {
 	ID string
 }
 
-//The result of an aggregation in bytes
+//AggResult is the result of an aggregation in bytes
 type AggResult struct {
 	Result []byte
 }
 
+//RequestResult is the empty structure used for verification response.
 type RequestResult struct {
 }
 
-//The type of message exchanged
+//MsgTypes is the type of message exchanged
 type MsgTypes struct {
 	msgProofDoing network.MessageTypeID
 	msgProofExec  network.MessageTypeID
@@ -80,6 +82,7 @@ func init() {
 	network.RegisterMessage(&AggResult{})
 }
 
+//Service is the structure of the whole service
 type Service struct {
 	// We need to embed the ServiceProcessor, so that incoming messages
 	// are correctly handled.
@@ -91,6 +94,7 @@ type Service struct {
 	Count   int64
 }
 
+//NewService creates a new Prio Service.
 func NewService(c *onet.Context) onet.Service {
 	newPrioInstance := &Service{
 		ServiceProcessor: onet.NewServiceProcessor(c),
@@ -112,7 +116,7 @@ func NewService(c *onet.Context) onet.Service {
 	return newPrioInstance
 }
 
-//Handle a request from a client by registering it
+//HandleRequest handles a request from a client by registering it
 func (s *Service) HandleRequest(requestFromClient *DataSentClient) (network.Message, onet.ClientError) {
 
 	if requestFromClient == nil {
@@ -125,7 +129,7 @@ func (s *Service) HandleRequest(requestFromClient *DataSentClient) (network.Mess
 	return &ServiceResult{Results: string(requestFromClient.RequestID)}, nil
 }
 
-//Execute the verification of a request
+//ExecuteRequest executes the verification of a request
 func (s *Service) ExecuteRequest(exe *ExecRequest) (network.Message, onet.ClientError) {
 
 	//log.Lvl1(s.ServerIdentity(), " starts a Prio Verification Protocol")
@@ -141,7 +145,7 @@ func (s *Service) ExecuteRequest(exe *ExecRequest) (network.Message, onet.Client
 	return nil, nil
 }
 
-//The verification phase of a request given it's ID
+//VerifyPhase is the verification phase of a request given it's ID
 func (s *Service) VerifyPhase(requestID string) (bool, error) {
 	tmp := castToRequest(s.Request.Get(requestID))
 	isAccepted := false
@@ -165,7 +169,7 @@ func (s *Service) VerifyPhase(requestID string) (bool, error) {
 	return isAccepted, nil
 }
 
-//Execute the aggregation if you have more than 2 datas
+//ExecuteAggregation aggregates if you have more than 2 datas
 func (s *Service) ExecuteAggregation(exe *ExecAgg) (network.Message, onet.ClientError) {
 	pi, err := s.StartProtocol(prio.PrioAggregationProtocolName, exe.ID)
 
@@ -173,17 +177,16 @@ func (s *Service) ExecuteAggregation(exe *ExecAgg) (network.Message, onet.Client
 		log.Fatal("Error in the Aggregation Phase")
 	}
 	if len(pi.(*prio.PrioAggregationProtocol).Shares) >= 2 {
-
 		aggRes := <-pi.(*prio.PrioAggregationProtocol).Feedback
-
 		return &AggResult{aggRes[0].Bytes()}, nil
-	} else {
-		log.Lvl2("You cannot aggregate less than 5 data points")
-		return &AggResult{[]byte{byte(0)}}, nil
 	}
+
+	log.Lvl2("You cannot aggregate less than 5 data points")
+	return &AggResult{[]byte{byte(0)}}, nil
+
 }
 
-//method used to create a protocol given the name
+//StartProtocol creates a protocol given the name
 func (s *Service) StartProtocol(name string, targetRequest string) (onet.ProtocolInstance, error) {
 
 	tmp := castToRequest(s.Request.Get((string)(targetRequest)))
@@ -213,6 +216,7 @@ func castToRequest(object interface{}, err error) *DataSentClient {
 	return object.(*DataSentClient)
 }
 
+//NewProtocol create a new Protocol given a protocol name
 func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfig) (onet.ProtocolInstance, error) {
 
 	tn.SetConfig(conf)
@@ -234,7 +238,7 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 			}
 			circConf = append(circConf, &config.Field{Name: request.CircuitConfig[i].Name, Type: config.FieldType(request.CircuitConfig[i].Type), IntBits: int(request.CircuitConfig[i].IntBits), LinRegBits: linReg, IntPow: int(request.CircuitConfig[i].IntPow), CountMinBuckets: int(request.CircuitConfig[i].CountMinBuckets), CountMinHashes: int(request.CircuitConfig[i].CountMinHashes)})
 		}
-		ckt := prio_utils.ConfigToCircuit(circConf)
+		ckt := prioUtils.ConfigToCircuit(circConf)
 
 		tripleShareReq := new(triple.Share)
 		tripleShareReq.ShareA = big.NewInt(0).SetBytes(request.ShareA)
@@ -248,10 +252,10 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 			hintReq.Delta = append(hintReq.Delta, big.NewInt(0).SetBytes(v))
 		}
 
-		protoReq := prio_utils.Request{RequestID: request.RequestID, TripleShare: tripleShareReq, Hint: hintReq}
+		protoReq := prioUtils.Request{RequestID: request.RequestID, TripleShare: tripleShareReq, Hint: hintReq}
 		pi.(*prio.PrioVerificationProtocol).Request = &protoReq
-		pi.(*prio.PrioVerificationProtocol).Checker = prio_utils.NewChecker(ckt, tn.Index(), 0)
-		pi.(*prio.PrioVerificationProtocol).Pre = prio_utils.NewCheckerPrecomp(ckt)
+		pi.(*prio.PrioVerificationProtocol).Checker = prioUtils.NewChecker(ckt, tn.Index(), 0)
+		pi.(*prio.PrioVerificationProtocol).Pre = prioUtils.NewCheckerPrecomp(ckt)
 		rdm := big.NewInt(0).SetBytes(request.RandomPoint)
 		pi.(*prio.PrioVerificationProtocol).Pre.SetCheckerPrecomp(rdm)
 		s.Proto = pi.(*prio.PrioVerificationProtocol)

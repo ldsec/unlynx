@@ -1,4 +1,4 @@
-package prio_utils
+package prioUtils
 
 import (
 	"log"
@@ -8,6 +8,9 @@ import (
 	"github.com/henrycg/prio/utils"
 )
 
+//File originally in Prio repository.
+//Copied here to show whate can be done with each type.
+
 func bigToBits(nBits int, value *big.Int) []*big.Int {
 	bits := make([]*big.Int, nBits)
 	for i := 0; i < nBits; i++ {
@@ -16,18 +19,18 @@ func bigToBits(nBits int, value *big.Int) []*big.Int {
 	return bits
 }
 
-func int_Circuit(name string, nBits int) *circuit.Circuit {
+func intCircuit(name string, nBits int) *circuit.Circuit {
 	return circuit.NBits(nBits, name)
 }
 
-func int_NewRandom(nBits int) []*big.Int {
+func intNewRandom(nBits int) []*big.Int {
 	max := big.NewInt(1)
 	max.Lsh(max, uint(nBits))
 	v := utils.RandInt(max)
-	return int_New(nBits, v)
+	return intNew(nBits, v)
 }
 
-func int_New(nBits int, value *big.Int) []*big.Int {
+func intNew(nBits int, value *big.Int) []*big.Int {
 	if nBits < 1 {
 		log.Fatal("nBits must have value >= 1")
 	}

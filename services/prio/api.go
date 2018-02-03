@@ -7,13 +7,14 @@ to signify the communication way but it's data provider !
 import (
 	"github.com/henrycg/prio/config"
 	"github.com/henrycg/prio/share"
+	"github.com/henrycg/prio/utils"
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
 	"math/big"
-	"unlynx/lib/prio_utils"
+	"unlynx/lib/prioUtils"
 )
 
-//data provider in prio represented as its secret value ID and modulus
+//API is the data provider in prio represented as its secret value ID and modulus
 type API struct {
 	*onet.Client
 	ClientID    string
@@ -21,8 +22,7 @@ type API struct {
 	modulus     *big.Int
 }
 
-//This is just used because Protobuff cannot handle int...
-
+//ConfigByte is just used because Protobuff cannot handle int...
 type ConfigByte struct {
 	Name            string
 	Type            int64
@@ -33,19 +33,19 @@ type ConfigByte struct {
 	LinRegBits      []int64
 }
 
-// NewPrioClient constructor of a DataProvider
+//NewPrioClient constructor of a DataProvider
 func NewPrioClient(clientID string) *API {
 
 	newClient := &API{
 		Client:      onet.NewClient(ServiceName),
 		ClientID:    clientID,
-		secretValue: []*config.Field{&config.Field{Name: "Simul", Type: config.FieldType(byte(0)), IntBits: 64}},
+		secretValue: []*config.Field{&config.Field{Name: "Simul", Type: config.FieldType(byte(0)), IntBits: 2}},
 		modulus:     share.IntModulus,
 	}
 	return newClient
 }
 
-//To send the data you split it and then send each request for 1 client submission to each server.
+//SendRequest split and then send each request for 1 client submission to each server.
 //ProtoBuf do not support big.Int, we need to transform to []byte and transfer like this, reconstruction done at
 //server/
 func (c *API) SendRequest(entities *onet.Roster) (string, error) {
@@ -53,7 +53,7 @@ func (c *API) SendRequest(entities *onet.Roster) (string, error) {
 	//dataSplited := prio_utils.Share(c.modulus,numServer,c.secretValue)
 
 	//For the moment for almost all type, they are chosen randomly in function of the number of bits passed
-	requests := prio_utils.ClientRequest(c.secretValue, numServer, 0)
+	requests := prioUtils.ClientRequest(c.secretValue, numServer, 0)
 
 	//Conversion of field as protoBuf do not take int only int64
 	circuitConfig := make([]ConfigByte, len(c.secretValue))
@@ -70,7 +70,7 @@ func (c *API) SendRequest(entities *onet.Roster) (string, error) {
 	servList := entities.List
 
 	resp := ServiceResult{}
-	randomPoint := prio_utils.RandInt(c.modulus).Bytes()
+	randomPoint := utils.RandInt(c.modulus).Bytes()
 
 	for i := 0; i < len(servList); i++ {
 
@@ -107,7 +107,7 @@ func (c *API) SendRequest(entities *onet.Roster) (string, error) {
 	return resp.Results, nil
 }
 
-//function to execute the client submission verification
+//ExecuteRequest executes the client submission verification
 func (c *API) ExecuteRequest(entities *onet.Roster, id string) error {
 	result := RequestResult{}
 
@@ -121,6 +121,7 @@ func (c *API) ExecuteRequest(entities *onet.Roster, id string) error {
 	return nil
 }
 
+//Aggregate is used to aggregate the datas.
 //For now DPs send request to aggregate even if not wanted, was to simplify simulation. However, servers do not aggregate
 //if there are less than 2 data points.
 func (c *API) Aggregate(entities *onet.Roster, id string) (*big.Int, error) {

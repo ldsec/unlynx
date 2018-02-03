@@ -1,4 +1,4 @@
-package prio_utils
+package prioUtils
 
 /**
 Most of the function here litterally copy/cut from Prio. Others are also copy cut with modification

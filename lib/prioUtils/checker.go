@@ -1,4 +1,4 @@
-package prio_utils
+package prioUtils
 
 import (
 	"github.com/henrycg/prio/circuit"
@@ -7,6 +7,8 @@ import (
 	"github.com/henrycg/prio/utils"
 	"math/big"
 )
+
+//File originally in Prio repository.
 
 // Checker holds all of the state needed to check the validity
 // of a single client submission.
@@ -29,10 +31,12 @@ type Checker struct {
 	evalH *big.Int
 }
 
+//Outputs return the outputs of the circuit contained in the Checker
 func (c *Checker) Outputs() []*circuit.Gate {
 	return c.ckt.Outputs()
 }
 
+//NewChecker creates a new checker for a given server with given Leader and with a given circuit.
 func NewChecker(ckt *circuit.Circuit, serverIdx int, leaderIdx int) *Checker {
 	c := new(Checker)
 	c.Prg = share.NewReplayPRG(serverIdx, leaderIdx)
@@ -53,6 +57,7 @@ func NewChecker(ckt *circuit.Circuit, serverIdx int, leaderIdx int) *Checker {
 	return c
 }
 
+//SetReq set the wire of the circuit in the checker with the one from the request.
 func (c *Checker) SetReq(req *Request) {
 	c.req = req
 	c.Prg.Import(req.Hint)
@@ -63,6 +68,7 @@ func (c *Checker) SetReq(req *Request) {
 
 }
 
+//CheckerPrecomp is used to evaluate polynomials.
 type CheckerPrecomp struct {
 	x *big.Int
 
@@ -73,12 +79,14 @@ type CheckerPrecomp struct {
 	x2N *poly.PreX
 }
 
+//SetCheckerPrecomp set the Evaluation point in the CheckerPrecomp structure.
 func (pre *CheckerPrecomp) SetCheckerPrecomp(x *big.Int) {
 	pre.x = x
 	pre.xN = pre.degN.NewEvalPoint(x)
 	pre.x2N = pre.deg2N.NewEvalPoint(x)
 }
 
+//NewCheckerPrecomp creates a new structure with parameters inialized in function of the circuit.
 func NewCheckerPrecomp(ckt *circuit.Circuit) *CheckerPrecomp {
 	pre := new(CheckerPrecomp)
 
@@ -96,40 +104,13 @@ func NewCheckerPrecomp(ckt *circuit.Circuit) *CheckerPrecomp {
 	return pre
 }
 
-type CheckerPool struct {
-	ckt       *circuit.Circuit
-	serverIdx int
-	leaderIdx int
-	buffer    chan *Checker
-}
-
-func (p *CheckerPool) Get() *Checker {
-	select {
-	case out := <-p.buffer:
-		return out
-		//	default:
-		//		return mpc.NewChecker(p.cfg, p.serverIdx, p.leaderIdx)
-	}
-}
-
-func NewCheckerPool(ckt *circuit.Circuit, serverIdx int, leaderIdx int) *CheckerPool {
-	out := new(CheckerPool)
-	out.ckt = ckt
-	out.serverIdx = serverIdx
-	out.leaderIdx = leaderIdx
-
-	out.buffer = make(chan *Checker, 10)
-	for i := 0; i < 10; i++ {
-		out.buffer <- NewChecker(ckt, serverIdx, leaderIdx)
-	}
-	return out
-}
-
+//CorShare represents the share of BeaverMPC triple D and E equations.
 type CorShare struct {
 	ShareD *big.Int
 	ShareE *big.Int
 }
 
+//evalPoly evaluate polynoms of the Checker with the parametes of CheckerPrecomp
 func (c *Checker) evalPoly(pre *CheckerPrecomp) {
 	mulGates := c.ckt.MulGates()
 	// Recover constant terms of the polynomials f, g, and h.
@@ -167,6 +148,7 @@ func (c *Checker) evalPoly(pre *CheckerPrecomp) {
 	c.evalH.Mod(c.evalH, c.mod)
 }
 
+//CorShare create the D and E shares from the Beaver triple and the polynomials shares to multiply.
 func (c *Checker) CorShare(pre *CheckerPrecomp) *CorShare {
 	c.evalPoly(pre)
 
@@ -189,15 +171,18 @@ func (c *Checker) CorShare(pre *CheckerPrecomp) *CorShare {
 	return out
 }
 
+//OutShare is the OutPut of a polynoms interpolation f*g-h
 type OutShare struct {
 	Check *big.Int
 }
 
+//Cor is the value E and D of the Beaver MPC protocol
 type Cor struct {
 	D *big.Int
 	E *big.Int
 }
 
+//OutShare outputs the evaluation of each server reconstructed polynoms
 func (c *Checker) OutShare(corIn *Cor, key *utils.PRGKey) (sol *OutShare) {
 	// We have shares of a bunch of values (v1, v2, ..., vK) that should
 	// all be zero. To check them, the servers sample random values
@@ -254,6 +239,7 @@ func (c *Checker) randSum(key *utils.PRGKey, nums []*big.Int) *big.Int {
 	return out
 }
 
+//Cor makes the sum of the shares D and E
 func (c *Checker) Cor(sharesIn []*CorShare) *Cor {
 
 	cor := new(Cor)
@@ -272,6 +258,7 @@ func (c *Checker) Cor(sharesIn []*CorShare) *Cor {
 	return cor
 }
 
+//OutputIsValid returns True if and only if the sum of shares result in a 0.
 func (c *Checker) OutputIsValid(sharesIn []*OutShare) bool {
 
 	check := new(big.Int)
