@@ -502,7 +502,7 @@ func (cv *CipherVector) ToBytes() ([]byte, int) {
 
 // FromBytes converts a byte array to a CipherVector. Note that you need to create the (empty) object beforehand.
 func (cv *CipherVector) FromBytes(data []byte, length int) {
-	(*cv) = make(CipherVector, length)
+	*cv = make(CipherVector, length)
 	for i, pos := 0, 0; i < length*64; i, pos = i+64, pos+1 {
 		ct := CipherText{}
 		ct.FromBytes(data[i : i+64])
@@ -627,7 +627,6 @@ func AbstractPointsToBytes(aps []abstract.Point) []byte {
 func BytesToAbstractPoints(target []byte) []abstract.Point {
 	var err error
 	aps := make([]abstract.Point, 0)
-
 	for i := 0; i < len(target); i += 32 {
 		ap := network.Suite.Point()
 		if err = ap.UnmarshalBinary(target[i : i+32]); err != nil {

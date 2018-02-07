@@ -7,12 +7,15 @@ import (
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"
+
+	"time"
 )
 
 //var suite = network.Suite
 //var grpattr = lib.DeterministCipherText{Point: suite.Point().Base()}
 //var clientPrivate = suite.Scalar().One() //one -> to have the same for each node
 //var clientPublic = suite.Point().Mul(suite.Point().Base(), clientPrivate)
+var sum time.Duration
 
 func createDataSet(numberGroups, numberAttributes, numberGroupAttr int) map[lib.GroupingKey]lib.FilteredResponse {
 	var secContrib = network.Suite.Scalar().One()
@@ -92,7 +95,9 @@ func (sim *CollectiveAggregationSimulation) Node(config *onet.SimulationConfig) 
 
 // Run starts the simulation of the protocol and measures its runtime.
 func (sim *CollectiveAggregationSimulation) Run(config *onet.SimulationConfig) error {
+
 	for round := 0; round < sim.Rounds; round++ {
+		sum = 0
 		log.Lvl1("Starting round", round)
 		rooti, err := config.Overlay.CreateProtocol("CollectiveAggregationSimul", config.Tree, onet.NilServiceID)
 		if err != nil {
@@ -104,19 +109,20 @@ func (sim *CollectiveAggregationSimulation) Run(config *onet.SimulationConfig) e
 
 		//time measurement
 		round := lib.StartTimer("CollectiveAggregation(SIMULATION)")
-
 		log.Lvl1("Start protocol")
 		root.Start()
-		<-root.ProtocolInstance().(*protocols.CollectiveAggregationProtocol).FeedbackChannel
+		log.Lvl1(<-root.ProtocolInstance().(*protocols.CollectiveAggregationProtocol).FeedbackChannel)
 
 		lib.EndTimer(round)
-	}
 
+	}
 	return nil
+
 }
 
 // NewAggregationProtocolSimul is a simulation specific protocol instance constructor that injects test data.
 func NewAggregationProtocolSimul(tni *onet.TreeNodeInstance, sim *CollectiveAggregationSimulation) (onet.ProtocolInstance, error) {
+
 	protocol, err := protocols.NewCollectiveAggregationProtocol(tni)
 	pap := protocol.(*protocols.CollectiveAggregationProtocol)
 

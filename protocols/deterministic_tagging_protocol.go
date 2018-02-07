@@ -191,7 +191,6 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 			}
 		}
 	}
-
 	lib.EndParallelize(wg)
 	log.Lvl1(p.ServerIdentity(), " preparation round for deterministic tagging")
 
@@ -293,7 +292,7 @@ func deterministicTagFormat(i int, v GroupingAttributes, targetofSwitch *[]lib.P
 		if j < len(tmp[i].GroupByEnc) {
 			deterministicGroupAttributes[j] = lib.DeterministCipherText{Point: c.C}
 		} else if j < len(tmp[i].GroupByEnc)+len(tmp[i].WhereEnc) {
-			tmp1 := (lib.DeterministCipherVector{lib.DeterministCipherText{Point: c.C}})
+			tmp1 := lib.DeterministCipherVector{lib.DeterministCipherText{Point: c.C}}
 			deterministicWhereAttributes[j-len(tmp[i].GroupByEnc)] = tmp1.Key()
 		}
 

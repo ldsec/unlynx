@@ -61,7 +61,7 @@ func TestStoring(t *testing.T) {
 	// (1) Test Insert and Pull DpResponses
 	storage.InsertDpResponse(lib.DpResponse{GroupByEnc: testEncMap, WhereClear: testClearMap, AggregatingAttributesEnc: testAggrMap1}, true, groupBy, sum, where)
 
-	assert.True(t, (len(storage.PullDpResponses()) == 1))
+	assert.True(t, len(storage.PullDpResponses()) == 1)
 	assert.Empty(t, storage.DpResponses)
 
 	// (2) Test Insert and Pull multiple DpResponses to check aggregation
@@ -75,7 +75,7 @@ func TestStoring(t *testing.T) {
 
 	result := storage.PullDpResponses()
 
-	assert.True(t, (len(result) == 1))
+	assert.True(t, len(result) == 1)
 	assert.Equal(t, result[0].AggregatingAttributes, *sum1)
 
 	// (3) Test empty

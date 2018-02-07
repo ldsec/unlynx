@@ -69,7 +69,7 @@ func (s *Store) InsertDpResponse(cr DpResponse, proofs bool, groupBy, sum []stri
 	clearGrp := []int64{}
 	clearWhr := []int64{}
 
-	noEnc := (cr.WhereEnc == nil && cr.GroupByEnc == nil)
+	noEnc := cr.WhereEnc == nil && cr.GroupByEnc == nil
 	clearGrp, newResp.GroupByEnc = proccessParameters(groupBy, cr.GroupByClear, cr.GroupByEnc, noEnc)
 
 	whereStrings := make([]string, len(where))

@@ -39,15 +39,16 @@ func TestCollectiveAggregation(t *testing.T) {
 	protocol := p.(*protocols.CollectiveAggregationProtocol)
 
 	//run protocol
+	start := time.Now()
 	go protocol.Start()
 	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*5*2) * time.Millisecond
 
 	feedback := protocol.FeedbackChannel
 
 	//verify results
-	expectedGroups := map[lib.GroupingKey][]int64{groupingAttrA.Key(): []int64{1, 1},
-		groupingAttrB.Key(): []int64{1, 2},
-		groupingAttrC.Key(): []int64{3, 3}}
+	expectedGroups := map[lib.GroupingKey][]int64{groupingAttrA.Key(): {1, 1},
+		groupingAttrB.Key(): {1, 2},
+		groupingAttrC.Key(): {3, 3}}
 
 	expectedResults := map[lib.GroupingKey][]int64{groupingAttrA.Key(): {3, 5, 7, 9, 11},
 		groupingAttrB.Key(): {1, 2, 3, 4, 5},
@@ -67,6 +68,7 @@ func TestCollectiveAggregation(t *testing.T) {
 				assert.True(t, ok)
 				_ = v1
 				_ = v2
+				log.Lvl1("time elapsed ", time.Since(start))
 				assert.True(t, reflect.DeepEqual(v1, lib.DecryptIntVector(clientPrivate, &v2.GroupByEnc)))
 				delete(encryptedResult.GroupedData, k)
 			}

@@ -1,16 +1,16 @@
 package main
 
 import (
-	"gopkg.in/urfave/cli.v1"
-	"gopkg.in/dedis/onet.v1/network"
-	"gopkg.in/dedis/crypto.v0/config"
-	"gopkg.in/dedis/onet.v1/crypto"
-	"gopkg.in/dedis/onet.v1/app"
 	"errors"
+	"gopkg.in/dedis/crypto.v0/config"
+	"gopkg.in/dedis/onet.v1/app"
+	"gopkg.in/dedis/onet.v1/crypto"
 	"gopkg.in/dedis/onet.v1/log"
+	"gopkg.in/dedis/onet.v1/network"
+	"gopkg.in/urfave/cli.v1"
 )
 
-// setup cothority node for unlynx in a non-interactive (and without error checks) way
+// NonInteractiveSetup setups a cothority node for unlynx in a non-interactive (and without error checks) way
 func NonInteractiveSetup(c *cli.Context) error {
 
 	// cli arguments
@@ -32,9 +32,9 @@ func NonInteractiveSetup(c *cli.Context) error {
 	serverBinding := network.NewTCPAddress(serverBindingStr)
 
 	conf := &app.CothorityConfig{
-		Public:  pubStr,
-		Private: privStr,
-		Address: serverBinding,
+		Public:      pubStr,
+		Private:     privStr,
+		Address:     serverBinding,
 		Description: description,
 	}
 

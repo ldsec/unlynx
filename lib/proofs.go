@@ -1,6 +1,7 @@
 package lib
 
 import (
+	"github.com/dedis/paper_17_dfinity/pbc"
 	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/crypto.v0/proof"
 	"gopkg.in/dedis/crypto.v0/shuffle"
@@ -8,6 +9,9 @@ import (
 	"gopkg.in/dedis/onet.v1/network"
 	"reflect"
 	"sync"
+	"math"
+	"gopkg.in/dedis/crypto.v0/random"
+	"golang.org/x/crypto/sha3"
 )
 
 // SwitchKeyProof proof for key switching
@@ -612,5 +616,188 @@ func DetTagAdditionProofVerification(psap PublishedDetTagAdditionProof) bool {
 	//log.LLvl1("Proof verified")
 
 	cv := network.Suite.Point().Add(psap.C1, psap.C2)
-	return (partProof && reflect.DeepEqual(cv, psap.R))
+	return partProof && reflect.DeepEqual(cv, psap.R)
+}
+
+//_____________________________________________________________RANGE PROOF UNNLYNX____________________________________________________________________
+
+//PublishSignature contains points signed with a private key and the public key associated to verify the signatures.
+type PublishSignature struct {
+	Public    abstract.Point   //y
+	Signature []abstract.Point // A_i
+}
+
+//PublishRangeProof contains all information sent by DataProvider to Server
+type PublishRangeProof struct {
+	//Data from DP
+	Cipher    lib.CipherText
+	Challenge abstract.Scalar
+	V         []abstract.Point
+	Zv        []abstract.Scalar
+	Zphi      []abstract.Scalar
+	Zr        abstract.Scalar
+	//value to check equality with
+	D abstract.Point
+	A []abstract.Point
+}
+
+//InitRangeProofSignature create a public/private key pair and return new signatures in a PublishSignature structure. (done by servers)
+func InitRangeProofSignature(u int64) PublishSignature {
+	pairing := pbc.NewPairingFp254BNb()
+
+	A := make([]abstract.Point, int(u))
+
+	//pick a pair private/public key at each server
+	x, y := lib.GenKey()
+
+	//signature from private key done by server
+	for i := 0; int64(i) < int64(u); i++ {
+		scalar := pairing.G1().Scalar().SetInt64(int64(i))
+		invert := pairing.G1().Scalar().Add(x, scalar)
+		A[i] = pairing.G1().Point().Mul(pairing.G1().Point().Base(), pairing.G1().Scalar().Inv(invert))
+	}
+	return PublishSignature{Signature: A, Public: y}
+}
+
+//AT DP ONLY
+
+//CreatePredicateRangeProof creates predicate for secret range validation by the data provider
+func CreatePredicateRangeProof(sig PublishSignature, u int64, l int64, secret int64, caPub abstract.Point) PublishRangeProof {
+	//Base
+	pairing := pbc.NewPairingFp254BNb()
+	B := pairing.G2().Point().Base()
+	//value to pick and calculate
+	base := ToBase(int64(secret), int64(u), int(l))
+	cipher := pairing.G2().Point().Set(lib.IntToPoint(int64(secret)))
+	r := suite.Scalar().Pick(random.Stream)
+
+	//Encryption is E = (C1,C2) , C1 = rB C2 = m + Pr the commit
+	//C = m + Pr
+	commit := suite.Point().Add(suite.Point().Mul(caPub, r), cipher)
+	C1 := suite.Point().Mul(B, r)
+
+	cipherText := lib.CipherText{K: C1, C: commit}
+
+	a := make([]abstract.Point, int(len(base)))
+	D := suite.Point().Null()
+	Zphi := make([]abstract.Scalar, int(len(base)))
+	ZV := make([]abstract.Scalar, int(int(len(base))))
+	v := make([]abstract.Scalar, int(len(base)))
+	V := make([]abstract.Point, int(len(base)))
+	m := suite.Scalar()
+
+	//c = Hash(B,Commitment,y)
+	hash := sha3.New512()
+	Bbyte, err := B.MarshalBinary()
+	if err != nil {
+		log.Fatal("Problem in point To Bytes B ", err)
+	}
+	hash.Write(Bbyte)
+
+	C1byte, err := commit.MarshalBinary()
+	if err != nil {
+		log.Fatal("Problem in point To Bytes C ", err)
+	}
+	hash.Write(C1byte)
+
+	YByte, err := sig.Public.MarshalBinary()
+	if err != nil {
+		log.Fatal("Problem in point To Bytes Y ", err)
+	}
+	hash.Write(YByte)
+
+	c := suite.Scalar().SetBytes(hash.Sum(nil))
+
+	for j := 0; j < len(base); j++ {
+		v[j] = pairing.G1().Scalar().Pick(random.Stream)
+		///V_j = B(x+phi_j)^-1(v_j)
+		V[j] = pairing.G1().Point().Mul(sig.Signature[base[j]], v[j])
+
+		//
+		sj := suite.Scalar().Pick(random.Stream)
+		tj := suite.Scalar().Pick(random.Stream)
+		mj := suite.Scalar().Pick(random.Stream)
+		m.Add(m, mj)
+		//Compute D
+		//Bu^js_j
+		firstT := suite.Point().Mul(B, suite.Scalar().Mul(sj, suite.Scalar().SetInt64(int64(math.Pow(float64(u), float64(j))))))
+		D.Add(D, firstT)
+		secondT := suite.Point().Mul(caPub, mj)
+		D.Add(D, secondT)
+		//Compute a_j
+		a[j] = pairing.GT().PointGT().Pairing(V[j], suite.Point().Mul(suite.Point().Base(), suite.Scalar().Neg(sj)))
+		a[j].Add(a[j], pairing.GT().PointGT().Pairing(pairing.G1().Point().Base(), suite.Point().Mul(B, tj)))
+
+		Zphi[j] = suite.Scalar().Sub(sj, suite.Scalar().Mul(suite.Scalar().SetInt64(int64(base[j])), c))
+		ZV[j] = suite.Scalar().Sub(tj, suite.Scalar().Mul(v[j], c))
+
+	}
+	Zr := suite.Scalar().Sub(m, suite.Scalar().Mul(r, c))
+
+	return PublishRangeProof{Cipher: cipherText, D: D, A: a, Challenge: c, V: V, Zphi: Zphi, Zv: ZV, Zr: Zr}
+
+}
+
+//RangeProofVerification is a function that is executed at the server, when he receive the value from the Data Provider to verify the input.
+func RangeProofVerification(rangeProof PublishRangeProof, u int64, l int64, y abstract.Point, P abstract.Point) bool {
+	//check that indeed each value was filled with the good number of value in the base
+	if int(4*l)-len(rangeProof.Zphi)-len(rangeProof.Zv)-len(rangeProof.A)-len(rangeProof.V) != 0 {
+		//not same size
+		log.Lvl1(len(rangeProof.Zphi))
+		log.Lvl1(len(rangeProof.Zv))
+		log.Lvl1(len(rangeProof.A))
+		log.Lvl1(len(rangeProof.V))
+		log.LLvl3("Not same size")
+		return false
+	}
+	pairing := pbc.NewPairingFp254BNb()
+	//The base
+	B := pairing.G2().Point().Base()
+	//The a_j
+	ap := make([]abstract.Point, len(rangeProof.A))
+
+	//Dp = Cc + PZr + Sum(p)(in for)
+	Dp := suite.Point().Add(suite.Point().Mul(rangeProof.Cipher.C, rangeProof.Challenge), suite.Point().Mul(P, rangeProof.Zr))
+	for j := 0; j < len(rangeProof.Zphi); j++ {
+
+		//p = B*u^j*Zphi_j
+		point := suite.Point().Set(lib.IntToPoint(int64(math.Pow(float64(u), (float64(j))))))
+		//Dp = Cc + PZr + Sum(u^j*Zphi_j)
+		point.Mul(point, rangeProof.Zphi[j])
+		Dp.Add(Dp, point)
+
+		//check bipairing
+		//a_j = e(Vj,y)(c)+e(Vj,B)(-Zphi_j) + e(B,B)(Zv_j)
+		//e(Vj,y*c)
+		ap[j] = pairing.GT().PointGT().Pairing(rangeProof.V[j], suite.Point().Mul(y, rangeProof.Challenge))
+		//e(Vj,y*c) + e(Vj,B)(Zphi_j)
+		ap[j].Add(ap[j], pairing.GT().PointGT().Pairing(rangeProof.V[j], suite.Point().Mul(B, suite.Scalar().Neg(rangeProof.Zphi[j]))))
+		////e(Vj,y*c) + e(Vj,B)(Zphi_j) + e(B,B)(Zv_j)
+		ap[j].Add(ap[j], pairing.GT().PointGT().Pairing(pairing.G1().Point().Base(), suite.Point().Mul(B, rangeProof.Zv[j])))
+
+		if !ap[j].Equal(rangeProof.A[j]) {
+
+			return false
+		}
+	}
+
+	if !Dp.Equal(rangeProof.D) {
+		return false
+	}
+
+	return true
+}
+
+//ToBase transform n in base 10 to array in base b
+func ToBase(n int64, b int64, l int) []int64 {
+	digits := make([]int64, 0)
+	for n > 0 {
+		digits = append(digits, n%b)
+		n = n / b
+	}
+	for len(digits) < l {
+		digits = append(digits, 0)
+	}
+
+	return digits
 }

@@ -160,7 +160,7 @@ func (p *ShufflingProtocol) Start() error {
 	roundShufflingStart := lib.StartTimer(p.Name() + "_Shuffling(START-noProof)")
 
 	if p.Precomputed != nil {
-		log.Lvl1(p.Name(), " uses pre-computation in shuffling")
+		log.Lvl1(p.Name(), " uses Pre-computation in shuffling")
 	}
 
 	shuffledData, pi, beta := lib.ShuffleSequence(shuffleTarget, nil, collectiveKey, p.Precomputed)
@@ -219,7 +219,7 @@ func (p *ShufflingProtocol) Dispatch() error {
 	}
 
 	if p.Precomputed != nil {
-		log.Lvl1(p.Name(), " uses pre-computation in shuffling")
+		log.Lvl1(p.Name(), " uses Pre-computation in shuffling")
 	}
 
 	shuffledData := shufflingTarget
@@ -334,7 +334,7 @@ func (sm *ShufflingMessage) ToBytes() ([]byte, int, int, int) {
 func (sm *ShufflingMessage) FromBytes(data []byte, gacbLength, aabLength, pgaebLength int) {
 	var nbrData int
 
-	elementLength := (gacbLength*64 + aabLength*64 + pgaebLength*64) //CAUTION: hardcoded 64 (size of el-gamal element C,K)
+	elementLength := gacbLength*64 + aabLength*64 + pgaebLength*64 //CAUTION: hardcoded 64 (size of el-gamal element C,K)
 	nbrData = len(data) / elementLength
 
 	(*sm).Data = make([]lib.ProcessResponse, nbrData)

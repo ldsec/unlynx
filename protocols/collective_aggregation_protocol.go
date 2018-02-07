@@ -295,7 +295,7 @@ func (sm *ChildAggregatedDataMessage) ToBytes() ([]byte, int, int, int) {
 
 // FromBytes converts a byte array to a ChildAggregatedDataMessage. Note that you need to create the (empty) object beforehand.
 func (sm *ChildAggregatedDataMessage) FromBytes(data []byte, gacbLength, aabLength, dtbLength int) {
-	elementLength := (gacbLength*64 + aabLength*64 + dtbLength) //CAUTION: hardcoded 64 (size of el-gamal element C,K)
+	elementLength := gacbLength*64 + aabLength*64 + dtbLength //CAUTION: hardcoded 64 (size of el-gamal element C,K)
 
 	if elementLength != 0 && len(data) > 0 {
 		var nbrChildData int

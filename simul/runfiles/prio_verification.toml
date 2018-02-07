@@ -1,0 +1,9 @@
+Simulation = "PrioVerification"
+Servers = 5
+Bf = 2
+Rounds = 1
+RunWait = 60000000
+Bandwidth = 1000
+
+Hosts, NbrValidation, Proofs
+5,  10, true
