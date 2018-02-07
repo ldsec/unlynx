@@ -1,11 +1,11 @@
 package UnlynxRange
 
 import (
+	"github.com/lca1/unlynx/lib"
 	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
 	"testing"
-	"unlynx/lib"
 )
 
 var nbHost = 10

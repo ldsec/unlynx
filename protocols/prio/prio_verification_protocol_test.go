@@ -9,9 +9,9 @@ import (
 	"github.com/henrycg/prio/config"
 	"github.com/henrycg/prio/share"
 	"github.com/henrycg/prio/utils"
+	"github.com/lca1/unlynx/lib/prioUtils"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/dedis/onet.v1/log"
-	"unlynx/lib/prioUtils"
 )
 
 //the field cardinality must be superior to nbclient*2^b where b is the maximum number of bit a client need to encode its value
@@ -46,7 +46,7 @@ func TestPrioVerificationProtocol(t *testing.T) {
 		t.Fatal("Couldn't start protocol:", err)
 	}
 
-	protocol := p.(*PrioVerificationProtocol)
+	protocol := p.(*VerificationProtocol)
 
 	start := time.Now()
 	protocol.Start()
@@ -62,8 +62,8 @@ func TestPrioVerificationProtocol(t *testing.T) {
 
 //inject Test data
 func NewPrioVerificationTest(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
-	pi, err := NewPrioVerifcationProtocol(tni)
-	protocol := pi.(*PrioVerificationProtocol)
+	pi, err := NewVerifcationProtocol(tni)
+	protocol := pi.(*VerificationProtocol)
 
 	//set circuit
 	ckt := prioUtils.ConfigToCircuit(datas)

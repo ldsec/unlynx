@@ -2,11 +2,11 @@ package prio
 
 import (
 	"errors"
+	"github.com/lca1/unlynx/lib/prioUtils"
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"
 	"math/big"
-	"unlynx/lib/prioUtils"
 
 	"github.com/henrycg/prio/utils"
 )
@@ -24,8 +24,8 @@ protocol (not only root), but this can be done in the Services/prio. You can be 
 return True, the protocol has verify correctly and data were correct.
 */
 
-//PrioVerificationProtocolName is the name for Prio's Verification
-const PrioVerificationProtocolName = "PrioVerification"
+//VerificationProtocolName is the name for Prio's Verification
+const VerificationProtocolName = "PrioVerification"
 
 /*Messages
 ____________________________________________________________________________________________________________________
@@ -76,8 +76,8 @@ type StructOutShare struct {
 	OutShare
 }
 
-//PrioVerificationProtocol is the protocol structure
-type PrioVerificationProtocol struct {
+//VerificationProtocol is the protocol structure
+type VerificationProtocol struct {
 	*onet.TreeNodeInstance
 
 	//the Data to aggregate
@@ -107,13 +107,13 @@ func init() {
 	network.RegisterMessage(AnnounceVerification{})
 	network.RegisterMessage(ResponseVerification{})
 	network.RegisterMessage(CorShare{})
-	onet.GlobalProtocolRegister(PrioVerificationProtocolName, NewPrioVerifcationProtocol)
+	onet.GlobalProtocolRegister(VerificationProtocolName, NewVerifcationProtocol)
 }
 
-//NewPrioVerifcationProtocol creates a new Protocol to verify
-func NewPrioVerifcationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
+//NewVerifcationProtocol creates a new Protocol to verify
+func NewVerifcationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 
-	st := &PrioVerificationProtocol{
+	st := &VerificationProtocol{
 		TreeNodeInstance: n,
 		AggregateData:    make(chan []*big.Int, 1),
 	}
@@ -143,14 +143,14 @@ func NewPrioVerifcationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance
 }
 
 //Start called at the root
-func (p *PrioVerificationProtocol) Start() error {
+func (p *VerificationProtocol) Start() error {
 	p.SendToChildren(&AnnounceVerification{})
 
 	return nil
 }
 
 //Dispatch is called on the node and handle incoming messages
-func (p *PrioVerificationProtocol) Dispatch() error {
+func (p *VerificationProtocol) Dispatch() error {
 
 	//wakeUp all server
 	if !p.IsRoot() {
@@ -172,7 +172,7 @@ func (p *PrioVerificationProtocol) Dispatch() error {
 }
 
 //function to avoid broadcasting with server not launched, so wait for everyone to say it is awake
-func (p *PrioVerificationProtocol) waitOnSignal() {
+func (p *VerificationProtocol) waitOnSignal() {
 	//log.Lvl1("server enter in WaitOnSigal")
 	if !p.IsLeaf() {
 		//log.Lvl1(p.Index() , " waits to receive response on Resp chnnel")
@@ -193,7 +193,7 @@ func (p *PrioVerificationProtocol) waitOnSignal() {
 }
 
 // Do the validation given a request from a Client, return the share that are supposed to be aggregated by each server
-func (p *PrioVerificationProtocol) collectiveVerificationPhase() []*big.Int {
+func (p *VerificationProtocol) collectiveVerificationPhase() []*big.Int {
 
 	//SNIP's proof
 	//log.Lvl1(p.Request)

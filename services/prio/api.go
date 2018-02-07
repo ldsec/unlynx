@@ -8,10 +8,10 @@ import (
 	"github.com/henrycg/prio/config"
 	"github.com/henrycg/prio/share"
 	"github.com/henrycg/prio/utils"
+	"github.com/lca1/unlynx/lib/prioUtils"
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
 	"math/big"
-	"unlynx/lib/prioUtils"
 )
 
 //API is the data provider in prio represented as its secret value ID and modulus

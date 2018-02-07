@@ -2,18 +2,15 @@ package main
 
 import (
 	"github.com/BurntSushi/toml"
+	"github.com/lca1/unlynx/lib"
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
 	"math/big"
-	"unlynx/lib"
 
 	"github.com/henrycg/prio/share"
-	"unlynx/lib/prioUtils"
-
-	"github.com/henrycg/prio/utils"
+	"github.com/lca1/unlynx/protocols/prio"
 	"os"
 	"time"
-	"unlynx/protocols/prio"
 )
 
 var aggData [][]*big.Int
@@ -86,7 +83,7 @@ func (sim *PrioAggregationSimulation) Run(config *onet.SimulationConfig) error {
 			return nil
 		}
 		start := time.Now()
-		root := rooti.(*prio.PrioAggregationProtocol)
+		root := rooti.(*prio.AggregationProtocol)
 		root.Start()
 		result := <-root.Feedback
 		log.Lvl1("res is ", result)
@@ -126,8 +123,8 @@ func (sim *PrioAggregationSimulation) Run(config *onet.SimulationConfig) error {
 //NewPrioAggregationProtocolSimul is called on each node to send data
 func NewPrioAggregationProtocolSimul(tni *onet.TreeNodeInstance, sim *PrioAggregationSimulation) (onet.ProtocolInstance, error) {
 
-	protocol, err := prio.NewPrioAggregationProtocol(tni)
-	pap := protocol.(*prio.PrioAggregationProtocol)
+	protocol, err := prio.NewAggregationProtocol(tni)
+	pap := protocol.(*prio.AggregationProtocol)
 
 	pap.Modulus = share.IntModulus
 	pap.Shares = aggData

@@ -13,14 +13,14 @@ import (
 	"github.com/henrycg/prio/share"
 	"github.com/henrycg/prio/triple"
 	"github.com/henrycg/prio/utils"
+	"github.com/lca1/unlynx/lib/prioUtils"
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"
 	"math/big"
-	"unlynx/lib/prioUtils"
 
 	"github.com/henrycg/prio/config"
-	"unlynx/protocols/prio"
+	"github.com/lca1/unlynx/protocols/prio"
 )
 
 //ServiceName is the name for Prio Service

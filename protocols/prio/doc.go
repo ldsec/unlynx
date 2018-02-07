@@ -1,7 +1,7 @@
 package prio
 
 /**
-This is Prio Implementation as two protocols. The SNIPs verfication and the aggregation of shares.
+This is Prio Implementation has two protocols. The SNIPs verfication and the aggregation of shares.
 In order to make the protocol works, you need to modify the following import.
 Then you can use the protocols.
 They are each described and well commented so that you understand them.

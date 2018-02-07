@@ -14,8 +14,8 @@ leaf are reached. Then they locally aggregate the shares they have and send to t
 The root recolt all the data and publish the final aggregation
 */
 
-//PrioAggregationProtocolName is the name of Prio's aggregation protocol.
-const PrioAggregationProtocolName = "PrioAggregation"
+//AggregationProtocolName is the name of Prio's aggregation protocol.
+const AggregationProtocolName = "PrioAggregation"
 
 /*_________________________________________________________________________________________________________________
  */
@@ -46,9 +46,9 @@ type StructAnnounceAggregation struct {
 }
 
 //
-//PrioAggregationProtocol is the structure representing the protocol, the Feedback channel contains the
+//AggregationProtocol is the structure representing the protocol, the Feedback channel contains the
 //result of the aggregation
-type PrioAggregationProtocol struct {
+type AggregationProtocol struct {
 	*onet.TreeNodeInstance
 
 	//the feedback final
@@ -68,13 +68,13 @@ type PrioAggregationProtocol struct {
 func init() {
 	network.RegisterMessage(AnnounceAggregation{})
 	network.RegisterMessage(ReplySumCipherBytes{})
-	onet.GlobalProtocolRegister(PrioAggregationProtocolName, NewPrioAggregationProtocol)
+	onet.GlobalProtocolRegister(AggregationProtocolName, NewAggregationProtocol)
 }
 
-//NewPrioAggregationProtocol creates a new protocol instance
-func NewPrioAggregationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
+//NewAggregationProtocol creates a new protocol instance
+func NewAggregationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 	//initialize the local sum to 0 and channel
-	st := &PrioAggregationProtocol{
+	st := &AggregationProtocol{
 		TreeNodeInstance: n,
 		Feedback:         make(chan []*big.Int),
 		Sum:              make([]*big.Int, 0),
@@ -96,7 +96,7 @@ func NewPrioAggregationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance
 }
 
 //Start called at the root
-func (p *PrioAggregationProtocol) Start() error {
+func (p *AggregationProtocol) Start() error {
 	// log.Lvl1(p.ServerIdentity(), " started a Sum Cipher Protocol (", len(p.Request), " different shares)")
 
 	//The root announce to its children that we start the protocol
@@ -108,7 +108,7 @@ func (p *PrioAggregationProtocol) Start() error {
 }
 
 //Dispatch is called on the node and handle incoming messages
-func (p *PrioAggregationProtocol) Dispatch() error {
+func (p *AggregationProtocol) Dispatch() error {
 
 	//send if you're not the root (done in start), and only if you have children
 	if !p.IsRoot() {
@@ -132,7 +132,7 @@ func (p *PrioAggregationProtocol) Dispatch() error {
 }
 
 // Results pushing up the tree containing aggregation results.
-func (p *PrioAggregationProtocol) ascendingAggregationPhase() []*big.Int {
+func (p *AggregationProtocol) ascendingAggregationPhase() []*big.Int {
 	p.Sum = make([]*big.Int, len(p.Shares[0]))
 
 	for j := 0; j < len(p.Sum); j++ {

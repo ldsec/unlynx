@@ -9,12 +9,8 @@ import (
 	"gopkg.in/dedis/onet.v1/network"
 	"reflect"
 	"sync"
-
-	"github.com/lca1/unlynx/lib"
 	"math"
-
 	"gopkg.in/dedis/crypto.v0/random"
-
 	"golang.org/x/crypto/sha3"
 )
 

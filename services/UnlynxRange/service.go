@@ -3,16 +3,16 @@ package UnlynxRange
 import (
 	"github.com/dedis/paper_17_dfinity/pbc"
 	"github.com/fanliao/go-concurrentMap"
+	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/protocols"
 	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"
-	"unlynx/lib"
 	//this import are here because some modfi added in local
 	"errors"
 	lib2 "github.com/lca1/unlynx/lib"
-	proto2 "unlynx/protocols"
+	proto2 "github.com/lca1/unlynx/protocols"
 )
 
 /*

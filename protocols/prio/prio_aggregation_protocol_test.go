@@ -8,11 +8,9 @@ import (
 	"gopkg.in/dedis/onet.v1/log"
 
 	"github.com/henrycg/prio/share"
-	"github.com/henrycg/prio/utils"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/dedis/onet.v1/network"
 	"math/big"
-	"unlynx/lib/prioUtils"
 )
 
 //the field cardinality must be superior to nbclient*2^b
@@ -42,7 +40,7 @@ func TestPrioAggregationProtocol(t *testing.T) {
 		t.Fatal("Couldn't start protocol:", err)
 	}
 
-	protocol := p.(*PrioAggregationProtocol)
+	protocol := p.(*AggregationProtocol)
 
 	start := time.Now()
 	protocol.Start()
@@ -68,8 +66,8 @@ func TestPrioAggregationProtocol(t *testing.T) {
 //inject Test data
 func NewPrioAggregationTest(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 
-	pi, err := NewPrioAggregationProtocol(tni)
-	protocol := pi.(*PrioAggregationProtocol)
+	pi, err := NewAggregationProtocol(tni)
+	protocol := pi.(*AggregationProtocol)
 
 	//here assign a share of each secret to the server.
 	// Meaning if 2 server, secret1 = [share1,share2] each of them goes to different server

@@ -7,18 +7,18 @@ import (
 
 	"crypto/rand"
 	"errors"
+	"github.com/lca1/unlynx/lib"
 	"math/big"
-	"unlynx/lib"
 
 	"github.com/henrycg/prio/circuit"
 	"github.com/henrycg/prio/share"
 	"github.com/henrycg/prio/utils"
-	"unlynx/lib/prioUtils"
+	"github.com/lca1/unlynx/lib/prioUtils"
 
 	"github.com/henrycg/prio/config"
+	"github.com/lca1/unlynx/protocols/prio"
 	"os"
 	"time"
-	"unlynx/protocols/prio"
 )
 
 //variable to choose the secret once and split them, as you assume client have their secret already split
@@ -101,7 +101,7 @@ func (sim *PrioVerificationSimulation) Run(config *onet.SimulationConfig) error 
 				if err != nil {
 					return
 				}
-				root := rooti.(*prio.PrioVerificationProtocol)
+				root := rooti.(*prio.VerificationProtocol)
 
 				root.Start()
 				<-root.AggregateData
@@ -131,8 +131,8 @@ func (sim *PrioVerificationSimulation) Run(config *onet.SimulationConfig) error 
 //NewPrioVerificationProtocolSimul is the function called on each node to send data
 func NewPrioVerificationProtocolSimul(tni *onet.TreeNodeInstance, sim *PrioVerificationSimulation) (onet.ProtocolInstance, error) {
 
-	protocol, err := prio.NewPrioVerifcationProtocol(tni)
-	pap := protocol.(*prio.PrioVerificationProtocol)
+	protocol, err := prio.NewVerifcationProtocol(tni)
+	pap := protocol.(*prio.VerificationProtocol)
 
 	pap.Request = new(prioUtils.Request)
 	pap.Checker = new(prioUtils.Checker)

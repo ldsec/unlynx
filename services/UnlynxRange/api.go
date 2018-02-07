@@ -2,12 +2,12 @@ package UnlynxRange
 
 import (
 	"github.com/dedis/paper_17_dfinity/pbc"
+	"github.com/lca1/unlynx/lib"
 	lib2 "github.com/lca1/unlynx/lib"
 	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"
-	"unlynx/lib"
 )
 
 //Structs_______________________________________________________________________________________________

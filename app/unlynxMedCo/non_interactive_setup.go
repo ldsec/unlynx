@@ -10,7 +10,7 @@ import (
 	"gopkg.in/urfave/cli.v1"
 )
 
-// setup cothority node for unlynx in a non-interactive (and without error checks) way
+// NonInteractiveSetup setups a cothority node for unlynx in a non-interactive (and without error checks) way
 func NonInteractiveSetup(c *cli.Context) error {
 
 	// cli arguments
