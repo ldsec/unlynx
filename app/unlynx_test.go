@@ -1,4 +1,4 @@
-package main
+package appUnLynx
 
 import (
 	"os"

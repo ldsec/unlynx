@@ -1,11 +1,11 @@
-package main
+package appUnLynx
 
 import (
 	"os"
 
 	"github.com/btcsuite/goleveldb/leveldb/errors"
 	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/services/default"
+	"github.com/lca1/unlynx/services"
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/app"
 	"gopkg.in/dedis/onet.v1/log"
@@ -16,8 +16,8 @@ import (
 )
 
 // BEGIN CLIENT: QUERIER ----------
-func startQuery(el *onet.Roster, proofs bool, sum []string, count bool, whereQueryValues []lib.WhereQueryAttribute, predicate string, groupBy []string) {
-	client := serviceDefault.NewUnLynxClient(el.List[0], strconv.Itoa(0))
+func startQuery(el *onet.Roster, proofs bool, sum []string, count bool, whereQueryValues []libUnLynx.WhereQueryAttribute, predicate string, groupBy []string) {
+	client := serviceUnLynx.NewUnLynxClient(el.List[0], strconv.Itoa(0))
 
 	// Generate Survey Data
 	nbrDPs := make(map[string]int64)
@@ -26,7 +26,7 @@ func startQuery(el *onet.Roster, proofs bool, sum []string, count bool, whereQue
 		nbrDPs[server.String()] = 1 // 1 DP for each server
 	}
 
-	surveyID, err := client.SendSurveyCreationQuery(el, serviceDefault.SurveyID(""), nil, nbrDPs, proofs, true, sum, count, whereQueryValues, predicate, groupBy)
+	surveyID, err := client.SendSurveyCreationQuery(el, serviceUnLynx.SurveyID(""), nil, nbrDPs, proofs, true, sum, count, whereQueryValues, predicate, groupBy)
 	if err != nil {
 		log.Fatal("Service did not start.", err)
 	}
@@ -95,7 +95,7 @@ func checkRegex(input, expression, errorMessage string) {
 	}
 }
 
-func parseQuery(el *onet.Roster, sum string, count bool, where, predicate, groupBy string) ([]string, bool, []lib.WhereQueryAttribute, string, []string) {
+func parseQuery(el *onet.Roster, sum string, count bool, where, predicate, groupBy string) ([]string, bool, []libUnLynx.WhereQueryAttribute, string, []string) {
 
 	if sum == "" || (where != "" && predicate == "") || (where == "" && predicate != "") {
 		log.Fatal("Wrong query! Please check the sum, where and the predicate parameters")
@@ -130,7 +130,7 @@ func parseQuery(el *onet.Roster, sum string, count bool, where, predicate, group
 	where = strings.Replace(where, "}", "", -1)
 	tmp := strings.Split(where, ",")
 
-	whereFinal := make([]lib.WhereQueryAttribute, 0)
+	whereFinal := make([]libUnLynx.WhereQueryAttribute, 0)
 
 	var variable string
 	for i := range tmp {
@@ -143,7 +143,7 @@ func parseQuery(el *onet.Roster, sum string, count bool, where, predicate, group
 				log.Fatal("Something wrong with the where value")
 			}
 
-			whereFinal = append(whereFinal, lib.WhereQueryAttribute{Name: variable, Value: *lib.EncryptInt(el.Aggregate, int64(value))})
+			whereFinal = append(whereFinal, libUnLynx.WhereQueryAttribute{Name: variable, Value: *libUnLynx.EncryptInt(el.Aggregate, int64(value))})
 		}
 	}
 

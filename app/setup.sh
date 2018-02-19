@@ -3,7 +3,7 @@
 SSH_TYPE="-t ssh-ed25519"
 SERVERS="$@"
 
-./compileLinux.sh
+compileLinux.sh
 
 for s in $SERVERS; do
     login=root@iccluster0$s.iccluster.epfl.ch
@@ -15,4 +15,4 @@ done
 
 rm -rf unlynx
 
-./compileMac.sh
+compileMac.sh

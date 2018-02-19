@@ -1,4 +1,4 @@
-package lib_test
+package libUnLynx_test
 
 import (
 	"testing"

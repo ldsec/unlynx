@@ -1,4 +1,4 @@
-package lib_test
+package libUnLynx_test
 
 import (
 	"github.com/lca1/unlynx/lib"
@@ -18,31 +18,31 @@ func TestStoring(t *testing.T) {
 
 	// Generate data for aggregating attributes
 	tab := []int64{1, 2, 3, 6}
-	testAggr1 := *lib.EncryptIntVector(pubKey, tab)
-	testAggrMap1 := make(map[string]lib.CipherText)
+	testAggr1 := *libUnLynx.EncryptIntVector(pubKey, tab)
+	testAggrMap1 := make(map[string]libUnLynx.CipherText)
 	for i := range tab {
 		testAggrMap1[strconv.Itoa(i)] = testAggr1[i]
 	}
 
 	tab = []int64{2, 4, 8, 6}
-	testAggr2 := *lib.EncryptIntVector(pubKey, tab)
-	testAggrMap2 := make(map[string]lib.CipherText)
+	testAggr2 := *libUnLynx.EncryptIntVector(pubKey, tab)
+	testAggrMap2 := make(map[string]libUnLynx.CipherText)
 	for i := range tab {
 		testAggrMap2[strconv.Itoa(i)] = testAggr2[i]
 	}
 
 	tab = []int64{2, 4}
-	testAggr3 := *lib.EncryptIntVector(pubKey, tab)
-	testAggrMap3 := make(map[string]lib.CipherText)
+	testAggr3 := *libUnLynx.EncryptIntVector(pubKey, tab)
+	testAggrMap3 := make(map[string]libUnLynx.CipherText)
 	for i := range tab {
 		testAggrMap3[strconv.Itoa(i)] = testAggr3[i]
 	}
 
 	// Generate data for group by and where attributes
 	tab = []int64{0, 1}
-	testEncMap := make(map[string]lib.CipherText)
+	testEncMap := make(map[string]libUnLynx.CipherText)
 	for i, v := range tab {
-		testEncMap[strconv.Itoa(i)] = *lib.EncryptInt(pubKey, v)
+		testEncMap[strconv.Itoa(i)] = *libUnLynx.EncryptInt(pubKey, v)
 	}
 
 	tab = []int64{0, 1}
@@ -53,23 +53,23 @@ func TestStoring(t *testing.T) {
 
 	sum := []string{"0", "1", "2", "3"}
 	groupBy := []string{"0", "1"}
-	where := []lib.WhereQueryAttribute{{Name: "0", Value: lib.CipherText{}}, {Name: "1", Value: lib.CipherText{}}}
+	where := []libUnLynx.WhereQueryAttribute{{Name: "0", Value: libUnLynx.CipherText{}}, {Name: "1", Value: libUnLynx.CipherText{}}}
 
 	// Constructor Test
-	storage := lib.NewStore()
+	storage := libUnLynx.NewStore()
 
 	// (1) Test Insert and Pull DpResponses
-	storage.InsertDpResponse(lib.DpResponse{GroupByEnc: testEncMap, WhereClear: testClearMap, AggregatingAttributesEnc: testAggrMap1}, true, groupBy, sum, where)
+	storage.InsertDpResponse(libUnLynx.DpResponse{GroupByEnc: testEncMap, WhereClear: testClearMap, AggregatingAttributesEnc: testAggrMap1}, true, groupBy, sum, where)
 
 	assert.True(t, (len(storage.PullDpResponses()) == 1))
 	assert.Empty(t, storage.DpResponses)
 
 	// (2) Test Insert and Pull multiple DpResponses to check aggregation
-	storage.InsertDpResponse(lib.DpResponse{GroupByClear: testClearMap, WhereClear: testClearMap, AggregatingAttributesEnc: testAggrMap2}, true, groupBy, sum, where)
-	storage.InsertDpResponse(lib.DpResponse{GroupByClear: testClearMap, WhereClear: testClearMap, AggregatingAttributesEnc: testAggrMap2}, true, groupBy, sum, where)
-	storage.InsertDpResponse(lib.DpResponse{GroupByClear: testClearMap, WhereClear: testClearMap, AggregatingAttributesEnc: testAggrMap2}, true, groupBy, sum, where)
+	storage.InsertDpResponse(libUnLynx.DpResponse{GroupByClear: testClearMap, WhereClear: testClearMap, AggregatingAttributesEnc: testAggrMap2}, true, groupBy, sum, where)
+	storage.InsertDpResponse(libUnLynx.DpResponse{GroupByClear: testClearMap, WhereClear: testClearMap, AggregatingAttributesEnc: testAggrMap2}, true, groupBy, sum, where)
+	storage.InsertDpResponse(libUnLynx.DpResponse{GroupByClear: testClearMap, WhereClear: testClearMap, AggregatingAttributesEnc: testAggrMap2}, true, groupBy, sum, where)
 
-	sum1 := lib.NewCipherVector(len(testAggr2))
+	sum1 := libUnLynx.NewCipherVector(len(testAggr2))
 	sum1.Add(testAggr2, testAggr2)
 	sum1.Add(*sum1, testAggr2)
 
@@ -82,11 +82,11 @@ func TestStoring(t *testing.T) {
 	storage.PullLocallyAggregatedResponses()
 
 	// (4) Test Insert and Pull DpResponses but with different parameters
-	storage = lib.NewStore()
+	storage = libUnLynx.NewStore()
 
-	storage.InsertDpResponse(lib.DpResponse{GroupByClear: testClearMap, GroupByEnc: testEncMap, WhereClear: testClearMap, WhereEnc: testEncMap, AggregatingAttributesEnc: testAggrMap2}, true, groupBy, sum, where)
-	storage.InsertDpResponse(lib.DpResponse{GroupByEnc: testEncMap, AggregatingAttributesEnc: testAggrMap2}, false, groupBy, sum, where)
-	storage.InsertDpResponse(lib.DpResponse{WhereEnc: testEncMap, AggregatingAttributesEnc: testAggrMap1}, true, groupBy, sum, where)
+	storage.InsertDpResponse(libUnLynx.DpResponse{GroupByClear: testClearMap, GroupByEnc: testEncMap, WhereClear: testClearMap, WhereEnc: testEncMap, AggregatingAttributesEnc: testAggrMap2}, true, groupBy, sum, where)
+	storage.InsertDpResponse(libUnLynx.DpResponse{GroupByEnc: testEncMap, AggregatingAttributesEnc: testAggrMap2}, false, groupBy, sum, where)
+	storage.InsertDpResponse(libUnLynx.DpResponse{WhereEnc: testEncMap, AggregatingAttributesEnc: testAggrMap1}, true, groupBy, sum, where)
 
 	assert.True(t, len(storage.DpResponses) == 3)
 
@@ -103,10 +103,10 @@ func TestStoring(t *testing.T) {
 
 	// (5) Test Deterministic Tagging pull and push functions
 
-	detResponses := make([]lib.FilteredResponseDet, 3)
-	detResponses[0] = lib.FilteredResponseDet{Fr: lib.FilteredResponse{GroupByEnc: testAggr2, AggregatingAttributes: testAggr1}, DetTagGroupBy: lib.CipherVectorToDeterministicTag(testAggr2, secKey, secKey, pubKey, true)}
-	detResponses[1] = lib.FilteredResponseDet{Fr: lib.FilteredResponse{GroupByEnc: testAggr1, AggregatingAttributes: testAggr1}, DetTagGroupBy: lib.CipherVectorToDeterministicTag(testAggr1, secKey, secKey, pubKey, true)}
-	detResponses[2] = lib.FilteredResponseDet{Fr: lib.FilteredResponse{GroupByEnc: testAggr2, AggregatingAttributes: testAggr1}, DetTagGroupBy: lib.CipherVectorToDeterministicTag(testAggr2, secKey, secKey, pubKey, true)}
+	detResponses := make([]libUnLynx.FilteredResponseDet, 3)
+	detResponses[0] = libUnLynx.FilteredResponseDet{Fr: libUnLynx.FilteredResponse{GroupByEnc: testAggr2, AggregatingAttributes: testAggr1}, DetTagGroupBy: libUnLynx.CipherVectorToDeterministicTag(testAggr2, secKey, secKey, pubKey, true)}
+	detResponses[1] = libUnLynx.FilteredResponseDet{Fr: libUnLynx.FilteredResponse{GroupByEnc: testAggr1, AggregatingAttributes: testAggr1}, DetTagGroupBy: libUnLynx.CipherVectorToDeterministicTag(testAggr1, secKey, secKey, pubKey, true)}
+	detResponses[2] = libUnLynx.FilteredResponseDet{Fr: libUnLynx.FilteredResponse{GroupByEnc: testAggr2, AggregatingAttributes: testAggr1}, DetTagGroupBy: libUnLynx.CipherVectorToDeterministicTag(testAggr2, secKey, secKey, pubKey, true)}
 
 	storage.PushDeterministicFilteredResponses(detResponses, "ServerTest", true)
 
@@ -114,7 +114,7 @@ func TestStoring(t *testing.T) {
 	assert.Empty(t, storage.LocAggregatedProcessResponse, 0)
 
 	// (5) Test Collective Aggregation pull and push functions
-	detResponsesMap := make(map[lib.GroupingKey]lib.FilteredResponse, 3)
+	detResponsesMap := make(map[libUnLynx.GroupingKey]libUnLynx.FilteredResponse, 3)
 
 	detResponsesMap[detResponses[0].DetTagGroupBy] = detResponses[0].Fr
 	detResponsesMap[detResponses[1].DetTagGroupBy] = detResponses[1].Fr
@@ -122,14 +122,14 @@ func TestStoring(t *testing.T) {
 
 	storage.PushCothorityAggregatedFilteredResponses(detResponsesMap)
 
-	assert.True(t, len(storage.PullCothorityAggregatedFilteredResponses(false, lib.CipherText{})) == 2)
+	assert.True(t, len(storage.PullCothorityAggregatedFilteredResponses(false, libUnLynx.CipherText{})) == 2)
 	assert.Empty(t, storage.GroupedDeterministicFilteredResponses, 0)
 
 	// (5) Test KeySwitching pull and push functions
-	filteredResponses := []lib.FilteredResponse{{GroupByEnc: testAggr2, AggregatingAttributes: testAggr2},
+	filteredResponses := []libUnLynx.FilteredResponse{{GroupByEnc: testAggr2, AggregatingAttributes: testAggr2},
 		{GroupByEnc: testAggr1, AggregatingAttributes: testAggr2}, {GroupByEnc: testAggr2, AggregatingAttributes: testAggr1}}
 	storage.PushQuerierKeyEncryptedResponses(filteredResponses)
-	results := storage.PullDeliverableResults(false, lib.CipherText{})
+	results := storage.PullDeliverableResults(false, libUnLynx.CipherText{})
 
 	assert.True(t, len(results) == 3)
 	assert.Empty(t, len(storage.DeliverableResults), 0)
@@ -145,5 +145,5 @@ func TestConvertDataToMap(t *testing.T) {
 	result["g3"] = 3
 	result["g4"] = 4
 
-	assert.Equal(t, result, lib.ConvertDataToMap(test, "g", 0), "Wrong map conversion")
+	assert.Equal(t, result, libUnLynx.ConvertDataToMap(test, "g", 0), "Wrong map conversion")
 }

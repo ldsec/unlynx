@@ -1,12 +1,33 @@
-package data
+package libUnLynx
 
 import (
 	"encoding/gob"
-	"github.com/lca1/unlynx/lib"
+	"github.com/btcsuite/goleveldb/leveldb/errors"
+	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"
 	"os"
+	"strings"
 )
+
+// SendISMOthers sends a message to all other services
+func SendISMOthers(s *onet.ServiceProcessor, el *onet.Roster, msg interface{}) error {
+	var errStrs []string
+	for _, e := range el.List {
+		if !e.ID.Equal(s.ServerIdentity().ID) {
+			log.Lvl3("Sending to", e)
+			err := s.SendRaw(e, msg)
+			if err != nil {
+				errStrs = append(errStrs, err.Error())
+			}
+		}
+	}
+	var err error
+	if len(errStrs) > 0 {
+		err = errors.New(strings.Join(errStrs, "\n"))
+	}
+	return err
+}
 
 // WriteToGobFile stores object (e.g. lib.Enc_CipherVectorScalar) in a gob file. Note that the object must contain serializable stuff, for example byte arrays.
 func WriteToGobFile(path string, object interface{}) {
@@ -35,11 +56,11 @@ func ReadFromGobFile(path string, object interface{}) {
 }
 
 // EncodeCipherVectorScalar converts the data inside lib.CipherVectorScalar to bytes and stores it in a new object to be saved in the gob file
-func EncodeCipherVectorScalar(cV []lib.CipherVectorScalar) ([]lib.CipherVectorScalarBytes, error) {
-	slice := make([]lib.CipherVectorScalarBytes, 0)
+func EncodeCipherVectorScalar(cV []CipherVectorScalar) ([]CipherVectorScalarBytes, error) {
+	slice := make([]CipherVectorScalarBytes, 0)
 
 	for _, v := range cV {
-		eCV := lib.CipherVectorScalarBytes{}
+		eCV := CipherVectorScalarBytes{}
 
 		for _, el := range v.S {
 			scalar, err := el.MarshalBinary()
@@ -78,11 +99,11 @@ func EncodeCipherVectorScalar(cV []lib.CipherVectorScalar) ([]lib.CipherVectorSc
 }
 
 // DecodeCipherVectorScalar converts the byte data stored in the lib.Enc_CipherVectorScalar (which is read from the gob file) to a new lib.CipherVectorScalar
-func DecodeCipherVectorScalar(eCV []lib.CipherVectorScalarBytes) ([]lib.CipherVectorScalar, error) {
-	slice := make([]lib.CipherVectorScalar, 0)
+func DecodeCipherVectorScalar(eCV []CipherVectorScalarBytes) ([]CipherVectorScalar, error) {
+	slice := make([]CipherVectorScalar, 0)
 
 	for _, v := range eCV {
-		cV := lib.CipherVectorScalar{}
+		cV := CipherVectorScalar{}
 
 		for _, el := range v.S {
 			s := network.Suite.Scalar()
@@ -104,7 +125,7 @@ func DecodeCipherVectorScalar(eCV []lib.CipherVectorScalarBytes) ([]lib.CipherVe
 				return slice, err
 			}
 
-			cipher := lib.CipherText{K: k, C: c}
+			cipher := CipherText{K: k, C: c}
 			cV.CipherV = append(cV.CipherV, cipher)
 
 		}

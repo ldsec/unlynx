@@ -65,50 +65,50 @@ func (sim *AddRmSimulation) Run(config *onet.SimulationConfig) error {
 			return err
 		}
 
-		root := rooti.(*protocols.AddRmServerProtocol)
+		root := rooti.(*protocolsUnLynx.AddRmServerProtocol)
 
 		secKey := network.Suite.Scalar().Pick(random.Stream)
 		newSecKey := network.Suite.Scalar().Pick(random.Stream)
 		pubKey := network.Suite.Point().Mul(network.Suite.Point().Base(), secKey)
 
 		//generate set of grouping attributes (for this protocol they should all be encrypted)
-		group := make(map[string]lib.CipherText)
+		group := make(map[string]libUnLynx.CipherText)
 		for i := 0; i < sim.NbrGroupAttributes; i++ {
-			group[""+strconv.Itoa(i)] = *lib.EncryptInt(pubKey, 1)
+			group[""+strconv.Itoa(i)] = *libUnLynx.EncryptInt(pubKey, 1)
 		}
 
 		//generate set of aggregating attributes (for this protocol they should all be encrypted)
-		aggr := make(map[string]lib.CipherText)
+		aggr := make(map[string]libUnLynx.CipherText)
 		for i := 0; i < sim.NbrAggrAttributes; i++ {
-			aggr[""+strconv.Itoa(i)] = *lib.EncryptInt(pubKey, 1)
+			aggr[""+strconv.Itoa(i)] = *libUnLynx.EncryptInt(pubKey, 1)
 		}
 
 		//generate set of where attributes (for this protocol they should all be encrypted)
-		where := make(map[string]lib.CipherText)
+		where := make(map[string]libUnLynx.CipherText)
 		for i := 0; i < sim.NbrWhereAttributes; i++ {
-			where[""+strconv.Itoa(i)] = *lib.EncryptInt(pubKey, 1)
+			where[""+strconv.Itoa(i)] = *libUnLynx.EncryptInt(pubKey, 1)
 		}
 
-		cr := lib.DpResponse{GroupByEnc: group, AggregatingAttributesEnc: aggr, WhereEnc: where}
-		detResponses := make([]lib.DpResponse, 0)
+		cr := libUnLynx.DpResponse{GroupByEnc: group, AggregatingAttributesEnc: aggr, WhereEnc: where}
+		detResponses := make([]libUnLynx.DpResponse, 0)
 		for i := 0; i < sim.NbrResponses; i++ {
 			detResponses = append(detResponses, cr)
 		}
 
 		log.Lvl1("starting protocol with ", len(detResponses), " responses")
 
-		root.ProtocolInstance().(*protocols.AddRmServerProtocol).TargetOfTransformation = detResponses
-		root.ProtocolInstance().(*protocols.AddRmServerProtocol).Proofs = sim.Proofs
-		root.ProtocolInstance().(*protocols.AddRmServerProtocol).Add = sim.Add
-		root.ProtocolInstance().(*protocols.AddRmServerProtocol).KeyToRm = newSecKey
+		root.ProtocolInstance().(*protocolsUnLynx.AddRmServerProtocol).TargetOfTransformation = detResponses
+		root.ProtocolInstance().(*protocolsUnLynx.AddRmServerProtocol).Proofs = sim.Proofs
+		root.ProtocolInstance().(*protocolsUnLynx.AddRmServerProtocol).Add = sim.Add
+		root.ProtocolInstance().(*protocolsUnLynx.AddRmServerProtocol).KeyToRm = newSecKey
 
-		round := lib.StartTimer("_LocalAddRm(Simulation")
+		round := libUnLynx.StartTimer("_LocalAddRm(Simulation")
 
 		root.Start()
-		results := <-root.ProtocolInstance().(*protocols.AddRmServerProtocol).FeedbackChannel
+		results := <-root.ProtocolInstance().(*protocolsUnLynx.AddRmServerProtocol).FeedbackChannel
 		log.Lvl1("Number of aggregated lines: ", len(results))
 
-		lib.EndTimer(round)
+		libUnLynx.EndTimer(round)
 
 	}
 

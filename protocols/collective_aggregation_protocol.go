@@ -4,7 +4,7 @@
 // respond with their local result and other nodes aggregate what they receive before forwarding the
 // aggregation result up the tree until the root can produce the final result.
 
-package protocols
+package protocolsUnLynx
 
 import (
 	"errors"
@@ -32,7 +32,7 @@ func init() {
 
 // CothorityAggregatedData is the collective aggregation result.
 type CothorityAggregatedData struct {
-	GroupedData map[lib.GroupingKey]lib.FilteredResponse
+	GroupedData map[libUnLynx.GroupingKey]libUnLynx.FilteredResponse
 }
 
 // DataReferenceMessage message sent to trigger an aggregation protocol.
@@ -40,7 +40,7 @@ type DataReferenceMessage struct{}
 
 // ChildAggregatedDataMessage contains one node's aggregated data.
 type ChildAggregatedDataMessage struct {
-	ChildData []lib.FilteredResponseDet
+	ChildData []libUnLynx.FilteredResponseDet
 }
 
 // ChildAggregatedDataBytesMessage is ChildAggregatedDataMessage in bytes.
@@ -95,7 +95,7 @@ type CollectiveAggregationProtocol struct {
 	ChildDataChannel     chan []childAggregatedDataBytesStruct
 
 	// Protocol state data
-	GroupedData *map[lib.GroupingKey]lib.FilteredResponse
+	GroupedData *map[libUnLynx.GroupingKey]libUnLynx.FilteredResponse
 	Proofs      bool
 }
 
@@ -161,14 +161,14 @@ func (p *CollectiveAggregationProtocol) aggregationAnnouncementPhase() {
 }
 
 // Results pushing up the tree containing aggregation results.
-func (p *CollectiveAggregationProtocol) ascendingAggregationPhase() *map[lib.GroupingKey]lib.FilteredResponse {
+func (p *CollectiveAggregationProtocol) ascendingAggregationPhase() *map[libUnLynx.GroupingKey]libUnLynx.FilteredResponse {
 
 	if p.GroupedData == nil {
-		emptyMap := make(map[lib.GroupingKey]lib.FilteredResponse, 0)
+		emptyMap := make(map[libUnLynx.GroupingKey]libUnLynx.FilteredResponse, 0)
 		p.GroupedData = &emptyMap
 	}
 
-	roundTotComput := lib.StartTimer(p.Name() + "_CollectiveAggregation(ascendingAggregation)")
+	roundTotComput := libUnLynx.StartTimer(p.Name() + "_CollectiveAggregation(ascendingAggregation)")
 
 	if !p.IsLeaf() {
 
@@ -183,8 +183,8 @@ func (p *CollectiveAggregationProtocol) ascendingAggregationPhase() *map[lib.Gro
 		for i, v := range length {
 			childrenContribution := ChildAggregatedDataMessage{}
 			childrenContribution.FromBytes(datas[i].Data, v.GacbLength, v.AabLength, v.DtbLength)
-			c1 := make(map[lib.GroupingKey]lib.FilteredResponse)
-			roundProofs := lib.StartTimer(p.Name() + "_CollectiveAggregation(Proof-1stPart)")
+			c1 := make(map[libUnLynx.GroupingKey]libUnLynx.FilteredResponse)
+			roundProofs := libUnLynx.StartTimer(p.Name() + "_CollectiveAggregation(Proof-1stPart)")
 
 			if p.Proofs {
 				//need to save previous state
@@ -192,13 +192,13 @@ func (p *CollectiveAggregationProtocol) ascendingAggregationPhase() *map[lib.Gro
 					c1[i] = v
 				}
 			}
-			lib.EndTimer(roundProofs)
-			roundComput := lib.StartTimer(p.Name() + "_CollectiveAggregation(Aggregation)")
+			libUnLynx.EndTimer(roundProofs)
+			roundComput := libUnLynx.StartTimer(p.Name() + "_CollectiveAggregation(Aggregation)")
 
 			for _, aggr := range childrenContribution.ChildData {
 				localAggr, ok := (*p.GroupedData)[aggr.DetTagGroupBy]
 				if ok {
-					tmp := lib.NewCipherVector(len(localAggr.AggregatingAttributes))
+					tmp := libUnLynx.NewCipherVector(len(localAggr.AggregatingAttributes))
 					tmp.Add(localAggr.AggregatingAttributes, aggr.Fr.AggregatingAttributes)
 
 					localAggr.AggregatingAttributes = *tmp
@@ -208,21 +208,21 @@ func (p *CollectiveAggregationProtocol) ascendingAggregationPhase() *map[lib.Gro
 				(*p.GroupedData)[aggr.DetTagGroupBy] = localAggr
 			}
 
-			lib.EndTimer(roundComput)
-			roundProofs2 := lib.StartTimer(p.Name() + "_CollectiveAggregation(Proof-2ndPart)")
+			libUnLynx.EndTimer(roundComput)
+			roundProofs2 := libUnLynx.StartTimer(p.Name() + "_CollectiveAggregation(Proof-2ndPart)")
 			if p.Proofs {
-				PublishedCollectiveAggregationProof := lib.CollectiveAggregationProofCreation(c1, childrenContribution.ChildData, *p.GroupedData)
+				PublishedCollectiveAggregationProof := libUnLynx.CollectiveAggregationProofCreation(c1, childrenContribution.ChildData, *p.GroupedData)
 				//publication
 				_ = PublishedCollectiveAggregationProof
 			}
-			lib.EndTimer(roundProofs2)
+			libUnLynx.EndTimer(roundProofs2)
 		}
 	}
 
-	lib.EndTimer(roundTotComput)
+	libUnLynx.EndTimer(roundTotComput)
 
 	if !p.IsRoot() {
-		detAggrResponses := make([]lib.FilteredResponseDet, len(*p.GroupedData))
+		detAggrResponses := make([]libUnLynx.FilteredResponseDet, len(*p.GroupedData))
 		count := 0
 		for i, v := range *p.GroupedData {
 			detAggrResponses[count].DetTagGroupBy = i
@@ -259,10 +259,10 @@ func (sm *ChildAggregatedDataMessage) ToBytes() ([]byte, int, int, int) {
 	//var pgaebLength int
 	var dtbLength int
 
-	wg := lib.StartParallelize(len((*sm).ChildData))
+	wg := libUnLynx.StartParallelize(len((*sm).ChildData))
 	var mutexCD sync.Mutex
 	for i := range (*sm).ChildData {
-		if lib.PARALLELIZE {
+		if libUnLynx.PARALLELIZE {
 			go func(i int) {
 				defer wg.Done()
 
@@ -285,7 +285,7 @@ func (sm *ChildAggregatedDataMessage) ToBytes() ([]byte, int, int, int) {
 		}
 
 	}
-	lib.EndParallelize(wg)
+	libUnLynx.EndParallelize(wg)
 
 	for _, el := range bb {
 		b = append(b, el...)
@@ -301,11 +301,11 @@ func (sm *ChildAggregatedDataMessage) FromBytes(data []byte, gacbLength, aabLeng
 		var nbrChildData int
 		nbrChildData = len(data) / elementLength
 
-		(*sm).ChildData = make([]lib.FilteredResponseDet, nbrChildData)
-		wg := lib.StartParallelize(nbrChildData)
+		(*sm).ChildData = make([]libUnLynx.FilteredResponseDet, nbrChildData)
+		wg := libUnLynx.StartParallelize(nbrChildData)
 		for i := 0; i < nbrChildData; i++ {
 			v := data[i*elementLength : i*elementLength+elementLength]
-			if lib.PARALLELIZE {
+			if libUnLynx.PARALLELIZE {
 				go func(v []byte, i int) {
 					defer wg.Done()
 					(*sm).ChildData[i].FromBytes(v, gacbLength, aabLength, dtbLength)
@@ -315,6 +315,6 @@ func (sm *ChildAggregatedDataMessage) FromBytes(data []byte, gacbLength, aabLeng
 			}
 
 		}
-		lib.EndParallelize(wg)
+		libUnLynx.EndParallelize(wg)
 	}
 }

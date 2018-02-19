@@ -1,10 +1,10 @@
-// Package protocols contains the shuffling protocol which permits to rerandomize and shuffle a list of DP responses.
+// Package protocolsUnLynx contains the shuffling protocol which permits to rerandomize and shuffle a list of DP responses.
 // The El-Gamal encrypted DP response should be encrypted by the collective public key of the cothority.
 // In that case, each cothority server (node) can  homomorphically rerandomize and shuffle the DP responses.
 // This is done by creating a circuit between the servers. The DP response is sent through this circuit and
 // each server applies its transformation on it and forwards it to the next node in the circuit
 // until it comes back to the server who started the protocol.
-package protocols
+package protocolsUnLynx
 
 import (
 	"errors"
@@ -33,7 +33,7 @@ func init() {
 
 // ShufflingMessage represents a message containing data to shuffle
 type ShufflingMessage struct {
-	Data []lib.ProcessResponse
+	Data []libUnLynx.ProcessResponse
 }
 
 // ShufflingBytesMessage represents a shuffling message in bytes
@@ -77,7 +77,7 @@ type ShufflingProtocol struct {
 	*onet.TreeNodeInstance
 
 	// Protocol feedback channel
-	FeedbackChannel chan []lib.ProcessResponse
+	FeedbackChannel chan []libUnLynx.ProcessResponse
 
 	// Protocol communication channels
 	LengthNodeChannel         chan sbLengthStruct
@@ -88,18 +88,18 @@ type ShufflingProtocol struct {
 
 	// Protocol state data
 	nextNodeInCircuit *onet.TreeNode
-	TargetOfShuffle   *[]lib.ProcessResponse
+	TargetOfShuffle   *[]libUnLynx.ProcessResponse
 
 	CollectiveKey abstract.Point //only use in order to test the protocol
 	Proofs        bool
-	Precomputed   []lib.CipherVectorScalar
+	Precomputed   []libUnLynx.CipherVectorScalar
 }
 
 // NewShufflingProtocol constructs neff shuffle protocol instances.
 func NewShufflingProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 	dsp := &ShufflingProtocol{
 		TreeNodeInstance: n,
-		FeedbackChannel:  make(chan []lib.ProcessResponse),
+		FeedbackChannel:  make(chan []libUnLynx.ProcessResponse),
 	}
 
 	if err := dsp.RegisterChannel(&dsp.PreviousNodeInPathChannel); err != nil {
@@ -125,7 +125,7 @@ func NewShufflingProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, erro
 // Start is called at the root node and starts the execution of the protocol.
 func (p *ShufflingProtocol) Start() error {
 
-	roundTotalStart := lib.StartTimer(p.Name() + "_Shuffling(START)")
+	roundTotalStart := libUnLynx.StartTimer(p.Name() + "_Shuffling(START)")
 
 	if p.TargetOfShuffle == nil {
 		return errors.New("No map given as shuffling target")
@@ -141,12 +141,12 @@ func (p *ShufflingProtocol) Start() error {
 	shuffleTarget := *p.TargetOfShuffle
 
 	if len(shuffleTarget) == 1 { //cannot shuffle 1 -> add a dummy response with 0s
-		pr := lib.ProcessResponse{}
+		pr := libUnLynx.ProcessResponse{}
 		pr.GroupByEnc = shuffleTarget[0].GroupByEnc
 		pr.WhereEnc = shuffleTarget[0].WhereEnc
-		pr.AggregatingAttributes = make(lib.CipherVector, len(shuffleTarget[0].AggregatingAttributes))
+		pr.AggregatingAttributes = make(libUnLynx.CipherVector, len(shuffleTarget[0].AggregatingAttributes))
 		for i := range shuffleTarget[0].AggregatingAttributes {
-			pr.AggregatingAttributes[i] = lib.IntToCipherText(int64(0))
+			pr.AggregatingAttributes[i] = libUnLynx.IntToCipherText(int64(0))
 		}
 		shuffleTarget = append(shuffleTarget, pr)
 	}
@@ -157,24 +157,24 @@ func (p *ShufflingProtocol) Start() error {
 		collectiveKey = p.CollectiveKey
 		log.Lvl1("Key used is ", collectiveKey)
 	}
-	roundShufflingStart := lib.StartTimer(p.Name() + "_Shuffling(START-noProof)")
+	roundShufflingStart := libUnLynx.StartTimer(p.Name() + "_Shuffling(START-noProof)")
 
 	if p.Precomputed != nil {
 		log.Lvl1(p.Name(), " uses pre-computation in shuffling")
 	}
 
-	shuffledData, pi, beta := lib.ShuffleSequence(shuffleTarget, nil, collectiveKey, p.Precomputed)
-	lib.EndTimer(roundShufflingStart)
-	roundShufflingStartProof := lib.StartTimer(p.Name() + "_Shuffling(START-Proof)")
+	shuffledData, pi, beta := libUnLynx.ShuffleSequence(shuffleTarget, nil, collectiveKey, p.Precomputed)
+	libUnLynx.EndTimer(roundShufflingStart)
+	roundShufflingStartProof := libUnLynx.StartTimer(p.Name() + "_Shuffling(START-Proof)")
 
 	if p.Proofs {
-		proof := lib.ShufflingProofCreation(shuffleTarget, shuffledData, nil, collectiveKey, beta, pi)
+		proof := libUnLynx.ShufflingProofCreation(shuffleTarget, shuffledData, nil, collectiveKey, beta, pi)
 		//dummy publication
 		_ = proof
 	}
 
-	lib.EndTimer(roundShufflingStartProof)
-	lib.EndTimer(roundTotalStart)
+	libUnLynx.EndTimer(roundShufflingStartProof)
+	libUnLynx.EndTimer(roundTotalStart)
 
 	p.ExecTimeStart += time.Since(startT)
 	//sendingStart := lib.StartTimer(p.Name() + "_Sending")
@@ -183,12 +183,12 @@ func (p *ShufflingProtocol) Start() error {
 	var cgaLength, eaaLength, egaLength int
 	message.Data, cgaLength, eaaLength, egaLength = (&ShufflingMessage{shuffledData}).ToBytes()
 
-	sendingStart := lib.StartTimer(p.Name() + "_Sending")
+	sendingStart := libUnLynx.StartTimer(p.Name() + "_Sending")
 
 	p.sendToNext(&SBLengthMessage{cgaLength, eaaLength, egaLength})
 	p.sendToNext(&message)
 
-	lib.EndTimer(sendingStart)
+	libUnLynx.EndTimer(sendingStart)
 
 	return nil
 }
@@ -198,17 +198,17 @@ func (p *ShufflingProtocol) Dispatch() error {
 
 	shufflingLength := <-p.LengthNodeChannel
 
-	receiving := lib.StartTimer(p.Name() + "_Receiving")
+	receiving := libUnLynx.StartTimer(p.Name() + "_Receiving")
 	tmp := <-p.PreviousNodeInPathChannel
 
-	lib.EndTimer(receiving)
+	libUnLynx.EndTimer(receiving)
 
 	sm := ShufflingMessage{}
 	sm.FromBytes(tmp.Data, shufflingLength.GacbLength, shufflingLength.AabLength, shufflingLength.PgaebLength)
 	shufflingTarget := sm.Data
 
 	startT := time.Now()
-	roundTotalComputation := lib.StartTimer(p.Name() + "_Shuffling(DISPATCH)")
+	roundTotalComputation := libUnLynx.StartTimer(p.Name() + "_Shuffling(DISPATCH)")
 
 	collectiveKey := p.Roster().Aggregate //shuffling is by default done with collective authority key
 
@@ -227,19 +227,19 @@ func (p *ShufflingProtocol) Dispatch() error {
 	var beta [][]abstract.Scalar
 
 	if !p.IsRoot() {
-		roundShuffle := lib.StartTimer(p.Name() + "_Shuffling(DISPATCH-noProof)")
+		roundShuffle := libUnLynx.StartTimer(p.Name() + "_Shuffling(DISPATCH-noProof)")
 
-		shuffledData, pi, beta = lib.ShuffleSequence(shufflingTarget, nil, collectiveKey, p.Precomputed)
+		shuffledData, pi, beta = libUnLynx.ShuffleSequence(shufflingTarget, nil, collectiveKey, p.Precomputed)
 
-		lib.EndTimer(roundShuffle)
-		roundShuffleProof := lib.StartTimer("_Shuffling(DISPATCH-Proof)")
+		libUnLynx.EndTimer(roundShuffle)
+		roundShuffleProof := libUnLynx.StartTimer("_Shuffling(DISPATCH-Proof)")
 
 		if p.Proofs {
-			proof := lib.ShufflingProofCreation(shufflingTarget, shuffledData, nil, collectiveKey, beta, pi)
+			proof := libUnLynx.ShufflingProofCreation(shufflingTarget, shuffledData, nil, collectiveKey, beta, pi)
 			//dummy publication
 			_ = proof
 		}
-		lib.EndTimer(roundShuffleProof)
+		libUnLynx.EndTimer(roundShuffleProof)
 
 	}
 	shufflingTarget = shuffledData
@@ -250,7 +250,7 @@ func (p *ShufflingProtocol) Dispatch() error {
 		log.Lvl1(p.ServerIdentity(), " carried on shuffling.")
 	}
 
-	lib.EndTimer(roundTotalComputation)
+	libUnLynx.EndTimer(roundTotalComputation)
 
 	// If this tree node is the root, then protocol reached the end.
 	if p.IsRoot() {
@@ -264,12 +264,12 @@ func (p *ShufflingProtocol) Dispatch() error {
 		var cgaLength, eaaLength, egaLength int
 		message.Data, cgaLength, eaaLength, egaLength = (&ShufflingMessage{shuffledData}).ToBytes()
 
-		sending := lib.StartTimer(p.Name() + "_Sending")
+		sending := libUnLynx.StartTimer(p.Name() + "_Sending")
 
 		p.sendToNext(&SBLengthMessage{cgaLength, eaaLength, egaLength})
 		p.sendToNext(&message)
 
-		lib.EndTimer(sending)
+		libUnLynx.EndTimer(sending)
 	}
 
 	return nil
@@ -296,10 +296,10 @@ func (sm *ShufflingMessage) ToBytes() ([]byte, int, int, int) {
 	var aabLength int
 	var pgaebLength int
 
-	wg := lib.StartParallelize(len((*sm).Data))
+	wg := libUnLynx.StartParallelize(len((*sm).Data))
 	var mutexD sync.Mutex
 	for i := range (*sm).Data {
-		if lib.PARALLELIZE {
+		if libUnLynx.PARALLELIZE {
 			go func(i int) {
 				defer wg.Done()
 
@@ -321,7 +321,7 @@ func (sm *ShufflingMessage) ToBytes() ([]byte, int, int, int) {
 		}
 
 	}
-	lib.EndParallelize(wg)
+	libUnLynx.EndParallelize(wg)
 
 	for _, el := range bb {
 		b = append(b, el...)
@@ -337,11 +337,11 @@ func (sm *ShufflingMessage) FromBytes(data []byte, gacbLength, aabLength, pgaebL
 	elementLength := (gacbLength*64 + aabLength*64 + pgaebLength*64) //CAUTION: hardcoded 64 (size of el-gamal element C,K)
 	nbrData = len(data) / elementLength
 
-	(*sm).Data = make([]lib.ProcessResponse, nbrData)
-	wg := lib.StartParallelize(nbrData)
+	(*sm).Data = make([]libUnLynx.ProcessResponse, nbrData)
+	wg := libUnLynx.StartParallelize(nbrData)
 	for i := 0; i < nbrData; i++ {
 		v := data[i*elementLength : i*elementLength+elementLength]
-		if lib.PARALLELIZE {
+		if libUnLynx.PARALLELIZE {
 			go func(v []byte, i int) {
 				defer wg.Done()
 				(*sm).Data[i].FromBytes(v, gacbLength, aabLength, pgaebLength)
@@ -351,5 +351,5 @@ func (sm *ShufflingMessage) FromBytes(data []byte, gacbLength, aabLength, pgaebL
 		}
 
 	}
-	lib.EndParallelize(wg)
+	libUnLynx.EndParallelize(wg)
 }

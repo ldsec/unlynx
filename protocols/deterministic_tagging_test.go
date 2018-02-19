@@ -1,4 +1,4 @@
-package protocols_test
+package protocolsUnLynx_test
 
 import (
 	"reflect"
@@ -28,33 +28,33 @@ func TestDeterministicTagging(t *testing.T) {
 		t.Fatal("Couldn't start protocol:", err)
 	}
 
-	protocol := rootInstance.(*protocols.DeterministicTaggingProtocol)
+	protocol := rootInstance.(*protocolsUnLynx.DeterministicTaggingProtocol)
 
 	aggregateKey := entityList.Aggregate
 
 	//create data for test
-	testCipherVect := make(lib.CipherVector, 1)
+	testCipherVect := make(libUnLynx.CipherVector, 1)
 	expRes := []int64{1}
 	for i, p := range expRes {
-		testCipherVect[i] = *lib.EncryptInt(aggregateKey, p)
+		testCipherVect[i] = *libUnLynx.EncryptInt(aggregateKey, p)
 	}
-	processResponse1 := lib.ProcessResponse{GroupByEnc: testCipherVect, WhereEnc: testCipherVect, AggregatingAttributes: testCipherVect}
+	processResponse1 := libUnLynx.ProcessResponse{GroupByEnc: testCipherVect, WhereEnc: testCipherVect, AggregatingAttributes: testCipherVect}
 
-	testCipherVect1 := make(lib.CipherVector, 1)
+	testCipherVect1 := make(libUnLynx.CipherVector, 1)
 	expRes1 := []int64{1}
 	for i, p := range expRes1 {
-		testCipherVect1[i] = *lib.EncryptInt(aggregateKey, p)
+		testCipherVect1[i] = *libUnLynx.EncryptInt(aggregateKey, p)
 	}
-	processResponse2 := lib.ProcessResponse{GroupByEnc: testCipherVect1, WhereEnc: testCipherVect1, AggregatingAttributes: testCipherVect1}
+	processResponse2 := libUnLynx.ProcessResponse{GroupByEnc: testCipherVect1, WhereEnc: testCipherVect1, AggregatingAttributes: testCipherVect1}
 
-	testCipherVect2 := make(lib.CipherVector, 1)
+	testCipherVect2 := make(libUnLynx.CipherVector, 1)
 	expRes2 := []int64{2}
 	for i, p := range expRes2 {
-		testCipherVect2[i] = *lib.EncryptInt(aggregateKey, p)
+		testCipherVect2[i] = *libUnLynx.EncryptInt(aggregateKey, p)
 	}
-	processResponse3 := lib.ProcessResponse{GroupByEnc: testCipherVect2, WhereEnc: testCipherVect2, AggregatingAttributes: testCipherVect2}
+	processResponse3 := libUnLynx.ProcessResponse{GroupByEnc: testCipherVect2, WhereEnc: testCipherVect2, AggregatingAttributes: testCipherVect2}
 
-	mapi := make([]lib.ProcessResponse, 4)
+	mapi := make([]libUnLynx.ProcessResponse, 4)
 	mapi[0] = processResponse1
 	mapi[1] = processResponse2
 	mapi[2] = processResponse3
@@ -108,8 +108,8 @@ func TestDeterministicTagging(t *testing.T) {
 // NewDeterministicTaggingTest is a special purpose protocol constructor specific to tests.
 func NewDeterministicTaggingTest(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 
-	pi, err := protocols.NewDeterministicTaggingProtocol(tni)
-	protocol := pi.(*protocols.DeterministicTaggingProtocol)
+	pi, err := protocolsUnLynx.NewDeterministicTaggingProtocol(tni)
+	protocol := pi.(*protocolsUnLynx.DeterministicTaggingProtocol)
 	protocol.Proofs = true
 	clientPrivate := network.Suite.Scalar().Pick(random.Stream)
 	protocol.SurveySecretKey = &clientPrivate

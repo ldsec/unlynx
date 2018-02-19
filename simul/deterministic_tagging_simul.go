@@ -71,13 +71,13 @@ func (sim *DeterministicTaggingSimulation) Run(config *onet.SimulationConfig) er
 			return err
 		}
 
-		root := rooti.(*protocols.DeterministicTaggingProtocol)
+		root := rooti.(*protocolsUnLynx.DeterministicTaggingProtocol)
 
 		//complete protocol time measurement
 		round := monitor.NewTimeMeasure("DetTagging(SIMULATION)")
 		root.Start()
 
-		<-root.ProtocolInstance().(*protocols.DeterministicTaggingProtocol).FeedbackChannel
+		<-root.ProtocolInstance().(*protocolsUnLynx.DeterministicTaggingProtocol).FeedbackChannel
 
 		round.Record()
 	}
@@ -87,15 +87,15 @@ func (sim *DeterministicTaggingSimulation) Run(config *onet.SimulationConfig) er
 
 // NewDeterministicTaggingSimul is a custom protocol constructor specific for simulation purposes.
 func NewDeterministicTaggingSimul(tni *onet.TreeNodeInstance, sim *DeterministicTaggingSimulation) (onet.ProtocolInstance, error) {
-	protocol, err := protocols.NewDeterministicTaggingProtocol(tni)
-	pap := protocol.(*protocols.DeterministicTaggingProtocol)
+	protocol, err := protocolsUnLynx.NewDeterministicTaggingProtocol(tni)
+	pap := protocol.(*protocolsUnLynx.DeterministicTaggingProtocol)
 	pap.Proofs = sim.Proofs
 
 	if tni.IsRoot() {
 		aggregateKey := pap.Roster().Aggregate
 
 		// Creates dummy data...
-		processResponses := make([]lib.ProcessResponse, sim.NbrResponses)
+		processResponses := make([]libUnLynx.ProcessResponse, sim.NbrResponses)
 		tabGroup := make([]int64, sim.NbrGroupAttributes)
 		tabAttr := make([]int64, sim.NbrAggrAttributes)
 
@@ -106,9 +106,9 @@ func NewDeterministicTaggingSimul(tni *onet.TreeNodeInstance, sim *Deterministic
 			tabAttr[i] = int64(1)
 		}
 
-		encryptedGrp := *lib.EncryptIntVector(aggregateKey, tabGroup)
-		encryptedAttr := *lib.EncryptIntVector(aggregateKey, tabAttr)
-		processResponse := lib.ProcessResponse{GroupByEnc: encryptedGrp, AggregatingAttributes: encryptedAttr}
+		encryptedGrp := *libUnLynx.EncryptIntVector(aggregateKey, tabGroup)
+		encryptedAttr := *libUnLynx.EncryptIntVector(aggregateKey, tabAttr)
+		processResponse := libUnLynx.ProcessResponse{GroupByEnc: encryptedGrp, AggregatingAttributes: encryptedAttr}
 
 		for i := 0; i < sim.NbrResponses; i++ {
 			processResponses[i] = processResponse

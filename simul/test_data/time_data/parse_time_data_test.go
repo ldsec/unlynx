@@ -6,9 +6,9 @@ import (
 	"github.com/lca1/unlynx/simul/test_data/time_data"
 )
 
-const filename_read = "../unlynx.csv"
+const filename_read = "../service_unlynx.csv"
 const filename_write = "result.txt"
-const filename_toml = "../../runfiles/unlynx.toml"
+const filename_toml = "../../runfiles/service_unlynx.toml"
 
 var flags = []string{"bf", "depth", "rounds", "runwait", "servers", "\n",
 	"Shuffling(START)", "Shuffling(DISPATCH)", "Shuffling(START-noProof)", "Shuffling(DISPATCH-noProof)", "Shuffling(START-Proof)", "Shuffling(DISPATCH-Proof)", "ShufflingPhase", "\n",

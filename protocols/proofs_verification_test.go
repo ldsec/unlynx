@@ -1,4 +1,4 @@
-package protocols_test
+package protocolsUnLynx_test
 
 import (
 	"testing"
@@ -23,7 +23,7 @@ func TestProofsVerification(t *testing.T) {
 	if err != nil {
 		t.Fatal("Couldn't start protocol:", err)
 	}
-	protocol := rootInstance.(*protocols.ProofsVerificationProtocol)
+	protocol := rootInstance.(*protocolsUnLynx.ProofsVerificationProtocol)
 
 	secKey := network.Suite.Scalar().Pick(random.Stream)
 	pubKey := network.Suite.Point().Mul(network.Suite.Point().Base(), secKey)
@@ -31,47 +31,47 @@ func TestProofsVerification(t *testing.T) {
 	secKeyNew := network.Suite.Scalar().Pick(random.Stream)
 	pubKeyNew := network.Suite.Point().Mul(network.Suite.Point().Base(), secKeyNew)
 
-	cipherOne := *lib.EncryptInt(pubKey, 10)
+	cipherOne := *libUnLynx.EncryptInt(pubKey, 10)
 
-	cipherVect := lib.CipherVector{cipherOne, cipherOne}
+	cipherVect := libUnLynx.CipherVector{cipherOne, cipherOne}
 
 	// key switching ***********************************************************************************************
 	origEphemKeys := []abstract.Point{cipherOne.K, cipherOne.K}
-	switchedVect := lib.NewCipherVector(2)
+	switchedVect := libUnLynx.NewCipherVector(2)
 	rs := switchedVect.KeySwitching(cipherVect, origEphemKeys, pubKeyNew, secKey)
-	cps := lib.VectorSwitchKeyProofCreation(cipherVect, *switchedVect, rs, secKey, origEphemKeys, pubKeyNew)
-	pskp1 := lib.PublishedSwitchKeyProof{Skp: cps, VectBefore: cipherVect, VectAfter: *switchedVect, K: pubKey, Q: pubKeyNew}
+	cps := libUnLynx.VectorSwitchKeyProofCreation(cipherVect, *switchedVect, rs, secKey, origEphemKeys, pubKeyNew)
+	pskp1 := libUnLynx.PublishedSwitchKeyProof{Skp: cps, VectBefore: cipherVect, VectAfter: *switchedVect, K: pubKey, Q: pubKeyNew}
 
-	cps = lib.VectorSwitchKeyProofCreation(cipherVect, *switchedVect, rs, secKey, []abstract.Point{cipherOne.K, cipherOne.K}, pubKey)
-	pskp2 := lib.PublishedSwitchKeyProof{Skp: cps, VectBefore: cipherVect, VectAfter: *switchedVect, K: pubKeyNew, Q: pubKeyNew}
+	cps = libUnLynx.VectorSwitchKeyProofCreation(cipherVect, *switchedVect, rs, secKey, []abstract.Point{cipherOne.K, cipherOne.K}, pubKey)
+	pskp2 := libUnLynx.PublishedSwitchKeyProof{Skp: cps, VectBefore: cipherVect, VectAfter: *switchedVect, K: pubKeyNew, Q: pubKeyNew}
 
-	keySwitchingProofs := []lib.PublishedSwitchKeyProof{pskp1, pskp2}
+	keySwitchingProofs := []libUnLynx.PublishedSwitchKeyProof{pskp1, pskp2}
 
-	cipherOne1 := *lib.EncryptInt(pubKey, 10)
-	cipherVect1 := lib.CipherVector{cipherOne1, cipherOne1}
+	cipherOne1 := *libUnLynx.EncryptInt(pubKey, 10)
+	cipherVect1 := libUnLynx.CipherVector{cipherOne1, cipherOne1}
 
 	// deterministic tagging ***************************************************************************************
-	tagSwitchedVect := lib.NewCipherVector(2)
+	tagSwitchedVect := libUnLynx.NewCipherVector(2)
 	tagSwitchedVect.DeterministicTagging(&cipherVect1, secKey, secKeyNew)
 
-	cps1 := lib.VectorDeterministicTagProofCreation(cipherVect1, *tagSwitchedVect, secKeyNew, secKey)
-	pdhp1 := lib.PublishedDeterministicTaggingProof{Dhp: cps1, VectBefore: cipherVect1, VectAfter: *tagSwitchedVect, K: pubKey, SB: nil}
+	cps1 := libUnLynx.VectorDeterministicTagProofCreation(cipherVect1, *tagSwitchedVect, secKeyNew, secKey)
+	pdhp1 := libUnLynx.PublishedDeterministicTaggingProof{Dhp: cps1, VectBefore: cipherVect1, VectAfter: *tagSwitchedVect, K: pubKey, SB: nil}
 
-	cps1 = lib.VectorDeterministicTagProofCreation(cipherVect1, *tagSwitchedVect, secKeyNew, secKey)
-	pdhp2 := lib.PublishedDeterministicTaggingProof{Dhp: cps1, VectBefore: cipherVect1, VectAfter: *tagSwitchedVect, K: pubKey, SB: network.Suite.Point().Mul(network.Suite.Point().Base(), secKeyNew)}
+	cps1 = libUnLynx.VectorDeterministicTagProofCreation(cipherVect1, *tagSwitchedVect, secKeyNew, secKey)
+	pdhp2 := libUnLynx.PublishedDeterministicTaggingProof{Dhp: cps1, VectBefore: cipherVect1, VectAfter: *tagSwitchedVect, K: pubKey, SB: network.Suite.Point().Mul(network.Suite.Point().Base(), secKeyNew)}
 
-	cps1 = lib.VectorDeterministicTagProofCreation(cipherVect1, *tagSwitchedVect, secKey, secKey)
-	pdhp3 := lib.PublishedDeterministicTaggingProof{Dhp: cps1, VectBefore: cipherVect1, VectAfter: *tagSwitchedVect, K: pubKey, SB: network.Suite.Point().Mul(network.Suite.Point().Base(), secKeyNew)}
+	cps1 = libUnLynx.VectorDeterministicTagProofCreation(cipherVect1, *tagSwitchedVect, secKey, secKey)
+	pdhp3 := libUnLynx.PublishedDeterministicTaggingProof{Dhp: cps1, VectBefore: cipherVect1, VectAfter: *tagSwitchedVect, K: pubKey, SB: network.Suite.Point().Mul(network.Suite.Point().Base(), secKeyNew)}
 
-	deterministicTaggingProofs := []lib.PublishedDeterministicTaggingProof{pdhp1, pdhp2, pdhp3}
+	deterministicTaggingProofs := []libUnLynx.PublishedDeterministicTaggingProof{pdhp1, pdhp2, pdhp3}
 
 	// deterministic tagging 2 *************************************************************************************
 	tab := make([]int64, 2)
 	for i := 0; i < len(tab); i++ {
 		tab[i] = int64(1)
 	}
-	cipherVect = *lib.EncryptIntVector(pubKey, tab)
-	var deterministicTaggingAddProofs []lib.PublishedDetTagAdditionProof
+	cipherVect = *libUnLynx.EncryptIntVector(pubKey, tab)
+	var deterministicTaggingAddProofs []libUnLynx.PublishedDetTagAdditionProof
 	toAdd := network.Suite.Point().Mul(network.Suite.Point().Base(), secKeyNew)
 	toAddWrong := network.Suite.Point().Mul(network.Suite.Point().Base(), secKey)
 	for j := 0; j < 2; j++ {
@@ -83,66 +83,66 @@ func TestProofsVerification(t *testing.T) {
 				tmp = network.Suite.Point().Add(cipherVect[i].C, toAddWrong)
 			}
 
-			prf := lib.DetTagAdditionProofCreation(cipherVect[i].C, secKeyNew, toAdd, tmp)
+			prf := libUnLynx.DetTagAdditionProofCreation(cipherVect[i].C, secKeyNew, toAdd, tmp)
 			deterministicTaggingAddProofs = append(deterministicTaggingAddProofs, prf)
 		}
 	}
 
 	// local aggregation *******************************************************************************************
-	cipherOne2 := *lib.EncryptInt(pubKey, 10)
-	cipherVect2 := lib.CipherVector{cipherOne2, cipherOne2}
+	cipherOne2 := *libUnLynx.EncryptInt(pubKey, 10)
+	cipherVect2 := libUnLynx.CipherVector{cipherOne2, cipherOne2}
 
-	detResponses := make([]lib.FilteredResponseDet, 3)
-	detResponses[0] = lib.FilteredResponseDet{Fr: lib.FilteredResponse{GroupByEnc: cipherVect2, AggregatingAttributes: cipherVect}, DetTagGroupBy: lib.CipherVectorToDeterministicTag(*switchedVect, secKey, secKey, pubKey, true)}
-	detResponses[1] = lib.FilteredResponseDet{Fr: lib.FilteredResponse{GroupByEnc: cipherVect, AggregatingAttributes: cipherVect}, DetTagGroupBy: lib.CipherVectorToDeterministicTag(cipherVect2, secKey, secKey, pubKey, true)}
-	detResponses[2] = lib.FilteredResponseDet{Fr: lib.FilteredResponse{GroupByEnc: cipherVect2, AggregatingAttributes: cipherVect}, DetTagGroupBy: lib.CipherVectorToDeterministicTag(*switchedVect, secKey, secKey, pubKey, true)}
+	detResponses := make([]libUnLynx.FilteredResponseDet, 3)
+	detResponses[0] = libUnLynx.FilteredResponseDet{Fr: libUnLynx.FilteredResponse{GroupByEnc: cipherVect2, AggregatingAttributes: cipherVect}, DetTagGroupBy: libUnLynx.CipherVectorToDeterministicTag(*switchedVect, secKey, secKey, pubKey, true)}
+	detResponses[1] = libUnLynx.FilteredResponseDet{Fr: libUnLynx.FilteredResponse{GroupByEnc: cipherVect, AggregatingAttributes: cipherVect}, DetTagGroupBy: libUnLynx.CipherVectorToDeterministicTag(cipherVect2, secKey, secKey, pubKey, true)}
+	detResponses[2] = libUnLynx.FilteredResponseDet{Fr: libUnLynx.FilteredResponse{GroupByEnc: cipherVect2, AggregatingAttributes: cipherVect}, DetTagGroupBy: libUnLynx.CipherVectorToDeterministicTag(*switchedVect, secKey, secKey, pubKey, true)}
 
-	comparisonMap := make(map[lib.GroupingKey]lib.FilteredResponse)
+	comparisonMap := make(map[libUnLynx.GroupingKey]libUnLynx.FilteredResponse)
 	for _, v := range detResponses {
-		lib.AddInMap(comparisonMap, v.DetTagGroupBy, v.Fr)
+		libUnLynx.AddInMap(comparisonMap, v.DetTagGroupBy, v.Fr)
 	}
 
-	comparisonMap2 := make(map[lib.GroupingKey]lib.FilteredResponse)
+	comparisonMap2 := make(map[libUnLynx.GroupingKey]libUnLynx.FilteredResponse)
 	for i := 0; i < len(detResponses)-2; i++ {
-		lib.AddInMap(comparisonMap2, detResponses[i].DetTagGroupBy, detResponses[i].Fr)
+		libUnLynx.AddInMap(comparisonMap2, detResponses[i].DetTagGroupBy, detResponses[i].Fr)
 	}
 
-	PublishedAggregationProof1 := lib.AggregationProofCreation(detResponses, comparisonMap)
+	PublishedAggregationProof1 := libUnLynx.AggregationProofCreation(detResponses, comparisonMap)
 
-	PublishedAggregationProof2 := lib.AggregationProofCreation(detResponses, comparisonMap2)
+	PublishedAggregationProof2 := libUnLynx.AggregationProofCreation(detResponses, comparisonMap2)
 
-	aggregationProofs := []lib.PublishedAggregationProof{PublishedAggregationProof1, PublishedAggregationProof2}
+	aggregationProofs := []libUnLynx.PublishedAggregationProof{PublishedAggregationProof1, PublishedAggregationProof2}
 
 	// shuffling ***************************************************************************************************
-	processResponsesToShuffle := make([]lib.ProcessResponse, 3)
-	processResponsesToShuffle[0] = lib.ProcessResponse{GroupByEnc: cipherVect2, WhereEnc: cipherVect2, AggregatingAttributes: cipherVect2}
-	processResponsesToShuffle[1] = lib.ProcessResponse{GroupByEnc: cipherVect1, WhereEnc: cipherVect1, AggregatingAttributes: cipherVect1}
-	processResponsesToShuffle[2] = lib.ProcessResponse{GroupByEnc: cipherVect2, WhereEnc: cipherVect2, AggregatingAttributes: cipherVect1}
-	detResponsesCreationShuffled, pi, beta := lib.ShuffleSequence(processResponsesToShuffle, nil, protocol.Roster().Aggregate, nil)
+	processResponsesToShuffle := make([]libUnLynx.ProcessResponse, 3)
+	processResponsesToShuffle[0] = libUnLynx.ProcessResponse{GroupByEnc: cipherVect2, WhereEnc: cipherVect2, AggregatingAttributes: cipherVect2}
+	processResponsesToShuffle[1] = libUnLynx.ProcessResponse{GroupByEnc: cipherVect1, WhereEnc: cipherVect1, AggregatingAttributes: cipherVect1}
+	processResponsesToShuffle[2] = libUnLynx.ProcessResponse{GroupByEnc: cipherVect2, WhereEnc: cipherVect2, AggregatingAttributes: cipherVect1}
+	detResponsesCreationShuffled, pi, beta := libUnLynx.ShuffleSequence(processResponsesToShuffle, nil, protocol.Roster().Aggregate, nil)
 
-	PublishedShufflingProof1 := lib.ShufflingProofCreation(processResponsesToShuffle, detResponsesCreationShuffled, nil, protocol.Roster().Aggregate, beta, pi)
+	PublishedShufflingProof1 := libUnLynx.ShufflingProofCreation(processResponsesToShuffle, detResponsesCreationShuffled, nil, protocol.Roster().Aggregate, beta, pi)
 
-	PublishedShufflingProof2 := lib.ShufflingProofCreation(processResponsesToShuffle, processResponsesToShuffle, nil, pubKey, beta, pi)
+	PublishedShufflingProof2 := libUnLynx.ShufflingProofCreation(processResponsesToShuffle, processResponsesToShuffle, nil, pubKey, beta, pi)
 
-	shufflingProofs := []lib.PublishedShufflingProof{PublishedShufflingProof1, PublishedShufflingProof2}
+	shufflingProofs := []libUnLynx.PublishedShufflingProof{PublishedShufflingProof1, PublishedShufflingProof2}
 
 	// collective aggregation **************************************************************************************
-	c1 := make(map[lib.GroupingKey]lib.FilteredResponse)
+	c1 := make(map[libUnLynx.GroupingKey]libUnLynx.FilteredResponse)
 	for _, v := range detResponses {
-		lib.AddInMap(c1, v.DetTagGroupBy, v.Fr)
+		libUnLynx.AddInMap(c1, v.DetTagGroupBy, v.Fr)
 	}
 
-	c3 := make(map[lib.GroupingKey]lib.FilteredResponse)
+	c3 := make(map[libUnLynx.GroupingKey]libUnLynx.FilteredResponse)
 	for i, v := range c1 {
-		lib.AddInMap(c3, i, v)
-		lib.AddInMap(c3, i, v)
+		libUnLynx.AddInMap(c3, i, v)
+		libUnLynx.AddInMap(c3, i, v)
 	}
 
-	collectiveAggregationProof1 := lib.PublishedCollectiveAggregationProof{Aggregation1: c1, Aggregation2: detResponses, AggregationResults: c3}
-	collectiveAggregationProof2 := lib.PublishedCollectiveAggregationProof{Aggregation1: c3, Aggregation2: detResponses, AggregationResults: c1}
+	collectiveAggregationProof1 := libUnLynx.PublishedCollectiveAggregationProof{Aggregation1: c1, Aggregation2: detResponses, AggregationResults: c3}
+	collectiveAggregationProof2 := libUnLynx.PublishedCollectiveAggregationProof{Aggregation1: c3, Aggregation2: detResponses, AggregationResults: c1}
 
-	collectiveAggregationProofs := []lib.PublishedCollectiveAggregationProof{collectiveAggregationProof1, collectiveAggregationProof2}
-	protocol.TargetOfVerification = protocols.ProofsToVerify{KeySwitchingProofs: keySwitchingProofs, DeterministicTaggingProofs: deterministicTaggingProofs, DetTagAdditionProofs: deterministicTaggingAddProofs, AggregationProofs: aggregationProofs, ShufflingProofs: shufflingProofs, CollectiveAggregationProofs: collectiveAggregationProofs}
+	collectiveAggregationProofs := []libUnLynx.PublishedCollectiveAggregationProof{collectiveAggregationProof1, collectiveAggregationProof2}
+	protocol.TargetOfVerification = protocolsUnLynx.ProofsToVerify{KeySwitchingProofs: keySwitchingProofs, DeterministicTaggingProofs: deterministicTaggingProofs, DetTagAdditionProofs: deterministicTaggingAddProofs, AggregationProofs: aggregationProofs, ShufflingProofs: shufflingProofs, CollectiveAggregationProofs: collectiveAggregationProofs}
 
 	feedback := protocol.FeedbackChannel
 

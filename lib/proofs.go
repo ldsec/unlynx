@@ -1,4 +1,4 @@
-package lib
+package libUnLynx
 
 import (
 	"gopkg.in/dedis/crypto.v0/abstract"

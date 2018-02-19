@@ -1,4 +1,4 @@
-package protocols_test
+package protocolsUnLynx_test
 
 import (
 	"testing"
@@ -22,10 +22,10 @@ func TestLocalClearAggregation(t *testing.T) {
 	if err != nil {
 		t.Fatal("Couldn't start protocol:", err)
 	}
-	protocol := rootInstance.(*protocols.LocalClearAggregationProtocol)
+	protocol := rootInstance.(*protocolsUnLynx.LocalClearAggregationProtocol)
 
 	testData := generateClearData()
-	aggregatedData := lib.AddInClear(testData)
+	aggregatedData := libUnLynx.AddInClear(testData)
 
 	protocol.TargetOfAggregation = testData
 	feedback := protocol.FeedbackChannel
@@ -36,22 +36,22 @@ func TestLocalClearAggregation(t *testing.T) {
 
 	select {
 	case results := <-feedback:
-		assert.Equal(t, data.CompareClearResponses(results, aggregatedData), true)
+		assert.Equal(t, dataUnLynx.CompareClearResponses(results, aggregatedData), true)
 	case <-time.After(timeout):
 		t.Fatal("Didn't finish in time")
 	}
 }
 
-func generateClearData() []lib.DpClearResponse {
-	testData := make([]lib.DpClearResponse, 6)
+func generateClearData() []libUnLynx.DpClearResponse {
+	testData := make([]libUnLynx.DpClearResponse, 6)
 
-	testData[0] = lib.DpClearResponse{WhereClear: lib.ConvertDataToMap([]int64{1, 1}, "w", 0), GroupByClear: lib.ConvertDataToMap([]int64{1, 1}, "g", 0), AggregatingAttributesClear: lib.ConvertDataToMap([]int64{1, 2, 3, 4, 5}, "s", 0)}
-	testData[1] = lib.DpClearResponse{WhereClear: lib.ConvertDataToMap([]int64{1, 2}, "w", 0), GroupByClear: lib.ConvertDataToMap([]int64{1, 2}, "g", 0), AggregatingAttributesClear: lib.ConvertDataToMap([]int64{0, 1, 4, 3, 0}, "s", 0)}
-	testData[2] = lib.DpClearResponse{WhereClear: lib.ConvertDataToMap([]int64{1, 3}, "w", 0), GroupByClear: lib.ConvertDataToMap([]int64{1, 3}, "g", 0), AggregatingAttributesClear: lib.ConvertDataToMap([]int64{0, 1, 0, 1, 0}, "s", 0)}
+	testData[0] = libUnLynx.DpClearResponse{WhereClear: libUnLynx.ConvertDataToMap([]int64{1, 1}, "w", 0), GroupByClear: libUnLynx.ConvertDataToMap([]int64{1, 1}, "g", 0), AggregatingAttributesClear: libUnLynx.ConvertDataToMap([]int64{1, 2, 3, 4, 5}, "s", 0)}
+	testData[1] = libUnLynx.DpClearResponse{WhereClear: libUnLynx.ConvertDataToMap([]int64{1, 2}, "w", 0), GroupByClear: libUnLynx.ConvertDataToMap([]int64{1, 2}, "g", 0), AggregatingAttributesClear: libUnLynx.ConvertDataToMap([]int64{0, 1, 4, 3, 0}, "s", 0)}
+	testData[2] = libUnLynx.DpClearResponse{WhereClear: libUnLynx.ConvertDataToMap([]int64{1, 3}, "w", 0), GroupByClear: libUnLynx.ConvertDataToMap([]int64{1, 3}, "g", 0), AggregatingAttributesClear: libUnLynx.ConvertDataToMap([]int64{0, 1, 0, 1, 0}, "s", 0)}
 
-	testData[3] = lib.DpClearResponse{WhereClear: lib.ConvertDataToMap([]int64{1, 1}, "w", 0), GroupByClear: lib.ConvertDataToMap([]int64{1, 1}, "g", 0), AggregatingAttributesClear: lib.ConvertDataToMap([]int64{0, 0, 0, 0, 0}, "w", 0)}
-	testData[4] = lib.DpClearResponse{WhereClear: lib.ConvertDataToMap([]int64{1, 2}, "w", 0), GroupByClear: lib.ConvertDataToMap([]int64{1, 2}, "g", 0), AggregatingAttributesClear: lib.ConvertDataToMap([]int64{1, 3, 5, 7, 1}, "w", 0)}
-	testData[5] = lib.DpClearResponse{WhereClear: lib.ConvertDataToMap([]int64{1, 3}, "w", 0), GroupByClear: lib.ConvertDataToMap([]int64{1, 3}, "g", 0), AggregatingAttributesClear: lib.ConvertDataToMap([]int64{1, 0, 1, 0, 1}, "w", 0)}
+	testData[3] = libUnLynx.DpClearResponse{WhereClear: libUnLynx.ConvertDataToMap([]int64{1, 1}, "w", 0), GroupByClear: libUnLynx.ConvertDataToMap([]int64{1, 1}, "g", 0), AggregatingAttributesClear: libUnLynx.ConvertDataToMap([]int64{0, 0, 0, 0, 0}, "w", 0)}
+	testData[4] = libUnLynx.DpClearResponse{WhereClear: libUnLynx.ConvertDataToMap([]int64{1, 2}, "w", 0), GroupByClear: libUnLynx.ConvertDataToMap([]int64{1, 2}, "g", 0), AggregatingAttributesClear: libUnLynx.ConvertDataToMap([]int64{1, 3, 5, 7, 1}, "w", 0)}
+	testData[5] = libUnLynx.DpClearResponse{WhereClear: libUnLynx.ConvertDataToMap([]int64{1, 3}, "w", 0), GroupByClear: libUnLynx.ConvertDataToMap([]int64{1, 3}, "g", 0), AggregatingAttributesClear: libUnLynx.ConvertDataToMap([]int64{1, 0, 1, 0, 1}, "w", 0)}
 
 	return testData
 }

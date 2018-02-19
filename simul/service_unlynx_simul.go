@@ -3,8 +3,8 @@ package main
 import (
 	"github.com/BurntSushi/toml"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/services"
 	"github.com/lca1/unlynx/services/data"
-	"github.com/lca1/unlynx/services/default"
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/simul/monitor"
@@ -77,7 +77,7 @@ func (sim *SimulationUnLynx) Run(config *onet.SimulationConfig) error {
 
 	for round := 0; round < sim.Rounds; round++ {
 		log.Lvl1("Starting round", round, el)
-		client := serviceDefault.NewUnLynxClient(el.List[0], strconv.Itoa(0))
+		client := serviceUnLynx.NewUnLynxClient(el.List[0], strconv.Itoa(0))
 
 		// Define how many data providers for each server
 		nbrDPs := make(map[string]int64)
@@ -97,14 +97,14 @@ func (sim *SimulationUnLynx) Run(config *onet.SimulationConfig) error {
 
 		// Where attributes + predicate
 		NbrWhere := sim.NbrWhereClear + sim.NbrWhereEncrypted
-		whereQueryValues := make([]lib.WhereQueryAttribute, NbrWhere)
+		whereQueryValues := make([]libUnLynx.WhereQueryAttribute, NbrWhere)
 
 		predicate := ""
 		counter := 0
 
 		if int(NbrWhere) > 0 {
 			for i := 0; i < int(NbrWhere); i++ {
-				whereQueryValues[i] = lib.WhereQueryAttribute{Name: "w" + strconv.Itoa(i), Value: *lib.EncryptInt(el.Aggregate, 1)}
+				whereQueryValues[i] = libUnLynx.WhereQueryAttribute{Name: "w" + strconv.Itoa(i), Value: *libUnLynx.EncryptInt(el.Aggregate, 1)}
 				predicate = predicate + " v" + strconv.Itoa(counter) + " == v" + strconv.Itoa(counter+1) + " &&"
 				counter = counter + 2
 			}
@@ -119,78 +119,78 @@ func (sim *SimulationUnLynx) Run(config *onet.SimulationConfig) error {
 			groupBy[i] = "g" + strconv.Itoa(i)
 		}
 
-		surveyID, err := client.SendSurveyCreationQuery(el, serviceDefault.SurveyID(""), nil, nbrDPs, sim.Proofs, false, sum, count, whereQueryValues, predicate, groupBy)
+		surveyID, err := client.SendSurveyCreationQuery(el, serviceUnLynx.SurveyID(""), nil, nbrDPs, sim.Proofs, false, sum, count, whereQueryValues, predicate, groupBy)
 
 		if err != nil {
 			log.Fatal("Service did not start.")
 		}
 
 		// RandomGroups (true/false) is to respectively generate random or non random entries
-		testData := data.GenerateData(int64(sim.NbrDPs), sim.NbrResponsesTot, sim.NbrResponsesFiltered, sim.NbrGroupsClear, sim.NbrGroupsEnc,
+		testData := dataUnLynx.GenerateData(int64(sim.NbrDPs), sim.NbrResponsesTot, sim.NbrResponsesFiltered, sim.NbrGroupsClear, sim.NbrGroupsEnc,
 			sim.NbrWhereClear, sim.NbrWhereEncrypted, sim.NbrAggrClear, sim.NbrAggrEncrypted, sim.NbrGroupAttributes, sim.RandomGroups)
 
 		/*log.Lvl1("Saving test data...")
 		data.WriteDataToFile("unlynx_test_data.txt", testData)*/
 
 		/// START SERVICE PROTOCOL
-		if lib.TIME {
+		if libUnLynx.TIME {
 			start = monitor.NewTimeMeasure("SendingData")
 		}
 
 		log.Lvl1("Sending response data... ")
-		dataHolder := make([]*serviceDefault.API, sim.NbrDPs)
-		wg := lib.StartParallelize(len(dataHolder))
+		dataHolder := make([]*serviceUnLynx.API, sim.NbrDPs)
+		wg := libUnLynx.StartParallelize(len(dataHolder))
 
 		for i, client := range dataHolder {
-			start1 := lib.StartTimer(strconv.Itoa(i) + "_IndividualSendingData")
-			if lib.PARALLELIZE {
-				go func(i int, client *serviceDefault.API) {
+			start1 := libUnLynx.StartTimer(strconv.Itoa(i) + "_IndividualSendingData")
+			if libUnLynx.PARALLELIZE {
+				go func(i int, client *serviceUnLynx.API) {
 					dataCollection := testData[strconv.Itoa(i)]
 					server := el.List[i%nbrHosts]
 
-					client = serviceDefault.NewUnLynxClient(server, strconv.Itoa(i+1))
+					client = serviceUnLynx.NewUnLynxClient(server, strconv.Itoa(i+1))
 					client.SendSurveyResponseQuery(*surveyID, dataCollection, el.Aggregate, sim.DataRepetitions, count)
 					defer wg.Done()
 				}(i, client)
 			} else {
-				start2 := lib.StartTimer(strconv.Itoa(i) + "_IndividualNewUnLynxClient")
+				start2 := libUnLynx.StartTimer(strconv.Itoa(i) + "_IndividualNewUnLynxClient")
 
-				client = serviceDefault.NewUnLynxClient(el.List[i%nbrHosts], strconv.Itoa(i+1))
+				client = serviceUnLynx.NewUnLynxClient(el.List[i%nbrHosts], strconv.Itoa(i+1))
 
-				lib.EndTimer(start2)
-				start3 := lib.StartTimer(strconv.Itoa(i) + "_IndividualSendSurveyResults")
+				libUnLynx.EndTimer(start2)
+				start3 := libUnLynx.StartTimer(strconv.Itoa(i) + "_IndividualSendSurveyResults")
 
 				client.SendSurveyResponseQuery(*surveyID, testData[strconv.Itoa(i)], el.Aggregate, sim.DataRepetitions, count)
 
-				lib.EndTimer(start3)
+				libUnLynx.EndTimer(start3)
 
 			}
-			lib.EndTimer(start1)
+			libUnLynx.EndTimer(start1)
 
 		}
-		lib.EndParallelize(wg)
-		lib.EndTimer(start)
+		libUnLynx.EndParallelize(wg)
+		libUnLynx.EndTimer(start)
 
-		start := lib.StartTimer("Simulation")
+		start := libUnLynx.StartTimer("Simulation")
 
 		grp, aggr, err := client.SendSurveyResultsQuery(*surveyID)
 		if err != nil {
 			log.Fatal("Service could not output the results. ", err)
 		}
 
-		lib.EndTimer(start)
+		libUnLynx.EndTimer(start)
 		// END SERVICE PROTOCOL
 
 		// Print Output
-		allData := make([]lib.DpClearResponse, 0)
+		allData := make([]libUnLynx.DpClearResponse, 0)
 		log.Lvl1("Service output:")
 		for i := range *grp {
 			log.Lvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
-			allData = append(allData, lib.DpClearResponse{GroupByClear: lib.ConvertDataToMap((*grp)[i], "g", 0), AggregatingAttributesClear: lib.ConvertDataToMap((*aggr)[i], "s", 0)})
+			allData = append(allData, libUnLynx.DpClearResponse{GroupByClear: libUnLynx.ConvertDataToMap((*grp)[i], "g", 0), AggregatingAttributesClear: libUnLynx.ConvertDataToMap((*aggr)[i], "s", 0)})
 		}
 
 		// Test Service Simulation
-		if data.CompareClearResponses(data.ComputeExpectedResult(testData, sim.DataRepetitions, true), allData) {
+		if dataUnLynx.CompareClearResponses(dataUnLynx.ComputeExpectedResult(testData, sim.DataRepetitions, true), allData) {
 			log.Lvl1("Result is right! :)")
 		} else {
 			log.Lvl1("Result is wrong! :(")

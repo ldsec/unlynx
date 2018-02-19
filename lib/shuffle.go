@@ -1,9 +1,11 @@
-package lib
+package libUnLynx
 
 import (
 	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/crypto.v0/random"
+	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"
+	"os"
 )
 
 // compressCipherVector (slice of ciphertexts) into one ciphertext
@@ -215,4 +217,59 @@ func CompressProcessResponseMultiple(inputList, outputList []ProcessResponse, i 
 	tmpBar := CompressProcessResponse(outputList[i], e)
 	XhatBar[i] = tmpBar.K
 	YhatBar[i] = tmpBar.C
+}
+
+// PrecomputeForShuffling precomputes data to be used in the shuffling protocol (to make it faster) and saves it in a .gob file
+func PrecomputeForShuffling(serverName, gobFile string, surveySecret abstract.Scalar, collectiveKey abstract.Point, lineSize int) []CipherVectorScalar {
+	log.Lvl1(serverName, " precomputes for shuffling")
+	precomputeShuffle := CreatePrecomputedRandomize(network.Suite.Point().Base(), collectiveKey, network.Suite.Cipher(surveySecret.Bytes()), lineSize*2, 10)
+
+	encoded, err := EncodeCipherVectorScalar(precomputeShuffle)
+
+	if err != nil {
+		log.Error("Error during marshaling")
+	}
+	WriteToGobFile(gobFile, encoded)
+
+	return precomputeShuffle
+}
+
+// PrecomputationWritingForShuffling reads the precomputation data from  .gob file if it already exists or generates a new one
+func PrecomputationWritingForShuffling(appFlag bool, gobFile, serverName string, surveySecret abstract.Scalar, collectiveKey abstract.Point, lineSize int) []CipherVectorScalar {
+	log.Lvl1(serverName, " precomputes for shuffling")
+	var precomputeShuffle []CipherVectorScalar
+	if appFlag {
+		if _, err := os.Stat(gobFile); os.IsNotExist(err) {
+			precomputeShuffle = PrecomputeForShuffling(serverName, gobFile, surveySecret, collectiveKey, lineSize)
+		} else {
+			var encoded []CipherVectorScalarBytes
+			ReadFromGobFile(gobFile, &encoded)
+
+			precomputeShuffle, err = DecodeCipherVectorScalar(encoded)
+
+			if len(precomputeShuffle[0].CipherV) < lineSize {
+
+			}
+			if err != nil {
+				log.Error("Error during unmarshaling")
+			}
+		}
+	} else {
+		precomputeShuffle = CreatePrecomputedRandomize(network.Suite.Point().Base(), collectiveKey, network.Suite.Cipher(surveySecret.Bytes()), lineSize*2, 10)
+	}
+	return precomputeShuffle
+}
+
+// ReadPrecomputedFile reads the precomputation data from a .gob file
+func ReadPrecomputedFile(fileName string) []CipherVectorScalar {
+	var precomputeShuffle []CipherVectorScalar
+	if _, err := os.Stat(fileName); !os.IsNotExist(err) {
+		var encoded []CipherVectorScalarBytes
+		ReadFromGobFile(fileName, &encoded)
+
+		precomputeShuffle, _ = DecodeCipherVectorScalar(encoded)
+	} else {
+		precomputeShuffle = nil
+	}
+	return precomputeShuffle
 }

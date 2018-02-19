@@ -61,29 +61,29 @@ func (sim *LocalClearAggregationSimulation) Run(config *onet.SimulationConfig) e
 			return err
 		}
 
-		root := rooti.(*protocols.LocalClearAggregationProtocol)
+		root := rooti.(*protocolsUnLynx.LocalClearAggregationProtocol)
 
 		types := make([]int64, sim.NbrGroupAttributes)
-		data.FillInt64Slice(types, 1)
+		dataUnLynx.FillInt64Slice(types, 1)
 		if len(types) > 0 {
 			types[0] = int64(sim.NbrGroups)
 		}
 
-		testData := data.GenerateData(1, int64(sim.NbrResponses), int64(sim.NbrResponses), int64(sim.NbrGroupAttributes), 0,
+		testData := dataUnLynx.GenerateData(1, int64(sim.NbrResponses), int64(sim.NbrResponses), int64(sim.NbrGroupAttributes), 0,
 			int64(sim.NbrWhereAttributes), 0, int64(sim.NbrAggrAttributes), 0, types, true)
 
 		log.Lvl1("starting protocol with ", len(testData), " responses")
 
 		//protocol
-		root.ProtocolInstance().(*protocols.LocalClearAggregationProtocol).TargetOfAggregation = testData["0"]
+		root.ProtocolInstance().(*protocolsUnLynx.LocalClearAggregationProtocol).TargetOfAggregation = testData["0"]
 
 		round := monitor.NewTimeMeasure("LocalClearAggregation(SIMULATION)")
 		root.Start()
-		results := <-root.ProtocolInstance().(*protocols.LocalClearAggregationProtocol).FeedbackChannel
+		results := <-root.ProtocolInstance().(*protocolsUnLynx.LocalClearAggregationProtocol).FeedbackChannel
 		log.Lvl1("Number of aggregated lines (groups): ", len(results))
 
 		// Test Simulation
-		if data.CompareClearResponses(data.ComputeExpectedResult(testData, 1, false), results) {
+		if dataUnLynx.CompareClearResponses(dataUnLynx.ComputeExpectedResult(testData, 1, false), results) {
 			log.Lvl1("Result is right! :)")
 		} else {
 			log.Lvl1("Result is wrong! :(")

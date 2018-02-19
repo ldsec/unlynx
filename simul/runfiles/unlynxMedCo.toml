@@ -1,9 +1,0 @@
-Simulation = "ServiceUnLynxMedCo"
-Servers = 4
-Bf = 2
-Rounds = 1
-RunWait = 6000000
-Bandwidth = 1000
-
-Hosts, NbrDPs, NbrResponsesTot, NbrResponsesFiltered, NbrWhereClear, NbrWhereEncrypted, NbrAggrClear, NbrAggrEncrypted, Count, DataRepetitions, Proofs, QueryMode
-4, 4, 300, 50, 0, 2, 0, 2, false, 1, true, 0

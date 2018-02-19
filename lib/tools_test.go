@@ -1,9 +1,7 @@
-package data_test
+package libUnLynx
 
 import (
 	"fmt"
-	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/services/data"
 	"gopkg.in/dedis/crypto.v0/random"
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/network"
@@ -14,9 +12,9 @@ import (
 const file = "pre_compute_multiplications.gob"
 
 func TestWriteToGobFile(t *testing.T) {
-	data_cipher := make([]lib.CipherVectorScalar, 0)
+	dataCipher := make([]CipherVectorScalar, 0)
 
-	cipher := lib.CipherVectorScalar{}
+	cipher := CipherVectorScalar{}
 
 	v1 := network.Suite.Scalar().Pick(random.Stream)
 	v2 := network.Suite.Scalar().Pick(random.Stream)
@@ -26,34 +24,34 @@ func TestWriteToGobFile(t *testing.T) {
 	vK := network.Suite.Point()
 	vC := network.Suite.Point()
 
-	ct := lib.CipherText{K: vK, C: vC}
+	ct := CipherText{K: vK, C: vC}
 
 	cipher.CipherV = append(cipher.CipherV, ct)
-	data_cipher = append(data_cipher, cipher)
+	dataCipher = append(dataCipher, cipher)
 
 	// we need bytes (or any other serializable data) to be able to store in a gob file
-	encoded, err := data.EncodeCipherVectorScalar(data_cipher)
+	encoded, err := EncodeCipherVectorScalar(dataCipher)
 
 	if err != nil {
 		log.Fatal("Error during marshling")
 	}
 
-	data.WriteToGobFile(file, encoded)
+	WriteToGobFile(file, encoded)
 
-	fmt.Println(data_cipher)
+	fmt.Println(dataCipher)
 }
 
 func TestReadFromGobFile(t *testing.T) {
-	var encoded []lib.CipherVectorScalarBytes
+	var encoded []CipherVectorScalarBytes
 
-	data.ReadFromGobFile(file, &encoded)
+	ReadFromGobFile(file, &encoded)
 
-	data_cipher, err := data.DecodeCipherVectorScalar(encoded)
+	dataCipher, err := DecodeCipherVectorScalar(encoded)
 
 	if err != nil {
 		log.Fatal("Error during unmarshling")
 	}
 
-	fmt.Println(data_cipher)
+	fmt.Println(dataCipher)
 	os.Remove("pre_compute_multiplications.gob")
 }

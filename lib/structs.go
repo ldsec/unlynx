@@ -1,5 +1,5 @@
-// Package lib contains unlynx_structs which contains structures and methods built on basic structures defined in crypto
-package lib
+// Package libUnLynx contains unlynx_structs which contains structures and methods built on basic structures defined in crypto
+package libUnLynx
 
 import (
 	"gopkg.in/dedis/crypto.v0/abstract"
