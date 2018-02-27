@@ -6,9 +6,9 @@ import (
 	"github.com/lca1/unlynx/simul/test_data/time_data"
 )
 
-const filename_read = "../service_unlynx.csv"
-const filename_write = "result.txt"
-const filename_toml = "../../runfiles/unlynx_default.toml"
+const filenameRead = "../service_unlynx.csv"
+const filenameWrite = "result.txt"
+const filenameToml = "../../runfiles/unlynx_default.toml"
 
 var flags = []string{"bf", "depth", "rounds", "runwait", "servers", "\n",
 	"Shuffling(START)", "Shuffling(DISPATCH)", "Shuffling(START-noProof)", "Shuffling(DISPATCH-noProof)", "Shuffling(START-Proof)", "Shuffling(DISPATCH-Proof)", "ShufflingPhase", "\n",
@@ -23,19 +23,22 @@ var flags = []string{"bf", "depth", "rounds", "runwait", "servers", "\n",
 	"KeySwitchingVerif", "DetTagVerif", "DetTagAddVerif", "LocalAggrVerif", "ShufflingVerif", "CollectiveAggrVerif", "AddRmServer(PROTOCOL)", "AddRmServer(PROOFS)", "AddRmServer(PROOFSVerif)"}
 
 func TestReadTomlSetup(t *testing.T) {
-	timedata.ReadTomlSetup(filename_toml, 0)
+	t.Skip()
+	timedata.ReadTomlSetup(filenameToml, 0)
 }
 
 func TestReadDataToCSVFile(t *testing.T) {
-	timedata.ReadDataFromCSVFile(filename_read, flags)
+	t.Skip()
+	timedata.ReadDataFromCSVFile(filenameRead, flags)
 }
 
 func TestWriteDataFromCSVFile(t *testing.T) {
-	test_time_data := timedata.ReadDataFromCSVFile(filename_read, flags)
+	t.Skip()
+	testTimeData := timedata.ReadDataFromCSVFile(filenameRead, flags)
 
-	timedata.CreateCSVFile(filename_write)
-	for i := 0; i < len(test_time_data[flags[0]]); i++ {
-		setup := timedata.ReadTomlSetup(filename_toml, i)
-		timedata.WriteDataFromCSVFile(filename_write, flags, test_time_data, i, setup)
+	timedata.CreateCSVFile(filenameWrite)
+	for i := 0; i < len(testTimeData[flags[0]]); i++ {
+		setup := timedata.ReadTomlSetup(filenameToml, i)
+		timedata.WriteDataFromCSVFile(filenameWrite, flags, testTimeData, i, setup)
 	}
 }
