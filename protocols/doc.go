@@ -1,4 +1,4 @@
-// Package protocolsUnLynx contains the code for the unlynx protocols.
+// Package protocolsunlynx contains the code for the unlynx protocols.
 // UnLynx stands for medical cothority and more precisely for privacy-preserving medical data sharing
 // using a cothority. We use medical data and more precisely medical surveys as a working example
 // but we intend to create a more general framework which would be a decentralized database containing
@@ -16,4 +16,4 @@
 //	- participates in the Shuffling protocol (shuffling_protocol)
 //	- a server leyving or joining the cothority can change data encryption to adapt to new collectiv key
 //	  by using addrm_server_protocol
-package protocolsUnLynx
+package protocolsunlynx

@@ -1,4 +1,4 @@
-package protocolsUnLynx
+package protocolsunlynx
 
 import (
 	"gopkg.in/dedis/onet.v1"

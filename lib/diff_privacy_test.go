@@ -1,4 +1,4 @@
-package libUnLynx_test
+package libunlynx_test
 
 import (
 	"github.com/lca1/unlynx/lib"
@@ -8,10 +8,10 @@ import (
 
 // TestAddRmProof tests the generation of the noise values for the differential privacy
 func TestGenerateNoiseValues(t *testing.T) {
-	aux := libUnLynx.GenerateNoiseValues(0, 0, 1, 0.005)
+	aux := libunlynx.GenerateNoiseValues(0, 0, 1, 0.005)
 	assert.Empty(t, aux)
 
-	aux = libUnLynx.GenerateNoiseValues(500, 0, 1, 0.005)
+	aux = libunlynx.GenerateNoiseValues(500, 0, 1, 0.005)
 
 	assert.Equal(t, len(aux), 500)
 

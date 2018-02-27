@@ -1,4 +1,4 @@
-package serviceUnLynx
+package servicesunlynxdefault
 
 import (
 	"github.com/lca1/unlynx/lib"
@@ -36,7 +36,7 @@ func NewUnLynxClient(entryPoint *network.ServerIdentity, clientID string) *API {
 //______________________________________________________________________________________________________________________
 
 // SendSurveyCreationQuery creates a survey based on a set of entities (servers) and a survey description.
-func (c *API) SendSurveyCreationQuery(entities *onet.Roster, surveyID SurveyID, clientPubKey abstract.Point, nbrDPs map[string]int64, proofs, appFlag bool, sum []string, count bool, where []libUnLynx.WhereQueryAttribute, predicate string, groupBy []string) (*SurveyID, error) {
+func (c *API) SendSurveyCreationQuery(entities *onet.Roster, surveyID SurveyID, clientPubKey abstract.Point, nbrDPs map[string]int64, proofs, appFlag bool, sum []string, count bool, where []libunlynx.WhereQueryAttribute, predicate string, groupBy []string) (*SurveyID, error) {
 	log.Lvl1(c, "is creating a survey with id: ", surveyID)
 
 	var newSurveyID SurveyID
@@ -68,7 +68,7 @@ func (c *API) SendSurveyCreationQuery(entities *onet.Roster, surveyID SurveyID, 
 }
 
 // SendSurveyResponseQuery handles the encryption and sending of DP responses
-func (c *API) SendSurveyResponseQuery(surveyID SurveyID, clearClientResponses []libUnLynx.DpClearResponse, groupKey abstract.Point, dataRepetitions int, count bool) error {
+func (c *API) SendSurveyResponseQuery(surveyID SurveyID, clearClientResponses []libunlynx.DpClearResponse, groupKey abstract.Point, dataRepetitions int, count bool) error {
 	log.Lvl1(c, " sends a result for survey ", surveyID)
 	var err error
 
@@ -100,8 +100,8 @@ func (c *API) SendSurveyResultsQuery(surveyID SurveyID) (*[][]int64, *[][]int64,
 	grp := make([][]int64, len(resp.Results))
 	aggr := make([][]int64, len(resp.Results))
 	for i, res := range resp.Results {
-		grp[i] = libUnLynx.DecryptIntVector(c.private, &res.GroupByEnc)
-		aggr[i] = libUnLynx.DecryptIntVector(c.private, &res.AggregatingAttributes)
+		grp[i] = libunlynx.DecryptIntVector(c.private, &res.GroupByEnc)
+		aggr[i] = libunlynx.DecryptIntVector(c.private, &res.AggregatingAttributes)
 	}
 	return &grp, &aggr, nil
 }
@@ -110,25 +110,25 @@ func (c *API) SendSurveyResultsQuery(surveyID SurveyID) (*[][]int64, *[][]int64,
 //______________________________________________________________________________________________________________________
 
 // EncryptDataToSurvey is used to encrypt client responses with the collective key
-func EncryptDataToSurvey(name string, surveyID SurveyID, dpClearResponses []libUnLynx.DpClearResponse, groupKey abstract.Point, dataRepetitions int, count bool) *SurveyResponseQuery {
+func EncryptDataToSurvey(name string, surveyID SurveyID, dpClearResponses []libunlynx.DpClearResponse, groupKey abstract.Point, dataRepetitions int, count bool) *SurveyResponseQuery {
 	nbrResponses := len(dpClearResponses)
 
 	log.Lvl1(name, " responds with ", nbrResponses, " response(s)")
 
-	var dpResponses []libUnLynx.DpResponseToSend
-	dpResponses = make([]libUnLynx.DpResponseToSend, nbrResponses*dataRepetitions)
+	var dpResponses []libunlynx.DpResponseToSend
+	dpResponses = make([]libunlynx.DpResponseToSend, nbrResponses*dataRepetitions)
 
-	wg := libUnLynx.StartParallelize(len(dpClearResponses))
-	round := libUnLynx.StartTimer(name + "_ClientEncryption")
+	wg := libunlynx.StartParallelize(len(dpClearResponses))
+	round := libunlynx.StartTimer(name + "_ClientEncryption")
 
 	for i, v := range dpClearResponses {
-		if libUnLynx.PARALLELIZE {
-			go func(i int, v libUnLynx.DpClearResponse) {
+		if libunlynx.PARALLELIZE {
+			go func(i int, v libunlynx.DpClearResponse) {
 				// dataRepetitions is used to make the simulations faster by using the same response multiple times
 				// should be set to 1 if no repet
 				i = i * dataRepetitions
 				if i < len(dpResponses) {
-					dpResponses[i] = libUnLynx.EncryptDpClearResponse(v, groupKey, count)
+					dpResponses[i] = libunlynx.EncryptDpClearResponse(v, groupKey, count)
 
 					for j := 0; j < dataRepetitions && j+i < len(dpResponses); j++ {
 						dpResponses[i+j].GroupByClear = dpResponses[i].GroupByClear
@@ -142,12 +142,12 @@ func EncryptDataToSurvey(name string, surveyID SurveyID, dpClearResponses []libU
 				defer wg.Done()
 			}(i, v)
 		} else {
-			dpResponses[i] = libUnLynx.EncryptDpClearResponse(v, groupKey, count)
+			dpResponses[i] = libunlynx.EncryptDpClearResponse(v, groupKey, count)
 		}
 
 	}
-	libUnLynx.EndParallelize(wg)
-	libUnLynx.EndTimer(round)
+	libunlynx.EndParallelize(wg)
+	libunlynx.EndTimer(round)
 	return &SurveyResponseQuery{SurveyID: surveyID, Responses: dpResponses}
 }
 

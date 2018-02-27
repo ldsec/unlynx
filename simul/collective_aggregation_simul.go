@@ -14,28 +14,28 @@ import (
 //var clientPrivate = suite.Scalar().One() //one -> to have the same for each node
 //var clientPublic = suite.Point().Mul(suite.Point().Base(), clientPrivate)
 
-func createDataSet(numberGroups, numberAttributes, numberGroupAttr int) map[libUnLynx.GroupingKey]libUnLynx.FilteredResponse {
+func createDataSet(numberGroups, numberAttributes, numberGroupAttr int) map[libunlynx.GroupingKey]libunlynx.FilteredResponse {
 	var secContrib = network.Suite.Scalar().One()
 	var clientPrivate = network.Suite.Scalar().One() //one -> to have the same for each node
 	var clientPublic = network.Suite.Point().Mul(network.Suite.Point().Base(), clientPrivate)
 
-	testCVMap := make(map[libUnLynx.GroupingKey]libUnLynx.FilteredResponse)
+	testCVMap := make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse)
 
 	tabGrp := make([]int64, numberGroupAttr)
 	for i := 0; i < numberGroupAttr; i++ {
 		tabGrp[i] = int64(1)
 	}
 
-	dummyGroups := *libUnLynx.EncryptIntVector(clientPublic, tabGrp)
+	dummyGroups := *libunlynx.EncryptIntVector(clientPublic, tabGrp)
 	for i := 0; i < numberGroups; i++ {
 		tab := make([]int64, numberAttributes)
 		for i := 0; i < numberAttributes; i++ {
 			tab[i] = int64(1)
 		}
 
-		cipherVect := *libUnLynx.EncryptIntVector(clientPublic, tab)
+		cipherVect := *libunlynx.EncryptIntVector(clientPublic, tab)
 
-		testCVMap[libUnLynx.CipherVectorToDeterministicTag(*libUnLynx.EncryptIntVector(clientPublic, []int64{int64(i)}), clientPrivate, secContrib, clientPublic, false)] = libUnLynx.FilteredResponse{GroupByEnc: dummyGroups, AggregatingAttributes: cipherVect}
+		testCVMap[libunlynx.CipherVectorToDeterministicTag(*libunlynx.EncryptIntVector(clientPublic, []int64{int64(i)}), clientPrivate, secContrib, clientPublic, false)] = libunlynx.FilteredResponse{GroupByEnc: dummyGroups, AggregatingAttributes: cipherVect}
 	}
 	return testCVMap
 }
@@ -100,16 +100,16 @@ func (sim *CollectiveAggregationSimulation) Run(config *onet.SimulationConfig) e
 			return err
 		}
 
-		root := rooti.(*protocolsUnLynx.CollectiveAggregationProtocol)
+		root := rooti.(*protocolsunlynx.CollectiveAggregationProtocol)
 
 		//time measurement
-		round := libUnLynx.StartTimer("CollectiveAggregation(SIMULATION)")
+		round := libunlynx.StartTimer("CollectiveAggregation(SIMULATION)")
 
 		log.Lvl1("Start protocol")
 		root.Start()
-		<-root.ProtocolInstance().(*protocolsUnLynx.CollectiveAggregationProtocol).FeedbackChannel
+		<-root.ProtocolInstance().(*protocolsunlynx.CollectiveAggregationProtocol).FeedbackChannel
 
-		libUnLynx.EndTimer(round)
+		libunlynx.EndTimer(round)
 	}
 
 	return nil
@@ -117,8 +117,8 @@ func (sim *CollectiveAggregationSimulation) Run(config *onet.SimulationConfig) e
 
 // NewAggregationProtocolSimul is a simulation specific protocol instance constructor that injects test data.
 func NewAggregationProtocolSimul(tni *onet.TreeNodeInstance, sim *CollectiveAggregationSimulation) (onet.ProtocolInstance, error) {
-	protocol, err := protocolsUnLynx.NewCollectiveAggregationProtocol(tni)
-	pap := protocol.(*protocolsUnLynx.CollectiveAggregationProtocol)
+	protocol, err := protocolsunlynx.NewCollectiveAggregationProtocol(tni)
+	pap := protocol.(*protocolsunlynx.CollectiveAggregationProtocol)
 
 	data := createDataSet(sim.NbrGroups, sim.NbrAggrAttributes, sim.NbrGroupAttributes)
 	pap.GroupedData = &data

@@ -1,4 +1,4 @@
-package libUnLynx
+package libunlynx
 
 import (
 	"encoding"

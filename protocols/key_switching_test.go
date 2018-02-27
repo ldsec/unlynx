@@ -1,4 +1,4 @@
-package protocolsUnLynx_test
+package protocolsunlynx_test
 
 import (
 	"reflect"
@@ -23,21 +23,21 @@ func TestKeySwitching(t *testing.T) {
 	if err != nil {
 		t.Fatal("Couldn't start protocol:", err)
 	}
-	protocol := rootInstance.(*protocolsUnLynx.KeySwitchingProtocol)
+	protocol := rootInstance.(*protocolsunlynx.KeySwitchingProtocol)
 
 	suite := network.Suite
 	aggregateKey := entityList.Aggregate
 
 	//create data
 	expRes := []int64{1, 2, 3, 6}
-	testCipherVect := *libUnLynx.EncryptIntVector(aggregateKey, expRes)
+	testCipherVect := *libunlynx.EncryptIntVector(aggregateKey, expRes)
 	expRes1 := []int64{7, 8, 9, 7}
-	testCipherVect1 := *libUnLynx.EncryptIntVector(aggregateKey, expRes1)
-	var tabi []libUnLynx.FilteredResponse
-	tabi = make([]libUnLynx.FilteredResponse, 2)
+	testCipherVect1 := *libunlynx.EncryptIntVector(aggregateKey, expRes1)
+	var tabi []libunlynx.FilteredResponse
+	tabi = make([]libunlynx.FilteredResponse, 2)
 
-	tabi[0] = libUnLynx.FilteredResponse{GroupByEnc: testCipherVect1, AggregatingAttributes: testCipherVect}
-	tabi[1] = libUnLynx.FilteredResponse{GroupByEnc: testCipherVect, AggregatingAttributes: testCipherVect1}
+	tabi[0] = libunlynx.FilteredResponse{GroupByEnc: testCipherVect1, AggregatingAttributes: testCipherVect}
+	tabi[1] = libunlynx.FilteredResponse{GroupByEnc: testCipherVect, AggregatingAttributes: testCipherVect1}
 
 	clientPrivate := suite.Scalar().Pick(random.Stream)
 	clientPublic := suite.Point().Mul(suite.Point().Base(), clientPrivate)
@@ -55,13 +55,13 @@ func TestKeySwitching(t *testing.T) {
 	select {
 	case encryptedResult := <-feedback:
 		cv1 := encryptedResult[0]
-		res := libUnLynx.DecryptIntVector(clientPrivate, &cv1.AggregatingAttributes)
-		resGrp := libUnLynx.DecryptIntVector(clientPrivate, &cv1.GroupByEnc)
+		res := libunlynx.DecryptIntVector(clientPrivate, &cv1.AggregatingAttributes)
+		resGrp := libunlynx.DecryptIntVector(clientPrivate, &cv1.GroupByEnc)
 		log.Lvl1("Recieved results (attributes) ", res)
 		log.Lvl1("Recieved results (groups) ", resGrp)
 		cv2 := encryptedResult[1]
-		res1 := libUnLynx.DecryptIntVector(clientPrivate, &cv2.AggregatingAttributes)
-		resGrp1 := libUnLynx.DecryptIntVector(clientPrivate, &cv2.GroupByEnc)
+		res1 := libunlynx.DecryptIntVector(clientPrivate, &cv2.AggregatingAttributes)
+		resGrp1 := libunlynx.DecryptIntVector(clientPrivate, &cv2.GroupByEnc)
 		log.Lvl1("Recieved results (attributes) ", res1)
 		log.Lvl1("Recieved results (groups) ", resGrp1)
 

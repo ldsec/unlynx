@@ -1,4 +1,4 @@
-// Package protocolsUnLynx contains the distributed deterministic tagging protocol which permits to add a deterministic
+// Package protocolsunlynx contains the distributed deterministic tagging protocol which permits to add a deterministic
 // tag to a DP response.
 // The El-Gamal encrypted DP response should be encrypted by the collective public key of the cothority.
 // In that case, each cothority server (node) can remove his El-Gamal secret contribution and homomorphically
@@ -6,7 +6,7 @@
 // This is done by creating a circuit between the servers. The DP response is sent through this circuit and
 // each server applies its transformation on it and forwards it to the next node in the circuit
 // until it comes back to the server who started the protocol.
-package protocolsUnLynx
+package protocolsunlynx
 
 import (
 	"errors"
@@ -29,7 +29,7 @@ func init() {
 	network.RegisterMessage(DeterministicTaggingMessage{})
 	network.RegisterMessage(DeterministicTaggingBytesMessage{})
 	network.RegisterMessage(DTBLengthMessage{})
-	network.RegisterMessage(libUnLynx.ProcessResponseDet{})
+	network.RegisterMessage(libunlynx.ProcessResponseDet{})
 	onet.GlobalProtocolRegister(DeterministicTaggingProtocolName, NewDeterministicTaggingProtocol)
 }
 
@@ -38,7 +38,7 @@ func init() {
 
 // GroupingAttributes are the grouping attributes used to create the tag
 type GroupingAttributes struct {
-	Vector libUnLynx.CipherVector
+	Vector libunlynx.CipherVector
 }
 
 // DeterministicTaggingMessage represents a deterministic tagging message containing the processed cipher vectors DP
@@ -80,7 +80,7 @@ type DeterministicTaggingProtocol struct {
 	*onet.TreeNodeInstance
 
 	// Protocol feedback channel
-	FeedbackChannel chan []libUnLynx.ProcessResponseDet
+	FeedbackChannel chan []libunlynx.ProcessResponseDet
 
 	// Protocol communication channels
 	PreviousNodeInPathChannel chan deterministicTaggingBytesStruct
@@ -88,7 +88,7 @@ type DeterministicTaggingProtocol struct {
 
 	// Protocol state data
 	nextNodeInCircuit *onet.TreeNode
-	TargetOfSwitch    *[]libUnLynx.ProcessResponse
+	TargetOfSwitch    *[]libunlynx.ProcessResponse
 	SurveySecretKey   *abstract.Scalar
 	Proofs            bool
 
@@ -99,7 +99,7 @@ type DeterministicTaggingProtocol struct {
 func NewDeterministicTaggingProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 	dsp := &DeterministicTaggingProtocol{
 		TreeNodeInstance: n,
-		FeedbackChannel:  make(chan []libUnLynx.ProcessResponseDet),
+		FeedbackChannel:  make(chan []libunlynx.ProcessResponseDet),
 	}
 
 	if err := dsp.RegisterChannel(&dsp.PreviousNodeInPathChannel); err != nil {
@@ -125,7 +125,7 @@ func NewDeterministicTaggingProtocol(n *onet.TreeNodeInstance) (onet.ProtocolIns
 // Start is called at the root node and starts the execution of the protocol.
 func (p *DeterministicTaggingProtocol) Start() error {
 
-	roundTotalStart := libUnLynx.StartTimer(p.Name() + "_DetTagging(START)")
+	roundTotalStart := libunlynx.StartTimer(p.Name() + "_DetTagging(START)")
 
 	if p.TargetOfSwitch == nil {
 		return errors.New("No data on which to do a deterministic tagging")
@@ -146,7 +146,7 @@ func (p *DeterministicTaggingProtocol) Start() error {
 	for i, v := range *p.TargetOfSwitch {
 		detTarget[i].Vector = append(v.GroupByEnc, v.WhereEnc...)
 	}
-	libUnLynx.EndTimer(roundTotalStart)
+	libunlynx.EndTimer(roundTotalStart)
 
 	sendingDet(*p, DeterministicTaggingMessage{detTarget})
 
@@ -162,16 +162,16 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 	deterministicTaggingTargetBef.FromBytes(deterministicTaggingTargetBytesBef.Data, lengthBef.CVLengths)
 
 	startT := time.Now()
-	wg := libUnLynx.StartParallelize(len(deterministicTaggingTargetBef.Data))
+	wg := libunlynx.StartParallelize(len(deterministicTaggingTargetBef.Data))
 	toAdd := network.Suite.Point().Mul(network.Suite.Point().Base(), *p.SurveySecretKey)
 	for i := range deterministicTaggingTargetBef.Data {
-		if libUnLynx.PARALLELIZE {
+		if libunlynx.PARALLELIZE {
 			go func(v []GroupingAttributes, i int) {
 				defer wg.Done()
 				for j := range v[i].Vector {
 					tmp := network.Suite.Point().Add(v[i].Vector[j].C, toAdd)
 					if p.Proofs {
-						prf := libUnLynx.DetTagAdditionProofCreation(v[i].Vector[j].C, *p.SurveySecretKey, toAdd, tmp)
+						prf := libunlynx.DetTagAdditionProofCreation(v[i].Vector[j].C, *p.SurveySecretKey, toAdd, tmp)
 						//dummy proof publication
 						_ = prf
 					}
@@ -184,7 +184,7 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 			for j := range deterministicTaggingTargetBef.Data[i].Vector {
 				tmp := network.Suite.Point().Add(deterministicTaggingTargetBef.Data[i].Vector[j].C, toAdd)
 				if p.Proofs {
-					prf := libUnLynx.DetTagAdditionProofCreation(deterministicTaggingTargetBef.Data[i].Vector[j].C, *p.SurveySecretKey, toAdd, tmp)
+					prf := libunlynx.DetTagAdditionProofCreation(deterministicTaggingTargetBef.Data[i].Vector[j].C, *p.SurveySecretKey, toAdd, tmp)
 					_ = prf
 				}
 				deterministicTaggingTargetBef.Data[i].Vector[j].C = tmp
@@ -192,7 +192,7 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 		}
 	}
 
-	libUnLynx.EndParallelize(wg)
+	libunlynx.EndParallelize(wg)
 	log.Lvl1(p.ServerIdentity(), " preparation round for deterministic tagging")
 
 	if p.IsRoot() {
@@ -207,11 +207,11 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 	deterministicTaggingTarget.FromBytes(deterministicTaggingTargetBytes.Data, length.CVLengths)
 
 	startT = time.Now()
-	roundTotalComputation := libUnLynx.StartTimer(p.Name() + "_DetTagging(DISPATCH)")
+	roundTotalComputation := libunlynx.StartTimer(p.Name() + "_DetTagging(DISPATCH)")
 
-	wg = libUnLynx.StartParallelize(len(deterministicTaggingTarget.Data))
+	wg = libunlynx.StartParallelize(len(deterministicTaggingTarget.Data))
 	for i := range deterministicTaggingTarget.Data {
-		if libUnLynx.PARALLELIZE {
+		if libunlynx.PARALLELIZE {
 			go func(v []GroupingAttributes, i int) {
 				defer wg.Done()
 				v[i].Vector.TaggingDet(p.Private(), *p.SurveySecretKey, p.Public(), p.Proofs)
@@ -223,17 +223,17 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 		}
 	}
 
-	libUnLynx.EndParallelize(wg)
+	libunlynx.EndParallelize(wg)
 
-	var TaggedData []libUnLynx.ProcessResponseDet
+	var TaggedData []libunlynx.ProcessResponseDet
 
 	if p.IsRoot() {
 		detCreatedData := deterministicTaggingTarget.Data
-		TaggedData = make([]libUnLynx.ProcessResponseDet, len(*p.TargetOfSwitch))
+		TaggedData = make([]libunlynx.ProcessResponseDet, len(*p.TargetOfSwitch))
 
-		wg1 := libUnLynx.StartParallelize(len(detCreatedData))
+		wg1 := libunlynx.StartParallelize(len(detCreatedData))
 		for i, v := range detCreatedData {
-			if libUnLynx.PARALLELIZE {
+			if libunlynx.PARALLELIZE {
 				go func(i int, v GroupingAttributes) {
 					defer wg1.Done()
 					TaggedData[i] = deterministicTagFormat(i, v, p.TargetOfSwitch)
@@ -244,13 +244,13 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 
 		}
 
-		libUnLynx.EndParallelize(wg1)
+		libunlynx.EndParallelize(wg1)
 		log.Lvl1(p.ServerIdentity(), " completed deterministic Tagging (", len(detCreatedData), "row )")
 	} else {
 		log.Lvl1(p.ServerIdentity(), " carried on deterministic Tagging.", len(deterministicTaggingTarget.Data))
 	}
 
-	libUnLynx.EndTimer(roundTotalComputation)
+	libunlynx.EndTimer(roundTotalComputation)
 
 	if p.IsRoot() {
 		p.ExecTime += time.Since(startT)
@@ -284,21 +284,21 @@ func sendingDet(p DeterministicTaggingProtocol, detTarget DeterministicTaggingMe
 }
 
 // DeterministicTagFormat creates a response with a deterministic tag
-func deterministicTagFormat(i int, v GroupingAttributes, targetofSwitch *[]libUnLynx.ProcessResponse) libUnLynx.ProcessResponseDet {
+func deterministicTagFormat(i int, v GroupingAttributes, targetofSwitch *[]libunlynx.ProcessResponse) libunlynx.ProcessResponseDet {
 	tmp := *targetofSwitch
 
-	deterministicGroupAttributes := make(libUnLynx.DeterministCipherVector, len(tmp[i].GroupByEnc))
-	deterministicWhereAttributes := make([]libUnLynx.GroupingKey, len(tmp[i].WhereEnc))
+	deterministicGroupAttributes := make(libunlynx.DeterministCipherVector, len(tmp[i].GroupByEnc))
+	deterministicWhereAttributes := make([]libunlynx.GroupingKey, len(tmp[i].WhereEnc))
 	for j, c := range v.Vector {
 		if j < len(tmp[i].GroupByEnc) {
-			deterministicGroupAttributes[j] = libUnLynx.DeterministCipherText{Point: c.C}
+			deterministicGroupAttributes[j] = libunlynx.DeterministCipherText{Point: c.C}
 		} else if j < len(tmp[i].GroupByEnc)+len(tmp[i].WhereEnc) {
-			tmp1 := (libUnLynx.DeterministCipherVector{libUnLynx.DeterministCipherText{Point: c.C}})
+			tmp1 := (libunlynx.DeterministCipherVector{libunlynx.DeterministCipherText{Point: c.C}})
 			deterministicWhereAttributes[j-len(tmp[i].GroupByEnc)] = tmp1.Key()
 		}
 
 	}
-	return libUnLynx.ProcessResponseDet{PR: (*targetofSwitch)[i], DetTagGroupBy: deterministicGroupAttributes.Key(), DetTagWhere: deterministicWhereAttributes}
+	return libunlynx.ProcessResponseDet{PR: (*targetofSwitch)[i], DetTagGroupBy: deterministicGroupAttributes.Key(), DetTagWhere: deterministicWhereAttributes}
 }
 
 // Conversion
@@ -333,10 +333,10 @@ func (dtm *DeterministicTaggingMessage) ToBytes() ([]byte, []byte) {
 	b := make([]byte, 0)
 	bb := make([][]byte, length)
 
-	wg := libUnLynx.StartParallelize(length)
+	wg := libunlynx.StartParallelize(length)
 	var mutexD sync.Mutex
 	for i := range (*dtm).Data {
-		if libUnLynx.PARALLELIZE {
+		if libunlynx.PARALLELIZE {
 			go func(i int) {
 				defer wg.Done()
 
@@ -350,7 +350,7 @@ func (dtm *DeterministicTaggingMessage) ToBytes() ([]byte, []byte) {
 		}
 
 	}
-	libUnLynx.EndParallelize(wg)
+	libunlynx.EndParallelize(wg)
 	for _, v := range bb {
 		b = append(b, v...)
 	}
@@ -363,17 +363,17 @@ func (dtm *DeterministicTaggingMessage) FromBytes(data []byte, cvLengthsByte []b
 	cvLengths := UnsafeCastBytesToInts(cvLengthsByte)
 	(*dtm).Data = make([]GroupingAttributes, len(cvLengths))
 
-	wg := libUnLynx.StartParallelize(len(cvLengths))
+	wg := libunlynx.StartParallelize(len(cvLengths))
 
 	// iter over each value in the flatten data byte array
 	bytePos := 0
 	for i := 0; i < len(cvLengths); i++ {
 		nextBytePos := bytePos + cvLengths[i]*64 //TODO: hardcoded 64 (size of el-gamal element C,K)
 
-		cv := make(libUnLynx.CipherVector, cvLengths[i])
+		cv := make(libunlynx.CipherVector, cvLengths[i])
 		v := data[bytePos:nextBytePos]
 
-		if libUnLynx.PARALLELIZE {
+		if libunlynx.PARALLELIZE {
 			go func(v []byte, i int) {
 				defer wg.Done()
 				cv.FromBytes(v, cvLengths[i])
@@ -387,5 +387,5 @@ func (dtm *DeterministicTaggingMessage) FromBytes(data []byte, cvLengthsByte []b
 		// advance pointer
 		bytePos = nextBytePos
 	}
-	libUnLynx.EndParallelize(wg)
+	libunlynx.EndParallelize(wg)
 }

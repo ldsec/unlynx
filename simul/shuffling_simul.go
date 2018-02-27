@@ -69,15 +69,15 @@ func (sim *ShufflingSimulation) Run(config *onet.SimulationConfig) error {
 			return err
 		}
 
-		root := rooti.(*protocolsUnLynx.ShufflingProtocol)
+		root := rooti.(*protocolsunlynx.ShufflingProtocol)
 
 		//complete protocol time measurement
-		round := libUnLynx.StartTimer("_Shuffling(SIMULATION)")
+		round := libunlynx.StartTimer("_Shuffling(SIMULATION)")
 
 		root.Start()
 
-		<-root.ProtocolInstance().(*protocolsUnLynx.ShufflingProtocol).FeedbackChannel
-		libUnLynx.EndTimer(round)
+		<-root.ProtocolInstance().(*protocolsunlynx.ShufflingProtocol).FeedbackChannel
+		libunlynx.EndTimer(round)
 	}
 
 	return nil
@@ -85,17 +85,17 @@ func (sim *ShufflingSimulation) Run(config *onet.SimulationConfig) error {
 
 // NewShufflingSimul is a custom protocol constructor specific for simulation purposes.
 func NewShufflingSimul(tni *onet.TreeNodeInstance, sim *ShufflingSimulation) (onet.ProtocolInstance, error) {
-	protocol, err := protocolsUnLynx.NewShufflingProtocol(tni)
-	pap := protocol.(*protocolsUnLynx.ShufflingProtocol)
+	protocol, err := protocolsunlynx.NewShufflingProtocol(tni)
+	pap := protocol.(*protocolsunlynx.ShufflingProtocol)
 	pap.Proofs = sim.Proofs
 	if sim.PreCompute {
-		pap.Precomputed = libUnLynx.CreatePrecomputedRandomize(network.Suite.Point().Base(), tni.Roster().Aggregate, network.Suite.Cipher(tni.Private().Bytes()), int(sim.NbrGroupAttributes)+int(sim.NbrAggrAttributes), 10)
+		pap.Precomputed = libunlynx.CreatePrecomputedRandomize(network.Suite.Point().Base(), tni.Roster().Aggregate, network.Suite.Cipher(tni.Private().Bytes()), int(sim.NbrGroupAttributes)+int(sim.NbrAggrAttributes), 10)
 	}
 	if tni.IsRoot() {
 		aggregateKey := pap.Roster().Aggregate
 
 		// Creates dummy data...
-		clientResponses := make([]libUnLynx.ProcessResponse, sim.NbrResponses)
+		clientResponses := make([]libunlynx.ProcessResponse, sim.NbrResponses)
 		tabGroup := make([]int64, sim.NbrGroupAttributes)
 		tabAttr := make([]int64, sim.NbrAggrAttributes)
 
@@ -106,9 +106,9 @@ func NewShufflingSimul(tni *onet.TreeNodeInstance, sim *ShufflingSimulation) (on
 			tabAttr[i] = int64(1)
 		}
 
-		encryptedGrp := *libUnLynx.EncryptIntVector(aggregateKey, tabGroup)
-		encryptedAttr := *libUnLynx.EncryptIntVector(aggregateKey, tabAttr)
-		clientResponse := libUnLynx.ProcessResponse{GroupByEnc: encryptedGrp, AggregatingAttributes: encryptedAttr}
+		encryptedGrp := *libunlynx.EncryptIntVector(aggregateKey, tabGroup)
+		encryptedAttr := *libunlynx.EncryptIntVector(aggregateKey, tabAttr)
+		clientResponse := libunlynx.ProcessResponse{GroupByEnc: encryptedGrp, AggregatingAttributes: encryptedAttr}
 
 		for i := 0; i < sim.NbrResponses; i++ {
 			clientResponses[i] = clientResponse

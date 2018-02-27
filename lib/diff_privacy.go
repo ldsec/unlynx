@@ -1,4 +1,4 @@
-package libUnLynx
+package libunlynx
 
 import (
 	"github.com/r0fls/gostats"

@@ -1,4 +1,4 @@
-package appUnLynx
+package appunlynx
 
 import (
 	"gopkg.in/dedis/onet.v1/app"

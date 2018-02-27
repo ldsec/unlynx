@@ -1,6 +1,6 @@
-// Package protocolsUnLynx contains LocalAggregationProtocol and its only purpose is to simulate aggregations done locally
+// Package protocolsunlynx contains LocalAggregationProtocol and its only purpose is to simulate aggregations done locally
 // For example, it can be used to simulate a data provider doing some pre-processing on its data
-package protocolsUnLynx
+package protocolsunlynx
 
 import (
 	"github.com/lca1/unlynx/lib"
@@ -18,17 +18,17 @@ func init() {
 // Protocol
 //______________________________________________________________________________________________________________________
 
-var finalResultAggr = make(chan map[libUnLynx.GroupingKey]libUnLynx.FilteredResponse)
+var finalResultAggr = make(chan map[libunlynx.GroupingKey]libunlynx.FilteredResponse)
 
 // LocalAggregationProtocol is a struct holding the state of a protocol instance.
 type LocalAggregationProtocol struct {
 	*onet.TreeNodeInstance
 
 	// Protocol feedback channel
-	FeedbackChannel chan map[libUnLynx.GroupingKey]libUnLynx.FilteredResponse
+	FeedbackChannel chan map[libunlynx.GroupingKey]libunlynx.FilteredResponse
 
 	// Protocol state data
-	TargetOfAggregation []libUnLynx.FilteredResponseDet
+	TargetOfAggregation []libunlynx.FilteredResponseDet
 	Proofs              bool
 }
 
@@ -36,7 +36,7 @@ type LocalAggregationProtocol struct {
 func NewLocalAggregationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 	pvp := &LocalAggregationProtocol{
 		TreeNodeInstance: n,
-		FeedbackChannel:  make(chan map[libUnLynx.GroupingKey]libUnLynx.FilteredResponse),
+		FeedbackChannel:  make(chan map[libunlynx.GroupingKey]libunlynx.FilteredResponse),
 	}
 
 	return pvp, nil
@@ -46,24 +46,24 @@ func NewLocalAggregationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstanc
 func (p *LocalAggregationProtocol) Start() error {
 
 	log.Lvl1(p.ServerIdentity(), "started a local aggregation Protocol")
-	roundComput := libUnLynx.StartTimer(p.Name() + "_LocalAggregation(PROTOCOL)")
+	roundComput := libunlynx.StartTimer(p.Name() + "_LocalAggregation(PROTOCOL)")
 
-	resultingMap := make(map[libUnLynx.GroupingKey]libUnLynx.FilteredResponse)
+	resultingMap := make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse)
 
 	for _, v := range p.TargetOfAggregation {
-		libUnLynx.AddInMap(resultingMap, v.DetTagGroupBy, v.Fr)
+		libunlynx.AddInMap(resultingMap, v.DetTagGroupBy, v.Fr)
 	}
 
-	libUnLynx.EndTimer(roundComput)
-	roundProof := libUnLynx.StartTimer(p.Name() + "_LocalAggregation(PROOFS)")
+	libunlynx.EndTimer(roundComput)
+	roundProof := libunlynx.StartTimer(p.Name() + "_LocalAggregation(PROOFS)")
 
 	if p.Proofs {
-		PublishedAggregationProof := libUnLynx.AggregationProofCreation(p.TargetOfAggregation, resultingMap)
+		PublishedAggregationProof := libunlynx.AggregationProofCreation(p.TargetOfAggregation, resultingMap)
 		//publication
 		_ = PublishedAggregationProof
 	}
 
-	libUnLynx.EndTimer(roundProof)
+	libunlynx.EndTimer(roundProof)
 
 	finalResultAggr <- resultingMap
 

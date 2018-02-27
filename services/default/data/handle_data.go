@@ -1,4 +1,4 @@
-package dataUnLynx
+package dataunlynx
 
 import (
 	"bufio"
@@ -75,14 +75,14 @@ func AllPossibleGroups(numType []int64, group []int64, pos int) {
 //	randomGroups: 		true -> groups are generated randomly, false -> we cover all possible groups
 //TODO where + whereClear
 func GenerateData(numDPs, numEntries, numEntriesFiltered, numGroupsClear, numGroupsEnc,
-	numWhereClear, numWhereEnc, numAggrClear, numAggrEnc int64, numType []int64, randomGroups bool) map[string][]libUnLynx.DpClearResponse {
+	numWhereClear, numWhereEnc, numAggrClear, numAggrEnc int64, numType []int64, randomGroups bool) map[string][]libunlynx.DpClearResponse {
 
 	if int64(len(numType)) != (numGroupsClear + numGroupsEnc) {
 		log.Fatal("Please ensure that you specify the number of group types for each grouping attribute")
 		return nil
 	}
 
-	testData := make(map[string][]libUnLynx.DpClearResponse)
+	testData := make(map[string][]libunlynx.DpClearResponse)
 
 	if !randomGroups {
 		numElem := 1
@@ -101,7 +101,7 @@ func GenerateData(numDPs, numEntries, numEntriesFiltered, numGroupsClear, numGro
 	}
 
 	for i := int64(0); i < numDPs; i++ {
-		dpData := make([]libUnLynx.DpClearResponse, numEntries)
+		dpData := make([]libunlynx.DpClearResponse, numEntries)
 
 		for j := int64(0); j < numEntries; j++ {
 			aggr := make([]int64, numAggrEnc+numAggrClear)
@@ -130,13 +130,13 @@ func GenerateData(numDPs, numEntries, numEntriesFiltered, numGroupsClear, numGro
 				grp = Groups[j]
 			}
 
-			dpData[j] = libUnLynx.DpClearResponse{
-				GroupByClear:               libUnLynx.ConvertDataToMap(grp[:numGroupsClear], "g", 0),
-				GroupByEnc:                 libUnLynx.ConvertDataToMap(grp[numGroupsClear:numGroupsClear+numGroupsEnc], "g", int(numGroupsClear)),
-				WhereClear:                 libUnLynx.ConvertDataToMap(where[:numWhereClear], "w", 0),
-				WhereEnc:                   libUnLynx.ConvertDataToMap(where[numWhereClear:numWhereClear+numWhereEnc], "w", int(numWhereClear)),
-				AggregatingAttributesClear: libUnLynx.ConvertDataToMap(aggr[:numAggrClear], "s", 0),
-				AggregatingAttributesEnc:   libUnLynx.ConvertDataToMap(aggr[numAggrClear:numAggrClear+numAggrEnc], "s", int(numAggrClear)),
+			dpData[j] = libunlynx.DpClearResponse{
+				GroupByClear:               libunlynx.ConvertDataToMap(grp[:numGroupsClear], "g", 0),
+				GroupByEnc:                 libunlynx.ConvertDataToMap(grp[numGroupsClear:numGroupsClear+numGroupsEnc], "g", int(numGroupsClear)),
+				WhereClear:                 libunlynx.ConvertDataToMap(where[:numWhereClear], "w", 0),
+				WhereEnc:                   libunlynx.ConvertDataToMap(where[numWhereClear:numWhereClear+numWhereEnc], "w", int(numWhereClear)),
+				AggregatingAttributesClear: libunlynx.ConvertDataToMap(aggr[:numAggrClear], "s", 0),
+				AggregatingAttributesEnc:   libunlynx.ConvertDataToMap(aggr[numAggrClear:numAggrClear+numAggrEnc], "s", int(numAggrClear)),
 			}
 
 		}
@@ -157,7 +157,7 @@ func flushInt64Data(writer *bufio.Writer, slice []int64) {
 }
 
 // WriteDataToFile writes the test_data to 'filename'.txt
-func WriteDataToFile(filename string, testData map[string][]libUnLynx.DpClearResponse) {
+func WriteDataToFile(filename string, testData map[string][]libunlynx.DpClearResponse) {
 	fileHandle, err := os.Create(filename)
 
 	if err != nil {
@@ -172,19 +172,19 @@ func WriteDataToFile(filename string, testData map[string][]libUnLynx.DpClearRes
 		writer.Flush()
 
 		for _, entry := range v {
-			flushInt64Data(writer, libUnLynx.ConvertMapToData(entry.GroupByClear, "g", 0))
-			flushInt64Data(writer, libUnLynx.ConvertMapToData(entry.GroupByEnc, "g", len(entry.GroupByClear)))
-			flushInt64Data(writer, libUnLynx.ConvertMapToData(entry.WhereClear, "w", 0))
-			flushInt64Data(writer, libUnLynx.ConvertMapToData(entry.WhereEnc, "w", len(entry.WhereClear)))
-			flushInt64Data(writer, libUnLynx.ConvertMapToData(entry.AggregatingAttributesClear, "s", 0))
-			flushInt64Data(writer, libUnLynx.ConvertMapToData(entry.AggregatingAttributesEnc, "s", len(entry.AggregatingAttributesClear)))
+			flushInt64Data(writer, libunlynx.ConvertMapToData(entry.GroupByClear, "g", 0))
+			flushInt64Data(writer, libunlynx.ConvertMapToData(entry.GroupByEnc, "g", len(entry.GroupByClear)))
+			flushInt64Data(writer, libunlynx.ConvertMapToData(entry.WhereClear, "w", 0))
+			flushInt64Data(writer, libunlynx.ConvertMapToData(entry.WhereEnc, "w", len(entry.WhereClear)))
+			flushInt64Data(writer, libunlynx.ConvertMapToData(entry.AggregatingAttributesClear, "s", 0))
+			flushInt64Data(writer, libunlynx.ConvertMapToData(entry.AggregatingAttributesEnc, "s", len(entry.AggregatingAttributesClear)))
 		}
 	}
 }
 
 // ReadDataFromFile reads the test_data from 'filename'.txt
-func ReadDataFromFile(filename string) map[string][]libUnLynx.DpClearResponse {
-	testData := make(map[string][]libUnLynx.DpClearResponse)
+func ReadDataFromFile(filename string) map[string][]libunlynx.DpClearResponse {
+	testData := make(map[string][]libunlynx.DpClearResponse)
 
 	fileHandle, err := os.Open(filename)
 	if err != nil {
@@ -195,7 +195,7 @@ func ReadDataFromFile(filename string) map[string][]libUnLynx.DpClearResponse {
 
 	var id string
 	dataIn := false
-	var container []libUnLynx.DpClearResponse
+	var container []libunlynx.DpClearResponse
 
 	scanner := bufio.NewScanner(fileHandle)
 	for scanner.Scan() {
@@ -203,42 +203,42 @@ func ReadDataFromFile(filename string) map[string][]libUnLynx.DpClearResponse {
 		if len(line) > 0 && strings.Compare(string(line[0]), "#") == 0 {
 			if dataIn != false {
 				testData[id] = container
-				container = make([]libUnLynx.DpClearResponse, 0)
+				container = make([]libunlynx.DpClearResponse, 0)
 			} else {
 				dataIn = true
 			}
 			id = line[1:]
 		} else {
 			// Grouping Attributes Clear
-			grpClear := libUnLynx.StringToInt64Array(line[:int(math.Max(float64(0), float64(len(line)-1)))])
+			grpClear := libunlynx.StringToInt64Array(line[:int(math.Max(float64(0), float64(len(line)-1)))])
 
 			// Grouping Attributes Encrypted
 			scanner.Scan()
-			grpEnc := libUnLynx.StringToInt64Array(scanner.Text()[:int(math.Max(float64(0), float64(len(scanner.Text())-1)))])
+			grpEnc := libunlynx.StringToInt64Array(scanner.Text()[:int(math.Max(float64(0), float64(len(scanner.Text())-1)))])
 
 			// Where Attributes Clear
 			scanner.Scan()
-			whereClear := libUnLynx.StringToInt64Array(scanner.Text()[:int(math.Max(float64(0), float64(len(scanner.Text())-1)))])
+			whereClear := libunlynx.StringToInt64Array(scanner.Text()[:int(math.Max(float64(0), float64(len(scanner.Text())-1)))])
 
 			// Where Attributes Encrypted
 			scanner.Scan()
-			whereEnc := libUnLynx.StringToInt64Array(scanner.Text()[:int(math.Max(float64(0), float64(len(scanner.Text())-1)))])
+			whereEnc := libunlynx.StringToInt64Array(scanner.Text()[:int(math.Max(float64(0), float64(len(scanner.Text())-1)))])
 
 			// Aggregating Attributes Clear
 			scanner.Scan()
-			aggrClear := libUnLynx.StringToInt64Array(scanner.Text()[:int(math.Max(float64(0), float64(len(scanner.Text())-1)))])
+			aggrClear := libunlynx.StringToInt64Array(scanner.Text()[:int(math.Max(float64(0), float64(len(scanner.Text())-1)))])
 
 			// Aggregating Attributes Encrypted
 			scanner.Scan()
-			aggrEnc := libUnLynx.StringToInt64Array(scanner.Text()[:int(math.Max(float64(0), float64(len(scanner.Text())-1)))])
+			aggrEnc := libunlynx.StringToInt64Array(scanner.Text()[:int(math.Max(float64(0), float64(len(scanner.Text())-1)))])
 
-			container = append(container, libUnLynx.DpClearResponse{
-				GroupByClear:               libUnLynx.ConvertDataToMap(grpClear, "g", 0),
-				GroupByEnc:                 libUnLynx.ConvertDataToMap(grpEnc, "g", len(grpClear)),
-				WhereClear:                 libUnLynx.ConvertDataToMap(whereClear, "w", 0),
-				WhereEnc:                   libUnLynx.ConvertDataToMap(whereEnc, "w", len(whereClear)),
-				AggregatingAttributesClear: libUnLynx.ConvertDataToMap(aggrClear, "s", 0),
-				AggregatingAttributesEnc:   libUnLynx.ConvertDataToMap(aggrEnc, "s", len(aggrClear)),
+			container = append(container, libunlynx.DpClearResponse{
+				GroupByClear:               libunlynx.ConvertDataToMap(grpClear, "g", 0),
+				GroupByEnc:                 libunlynx.ConvertDataToMap(grpEnc, "g", len(grpClear)),
+				WhereClear:                 libunlynx.ConvertDataToMap(whereClear, "w", 0),
+				WhereEnc:                   libunlynx.ConvertDataToMap(whereEnc, "w", len(whereClear)),
+				AggregatingAttributesClear: libunlynx.ConvertDataToMap(aggrClear, "s", 0),
+				AggregatingAttributesEnc:   libunlynx.ConvertDataToMap(aggrEnc, "s", len(aggrClear)),
 			})
 		}
 	}
@@ -268,8 +268,8 @@ func joinMaps(a, b map[string]int64) map[string]int64 {
 }
 
 // ClearExpectedResult clears the map so that there are no where attributes
-func ClearExpectedResult(expectedResult []libUnLynx.DpClearResponse) []libUnLynx.DpClearResponse {
-	clearExpectedResult := make([]libUnLynx.DpClearResponse, len(expectedResult))
+func ClearExpectedResult(expectedResult []libunlynx.DpClearResponse) []libunlynx.DpClearResponse {
+	clearExpectedResult := make([]libunlynx.DpClearResponse, len(expectedResult))
 
 	for i, elem := range expectedResult {
 		elem.WhereClear = map[string]int64{}
@@ -286,8 +286,8 @@ func ClearExpectedResult(expectedResult []libUnLynx.DpClearResponse) []libUnLynx
 }
 
 // ComputeExpectedResult computes the expected results from the test_data (we can then compare with the result obtained by service UnLynx)
-func ComputeExpectedResult(testData map[string][]libUnLynx.DpClearResponse, dataRepetitions int, clear bool) []libUnLynx.DpClearResponse {
-	allData := make([]libUnLynx.DpClearResponse, 0)
+func ComputeExpectedResult(testData map[string][]libunlynx.DpClearResponse, dataRepetitions int, clear bool) []libunlynx.DpClearResponse {
+	allData := make([]libunlynx.DpClearResponse, 0)
 
 	for _, v := range testData {
 		for _, elem := range v {
@@ -305,7 +305,7 @@ func ComputeExpectedResult(testData map[string][]libUnLynx.DpClearResponse, data
 			allData = append(allData, elem)
 		}
 	}
-	expectedResult := libUnLynx.AddInClear(allData)
+	expectedResult := libunlynx.AddInClear(allData)
 
 	// Toggle the clearing function (necessary for the service simulation)
 	if clear {
@@ -316,7 +316,7 @@ func ComputeExpectedResult(testData map[string][]libUnLynx.DpClearResponse, data
 }
 
 // CompareClearResponses compares two DP ClearResponse arrays and returns true if they are the same or false otherwise
-func CompareClearResponses(x []libUnLynx.DpClearResponse, y []libUnLynx.DpClearResponse) bool {
+func CompareClearResponses(x []libunlynx.DpClearResponse, y []libunlynx.DpClearResponse) bool {
 	var test bool
 	for _, i := range x {
 		test = false

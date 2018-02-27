@@ -1,4 +1,4 @@
-package protocolsUnLynx_test
+package protocolsunlynx_test
 
 import (
 	"testing"
@@ -24,7 +24,7 @@ func TestAddRmServer(t *testing.T) {
 	if err != nil {
 		t.Fatal("Couldn't start protocol:", err)
 	}
-	protocol := rootInstance.(*protocolsUnLynx.AddRmServerProtocol)
+	protocol := rootInstance.(*protocolsunlynx.AddRmServerProtocol)
 
 	secKey := network.Suite.Scalar().Pick(random.Stream)
 	pubKey := network.Suite.Point().Mul(network.Suite.Point().Base(), secKey)
@@ -49,15 +49,15 @@ func TestAddRmServer(t *testing.T) {
 	for i, v := range tab {
 		notEncrypted[strconv.Itoa(i)] = v
 	}
-	encrypted := make(map[string]libUnLynx.CipherText)
+	encrypted := make(map[string]libunlynx.CipherText)
 	for i, v := range tab {
-		encrypted[strconv.Itoa(i)] = *libUnLynx.EncryptInt(pubKey, v)
+		encrypted[strconv.Itoa(i)] = *libunlynx.EncryptInt(pubKey, v)
 	}
 	// aggregation
-	dpResponses := make([]libUnLynx.DpResponse, 3)
-	dpResponses[0] = libUnLynx.DpResponse{GroupByClear: notEncrypted, GroupByEnc: encrypted, WhereClear: notEncrypted, WhereEnc: encrypted, AggregatingAttributesClear: notEncrypted, AggregatingAttributesEnc: encrypted}
-	dpResponses[1] = libUnLynx.DpResponse{GroupByClear: notEncrypted, GroupByEnc: encrypted, WhereClear: notEncrypted, WhereEnc: encrypted, AggregatingAttributesClear: notEncrypted, AggregatingAttributesEnc: encrypted}
-	dpResponses[2] = libUnLynx.DpResponse{GroupByClear: notEncrypted, GroupByEnc: encrypted, WhereClear: notEncrypted, WhereEnc: encrypted, AggregatingAttributesClear: notEncrypted, AggregatingAttributesEnc: encrypted}
+	dpResponses := make([]libunlynx.DpResponse, 3)
+	dpResponses[0] = libunlynx.DpResponse{GroupByClear: notEncrypted, GroupByEnc: encrypted, WhereClear: notEncrypted, WhereEnc: encrypted, AggregatingAttributesClear: notEncrypted, AggregatingAttributesEnc: encrypted}
+	dpResponses[1] = libunlynx.DpResponse{GroupByClear: notEncrypted, GroupByEnc: encrypted, WhereClear: notEncrypted, WhereEnc: encrypted, AggregatingAttributesClear: notEncrypted, AggregatingAttributesEnc: encrypted}
+	dpResponses[2] = libunlynx.DpResponse{GroupByClear: notEncrypted, GroupByEnc: encrypted, WhereClear: notEncrypted, WhereEnc: encrypted, AggregatingAttributesClear: notEncrypted, AggregatingAttributesEnc: encrypted}
 
 	log.Lvl1("CipherTexts to transform ")
 	log.Lvl1(dpResponses)
@@ -78,7 +78,7 @@ func TestAddRmServer(t *testing.T) {
 		log.Lvl1(results)
 		decryptedResult := make(map[string]int64)
 		for i, v := range results[0].AggregatingAttributesEnc {
-			decryptedResult[i] = libUnLynx.DecryptInt(secKeyAfter, v)
+			decryptedResult[i] = libunlynx.DecryptInt(secKeyAfter, v)
 		}
 		//decryptedResult := lib.DecryptIntVector(secKeyAfter, &results[0].AggregatingAttributesEnc)
 		assert.Equal(t, decryptedResult, expectedResults)

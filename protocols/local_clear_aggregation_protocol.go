@@ -1,6 +1,6 @@
-// Package protocolsUnLynx contains the LocalClearAggregation Protocol and its only purpose is to simulate aggregations done locally
+// Package protocolsunlynx contains the LocalClearAggregation Protocol and its only purpose is to simulate aggregations done locally
 // For example, it can be used to simulate a data provider doing some pre-processing on its data
-package protocolsUnLynx
+package protocolsunlynx
 
 import (
 	"github.com/lca1/unlynx/lib"
@@ -23,30 +23,30 @@ type LocalClearAggregationProtocol struct {
 	*onet.TreeNodeInstance
 
 	// Protocol feedback channel
-	FeedbackChannel chan []libUnLynx.DpClearResponse
+	FeedbackChannel chan []libunlynx.DpClearResponse
 
 	// Protocol state data
-	TargetOfAggregation []libUnLynx.DpClearResponse
+	TargetOfAggregation []libunlynx.DpClearResponse
 }
 
 // NewLocalClearAggregationProtocol is constructor of Proofs Verification protocol instances.
 func NewLocalClearAggregationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 	pvp := &LocalClearAggregationProtocol{
 		TreeNodeInstance: n,
-		FeedbackChannel:  make(chan []libUnLynx.DpClearResponse),
+		FeedbackChannel:  make(chan []libunlynx.DpClearResponse),
 	}
 
 	return pvp, nil
 }
 
-var finalResultClearAggr = make(chan []libUnLynx.DpClearResponse)
+var finalResultClearAggr = make(chan []libunlynx.DpClearResponse)
 
 // Start is called at the root to start the execution of the local clear aggregation.
 func (p *LocalClearAggregationProtocol) Start() error {
 	log.Lvl1(p.ServerIdentity(), "started a local clear aggregation protocol")
-	roundComput := libUnLynx.StartTimer(p.Name() + "_LocalClearAggregation(START)")
-	result := libUnLynx.AddInClear(p.TargetOfAggregation)
-	libUnLynx.EndTimer(roundComput)
+	roundComput := libunlynx.StartTimer(p.Name() + "_LocalClearAggregation(START)")
+	result := libunlynx.AddInClear(p.TargetOfAggregation)
+	libunlynx.EndTimer(roundComput)
 	finalResultClearAggr <- result
 	return nil
 }

@@ -1,4 +1,4 @@
-package protocolsUnLynx_test
+package protocolsunlynx_test
 
 import (
 	"reflect"
@@ -20,7 +20,7 @@ var pub = make([]abstract.Point, nbrNodes)
 var groupPub = network.Suite.Point().Null()
 var groupSec = network.Suite.Scalar().Zero()
 
-var precomputes = make([][]libUnLynx.CipherVectorScalar, nbrNodes)
+var precomputes = make([][]libunlynx.CipherVectorScalar, nbrNodes)
 
 func TestShuffling(t *testing.T) {
 	defer log.AfterTest(t)
@@ -34,7 +34,7 @@ func TestShuffling(t *testing.T) {
 		groupSec.Add(groupSec, priv[i])
 	}
 	for i := 0; i < nbrNodes; i++ {
-		precomputes[i] = libUnLynx.CreatePrecomputedRandomize(network.Suite.Point().Base(), groupPub, network.Suite.Cipher(priv[i].Bytes()), 4, 10)
+		precomputes[i] = libunlynx.CreatePrecomputedRandomize(network.Suite.Point().Base(), groupPub, network.Suite.Cipher(priv[i].Bytes()), 4, 10)
 	}
 	aggregateKey := groupPub
 
@@ -44,31 +44,31 @@ func TestShuffling(t *testing.T) {
 	defer local.CloseAll()
 
 	rootInstance, _ := local.CreateProtocol("ShufflingTest", tree)
-	protocol := rootInstance.(*protocolsUnLynx.ShufflingProtocol)
+	protocol := rootInstance.(*protocolsunlynx.ShufflingProtocol)
 
 	//create data
-	testCipherVect := make(libUnLynx.CipherVector, 1)
+	testCipherVect := make(libunlynx.CipherVector, 1)
 	expRes := []int64{1}
 	for i, p := range expRes {
-		testCipherVect[i] = *libUnLynx.EncryptInt(aggregateKey, p)
+		testCipherVect[i] = *libunlynx.EncryptInt(aggregateKey, p)
 	}
-	processResponse1 := libUnLynx.ProcessResponse{GroupByEnc: testCipherVect, WhereEnc: testCipherVect, AggregatingAttributes: testCipherVect}
+	processResponse1 := libunlynx.ProcessResponse{GroupByEnc: testCipherVect, WhereEnc: testCipherVect, AggregatingAttributes: testCipherVect}
 
-	testCipherVect1 := make(libUnLynx.CipherVector, 1)
+	testCipherVect1 := make(libunlynx.CipherVector, 1)
 	expRes1 := []int64{1}
 	for i, p := range expRes1 {
-		testCipherVect1[i] = *libUnLynx.EncryptInt(aggregateKey, p)
+		testCipherVect1[i] = *libunlynx.EncryptInt(aggregateKey, p)
 	}
-	processResponse2 := libUnLynx.ProcessResponse{GroupByEnc: testCipherVect1, WhereEnc: testCipherVect1, AggregatingAttributes: testCipherVect1}
+	processResponse2 := libunlynx.ProcessResponse{GroupByEnc: testCipherVect1, WhereEnc: testCipherVect1, AggregatingAttributes: testCipherVect1}
 
-	testCipherVect2 := make(libUnLynx.CipherVector, 1)
+	testCipherVect2 := make(libunlynx.CipherVector, 1)
 	expRes2 := []int64{2}
 	for i, p := range expRes2 {
-		testCipherVect2[i] = *libUnLynx.EncryptInt(aggregateKey, p)
+		testCipherVect2[i] = *libunlynx.EncryptInt(aggregateKey, p)
 	}
-	processResponse3 := libUnLynx.ProcessResponse{GroupByEnc: testCipherVect2, WhereEnc: testCipherVect2, AggregatingAttributes: testCipherVect2}
+	processResponse3 := libunlynx.ProcessResponse{GroupByEnc: testCipherVect2, WhereEnc: testCipherVect2, AggregatingAttributes: testCipherVect2}
 
-	mapi := make([]libUnLynx.ProcessResponse, 4)
+	mapi := make([]libunlynx.ProcessResponse, 4)
 	mapi[0] = processResponse1
 	mapi[1] = processResponse2
 	mapi[2] = processResponse3
@@ -89,13 +89,13 @@ func TestShuffling(t *testing.T) {
 	case encryptedResult := <-feedback:
 
 		for _, v := range encryptedResult {
-			decryptedVAggr := libUnLynx.DecryptIntVector(groupSec, &v.AggregatingAttributes)
+			decryptedVAggr := libunlynx.DecryptIntVector(groupSec, &v.AggregatingAttributes)
 			log.Lvl1(decryptedVAggr)
-			decryptedVGrp := libUnLynx.DecryptIntVector(groupSec, &v.GroupByEnc)
+			decryptedVGrp := libunlynx.DecryptIntVector(groupSec, &v.GroupByEnc)
 			present := false
 			for _, w := range mapi {
-				decryptedWAggr := libUnLynx.DecryptIntVector(groupSec, &w.AggregatingAttributes)
-				decryptedWGrp := libUnLynx.DecryptIntVector(groupSec, &w.GroupByEnc)
+				decryptedWAggr := libunlynx.DecryptIntVector(groupSec, &w.AggregatingAttributes)
+				decryptedWGrp := libunlynx.DecryptIntVector(groupSec, &w.GroupByEnc)
 				if reflect.DeepEqual(decryptedWAggr, decryptedVAggr) && reflect.DeepEqual(decryptedWGrp, decryptedVGrp) {
 					present = true
 				}
@@ -114,8 +114,8 @@ func TestShuffling(t *testing.T) {
 
 // NewShufflingTest is a special purpose protocol constructor specific to tests.
 func NewShufflingTest(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
-	pi, err := protocolsUnLynx.NewShufflingProtocol(tni)
-	protocol := pi.(*protocolsUnLynx.ShufflingProtocol)
+	pi, err := protocolsunlynx.NewShufflingProtocol(tni)
+	protocol := pi.(*protocolsunlynx.ShufflingProtocol)
 	protocol.CollectiveKey = groupPub
 	protocol.Precomputed = precomputes[tni.Index()]
 	protocol.Proofs = true

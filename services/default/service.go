@@ -1,4 +1,4 @@
-package serviceUnLynx
+package servicesunlynxdefault
 
 import (
 	"github.com/Knetic/govaluate"
@@ -6,7 +6,7 @@ import (
 	"github.com/fanliao/go-concurrentMap"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/protocols"
-	"github.com/lca1/unlynx/services/data"
+	"github.com/lca1/unlynx/services/default/data"
 	"github.com/satori/go.uuid"
 	"gopkg.in/dedis/crypto.v0/abstract"
 	"gopkg.in/dedis/crypto.v0/random"
@@ -37,24 +37,24 @@ type SurveyCreationQuery struct {
 	// query statement
 	Sum       []string
 	Count     bool
-	Where     []libUnLynx.WhereQueryAttribute
+	Where     []libunlynx.WhereQueryAttribute
 	Predicate string
 	GroupBy   []string
 }
 
 // Survey represents a survey with the corresponding params
 type Survey struct {
-	*libUnLynx.Store
+	*libunlynx.Store
 	Query             SurveyCreationQuery
 	SurveySecretKey   abstract.Scalar
-	ShufflePrecompute []libUnLynx.CipherVectorScalar
+	ShufflePrecompute []libunlynx.CipherVectorScalar
 
 	// channels
 	SurveyChannel chan int // To wait for the survey to be created before loading data
 	DpChannel     chan int // To wait for all data to be read before starting unlynx service protocol
 	DDTChannel    chan int // To wait for all nodes to finish the tagging before continuing
 
-	Noise libUnLynx.CipherText
+	Noise libunlynx.CipherText
 }
 
 func castToSurvey(object interface{}, err error) Survey {
@@ -93,7 +93,7 @@ type DDTfinished struct {
 // SurveyResponseQuery is used to ask a client for its response to a survey.
 type SurveyResponseQuery struct {
 	SurveyID  SurveyID
-	Responses []libUnLynx.DpResponseToSend
+	Responses []libunlynx.DpResponseToSend
 }
 
 // SurveyResultsQuery is used by querier to ask for the response of the survey.
@@ -110,7 +110,7 @@ type ServiceState struct {
 
 // ServiceResult will contain final results of a survey and be sent to querier.
 type ServiceResult struct {
-	Results []libUnLynx.FilteredResponse
+	Results []libunlynx.FilteredResponse
 }
 
 // Service defines a service in unlynx with a survey.
@@ -163,7 +163,7 @@ func (s *Service) Process(msg *network.Envelope) {
 func (s *Service) PushData(resp *SurveyResponseQuery, proofs bool) {
 	survey := castToSurvey(s.Survey.Get((string)(resp.SurveyID)))
 	for _, v := range resp.Responses {
-		dr := libUnLynx.DpResponse{}
+		dr := libunlynx.DpResponse{}
 		dr.FromDpResponseToSend(v)
 		survey.InsertDpResponse(dr, proofs, survey.Query.GroupBy, survey.Query.Sum, survey.Query.Where)
 	}
@@ -188,7 +188,7 @@ func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.
 		log.Lvl1(s.ServerIdentity().String(), " handles this new survey ", recq.SurveyID)
 
 		// broadcasts the query
-		err := libUnLynx.SendISMOthers(s.ServiceProcessor, &recq.Roster, recq)
+		err := libunlynx.SendISMOthers(s.ServiceProcessor, &recq.Roster, recq)
 		if err != nil {
 			log.Error("broadcasting error ", err)
 		}
@@ -201,11 +201,11 @@ func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.
 
 	// prepares the precomputation for shuffling
 	lineSize := int(len(recq.Sum)) + int(len(recq.Where)) + int(len(recq.GroupBy)) + 1 // + 1 is for the possible count attribute
-	precomputeShuffle := libUnLynx.PrecomputationWritingForShuffling(recq.AppFlag, gobFile, s.ServerIdentity().String(), surveySecret, recq.Roster.Aggregate, lineSize)
+	precomputeShuffle := libunlynx.PrecomputationWritingForShuffling(recq.AppFlag, gobFile, s.ServerIdentity().String(), surveySecret, recq.Roster.Aggregate, lineSize)
 
 	// survey instantiation
 	s.Survey.Put((string)(recq.SurveyID), Survey{
-		Store:             libUnLynx.NewStore(),
+		Store:             libunlynx.NewStore(),
 		Query:             *recq,
 		SurveySecretKey:   surveySecret,
 		ShufflePrecompute: precomputeShuffle,
@@ -224,7 +224,7 @@ func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.
 				break
 			}
 		}
-		testData := dataUnLynx.ReadDataFromFile("unlynx_test_data.txt")
+		testData := dataunlynx.ReadDataFromFile("unlynx_test_data.txt")
 		resp := EncryptDataToSurvey(s.ServerIdentity().String(), recq.SurveyID, testData[strconv.Itoa(index)], recq.Roster.Aggregate, 1, recq.Count)
 		s.PushData(resp, recq.Proofs)
 
@@ -281,7 +281,7 @@ func (s *Service) HandleSurveyResultsQuery(resq *SurveyResultsQuery) (network.Me
 	if resq.IntraMessage == false {
 		resq.IntraMessage = true
 
-		err := libUnLynx.SendISMOthers(s.ServiceProcessor, &survey.Query.Roster, resq)
+		err := libunlynx.SendISMOthers(s.ServiceProcessor, &survey.Query.Roster, resq)
 		if err != nil {
 			log.Error("broadcasting error ", err)
 		}
@@ -290,7 +290,7 @@ func (s *Service) HandleSurveyResultsQuery(resq *SurveyResultsQuery) (network.Me
 		log.Lvl1(s.ServerIdentity(), " completed the query processing...")
 
 		survey := castToSurvey(s.Survey.Get((string)(resq.SurveyID)))
-		results := survey.PullDeliverableResults(false, libUnLynx.CipherText{})
+		results := survey.PullDeliverableResults(false, libunlynx.CipherText{})
 		s.Survey.Put(string(resq.SurveyID), survey)
 
 		return &ServiceResult{Results: results}, nil
@@ -320,12 +320,12 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 	survey := castToSurvey(s.Survey.Get(string(conf.Data)))
 
 	switch tn.ProtocolName() {
-	case protocolsUnLynx.ShufflingProtocolName:
-		pi, err = protocolsUnLynx.NewShufflingProtocol(tn)
+	case protocolsunlynx.ShufflingProtocolName:
+		pi, err = protocolsunlynx.NewShufflingProtocol(tn)
 		if err != nil {
 			return nil, err
 		}
-		shuffle := pi.(*protocolsUnLynx.ShufflingProtocol)
+		shuffle := pi.(*protocolsunlynx.ShufflingProtocol)
 
 		shuffle.Proofs = survey.Query.Proofs
 		shuffle.Precomputed = survey.ShufflePrecompute
@@ -336,12 +336,12 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 			s.Survey.Put(string(target), survey)
 		}
 
-	case protocolsUnLynx.DeterministicTaggingProtocolName:
-		pi, err = protocolsUnLynx.NewDeterministicTaggingProtocol(tn)
+	case protocolsunlynx.DeterministicTaggingProtocolName:
+		pi, err = protocolsunlynx.NewDeterministicTaggingProtocol(tn)
 		if err != nil {
 			return nil, err
 		}
-		hashCreation := pi.(*protocolsUnLynx.DeterministicTaggingProtocol)
+		hashCreation := pi.(*protocolsunlynx.DeterministicTaggingProtocol)
 
 		aux := survey.SurveySecretKey
 		hashCreation.SurveySecretKey = &aux
@@ -350,17 +350,17 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 			shuffledClientResponses := survey.PullShuffledProcessResponses()
 			s.Survey.Put(string(target), survey)
 
-			var queryWhereToTag []libUnLynx.ProcessResponse
+			var queryWhereToTag []libunlynx.ProcessResponse
 			for _, v := range survey.Query.Where {
-				tmp := libUnLynx.CipherVector{v.Value}
-				queryWhereToTag = append(queryWhereToTag, libUnLynx.ProcessResponse{WhereEnc: tmp, GroupByEnc: nil, AggregatingAttributes: nil})
+				tmp := libunlynx.CipherVector{v.Value}
+				queryWhereToTag = append(queryWhereToTag, libunlynx.ProcessResponse{WhereEnc: tmp, GroupByEnc: nil, AggregatingAttributes: nil})
 			}
 			shuffledClientResponses = append(queryWhereToTag, shuffledClientResponses...)
 			hashCreation.TargetOfSwitch = &shuffledClientResponses
 		}
 
-	case protocolsUnLynx.CollectiveAggregationProtocolName:
-		pi, err = protocolsUnLynx.NewCollectiveAggregationProtocol(tn)
+	case protocolsunlynx.CollectiveAggregationProtocolName:
+		pi, err = protocolsunlynx.NewCollectiveAggregationProtocol(tn)
 		if err != nil {
 			return nil, err
 		}
@@ -369,49 +369,49 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 		groupedData := survey.PullLocallyAggregatedResponses()
 		s.Survey.Put(string(target), survey)
 
-		pi.(*protocolsUnLynx.CollectiveAggregationProtocol).GroupedData = &groupedData
-		pi.(*protocolsUnLynx.CollectiveAggregationProtocol).Proofs = survey.Query.Proofs
+		pi.(*protocolsunlynx.CollectiveAggregationProtocol).GroupedData = &groupedData
+		pi.(*protocolsunlynx.CollectiveAggregationProtocol).Proofs = survey.Query.Proofs
 
 		counter := len(tn.Roster().List) - 1
 		for counter > 0 {
 			counter = counter - (<-castToSurvey(s.Survey.Get(string(conf.Data))).DDTChannel)
 		}
 
-	case protocolsUnLynx.DROProtocolName:
-		pi, err := protocolsUnLynx.NewShufflingProtocol(tn)
+	case protocolsunlynx.DROProtocolName:
+		pi, err := protocolsunlynx.NewShufflingProtocol(tn)
 		if err != nil {
 			return nil, err
 		}
 
-		shuffle := pi.(*protocolsUnLynx.ShufflingProtocol)
+		shuffle := pi.(*protocolsunlynx.ShufflingProtocol)
 		shuffle.Proofs = true
 		shuffle.Precomputed = nil
 
 		if tn.IsRoot() {
-			clientResponses := make([]libUnLynx.ProcessResponse, 0)
-			noiseArray := libUnLynx.GenerateNoiseValues(1000, 0, 1, 0.1)
+			clientResponses := make([]libunlynx.ProcessResponse, 0)
+			noiseArray := libunlynx.GenerateNoiseValues(1000, 0, 1, 0.1)
 			for _, v := range noiseArray {
-				clientResponses = append(clientResponses, libUnLynx.ProcessResponse{GroupByEnc: nil, AggregatingAttributes: libUnLynx.IntArrayToCipherVector([]int64{int64(v)})})
+				clientResponses = append(clientResponses, libunlynx.ProcessResponse{GroupByEnc: nil, AggregatingAttributes: libunlynx.IntArrayToCipherVector([]int64{int64(v)})})
 			}
 			shuffle.TargetOfShuffle = &clientResponses
 		}
 		return pi, nil
 
-	case protocolsUnLynx.KeySwitchingProtocolName:
-		pi, err = protocolsUnLynx.NewKeySwitchingProtocol(tn)
+	case protocolsunlynx.KeySwitchingProtocolName:
+		pi, err = protocolsunlynx.NewKeySwitchingProtocol(tn)
 		if err != nil {
 			return nil, err
 		}
 
-		keySwitch := pi.(*protocolsUnLynx.KeySwitchingProtocol)
+		keySwitch := pi.(*protocolsunlynx.KeySwitchingProtocol)
 		keySwitch.Proofs = survey.Query.Proofs
 		if tn.IsRoot() {
-			var coaggr []libUnLynx.FilteredResponse
+			var coaggr []libunlynx.FilteredResponse
 
-			if libUnLynx.DIFFPRI == true {
+			if libunlynx.DIFFPRI == true {
 				coaggr = survey.PullCothorityAggregatedFilteredResponses(true, survey.Noise)
 			} else {
-				coaggr = survey.PullCothorityAggregatedFilteredResponses(false, libUnLynx.CipherText{})
+				coaggr = survey.PullCothorityAggregatedFilteredResponses(false, libunlynx.CipherText{})
 			}
 
 			keySwitch.TargetOfSwitch = &coaggr
@@ -473,16 +473,16 @@ func (s *Service) StartService(targetSurvey SurveyID, root bool) error {
 	target := castToSurvey(s.Survey.Get((string)(targetSurvey)))
 
 	// Shuffling Phase
-	start := libUnLynx.StartTimer(s.ServerIdentity().String() + "_ShufflingPhase")
+	start := libunlynx.StartTimer(s.ServerIdentity().String() + "_ShufflingPhase")
 
 	err := s.ShufflingPhase(survey.Query.SurveyID)
 	if err != nil {
 		log.Fatal("Error in the Shuffling Phase")
 	}
 
-	libUnLynx.EndTimer(start)
+	libunlynx.EndTimer(start)
 	// Tagging Phase
-	start = libUnLynx.StartTimer(s.ServerIdentity().String() + "_TaggingPhase")
+	start = libunlynx.StartTimer(s.ServerIdentity().String() + "_TaggingPhase")
 
 	err = s.TaggingPhase(target.Query.SurveyID)
 	if err != nil {
@@ -491,41 +491,41 @@ func (s *Service) StartService(targetSurvey SurveyID, root bool) error {
 
 	// broadcasts the query to unlock waiting channel
 	aux := target.Query.Roster
-	err = libUnLynx.SendISMOthers(s.ServiceProcessor, &aux, &DDTfinished{SurveyID: targetSurvey})
+	err = libunlynx.SendISMOthers(s.ServiceProcessor, &aux, &DDTfinished{SurveyID: targetSurvey})
 	if err != nil {
 		log.Error("broadcasting error ", err)
 	}
 
-	libUnLynx.EndTimer(start)
+	libunlynx.EndTimer(start)
 
 	// Aggregation Phase
 	if root == true {
-		start := libUnLynx.StartTimer(s.ServerIdentity().String() + "_AggregationPhase")
+		start := libunlynx.StartTimer(s.ServerIdentity().String() + "_AggregationPhase")
 
 		err = s.AggregationPhase(target.Query.SurveyID)
 		if err != nil {
 			log.Fatal("Error in the Aggregation Phase")
 		}
 
-		libUnLynx.EndTimer(start)
+		libunlynx.EndTimer(start)
 	}
 
 	// DRO Phase
-	if root == true && libUnLynx.DIFFPRI == true {
-		start := libUnLynx.StartTimer(s.ServerIdentity().String() + "_DROPhase")
+	if root == true && libunlynx.DIFFPRI == true {
+		start := libunlynx.StartTimer(s.ServerIdentity().String() + "_DROPhase")
 
 		s.DROPhase(target.Query.SurveyID)
 
-		libUnLynx.EndTimer(start)
+		libunlynx.EndTimer(start)
 	}
 
 	// Key Switch Phase
 	if root == true {
-		start := libUnLynx.StartTimer(s.ServerIdentity().String() + "_KeySwitchingPhase")
+		start := libunlynx.StartTimer(s.ServerIdentity().String() + "_KeySwitchingPhase")
 
 		s.KeySwitchingPhase(target.Query.SurveyID)
 
-		libUnLynx.EndTimer(start)
+		libunlynx.EndTimer(start)
 	}
 
 	return nil
@@ -540,11 +540,11 @@ func (s *Service) ShufflingPhase(targetSurvey SurveyID) error {
 		return nil
 	}
 
-	pi, err := s.StartProtocol(protocolsUnLynx.ShufflingProtocolName, targetSurvey)
+	pi, err := s.StartProtocol(protocolsunlynx.ShufflingProtocolName, targetSurvey)
 	if err != nil {
 		return err
 	}
-	shufflingResult := <-pi.(*protocolsUnLynx.ShufflingProtocol).FeedbackChannel
+	shufflingResult := <-pi.(*protocolsunlynx.ShufflingProtocol).FeedbackChannel
 
 	survey.PushShuffledProcessResponses(shufflingResult)
 	s.Survey.Put(string(targetSurvey), survey)
@@ -560,21 +560,21 @@ func (s *Service) TaggingPhase(targetSurvey SurveyID) error {
 		return nil
 	}
 
-	pi, err := s.StartProtocol(protocolsUnLynx.DeterministicTaggingProtocolName, targetSurvey)
+	pi, err := s.StartProtocol(protocolsunlynx.DeterministicTaggingProtocolName, targetSurvey)
 	if err != nil {
 		return err
 	}
 
-	deterministicTaggingResult := <-pi.(*protocolsUnLynx.DeterministicTaggingProtocol).FeedbackChannel
+	deterministicTaggingResult := <-pi.(*protocolsunlynx.DeterministicTaggingProtocol).FeedbackChannel
 
-	var queryWhereTag []libUnLynx.WhereQueryAttributeTagged
+	var queryWhereTag []libunlynx.WhereQueryAttributeTagged
 	for i, v := range deterministicTaggingResult[:len(survey.Query.Where)] {
-		newElem := libUnLynx.WhereQueryAttributeTagged{Name: survey.Query.Where[i].Name, Value: v.DetTagWhere[0]}
+		newElem := libunlynx.WhereQueryAttributeTagged{Name: survey.Query.Where[i].Name, Value: v.DetTagWhere[0]}
 		queryWhereTag = append(queryWhereTag, newElem)
 	}
 	deterministicTaggingResult = deterministicTaggingResult[len(survey.Query.Where):]
 
-	var filteredResponses []libUnLynx.FilteredResponseDet
+	var filteredResponses []libunlynx.FilteredResponseDet
 	if survey.Query.Predicate == "" || len(queryWhereTag) == 0 {
 		filteredResponses = FilterNone(deterministicTaggingResult)
 	} else {
@@ -588,11 +588,11 @@ func (s *Service) TaggingPhase(targetSurvey SurveyID) error {
 
 // AggregationPhase performs the per-group aggregation on the currently grouped data.
 func (s *Service) AggregationPhase(targetSurvey SurveyID) error {
-	pi, err := s.StartProtocol(protocolsUnLynx.CollectiveAggregationProtocolName, targetSurvey)
+	pi, err := s.StartProtocol(protocolsunlynx.CollectiveAggregationProtocolName, targetSurvey)
 	if err != nil {
 		return err
 	}
-	cothorityAggregatedData := <-pi.(*protocolsUnLynx.CollectiveAggregationProtocol).FeedbackChannel
+	cothorityAggregatedData := <-pi.(*protocolsunlynx.CollectiveAggregationProtocol).FeedbackChannel
 
 	survey := castToSurvey(s.Survey.Get((string)(targetSurvey)))
 	survey.PushCothorityAggregatedFilteredResponses(cothorityAggregatedData.GroupedData)
@@ -602,12 +602,12 @@ func (s *Service) AggregationPhase(targetSurvey SurveyID) error {
 
 // DROPhase shuffles the list of noise values.
 func (s *Service) DROPhase(targetSurvey SurveyID) error {
-	pi, err := s.StartProtocol(protocolsUnLynx.DROProtocolName, targetSurvey)
+	pi, err := s.StartProtocol(protocolsunlynx.DROProtocolName, targetSurvey)
 	if err != nil {
 		return err
 	}
 
-	shufflingResult := <-pi.(*protocolsUnLynx.ShufflingProtocol).FeedbackChannel
+	shufflingResult := <-pi.(*protocolsunlynx.ShufflingProtocol).FeedbackChannel
 
 	survey := castToSurvey(s.Survey.Get((string)(targetSurvey)))
 	survey.Noise = shufflingResult[0].AggregatingAttributes[0]
@@ -617,11 +617,11 @@ func (s *Service) DROPhase(targetSurvey SurveyID) error {
 
 // KeySwitchingPhase performs the switch to the querier's key on the currently aggregated data.
 func (s *Service) KeySwitchingPhase(targetSurvey SurveyID) error {
-	pi, err := s.StartProtocol(protocolsUnLynx.KeySwitchingProtocolName, targetSurvey)
+	pi, err := s.StartProtocol(protocolsunlynx.KeySwitchingProtocolName, targetSurvey)
 	if err != nil {
 		return err
 	}
-	keySwitchedAggregatedResponses := <-pi.(*protocolsUnLynx.KeySwitchingProtocol).FeedbackChannel
+	keySwitchedAggregatedResponses := <-pi.(*protocolsunlynx.KeySwitchingProtocol).FeedbackChannel
 
 	survey := castToSurvey(s.Survey.Get((string)(targetSurvey)))
 	survey.PushQuerierKeyEncryptedResponses(keySwitchedAggregatedResponses)
@@ -633,8 +633,8 @@ func (s *Service) KeySwitchingPhase(targetSurvey SurveyID) error {
 //______________________________________________________________________________________________________________________
 
 // FilterResponses evaluates the predicate and keeps the entries that satisfy the conditions
-func FilterResponses(pred string, whereQueryValues []libUnLynx.WhereQueryAttributeTagged, responsesToFilter []libUnLynx.ProcessResponseDet) []libUnLynx.FilteredResponseDet {
-	var result []libUnLynx.FilteredResponseDet
+func FilterResponses(pred string, whereQueryValues []libunlynx.WhereQueryAttributeTagged, responsesToFilter []libunlynx.ProcessResponseDet) []libunlynx.FilteredResponseDet {
+	var result []libunlynx.FilteredResponseDet
 	for _, v := range responsesToFilter {
 		expression, err := govaluate.NewEvaluableExpression(pred)
 		if err != nil {
@@ -654,17 +654,17 @@ func FilterResponses(pred string, whereQueryValues []libUnLynx.WhereQueryAttribu
 		}
 		keep, err := expression.Evaluate(parameters)
 		if keep.(bool) {
-			result = append(result, libUnLynx.FilteredResponseDet{DetTagGroupBy: v.DetTagGroupBy, Fr: libUnLynx.FilteredResponse{GroupByEnc: v.PR.GroupByEnc, AggregatingAttributes: v.PR.AggregatingAttributes}})
+			result = append(result, libunlynx.FilteredResponseDet{DetTagGroupBy: v.DetTagGroupBy, Fr: libunlynx.FilteredResponse{GroupByEnc: v.PR.GroupByEnc, AggregatingAttributes: v.PR.AggregatingAttributes}})
 		}
 	}
 	return result
 }
 
 // FilterNone skips the filtering of attributes when there is no predicate (the number of where attributes == 0)
-func FilterNone(responsesToFilter []libUnLynx.ProcessResponseDet) []libUnLynx.FilteredResponseDet {
-	var result []libUnLynx.FilteredResponseDet
+func FilterNone(responsesToFilter []libunlynx.ProcessResponseDet) []libunlynx.FilteredResponseDet {
+	var result []libunlynx.FilteredResponseDet
 	for _, v := range responsesToFilter {
-		result = append(result, libUnLynx.FilteredResponseDet{DetTagGroupBy: v.DetTagGroupBy, Fr: libUnLynx.FilteredResponse{GroupByEnc: v.PR.GroupByEnc, AggregatingAttributes: v.PR.AggregatingAttributes}})
+		result = append(result, libunlynx.FilteredResponseDet{DetTagGroupBy: v.DetTagGroupBy, Fr: libunlynx.FilteredResponse{GroupByEnc: v.PR.GroupByEnc, AggregatingAttributes: v.PR.AggregatingAttributes}})
 	}
 	return result
 }

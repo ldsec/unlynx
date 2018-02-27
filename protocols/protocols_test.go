@@ -1,4 +1,4 @@
-package protocolsUnLynx_test
+package protocolsunlynx_test
 
 import (
 	"testing"

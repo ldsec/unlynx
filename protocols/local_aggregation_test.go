@@ -1,4 +1,4 @@
-package protocolsUnLynx_test
+package protocolsunlynx_test
 
 import (
 	"testing"
@@ -22,24 +22,24 @@ func TestLocalAggregation(t *testing.T) {
 	if err != nil {
 		t.Fatal("Couldn't start protocol:", err)
 	}
-	protocol := rootInstance.(*protocolsUnLynx.LocalAggregationProtocol)
+	protocol := rootInstance.(*protocolsunlynx.LocalAggregationProtocol)
 
 	secKey := network.Suite.Scalar().Pick(random.Stream)
 	pubKey := network.Suite.Point().Mul(network.Suite.Point().Base(), secKey)
-	cipherOne := *libUnLynx.EncryptInt(pubKey, 10)
-	cipherVect := libUnLynx.CipherVector{cipherOne, cipherOne}
-	cipherVect2 := *libUnLynx.NewCipherVector(len(cipherVect))
+	cipherOne := *libunlynx.EncryptInt(pubKey, 10)
+	cipherVect := libunlynx.CipherVector{cipherOne, cipherOne}
+	cipherVect2 := *libunlynx.NewCipherVector(len(cipherVect))
 	cipherVect2.Add(cipherVect, cipherVect)
 
 	// aggregation
-	detResponses := make([]libUnLynx.FilteredResponseDet, 3)
-	detResponses[0] = libUnLynx.FilteredResponseDet{Fr: libUnLynx.FilteredResponse{GroupByEnc: cipherVect2, AggregatingAttributes: cipherVect}, DetTagGroupBy: libUnLynx.CipherVectorToDeterministicTag(cipherVect2, secKey, secKey, pubKey, true)}
-	detResponses[1] = libUnLynx.FilteredResponseDet{Fr: libUnLynx.FilteredResponse{GroupByEnc: cipherVect, AggregatingAttributes: cipherVect}, DetTagGroupBy: libUnLynx.CipherVectorToDeterministicTag(cipherVect, secKey, secKey, pubKey, true)}
-	detResponses[2] = libUnLynx.FilteredResponseDet{Fr: libUnLynx.FilteredResponse{GroupByEnc: cipherVect2, AggregatingAttributes: cipherVect}, DetTagGroupBy: libUnLynx.CipherVectorToDeterministicTag(cipherVect2, secKey, secKey, pubKey, true)}
+	detResponses := make([]libunlynx.FilteredResponseDet, 3)
+	detResponses[0] = libunlynx.FilteredResponseDet{Fr: libunlynx.FilteredResponse{GroupByEnc: cipherVect2, AggregatingAttributes: cipherVect}, DetTagGroupBy: libunlynx.CipherVectorToDeterministicTag(cipherVect2, secKey, secKey, pubKey, true)}
+	detResponses[1] = libunlynx.FilteredResponseDet{Fr: libunlynx.FilteredResponse{GroupByEnc: cipherVect, AggregatingAttributes: cipherVect}, DetTagGroupBy: libunlynx.CipherVectorToDeterministicTag(cipherVect, secKey, secKey, pubKey, true)}
+	detResponses[2] = libunlynx.FilteredResponseDet{Fr: libunlynx.FilteredResponse{GroupByEnc: cipherVect2, AggregatingAttributes: cipherVect}, DetTagGroupBy: libunlynx.CipherVectorToDeterministicTag(cipherVect2, secKey, secKey, pubKey, true)}
 
-	comparisonMap := make(map[libUnLynx.GroupingKey]libUnLynx.FilteredResponse)
+	comparisonMap := make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse)
 	for _, v := range detResponses {
-		libUnLynx.AddInMap(comparisonMap, v.DetTagGroupBy, v.Fr)
+		libunlynx.AddInMap(comparisonMap, v.DetTagGroupBy, v.Fr)
 	}
 
 	protocol.TargetOfAggregation = detResponses

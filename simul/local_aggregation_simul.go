@@ -61,7 +61,7 @@ func (sim *LocalAggregationSimulation) Run(config *onet.SimulationConfig) error 
 			return err
 		}
 
-		root := rooti.(*protocolsUnLynx.LocalAggregationProtocol)
+		root := rooti.(*protocolsunlynx.LocalAggregationProtocol)
 
 		secKey := network.Suite.Scalar().Pick(random.Stream)
 		newSecKey := network.Suite.Scalar().Pick(random.Stream)
@@ -78,23 +78,23 @@ func (sim *LocalAggregationSimulation) Run(config *onet.SimulationConfig) error 
 		}
 
 		// aggregation
-		testCipherVect1 := *libUnLynx.EncryptIntVector(pubKey, tab)
-		groupCipherVect := *libUnLynx.EncryptIntVector(pubKey, tabGr)
-		detResponses := make([]libUnLynx.FilteredResponseDet, 0)
+		testCipherVect1 := *libunlynx.EncryptIntVector(pubKey, tab)
+		groupCipherVect := *libunlynx.EncryptIntVector(pubKey, tabGr)
+		detResponses := make([]libunlynx.FilteredResponseDet, 0)
 		for i := 0; i < sim.NbrGroups; i++ {
-			tmp := libUnLynx.NewCipherVector(sim.NbrGroupAttributes)
+			tmp := libunlynx.NewCipherVector(sim.NbrGroupAttributes)
 			tmp.Add(groupCipherVect, groupCipherVect)
 			groupCipherVect = *tmp
-			cr := libUnLynx.FilteredResponse{GroupByEnc: testCipherVect1, AggregatingAttributes: testCipherVect1}
+			cr := libunlynx.FilteredResponse{GroupByEnc: testCipherVect1, AggregatingAttributes: testCipherVect1}
 			det1 := groupCipherVect
 			det1.TaggingDet(secKey, newSecKey, pubKey, sim.Proofs)
 
-			deterministicGroupAttributes := make(libUnLynx.DeterministCipherVector, len(det1))
+			deterministicGroupAttributes := make(libunlynx.DeterministCipherVector, len(det1))
 			for j, c := range det1 {
-				deterministicGroupAttributes[j] = libUnLynx.DeterministCipherText{Point: c.C}
+				deterministicGroupAttributes[j] = libunlynx.DeterministCipherText{Point: c.C}
 			}
 
-			newDetResponse := libUnLynx.FilteredResponseDet{Fr: cr, DetTagGroupBy: deterministicGroupAttributes.Key()}
+			newDetResponse := libunlynx.FilteredResponseDet{Fr: cr, DetTagGroupBy: deterministicGroupAttributes.Key()}
 			log.Lvl1("step: ", i, " / ", sim.NbrGroups, " in preparation")
 			for j := 0; j < sim.NbrResponses/sim.NbrGroups; j++ {
 				detResponses = append(detResponses, newDetResponse)
@@ -103,16 +103,16 @@ func (sim *LocalAggregationSimulation) Run(config *onet.SimulationConfig) error 
 
 		log.Lvl1("starting protocol with ", len(detResponses), " responses")
 
-		root.ProtocolInstance().(*protocolsUnLynx.LocalAggregationProtocol).TargetOfAggregation = detResponses
-		root.ProtocolInstance().(*protocolsUnLynx.LocalAggregationProtocol).Proofs = sim.Proofs
+		root.ProtocolInstance().(*protocolsunlynx.LocalAggregationProtocol).TargetOfAggregation = detResponses
+		root.ProtocolInstance().(*protocolsunlynx.LocalAggregationProtocol).Proofs = sim.Proofs
 
-		round := libUnLynx.StartTimer("_LocalAggregation(Simulation")
+		round := libunlynx.StartTimer("_LocalAggregation(Simulation")
 
 		root.Start()
-		results := <-root.ProtocolInstance().(*protocolsUnLynx.LocalAggregationProtocol).FeedbackChannel
+		results := <-root.ProtocolInstance().(*protocolsunlynx.LocalAggregationProtocol).FeedbackChannel
 		log.Lvl1("Number of aggregated lines: ", len(results))
 
-		libUnLynx.EndTimer(round)
+		libunlynx.EndTimer(round)
 
 	}
 

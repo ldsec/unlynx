@@ -1,8 +1,8 @@
-package serviceUnLynx_test
+package servicesunlynxdefault_test
 
 import (
 	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/services"
+	"github.com/lca1/unlynx/services/default"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
@@ -30,28 +30,28 @@ func TestFilterResponses(t *testing.T) {
 	// simple predicate
 	predicate := "v0 == v1"
 
-	whereAttributes := make([]libUnLynx.WhereQueryAttributeTagged, 0)
-	whereAttributes = append(whereAttributes, libUnLynx.WhereQueryAttributeTagged{Name: "w0", Value: "1"})
+	whereAttributes := make([]libunlynx.WhereQueryAttributeTagged, 0)
+	whereAttributes = append(whereAttributes, libunlynx.WhereQueryAttributeTagged{Name: "w0", Value: "1"})
 
-	data := make([]libUnLynx.ProcessResponseDet, 0)
+	data := make([]libunlynx.ProcessResponseDet, 0)
 
 	// predicate is true
-	whereTrue := [1]libUnLynx.GroupingKey{libUnLynx.GroupingKey("1")}
+	whereTrue := [1]libunlynx.GroupingKey{libunlynx.GroupingKey("1")}
 
 	// predicate is false
-	whereFalse := [1]libUnLynx.GroupingKey{libUnLynx.GroupingKey("0")}
+	whereFalse := [1]libunlynx.GroupingKey{libunlynx.GroupingKey("0")}
 
-	data = append(data, libUnLynx.ProcessResponseDet{PR: libUnLynx.ProcessResponse{}, DetTagGroupBy: "", DetTagWhere: whereTrue[:]})
-	data = append(data, libUnLynx.ProcessResponseDet{PR: libUnLynx.ProcessResponse{}, DetTagGroupBy: "", DetTagWhere: whereFalse[:]})
+	data = append(data, libunlynx.ProcessResponseDet{PR: libunlynx.ProcessResponse{}, DetTagGroupBy: "", DetTagWhere: whereTrue[:]})
+	data = append(data, libunlynx.ProcessResponseDet{PR: libunlynx.ProcessResponse{}, DetTagGroupBy: "", DetTagWhere: whereFalse[:]})
 
-	result := serviceUnLynx.FilterResponses(predicate, whereAttributes, data)
+	result := servicesunlynxdefault.FilterResponses(predicate, whereAttributes, data)
 
 	// 1 result(s) are true
 	assert.Equal(t, len(result), 1)
 
-	data = append(data, libUnLynx.ProcessResponseDet{PR: libUnLynx.ProcessResponse{}, DetTagGroupBy: "", DetTagWhere: whereTrue[:]})
+	data = append(data, libunlynx.ProcessResponseDet{PR: libunlynx.ProcessResponse{}, DetTagGroupBy: "", DetTagWhere: whereTrue[:]})
 
-	result = serviceUnLynx.FilterResponses(predicate, whereAttributes, data)
+	result = servicesunlynxdefault.FilterResponses(predicate, whereAttributes, data)
 
 	// 2 result(s) are true
 	assert.Equal(t, len(result), 2)
@@ -60,24 +60,24 @@ func TestFilterResponses(t *testing.T) {
 	// more complex predicate
 	predicate = "v0 != v1 || (v2 == v3 && v4 == v5)"
 
-	whereAttributes = make([]libUnLynx.WhereQueryAttributeTagged, 0)
-	whereAttributes = append(whereAttributes, libUnLynx.WhereQueryAttributeTagged{Name: "w0", Value: "27"})
-	whereAttributes = append(whereAttributes, libUnLynx.WhereQueryAttributeTagged{Name: "w1", Value: "0"})
-	whereAttributes = append(whereAttributes, libUnLynx.WhereQueryAttributeTagged{Name: "w2", Value: "99"})
+	whereAttributes = make([]libunlynx.WhereQueryAttributeTagged, 0)
+	whereAttributes = append(whereAttributes, libunlynx.WhereQueryAttributeTagged{Name: "w0", Value: "27"})
+	whereAttributes = append(whereAttributes, libunlynx.WhereQueryAttributeTagged{Name: "w1", Value: "0"})
+	whereAttributes = append(whereAttributes, libunlynx.WhereQueryAttributeTagged{Name: "w2", Value: "99"})
 
 	// predicate is true
-	whereTrue1 := [3]libUnLynx.GroupingKey{libUnLynx.GroupingKey("21"), libUnLynx.GroupingKey("6"), libUnLynx.GroupingKey("0")}
-	whereTrue2 := [3]libUnLynx.GroupingKey{libUnLynx.GroupingKey("27"), libUnLynx.GroupingKey("0"), libUnLynx.GroupingKey("99")}
+	whereTrue1 := [3]libunlynx.GroupingKey{libunlynx.GroupingKey("21"), libunlynx.GroupingKey("6"), libunlynx.GroupingKey("0")}
+	whereTrue2 := [3]libunlynx.GroupingKey{libunlynx.GroupingKey("27"), libunlynx.GroupingKey("0"), libunlynx.GroupingKey("99")}
 
 	// predicate is false
-	whereFalse1 := [3]libUnLynx.GroupingKey{libUnLynx.GroupingKey("27"), libUnLynx.GroupingKey("6"), libUnLynx.GroupingKey("0")}
+	whereFalse1 := [3]libunlynx.GroupingKey{libunlynx.GroupingKey("27"), libunlynx.GroupingKey("6"), libunlynx.GroupingKey("0")}
 
-	data = make([]libUnLynx.ProcessResponseDet, 0)
-	data = append(data, libUnLynx.ProcessResponseDet{PR: libUnLynx.ProcessResponse{}, DetTagGroupBy: "", DetTagWhere: whereTrue1[:]})
-	data = append(data, libUnLynx.ProcessResponseDet{PR: libUnLynx.ProcessResponse{}, DetTagGroupBy: "", DetTagWhere: whereTrue2[:]})
-	data = append(data, libUnLynx.ProcessResponseDet{PR: libUnLynx.ProcessResponse{}, DetTagGroupBy: "", DetTagWhere: whereFalse1[:]})
+	data = make([]libunlynx.ProcessResponseDet, 0)
+	data = append(data, libunlynx.ProcessResponseDet{PR: libunlynx.ProcessResponse{}, DetTagGroupBy: "", DetTagWhere: whereTrue1[:]})
+	data = append(data, libunlynx.ProcessResponseDet{PR: libunlynx.ProcessResponse{}, DetTagGroupBy: "", DetTagWhere: whereTrue2[:]})
+	data = append(data, libunlynx.ProcessResponseDet{PR: libunlynx.ProcessResponse{}, DetTagGroupBy: "", DetTagWhere: whereFalse1[:]})
 
-	result = serviceUnLynx.FilterResponses(predicate, whereAttributes, data)
+	result = servicesunlynxdefault.FilterResponses(predicate, whereAttributes, data)
 
 	// 2 result(s) are true
 	assert.Equal(t, len(result), 2)
@@ -92,7 +92,7 @@ func TestCountDPs(t *testing.T) {
 		mapTest["server"+strconv.Itoa(i)] = int64(nbrElementsPerServer)
 	}
 
-	assert.Equal(t, int64(nbrElementsPerServer*nbrServer), serviceUnLynx.CountDPs(mapTest))
+	assert.Equal(t, int64(nbrElementsPerServer*nbrServer), servicesunlynxdefault.CountDPs(mapTest))
 }
 
 // TEST BATCH 1 -> encrypted or/and non-encrypted grouping attributes
@@ -110,11 +110,11 @@ func TestServiceClearAttr(t *testing.T) {
 	defer local.CloseAll()
 
 	// Send a request to the service
-	client := serviceUnLynx.NewUnLynxClient(el.List[0], strconv.Itoa(0))
+	client := servicesunlynxdefault.NewUnLynxClient(el.List[0], strconv.Itoa(0))
 
 	sum := []string{"s1", "s2"}
 	count := false
-	whereQueryValues := []libUnLynx.WhereQueryAttribute{{Name: "w1", Value: *libUnLynx.EncryptInt(el.Aggregate, 1)}, {Name: "w2", Value: *libUnLynx.EncryptInt(el.Aggregate, 1)}, {Name: "w3", Value: *libUnLynx.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
+	whereQueryValues := []libunlynx.WhereQueryAttribute{{Name: "w1", Value: *libunlynx.EncryptInt(el.Aggregate, 1)}, {Name: "w2", Value: *libunlynx.EncryptInt(el.Aggregate, 1)}, {Name: "w3", Value: *libunlynx.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
 	predicate := "(v0 == v1 || v2 == v3) && v4 == v5"
 	groupBy := []string{"g1", "g2", "g3"}
 
@@ -124,7 +124,7 @@ func TestServiceClearAttr(t *testing.T) {
 		nbrDPs[server.String()] = 2 // 2 DPs for each server
 	}
 
-	surveyID, err := client.SendSurveyCreationQuery(el, serviceUnLynx.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
+	surveyID, err := client.SendSurveyCreationQuery(el, servicesunlynxdefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
 
 	if err != nil {
 		t.Fatal("Service did not start.", err)
@@ -133,9 +133,9 @@ func TestServiceClearAttr(t *testing.T) {
 	//save values in a map to verify them at the end
 	expectedResults := make(map[[numberGrpAttr]int64][]int64)
 	log.Lvl1("Sending response data... ")
-	dataHolder := make([]*serviceUnLynx.API, 10)
+	dataHolder := make([]*servicesunlynxdefault.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
-		dataHolder[i] = serviceUnLynx.NewUnLynxClient(el.List[i%5], strconv.Itoa(i+1))
+		dataHolder[i] = servicesunlynxdefault.NewUnLynxClient(el.List[i%5], strconv.Itoa(i+1))
 		grp := [numberGrpAttr]int64{}
 		aggr := make(map[string]int64, numberAttr)
 
@@ -170,7 +170,7 @@ func TestServiceClearAttr(t *testing.T) {
 		}
 
 		//responses:= []lib.DpClearResponse{{WhereClear: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr},{WhereClear: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr},{WhereClear: sliceWhere, GroupByClear: sliceGrp1, AggregatingAttributesEnc: aggr}}
-		responses := []libUnLynx.DpClearResponse{{WhereClear: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereClear: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr}}
+		responses := []libunlynx.DpClearResponse{{WhereClear: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereClear: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr}}
 
 		log.Lvl1(responses)
 		dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
@@ -216,11 +216,11 @@ func TestServiceClearGrpEncWhereAttr(t *testing.T) {
 	defer local.CloseAll()
 
 	// Send a request to the service
-	client := serviceUnLynx.NewUnLynxClient(el.List[0], strconv.Itoa(0))
+	client := servicesunlynxdefault.NewUnLynxClient(el.List[0], strconv.Itoa(0))
 
 	sum := []string{"s1", "s2"}
 	count := false
-	whereQueryValues := []libUnLynx.WhereQueryAttribute{{Name: "w1", Value: *libUnLynx.EncryptInt(el.Aggregate, 1)}, {Name: "w2", Value: *libUnLynx.EncryptInt(el.Aggregate, 1)}, {Name: "w3", Value: *libUnLynx.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
+	whereQueryValues := []libunlynx.WhereQueryAttribute{{Name: "w1", Value: *libunlynx.EncryptInt(el.Aggregate, 1)}, {Name: "w2", Value: *libunlynx.EncryptInt(el.Aggregate, 1)}, {Name: "w3", Value: *libunlynx.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
 	predicate := "(v0 == v1 || v2 == v3) && v4 == v5"
 	groupBy := []string{"g1", "g2", "g3"}
 
@@ -230,7 +230,7 @@ func TestServiceClearGrpEncWhereAttr(t *testing.T) {
 		nbrDPs[server.String()] = 2 // 2 DPs for each server
 	}
 
-	surveyID, err := client.SendSurveyCreationQuery(el, serviceUnLynx.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
+	surveyID, err := client.SendSurveyCreationQuery(el, servicesunlynxdefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
 
 	if err != nil {
 		t.Fatal("Service did not start.", err)
@@ -239,9 +239,9 @@ func TestServiceClearGrpEncWhereAttr(t *testing.T) {
 	//save values in a map to verify them at the end
 	expectedResults := make(map[[numberGrpAttr]int64][]int64)
 	log.Lvl1("Sending response data... ")
-	dataHolder := make([]*serviceUnLynx.API, 10)
+	dataHolder := make([]*servicesunlynxdefault.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
-		dataHolder[i] = serviceUnLynx.NewUnLynxClient(el.List[i%5], strconv.Itoa(i+1))
+		dataHolder[i] = servicesunlynxdefault.NewUnLynxClient(el.List[i%5], strconv.Itoa(i+1))
 		grp := [numberGrpAttr]int64{}
 		aggr := make(map[string]int64, numberAttr)
 
@@ -272,7 +272,7 @@ func TestServiceClearGrpEncWhereAttr(t *testing.T) {
 			aggr["s"+strconv.Itoa(j+1)] = int64(j)
 		}
 
-		responses := []libUnLynx.DpClearResponse{{WhereEnc: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereEnc: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereEnc: sliceWhere, GroupByClear: sliceGrp1, AggregatingAttributesEnc: aggr}}
+		responses := []libunlynx.DpClearResponse{{WhereEnc: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereEnc: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereEnc: sliceWhere, GroupByClear: sliceGrp1, AggregatingAttributesEnc: aggr}}
 		dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
 	}
 
@@ -315,11 +315,11 @@ func TestServiceEncGrpClearWhereAttr(t *testing.T) {
 	defer local.CloseAll()
 
 	// Send a request to the service
-	client := serviceUnLynx.NewUnLynxClient(el.List[0], strconv.Itoa(0))
+	client := servicesunlynxdefault.NewUnLynxClient(el.List[0], strconv.Itoa(0))
 
 	sum := []string{"s1", "s2"}
 	count := false
-	whereQueryValues := []libUnLynx.WhereQueryAttribute{{Name: "w1", Value: *libUnLynx.EncryptInt(el.Aggregate, 1)}, {Name: "w2", Value: *libUnLynx.EncryptInt(el.Aggregate, 1)}, {Name: "w3", Value: *libUnLynx.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
+	whereQueryValues := []libunlynx.WhereQueryAttribute{{Name: "w1", Value: *libunlynx.EncryptInt(el.Aggregate, 1)}, {Name: "w2", Value: *libunlynx.EncryptInt(el.Aggregate, 1)}, {Name: "w3", Value: *libunlynx.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
 	predicate := "(v0 == v1 || v2 == v3) && v4 == v5"
 	groupBy := []string{"g1", "g2", "g3"}
 
@@ -329,7 +329,7 @@ func TestServiceEncGrpClearWhereAttr(t *testing.T) {
 		nbrDPs[server.String()] = 2 // 2 DPs for each server
 	}
 
-	surveyID, err := client.SendSurveyCreationQuery(el, serviceUnLynx.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
+	surveyID, err := client.SendSurveyCreationQuery(el, servicesunlynxdefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
 
 	if err != nil {
 		t.Fatal("Service did not start.", err)
@@ -338,9 +338,9 @@ func TestServiceEncGrpClearWhereAttr(t *testing.T) {
 	//save values in a map to verify them at the end
 	expectedResults := make(map[[numberGrpAttr]int64][]int64)
 	log.Lvl1("Sending response data... ")
-	dataHolder := make([]*serviceUnLynx.API, 10)
+	dataHolder := make([]*servicesunlynxdefault.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
-		dataHolder[i] = serviceUnLynx.NewUnLynxClient(el.List[i%5], strconv.Itoa(i+1))
+		dataHolder[i] = servicesunlynxdefault.NewUnLynxClient(el.List[i%5], strconv.Itoa(i+1))
 		grp := [numberGrpAttr]int64{}
 		aggr := make(map[string]int64, numberAttr)
 
@@ -372,7 +372,7 @@ func TestServiceEncGrpClearWhereAttr(t *testing.T) {
 			aggr["s"+strconv.Itoa(j+1)] = int64(j)
 		}
 
-		responses := []libUnLynx.DpClearResponse{{WhereClear: sliceWhere, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereClear: sliceWhere, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
+		responses := []libunlynx.DpClearResponse{{WhereClear: sliceWhere, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereClear: sliceWhere, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
 		dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
 	}
 
@@ -415,11 +415,11 @@ func TestServiceEncGrpAndWhereAttr(t *testing.T) {
 	defer local.CloseAll()
 
 	// Send a request to the service
-	client := serviceUnLynx.NewUnLynxClient(el.List[0], strconv.Itoa(0))
+	client := servicesunlynxdefault.NewUnLynxClient(el.List[0], strconv.Itoa(0))
 
 	sum := []string{"s1", "s2"}
 	count := false
-	whereQueryValues := []libUnLynx.WhereQueryAttribute{{Name: "w1", Value: *libUnLynx.EncryptInt(el.Aggregate, 1)}, {Name: "w2", Value: *libUnLynx.EncryptInt(el.Aggregate, 1)}, {Name: "w3", Value: *libUnLynx.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
+	whereQueryValues := []libunlynx.WhereQueryAttribute{{Name: "w1", Value: *libunlynx.EncryptInt(el.Aggregate, 1)}, {Name: "w2", Value: *libunlynx.EncryptInt(el.Aggregate, 1)}, {Name: "w3", Value: *libunlynx.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
 	predicate := "(v0 == v1 || v2 == v3) && v4 == v5"
 	groupBy := []string{"g1", "g2", "g3"}
 
@@ -429,7 +429,7 @@ func TestServiceEncGrpAndWhereAttr(t *testing.T) {
 		nbrDPs[server.String()] = 2 // 2 DPs for each server
 	}
 
-	surveyID, err := client.SendSurveyCreationQuery(el, serviceUnLynx.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
+	surveyID, err := client.SendSurveyCreationQuery(el, servicesunlynxdefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
 
 	if err != nil {
 		t.Fatal("Service did not start.", err)
@@ -438,9 +438,9 @@ func TestServiceEncGrpAndWhereAttr(t *testing.T) {
 	//save values in a map to verify them at the end
 	expectedResults := make(map[[numberGrpAttr]int64][]int64)
 	log.Lvl1("Sending response data... ")
-	dataHolder := make([]*serviceUnLynx.API, 10)
+	dataHolder := make([]*servicesunlynxdefault.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
-		dataHolder[i] = serviceUnLynx.NewUnLynxClient(el.List[i%5], strconv.Itoa(i+1))
+		dataHolder[i] = servicesunlynxdefault.NewUnLynxClient(el.List[i%5], strconv.Itoa(i+1))
 		grp := [numberGrpAttr]int64{}
 		aggr := make(map[string]int64, numberAttr)
 
@@ -475,7 +475,7 @@ func TestServiceEncGrpAndWhereAttr(t *testing.T) {
 
 		}
 
-		responses := []libUnLynx.DpClearResponse{{WhereEnc: sliceWhere, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereEnc: sliceWhere, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
+		responses := []libunlynx.DpClearResponse{{WhereEnc: sliceWhere, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereEnc: sliceWhere, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
 		dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
 	}
 
@@ -518,11 +518,11 @@ func TestServiceEverything(t *testing.T) {
 	defer local.CloseAll()
 
 	// Send a request to the service
-	client := serviceUnLynx.NewUnLynxClient(el.List[0], strconv.Itoa(0))
+	client := servicesunlynxdefault.NewUnLynxClient(el.List[0], strconv.Itoa(0))
 
 	sum := []string{"s1", "s2"}
 	count := false
-	whereQueryValues := []libUnLynx.WhereQueryAttribute{{Name: "w1", Value: *libUnLynx.EncryptInt(el.Aggregate, 1)}, {Name: "w2", Value: *libUnLynx.EncryptInt(el.Aggregate, 1)}, {Name: "w3", Value: *libUnLynx.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
+	whereQueryValues := []libunlynx.WhereQueryAttribute{{Name: "w1", Value: *libunlynx.EncryptInt(el.Aggregate, 1)}, {Name: "w2", Value: *libunlynx.EncryptInt(el.Aggregate, 1)}, {Name: "w3", Value: *libunlynx.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
 	predicate := "(v0 == v1 || v2 == v3) && v4 == v5"
 	groupBy := []string{"g1", "g2", "g3"}
 
@@ -532,7 +532,7 @@ func TestServiceEverything(t *testing.T) {
 		nbrDPs[server.String()] = 2 // 2 DPs for each server
 	}
 
-	surveyID, err := client.SendSurveyCreationQuery(el, serviceUnLynx.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
+	surveyID, err := client.SendSurveyCreationQuery(el, servicesunlynxdefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
 
 	if err != nil {
 		t.Fatal("Service did not start.", err)
@@ -541,9 +541,9 @@ func TestServiceEverything(t *testing.T) {
 	//save values in a map to verify them at the end
 	expectedResults := make(map[[numberGrpAttr]int64][]int64)
 	log.Lvl1("Sending response data... ")
-	dataHolder := make([]*serviceUnLynx.API, 10)
+	dataHolder := make([]*servicesunlynxdefault.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
-		dataHolder[i] = serviceUnLynx.NewUnLynxClient(el.List[i%5], strconv.Itoa(i+1))
+		dataHolder[i] = servicesunlynxdefault.NewUnLynxClient(el.List[i%5], strconv.Itoa(i+1))
 		grp := [numberGrpAttr]int64{}
 		aggr := make(map[string]int64, numberAttr)
 
@@ -574,7 +574,7 @@ func TestServiceEverything(t *testing.T) {
 			aggr["s"+strconv.Itoa(j+1)] = int64(j)
 		}
 
-		responses := []libUnLynx.DpClearResponse{{WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
+		responses := []libunlynx.DpClearResponse{{WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
 		dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
 	}
 
@@ -617,11 +617,11 @@ func TestServiceEncGrpAndWhereAttrWithCount(t *testing.T) {
 	defer local.CloseAll()
 
 	// Send a request to the service
-	client := serviceUnLynx.NewUnLynxClient(el.List[0], strconv.Itoa(0))
+	client := servicesunlynxdefault.NewUnLynxClient(el.List[0], strconv.Itoa(0))
 
 	sum := []string{"s1", "s2", "count"}
 	count := true
-	whereQueryValues := []libUnLynx.WhereQueryAttribute{{Name: "w1", Value: *libUnLynx.EncryptInt(el.Aggregate, 1)}, {Name: "w2", Value: *libUnLynx.EncryptInt(el.Aggregate, 1)}, {Name: "w3", Value: *libUnLynx.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
+	whereQueryValues := []libunlynx.WhereQueryAttribute{{Name: "w1", Value: *libunlynx.EncryptInt(el.Aggregate, 1)}, {Name: "w2", Value: *libunlynx.EncryptInt(el.Aggregate, 1)}, {Name: "w3", Value: *libunlynx.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
 	predicate := "(v0 == v1 || v2 == v3) && v4 == v5"
 	groupBy := []string{"g1", "g2", "g3"}
 
@@ -631,7 +631,7 @@ func TestServiceEncGrpAndWhereAttrWithCount(t *testing.T) {
 		nbrDPs[server.String()] = 2 // 2 DPs for each server
 	}
 
-	surveyID, err := client.SendSurveyCreationQuery(el, serviceUnLynx.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
+	surveyID, err := client.SendSurveyCreationQuery(el, servicesunlynxdefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
 
 	if err != nil {
 		t.Fatal("Service did not start.", err)
@@ -640,9 +640,9 @@ func TestServiceEncGrpAndWhereAttrWithCount(t *testing.T) {
 	//save values in a map to verify them at the end
 	expectedResults := make(map[[numberGrpAttr]int64][]int64)
 	log.Lvl1("Sending response data... ")
-	dataHolder := make([]*serviceUnLynx.API, 10)
+	dataHolder := make([]*servicesunlynxdefault.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
-		dataHolder[i] = serviceUnLynx.NewUnLynxClient(el.List[i%5], strconv.Itoa(i+1))
+		dataHolder[i] = servicesunlynxdefault.NewUnLynxClient(el.List[i%5], strconv.Itoa(i+1))
 		grp := [numberGrpAttr]int64{}
 		aggr := make(map[string]int64, numberAttr)
 
@@ -673,7 +673,7 @@ func TestServiceEncGrpAndWhereAttrWithCount(t *testing.T) {
 			aggr["s"+strconv.Itoa(j+1)] = int64(j)
 		}
 
-		responses := []libUnLynx.DpClearResponse{{WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
+		responses := []libunlynx.DpClearResponse{{WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
 		dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
 	}
 
@@ -719,11 +719,11 @@ func TestAllServersNoDPs(t *testing.T) {
 	defer local.CloseAll()
 
 	// Send a request to the service
-	client := serviceUnLynx.NewUnLynxClient(el.List[0], strconv.Itoa(0))
+	client := servicesunlynxdefault.NewUnLynxClient(el.List[0], strconv.Itoa(0))
 
 	sum := []string{"s1", "s2"}
 	count := false
-	whereQueryValues := []libUnLynx.WhereQueryAttribute{{Name: "w1", Value: *libUnLynx.EncryptInt(el.Aggregate, 1)}, {Name: "w2", Value: *libUnLynx.EncryptInt(el.Aggregate, 1)}, {Name: "w3", Value: *libUnLynx.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
+	whereQueryValues := []libunlynx.WhereQueryAttribute{{Name: "w1", Value: *libunlynx.EncryptInt(el.Aggregate, 1)}, {Name: "w2", Value: *libunlynx.EncryptInt(el.Aggregate, 1)}, {Name: "w3", Value: *libunlynx.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
 	predicate := "(v0 == v1 || v2 == v3) && v4 == v5"
 	groupBy := []string{"g1", "g2", "g3"}
 
@@ -737,7 +737,7 @@ func TestAllServersNoDPs(t *testing.T) {
 		}
 	}
 
-	surveyID, err := client.SendSurveyCreationQuery(el, serviceUnLynx.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
+	surveyID, err := client.SendSurveyCreationQuery(el, servicesunlynxdefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
 
 	if err != nil {
 		t.Fatal("Service did not start.")
@@ -746,9 +746,9 @@ func TestAllServersNoDPs(t *testing.T) {
 	//save values in a map to verify them at the end
 	expectedResults := make(map[[numberGrpAttr]int64][]int64)
 	log.Lvl1("Sending response data... ")
-	dataHolder := make([]*serviceUnLynx.API, 10)
+	dataHolder := make([]*servicesunlynxdefault.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
-		dataHolder[i] = serviceUnLynx.NewUnLynxClient(el.List[i%2], strconv.Itoa(i+1))
+		dataHolder[i] = servicesunlynxdefault.NewUnLynxClient(el.List[i%2], strconv.Itoa(i+1))
 		grp := [numberGrpAttr]int64{}
 		aggr := make(map[string]int64, numberAttr)
 
@@ -779,7 +779,7 @@ func TestAllServersNoDPs(t *testing.T) {
 			aggr["s"+strconv.Itoa(j+1)] = int64(j)
 		}
 
-		responses := []libUnLynx.DpClearResponse{{WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
+		responses := []libunlynx.DpClearResponse{{WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
 		dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
 	}
 
@@ -822,7 +822,7 @@ func TestAllServersRandomDPs(t *testing.T) {
 	defer local.CloseAll()
 
 	// Send a request to the service
-	client := serviceUnLynx.NewUnLynxClient(el.List[0], strconv.Itoa(0))
+	client := servicesunlynxdefault.NewUnLynxClient(el.List[0], strconv.Itoa(0))
 
 	nbrDPs := make(map[string]int64)
 	//how many data providers for each server
@@ -834,11 +834,11 @@ func TestAllServersRandomDPs(t *testing.T) {
 
 	sum := []string{"s1", "s2"}
 	count := false
-	whereQueryValues := []libUnLynx.WhereQueryAttribute{{Name: "w1", Value: *libUnLynx.EncryptInt(el.Aggregate, 1)}, {Name: "w2", Value: *libUnLynx.EncryptInt(el.Aggregate, 1)}, {Name: "w3", Value: *libUnLynx.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
+	whereQueryValues := []libunlynx.WhereQueryAttribute{{Name: "w1", Value: *libunlynx.EncryptInt(el.Aggregate, 1)}, {Name: "w2", Value: *libunlynx.EncryptInt(el.Aggregate, 1)}, {Name: "w3", Value: *libunlynx.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
 	predicate := "(v0 == v1 || v2 == v3) && v4 == v5"
 	groupBy := []string{"g1", "g2", "g3"}
 
-	surveyID, err := client.SendSurveyCreationQuery(el, serviceUnLynx.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
+	surveyID, err := client.SendSurveyCreationQuery(el, servicesunlynxdefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
 
 	if err != nil {
 		t.Fatal("Service did not start.")
@@ -847,16 +847,16 @@ func TestAllServersRandomDPs(t *testing.T) {
 	//save values in a map to verify them at the end
 	expectedResults := make(map[[numberGrpAttr]int64][]int64)
 	log.Lvl1("Sending response data... ")
-	dataHolder := make([]*serviceUnLynx.API, 10)
+	dataHolder := make([]*servicesunlynxdefault.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
 		if i < 2 {
-			dataHolder[i] = serviceUnLynx.NewUnLynxClient(el.List[1], strconv.Itoa(i+1))
+			dataHolder[i] = servicesunlynxdefault.NewUnLynxClient(el.List[1], strconv.Itoa(i+1))
 		} else if i == 2 {
-			dataHolder[i] = serviceUnLynx.NewUnLynxClient(el.List[2], strconv.Itoa(i+1))
+			dataHolder[i] = servicesunlynxdefault.NewUnLynxClient(el.List[2], strconv.Itoa(i+1))
 		} else if i < 6 {
-			dataHolder[i] = serviceUnLynx.NewUnLynxClient(el.List[3], strconv.Itoa(i+1))
+			dataHolder[i] = servicesunlynxdefault.NewUnLynxClient(el.List[3], strconv.Itoa(i+1))
 		} else {
-			dataHolder[i] = serviceUnLynx.NewUnLynxClient(el.List[4], strconv.Itoa(i+1))
+			dataHolder[i] = servicesunlynxdefault.NewUnLynxClient(el.List[4], strconv.Itoa(i+1))
 		}
 
 		grp := [numberGrpAttr]int64{}
@@ -889,7 +889,7 @@ func TestAllServersRandomDPs(t *testing.T) {
 			aggr["s"+strconv.Itoa(j+1)] = int64(j)
 		}
 
-		responses := []libUnLynx.DpClearResponse{{WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
+		responses := []libunlynx.DpClearResponse{{WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
 		dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
 	}
 	expectedResults[[3]int64{0, 1, 2}] = []int64{0, 9}
@@ -943,7 +943,7 @@ func TestConcurrentSurveys(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			// Send a request to the service
-			client := serviceUnLynx.NewUnLynxClient(el.List[0], strconv.Itoa(0))
+			client := servicesunlynxdefault.NewUnLynxClient(el.List[0], strconv.Itoa(0))
 
 			nbrDPs := make(map[string]int64)
 			//how many data providers for each server
@@ -955,11 +955,11 @@ func TestConcurrentSurveys(t *testing.T) {
 
 			sum := []string{"s1", "s2"}
 			count := false
-			whereQueryValues := []libUnLynx.WhereQueryAttribute{{Name: "w1", Value: *libUnLynx.EncryptInt(el.Aggregate, 1)}, {Name: "w2", Value: *libUnLynx.EncryptInt(el.Aggregate, 1)}, {Name: "w3", Value: *libUnLynx.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
+			whereQueryValues := []libunlynx.WhereQueryAttribute{{Name: "w1", Value: *libunlynx.EncryptInt(el.Aggregate, 1)}, {Name: "w2", Value: *libunlynx.EncryptInt(el.Aggregate, 1)}, {Name: "w3", Value: *libunlynx.EncryptInt(el.Aggregate, 1)}} // v1, v3 and v5
 			predicate := "(v0 == v1 || v2 == v3) && v4 == v5"
 			groupBy := []string{"g1", "g2", "g3"}
 
-			surveyID, err := client.SendSurveyCreationQuery(el, serviceUnLynx.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
+			surveyID, err := client.SendSurveyCreationQuery(el, servicesunlynxdefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
 
 			if err != nil {
 				t.Fatal("Service did not start.")
@@ -968,16 +968,16 @@ func TestConcurrentSurveys(t *testing.T) {
 			//save values in a map to verify them at the end
 			expectedResults := make(map[[numberGrpAttr]int64][]int64)
 			log.Lvl1("Sending response data... ")
-			dataHolder := make([]*serviceUnLynx.API, 10)
+			dataHolder := make([]*servicesunlynxdefault.API, 10)
 			for i := 0; i < len(dataHolder); i++ {
 				if i < 2 {
-					dataHolder[i] = serviceUnLynx.NewUnLynxClient(el.List[1], strconv.Itoa(i+1))
+					dataHolder[i] = servicesunlynxdefault.NewUnLynxClient(el.List[1], strconv.Itoa(i+1))
 				} else if i == 2 {
-					dataHolder[i] = serviceUnLynx.NewUnLynxClient(el.List[2], strconv.Itoa(i+1))
+					dataHolder[i] = servicesunlynxdefault.NewUnLynxClient(el.List[2], strconv.Itoa(i+1))
 				} else if i < 6 {
-					dataHolder[i] = serviceUnLynx.NewUnLynxClient(el.List[3], strconv.Itoa(i+1))
+					dataHolder[i] = servicesunlynxdefault.NewUnLynxClient(el.List[3], strconv.Itoa(i+1))
 				} else {
-					dataHolder[i] = serviceUnLynx.NewUnLynxClient(el.List[4], strconv.Itoa(i+1))
+					dataHolder[i] = servicesunlynxdefault.NewUnLynxClient(el.List[4], strconv.Itoa(i+1))
 				}
 
 				grp := [numberGrpAttr]int64{}
@@ -1010,7 +1010,7 @@ func TestConcurrentSurveys(t *testing.T) {
 					aggr["s"+strconv.Itoa(j+1)] = int64(j)
 				}
 
-				responses := []libUnLynx.DpClearResponse{{WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
+				responses := []libunlynx.DpClearResponse{{WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
 				dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
 			}
 			expectedResults[[3]int64{0, 1, 2}] = []int64{0, 9}
@@ -1044,10 +1044,10 @@ func TestConcurrentSurveys(t *testing.T) {
 
 func TestFilteringFunc(t *testing.T) {
 	predicate := "(v0 == v1 && v2 == v3) && v4 == v5"
-	whereQueryValues := []libUnLynx.WhereQueryAttributeTagged{{Name: "age", Value: libUnLynx.GroupingKey("1")}, {Name: "salary", Value: libUnLynx.GroupingKey("1")}, {Name: "joao", Value: libUnLynx.GroupingKey("1")}}
-	responsesToFilter := []libUnLynx.ProcessResponseDet{{DetTagWhere: []libUnLynx.GroupingKey{libUnLynx.GroupingKey("1"), libUnLynx.GroupingKey("1"), libUnLynx.GroupingKey("1")}}, {DetTagWhere: []libUnLynx.GroupingKey{libUnLynx.GroupingKey("1"), libUnLynx.GroupingKey("1"), libUnLynx.GroupingKey("2")}}}
+	whereQueryValues := []libunlynx.WhereQueryAttributeTagged{{Name: "age", Value: libunlynx.GroupingKey("1")}, {Name: "salary", Value: libunlynx.GroupingKey("1")}, {Name: "joao", Value: libunlynx.GroupingKey("1")}}
+	responsesToFilter := []libunlynx.ProcessResponseDet{{DetTagWhere: []libunlynx.GroupingKey{libunlynx.GroupingKey("1"), libunlynx.GroupingKey("1"), libunlynx.GroupingKey("1")}}, {DetTagWhere: []libunlynx.GroupingKey{libunlynx.GroupingKey("1"), libunlynx.GroupingKey("1"), libunlynx.GroupingKey("2")}}}
 	log.Lvl1(predicate)
 	log.Lvl1(responsesToFilter)
 	log.Lvl1(whereQueryValues)
-	log.Lvl1(serviceUnLynx.FilterResponses(predicate, whereQueryValues, responsesToFilter))
+	log.Lvl1(servicesunlynxdefault.FilterResponses(predicate, whereQueryValues, responsesToFilter))
 }

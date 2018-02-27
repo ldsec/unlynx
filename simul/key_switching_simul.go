@@ -59,11 +59,11 @@ func (sim *KeySwitchingSimulation) Run(config *onet.SimulationConfig) error {
 			return err
 		}
 
-		root := rooti.(*protocolsUnLynx.KeySwitchingProtocol)
+		root := rooti.(*protocolsunlynx.KeySwitchingProtocol)
 		suite := root.Suite()
 		aggregateKey := root.Roster().Aggregate
 
-		responses := make([]libUnLynx.FilteredResponse, sim.NbrResponses)
+		responses := make([]libunlynx.FilteredResponse, sim.NbrResponses)
 		tabAttrs := make([]int64, sim.NbrAggrAttributes)
 		for i := 0; i < sim.NbrAggrAttributes; i++ {
 			tabAttrs[i] = int64(1)
@@ -73,23 +73,23 @@ func (sim *KeySwitchingSimulation) Run(config *onet.SimulationConfig) error {
 			tabGrps[i] = int64(1)
 		}
 		for i := 0; i < sim.NbrResponses; i++ {
-			responses[i] = libUnLynx.FilteredResponse{GroupByEnc: *libUnLynx.EncryptIntVector(aggregateKey, tabGrps), AggregatingAttributes: *libUnLynx.EncryptIntVector(aggregateKey, tabAttrs)}
+			responses[i] = libunlynx.FilteredResponse{GroupByEnc: *libunlynx.EncryptIntVector(aggregateKey, tabGrps), AggregatingAttributes: *libunlynx.EncryptIntVector(aggregateKey, tabAttrs)}
 		}
 
 		clientSecret := suite.Scalar().Pick(random.Stream)
 		clientPublic := suite.Point().Mul(suite.Point().Base(), clientSecret)
 
-		root.ProtocolInstance().(*protocolsUnLynx.KeySwitchingProtocol).TargetPublicKey = &clientPublic
+		root.ProtocolInstance().(*protocolsunlynx.KeySwitchingProtocol).TargetPublicKey = &clientPublic
 		log.Lvl1("Number of respones to key switch ", len(responses))
-		root.ProtocolInstance().(*protocolsUnLynx.KeySwitchingProtocol).TargetOfSwitch = &responses
-		root.ProtocolInstance().(*protocolsUnLynx.KeySwitchingProtocol).Proofs = sim.Proofs
+		root.ProtocolInstance().(*protocolsunlynx.KeySwitchingProtocol).TargetOfSwitch = &responses
+		root.ProtocolInstance().(*protocolsunlynx.KeySwitchingProtocol).Proofs = sim.Proofs
 
-		round := libUnLynx.StartTimer("_KeySwitching(SIMULATION)")
+		round := libunlynx.StartTimer("_KeySwitching(SIMULATION)")
 
 		root.Start()
-		<-root.ProtocolInstance().(*protocolsUnLynx.KeySwitchingProtocol).FeedbackChannel
+		<-root.ProtocolInstance().(*protocolsunlynx.KeySwitchingProtocol).FeedbackChannel
 
-		libUnLynx.EndTimer(round)
+		libunlynx.EndTimer(round)
 
 	}
 

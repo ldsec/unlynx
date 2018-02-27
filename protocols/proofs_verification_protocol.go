@@ -1,8 +1,8 @@
-// Package protocolsUnLynx contains the proof verification protocol which permits a server
+// Package protocolsunlynx contains the proof verification protocol which permits a server
 // to check all available proofs.
 // We suppose the existence of a database of all generated proofs and in this protocol, the server running it will
 // verify all the proofs.
-package protocolsUnLynx
+package protocolsunlynx
 
 import (
 	"github.com/lca1/unlynx/lib"
@@ -21,12 +21,12 @@ func init() {
 
 // ProofsToVerify contains all proofs which have to be checked
 type ProofsToVerify struct {
-	KeySwitchingProofs          []libUnLynx.PublishedSwitchKeyProof
-	DeterministicTaggingProofs  []libUnLynx.PublishedDeterministicTaggingProof
-	DetTagAdditionProofs        []libUnLynx.PublishedDetTagAdditionProof
-	AggregationProofs           []libUnLynx.PublishedAggregationProof
-	ShufflingProofs             []libUnLynx.PublishedShufflingProof
-	CollectiveAggregationProofs []libUnLynx.PublishedCollectiveAggregationProof
+	KeySwitchingProofs          []libunlynx.PublishedSwitchKeyProof
+	DeterministicTaggingProofs  []libunlynx.PublishedDeterministicTaggingProof
+	DetTagAdditionProofs        []libunlynx.PublishedDetTagAdditionProof
+	AggregationProofs           []libunlynx.PublishedAggregationProof
+	ShufflingProofs             []libunlynx.PublishedShufflingProof
+	CollectiveAggregationProofs []libunlynx.PublishedCollectiveAggregationProof
 }
 
 // ProofsVerificationProtocol is a struct holding the state of a protocol instance.
@@ -68,109 +68,109 @@ func (p *ProofsVerificationProtocol) Start() error {
 	result := make([]bool, resultSize)
 
 	// key switching ***********************************************************************************
-	wg := libUnLynx.StartParallelize(nbrKsProofs)
-	keySwitchTime := libUnLynx.StartTimer(p.Name() + "_KeySwitchingVerif")
+	wg := libunlynx.StartParallelize(nbrKsProofs)
+	keySwitchTime := libunlynx.StartTimer(p.Name() + "_KeySwitchingVerif")
 	for i, v := range p.TargetOfVerification.KeySwitchingProofs {
-		if libUnLynx.PARALLELIZE {
-			go func(i int, v libUnLynx.PublishedSwitchKeyProof) {
-				result[i] = libUnLynx.PublishedSwitchKeyCheckProof(v)
+		if libunlynx.PARALLELIZE {
+			go func(i int, v libunlynx.PublishedSwitchKeyProof) {
+				result[i] = libunlynx.PublishedSwitchKeyCheckProof(v)
 				defer wg.Done()
 			}(i, v)
 		} else {
-			result[i] = libUnLynx.PublishedSwitchKeyCheckProof(v)
+			result[i] = libunlynx.PublishedSwitchKeyCheckProof(v)
 		}
 
 	}
-	libUnLynx.EndParallelize(wg)
-	libUnLynx.EndTimer(keySwitchTime)
+	libunlynx.EndParallelize(wg)
+	libunlynx.EndTimer(keySwitchTime)
 
 	// deterministic tagging ***********************************************************************************
-	wg = libUnLynx.StartParallelize(nbrDtProofs)
-	detTagTime := libUnLynx.StartTimer(p.Name() + "_DetTagVerif")
+	wg = libunlynx.StartParallelize(nbrDtProofs)
+	detTagTime := libunlynx.StartTimer(p.Name() + "_DetTagVerif")
 	for i, v := range p.TargetOfVerification.DeterministicTaggingProofs {
-		if libUnLynx.PARALLELIZE {
-			go func(i int, v libUnLynx.PublishedDeterministicTaggingProof) {
-				result[nbrKsProofs+i], _ = libUnLynx.PublishedDeterministicTaggingCheckProof(v)
+		if libunlynx.PARALLELIZE {
+			go func(i int, v libunlynx.PublishedDeterministicTaggingProof) {
+				result[nbrKsProofs+i], _ = libunlynx.PublishedDeterministicTaggingCheckProof(v)
 				defer wg.Done()
 			}(i, v)
 		} else {
-			result[nbrKsProofs+i], _ = libUnLynx.PublishedDeterministicTaggingCheckProof(v)
+			result[nbrKsProofs+i], _ = libunlynx.PublishedDeterministicTaggingCheckProof(v)
 		}
 	}
 
-	libUnLynx.EndParallelize(wg)
-	libUnLynx.EndTimer(detTagTime)
+	libunlynx.EndParallelize(wg)
+	libunlynx.EndTimer(detTagTime)
 
 	// deterministic tagging 2 ***********************************************************************************
-	wg = libUnLynx.StartParallelize(nbrDetTagAddProofs)
-	detTagAddTime := libUnLynx.StartTimer(p.Name() + "_DetTagAddVerif")
+	wg = libunlynx.StartParallelize(nbrDetTagAddProofs)
+	detTagAddTime := libunlynx.StartTimer(p.Name() + "_DetTagAddVerif")
 	for i, v := range p.TargetOfVerification.DetTagAdditionProofs {
-		if libUnLynx.PARALLELIZE {
-			go func(i int, v libUnLynx.PublishedDetTagAdditionProof) {
-				result[nbrKsProofs+nbrDtProofs+i] = libUnLynx.DetTagAdditionProofVerification(v)
+		if libunlynx.PARALLELIZE {
+			go func(i int, v libunlynx.PublishedDetTagAdditionProof) {
+				result[nbrKsProofs+nbrDtProofs+i] = libunlynx.DetTagAdditionProofVerification(v)
 				defer wg.Done()
 			}(i, v)
 		} else {
-			result[nbrKsProofs+nbrDtProofs+i] = libUnLynx.DetTagAdditionProofVerification(v)
+			result[nbrKsProofs+nbrDtProofs+i] = libunlynx.DetTagAdditionProofVerification(v)
 		}
 	}
 
-	libUnLynx.EndParallelize(wg)
-	libUnLynx.EndTimer(detTagAddTime)
+	libunlynx.EndParallelize(wg)
+	libunlynx.EndTimer(detTagAddTime)
 
 	// local aggregation ***********************************************************************************
 
-	wg = libUnLynx.StartParallelize(nbrAggrProofs)
-	localAggrTime := libUnLynx.StartTimer(p.Name() + "_LocalAggrVerif")
+	wg = libunlynx.StartParallelize(nbrAggrProofs)
+	localAggrTime := libunlynx.StartTimer(p.Name() + "_LocalAggrVerif")
 	for i, v := range p.TargetOfVerification.AggregationProofs {
-		if libUnLynx.PARALLELIZE {
-			go func(i int, v libUnLynx.PublishedAggregationProof) {
-				result[nbrKsProofs+nbrDtProofs+nbrDetTagAddProofs+i] = libUnLynx.AggregationProofVerification(v)
+		if libunlynx.PARALLELIZE {
+			go func(i int, v libunlynx.PublishedAggregationProof) {
+				result[nbrKsProofs+nbrDtProofs+nbrDetTagAddProofs+i] = libunlynx.AggregationProofVerification(v)
 				defer wg.Done()
 			}(i, v)
 		} else {
-			result[nbrKsProofs+nbrDtProofs+nbrDetTagAddProofs+i] = libUnLynx.AggregationProofVerification(v)
+			result[nbrKsProofs+nbrDtProofs+nbrDetTagAddProofs+i] = libunlynx.AggregationProofVerification(v)
 		}
 	}
 
-	libUnLynx.EndParallelize(wg)
-	libUnLynx.EndTimer(localAggrTime)
+	libunlynx.EndParallelize(wg)
+	libunlynx.EndTimer(localAggrTime)
 
 	// shuffling ***********************************************************************************
-	wg = libUnLynx.StartParallelize(nbrShuffleProofs)
-	shufflingTime := libUnLynx.StartTimer(p.Name() + "_ShufflingVerif")
+	wg = libunlynx.StartParallelize(nbrShuffleProofs)
+	shufflingTime := libunlynx.StartTimer(p.Name() + "_ShufflingVerif")
 	for i, v := range p.TargetOfVerification.ShufflingProofs {
-		if libUnLynx.PARALLELIZE {
-			go func(i int, v libUnLynx.PublishedShufflingProof) {
-				result[nbrKsProofs+nbrDtProofs+nbrDetTagAddProofs+nbrAggrProofs+i] = libUnLynx.ShufflingProofVerification(v, p.Roster().Aggregate)
+		if libunlynx.PARALLELIZE {
+			go func(i int, v libunlynx.PublishedShufflingProof) {
+				result[nbrKsProofs+nbrDtProofs+nbrDetTagAddProofs+nbrAggrProofs+i] = libunlynx.ShufflingProofVerification(v, p.Roster().Aggregate)
 				defer wg.Done()
 			}(i, v)
 		} else {
-			result[nbrKsProofs+nbrDtProofs+nbrDetTagAddProofs+nbrAggrProofs+i] = libUnLynx.ShufflingProofVerification(v, p.Roster().Aggregate)
+			result[nbrKsProofs+nbrDtProofs+nbrDetTagAddProofs+nbrAggrProofs+i] = libunlynx.ShufflingProofVerification(v, p.Roster().Aggregate)
 
 		}
 	}
 
-	libUnLynx.EndParallelize(wg)
-	libUnLynx.EndTimer(shufflingTime)
+	libunlynx.EndParallelize(wg)
+	libunlynx.EndTimer(shufflingTime)
 
 	// collective aggregation ***********************************************************************************
-	wg = libUnLynx.StartParallelize(nbrCollectiveAggrProofs)
-	collAggrTime := libUnLynx.StartTimer(p.Name() + "_CollectiveAggrVerif")
+	wg = libunlynx.StartParallelize(nbrCollectiveAggrProofs)
+	collAggrTime := libunlynx.StartTimer(p.Name() + "_CollectiveAggrVerif")
 	for i, v := range p.TargetOfVerification.CollectiveAggregationProofs {
-		if libUnLynx.PARALLELIZE {
-			go func(i int, v libUnLynx.PublishedCollectiveAggregationProof) {
-				result[nbrKsProofs+nbrDtProofs+nbrDetTagAddProofs+nbrAggrProofs+nbrShuffleProofs+i] = libUnLynx.CollectiveAggregationProofVerification(v)
+		if libunlynx.PARALLELIZE {
+			go func(i int, v libunlynx.PublishedCollectiveAggregationProof) {
+				result[nbrKsProofs+nbrDtProofs+nbrDetTagAddProofs+nbrAggrProofs+nbrShuffleProofs+i] = libunlynx.CollectiveAggregationProofVerification(v)
 				defer wg.Done()
 			}(i, v)
 		} else {
-			result[nbrKsProofs+nbrDtProofs+nbrDetTagAddProofs+nbrAggrProofs+nbrShuffleProofs+i] = libUnLynx.CollectiveAggregationProofVerification(v)
+			result[nbrKsProofs+nbrDtProofs+nbrDetTagAddProofs+nbrAggrProofs+nbrShuffleProofs+i] = libunlynx.CollectiveAggregationProofVerification(v)
 
 		}
 	}
 
-	libUnLynx.EndParallelize(wg)
-	libUnLynx.EndTimer(collAggrTime)
+	libunlynx.EndParallelize(wg)
+	libunlynx.EndTimer(collAggrTime)
 
 	finalResult <- result
 	return nil

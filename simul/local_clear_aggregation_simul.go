@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/BurntSushi/toml"
 	"github.com/lca1/unlynx/protocols"
-	"github.com/lca1/unlynx/services/data"
+	"github.com/lca1/unlynx/services/default/data"
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/dedis/onet.v1/simul/monitor"
@@ -61,29 +61,29 @@ func (sim *LocalClearAggregationSimulation) Run(config *onet.SimulationConfig) e
 			return err
 		}
 
-		root := rooti.(*protocolsUnLynx.LocalClearAggregationProtocol)
+		root := rooti.(*protocolsunlynx.LocalClearAggregationProtocol)
 
 		types := make([]int64, sim.NbrGroupAttributes)
-		dataUnLynx.FillInt64Slice(types, 1)
+		dataunlynx.FillInt64Slice(types, 1)
 		if len(types) > 0 {
 			types[0] = int64(sim.NbrGroups)
 		}
 
-		testData := dataUnLynx.GenerateData(1, int64(sim.NbrResponses), int64(sim.NbrResponses), int64(sim.NbrGroupAttributes), 0,
+		testData := dataunlynx.GenerateData(1, int64(sim.NbrResponses), int64(sim.NbrResponses), int64(sim.NbrGroupAttributes), 0,
 			int64(sim.NbrWhereAttributes), 0, int64(sim.NbrAggrAttributes), 0, types, true)
 
 		log.Lvl1("starting protocol with ", len(testData), " responses")
 
 		//protocol
-		root.ProtocolInstance().(*protocolsUnLynx.LocalClearAggregationProtocol).TargetOfAggregation = testData["0"]
+		root.ProtocolInstance().(*protocolsunlynx.LocalClearAggregationProtocol).TargetOfAggregation = testData["0"]
 
 		round := monitor.NewTimeMeasure("LocalClearAggregation(SIMULATION)")
 		root.Start()
-		results := <-root.ProtocolInstance().(*protocolsUnLynx.LocalClearAggregationProtocol).FeedbackChannel
+		results := <-root.ProtocolInstance().(*protocolsunlynx.LocalClearAggregationProtocol).FeedbackChannel
 		log.Lvl1("Number of aggregated lines (groups): ", len(results))
 
 		// Test Simulation
-		if dataUnLynx.CompareClearResponses(dataUnLynx.ComputeExpectedResult(testData, 1, false), results) {
+		if dataunlynx.CompareClearResponses(dataunlynx.ComputeExpectedResult(testData, 1, false), results) {
 			log.Lvl1("Result is right! :)")
 		} else {
 			log.Lvl1("Result is wrong! :(")

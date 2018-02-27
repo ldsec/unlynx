@@ -1,4 +1,4 @@
-Simulation = "ServiceUnLynx"
+Simulation = "ServiceUnLynxDefault"
 Servers = 3
 Bf = 2
 Rounds = 1

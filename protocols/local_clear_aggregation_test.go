@@ -1,4 +1,4 @@
-package protocolsUnLynx_test
+package protocolsunlynx_test
 
 import (
 	"testing"
@@ -6,7 +6,7 @@ import (
 
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/protocols"
-	"github.com/lca1/unlynx/services/data"
+	"github.com/lca1/unlynx/services/default/data"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/network"
@@ -22,10 +22,10 @@ func TestLocalClearAggregation(t *testing.T) {
 	if err != nil {
 		t.Fatal("Couldn't start protocol:", err)
 	}
-	protocol := rootInstance.(*protocolsUnLynx.LocalClearAggregationProtocol)
+	protocol := rootInstance.(*protocolsunlynx.LocalClearAggregationProtocol)
 
 	testData := generateClearData()
-	aggregatedData := libUnLynx.AddInClear(testData)
+	aggregatedData := libunlynx.AddInClear(testData)
 
 	protocol.TargetOfAggregation = testData
 	feedback := protocol.FeedbackChannel
@@ -36,22 +36,22 @@ func TestLocalClearAggregation(t *testing.T) {
 
 	select {
 	case results := <-feedback:
-		assert.Equal(t, dataUnLynx.CompareClearResponses(results, aggregatedData), true)
+		assert.Equal(t, dataunlynx.CompareClearResponses(results, aggregatedData), true)
 	case <-time.After(timeout):
 		t.Fatal("Didn't finish in time")
 	}
 }
 
-func generateClearData() []libUnLynx.DpClearResponse {
-	testData := make([]libUnLynx.DpClearResponse, 6)
+func generateClearData() []libunlynx.DpClearResponse {
+	testData := make([]libunlynx.DpClearResponse, 6)
 
-	testData[0] = libUnLynx.DpClearResponse{WhereClear: libUnLynx.ConvertDataToMap([]int64{1, 1}, "w", 0), GroupByClear: libUnLynx.ConvertDataToMap([]int64{1, 1}, "g", 0), AggregatingAttributesClear: libUnLynx.ConvertDataToMap([]int64{1, 2, 3, 4, 5}, "s", 0)}
-	testData[1] = libUnLynx.DpClearResponse{WhereClear: libUnLynx.ConvertDataToMap([]int64{1, 2}, "w", 0), GroupByClear: libUnLynx.ConvertDataToMap([]int64{1, 2}, "g", 0), AggregatingAttributesClear: libUnLynx.ConvertDataToMap([]int64{0, 1, 4, 3, 0}, "s", 0)}
-	testData[2] = libUnLynx.DpClearResponse{WhereClear: libUnLynx.ConvertDataToMap([]int64{1, 3}, "w", 0), GroupByClear: libUnLynx.ConvertDataToMap([]int64{1, 3}, "g", 0), AggregatingAttributesClear: libUnLynx.ConvertDataToMap([]int64{0, 1, 0, 1, 0}, "s", 0)}
+	testData[0] = libunlynx.DpClearResponse{WhereClear: libunlynx.ConvertDataToMap([]int64{1, 1}, "w", 0), GroupByClear: libunlynx.ConvertDataToMap([]int64{1, 1}, "g", 0), AggregatingAttributesClear: libunlynx.ConvertDataToMap([]int64{1, 2, 3, 4, 5}, "s", 0)}
+	testData[1] = libunlynx.DpClearResponse{WhereClear: libunlynx.ConvertDataToMap([]int64{1, 2}, "w", 0), GroupByClear: libunlynx.ConvertDataToMap([]int64{1, 2}, "g", 0), AggregatingAttributesClear: libunlynx.ConvertDataToMap([]int64{0, 1, 4, 3, 0}, "s", 0)}
+	testData[2] = libunlynx.DpClearResponse{WhereClear: libunlynx.ConvertDataToMap([]int64{1, 3}, "w", 0), GroupByClear: libunlynx.ConvertDataToMap([]int64{1, 3}, "g", 0), AggregatingAttributesClear: libunlynx.ConvertDataToMap([]int64{0, 1, 0, 1, 0}, "s", 0)}
 
-	testData[3] = libUnLynx.DpClearResponse{WhereClear: libUnLynx.ConvertDataToMap([]int64{1, 1}, "w", 0), GroupByClear: libUnLynx.ConvertDataToMap([]int64{1, 1}, "g", 0), AggregatingAttributesClear: libUnLynx.ConvertDataToMap([]int64{0, 0, 0, 0, 0}, "w", 0)}
-	testData[4] = libUnLynx.DpClearResponse{WhereClear: libUnLynx.ConvertDataToMap([]int64{1, 2}, "w", 0), GroupByClear: libUnLynx.ConvertDataToMap([]int64{1, 2}, "g", 0), AggregatingAttributesClear: libUnLynx.ConvertDataToMap([]int64{1, 3, 5, 7, 1}, "w", 0)}
-	testData[5] = libUnLynx.DpClearResponse{WhereClear: libUnLynx.ConvertDataToMap([]int64{1, 3}, "w", 0), GroupByClear: libUnLynx.ConvertDataToMap([]int64{1, 3}, "g", 0), AggregatingAttributesClear: libUnLynx.ConvertDataToMap([]int64{1, 0, 1, 0, 1}, "w", 0)}
+	testData[3] = libunlynx.DpClearResponse{WhereClear: libunlynx.ConvertDataToMap([]int64{1, 1}, "w", 0), GroupByClear: libunlynx.ConvertDataToMap([]int64{1, 1}, "g", 0), AggregatingAttributesClear: libunlynx.ConvertDataToMap([]int64{0, 0, 0, 0, 0}, "w", 0)}
+	testData[4] = libunlynx.DpClearResponse{WhereClear: libunlynx.ConvertDataToMap([]int64{1, 2}, "w", 0), GroupByClear: libunlynx.ConvertDataToMap([]int64{1, 2}, "g", 0), AggregatingAttributesClear: libunlynx.ConvertDataToMap([]int64{1, 3, 5, 7, 1}, "w", 0)}
+	testData[5] = libunlynx.DpClearResponse{WhereClear: libunlynx.ConvertDataToMap([]int64{1, 3}, "w", 0), GroupByClear: libunlynx.ConvertDataToMap([]int64{1, 3}, "g", 0), AggregatingAttributesClear: libunlynx.ConvertDataToMap([]int64{1, 0, 1, 0, 1}, "w", 0)}
 
 	return testData
 }

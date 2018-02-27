@@ -30,7 +30,7 @@ _testmain.go
 
 .idea/
 
-services/data/*.txt
+services/default/data/*.txt
 services/unlynxMedCo/*.toml
 
 simul/test_data/*.csv
