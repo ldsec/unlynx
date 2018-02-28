@@ -185,7 +185,7 @@ func ComputeE(index int, cv ProcessResponse, seed []byte, aggrAttrLen, grpAttrLe
 	var dataC []byte
 	var dataK []byte
 
-	randomCipher := SuiteT.XOF(seed)
+	randomCipher := SuiTe.XOF(seed)
 
 	if index < aggrAttrLen {
 		dataC, _ = cv.AggregatingAttributes[index].C.MarshalBinary()
@@ -204,7 +204,7 @@ func ComputeE(index int, cv ProcessResponse, seed []byte, aggrAttrLen, grpAttrLe
 	//randomCipher.Message(nil, nil, dataC)
 	//randomCipher.Message(nil, nil, dataK)
 
-	return SuiteT.Scalar().Pick(randomCipher)
+	return SuiTe.Scalar().Pick(randomCipher)
 }
 
 // DpClearResponse
@@ -254,21 +254,21 @@ func CreatePrecomputedRandomize(g, h kyber.Point, rand cipher.Stream, lineSize, 
 
 				for w := range result[i].CipherV {
 					mutex.Lock()
-					tmp := SuiteT.Scalar().Pick(rand)
+					tmp := SuiTe.Scalar().Pick(rand)
 					mutex.Unlock()
 
 					result[i].S[w] = tmp
-					result[i].CipherV[w].K = SuiteT.Point().Mul(tmp, g)
-					result[i].CipherV[w].C = SuiteT.Point().Mul(tmp, h)
+					result[i].CipherV[w].K = SuiTe.Point().Mul(tmp, g)
+					result[i].CipherV[w].C = SuiTe.Point().Mul(tmp, h)
 				}
 
 			}(i)
 		} else {
 			for w := range result[i].CipherV {
-				tmp := SuiteT.Scalar().Pick(rand)
+				tmp := SuiTe.Scalar().Pick(rand)
 				result[i].S[w] = tmp
-				result[i].CipherV[w].K = SuiteT.Point().Mul(tmp, g)
-				result[i].CipherV[w].C = SuiteT.Point().Mul(tmp, h)
+				result[i].CipherV[w].K = SuiTe.Point().Mul(tmp, g)
+				result[i].CipherV[w].C = SuiTe.Point().Mul(tmp, h)
 			}
 		}
 	}

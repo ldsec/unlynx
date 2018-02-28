@@ -99,19 +99,19 @@ func CompressBeta(beta [][]kyber.Scalar, e []kyber.Scalar) []kyber.Scalar {
 	betaCompressed := make([]kyber.Scalar, k)
 	wg := StartParallelize(k)
 	for i := 0; i < k; i++ {
-		betaCompressed[i] = SuiteT.Scalar().Zero()
+		betaCompressed[i] = SuiTe.Scalar().Zero()
 		if PARALLELIZE {
 			go func(i int) {
 				defer wg.Done()
 				for j := 0; j < NQ; j++ {
-					tmp := SuiteT.Scalar().Mul(beta[i][j], e[j])
-					betaCompressed[i] = SuiteT.Scalar().Add(betaCompressed[i], tmp)
+					tmp := SuiTe.Scalar().Mul(beta[i][j], e[j])
+					betaCompressed[i] = SuiTe.Scalar().Add(betaCompressed[i], tmp)
 				}
 			}(i)
 		} else {
 			for j := 0; j < NQ; j++ {
-				tmp := SuiteT.Scalar().Mul(beta[i][j], e[j])
-				betaCompressed[i] = SuiteT.Scalar().Add(betaCompressed[i], tmp)
+				tmp := SuiTe.Scalar().Mul(beta[i][j], e[j])
+				betaCompressed[i] = SuiTe.Scalar().Add(betaCompressed[i], tmp)
 			}
 		}
 
@@ -135,7 +135,7 @@ func ShuffleSequence(inputList []ProcessResponse, g, h kyber.Point, precomputed 
 
 	k := len(inputList) // number of clients
 
-	rand := SuiteT.RandomStream()
+	rand := SuiTe.RandomStream()
 	// Pick a fresh (or precomputed) ElGamal blinding factor for each pair
 	beta := make([][]kyber.Scalar, k)
 	precomputedPoints := make([]CipherVector, k)
@@ -227,7 +227,7 @@ func CompressProcessResponseMultiple(inputList, outputList []ProcessResponse, i 
 func PrecomputeForShuffling(serverName, gobFile string, surveySecret kyber.Scalar, collectiveKey kyber.Point, lineSize int) []CipherVectorScalar {
 	log.Lvl1(serverName, " precomputes for shuffling")
 	scalarBytes, _ := surveySecret.MarshalBinary()
-	precomputeShuffle := CreatePrecomputedRandomize(SuiteT.Point().Base(), collectiveKey, SuiteT.XOF(scalarBytes), lineSize*2, 10)
+	precomputeShuffle := CreatePrecomputedRandomize(SuiTe.Point().Base(), collectiveKey, SuiTe.XOF(scalarBytes), lineSize*2, 10)
 
 	encoded, err := EncodeCipherVectorScalar(precomputeShuffle)
 
@@ -261,7 +261,7 @@ func PrecomputationWritingForShuffling(appFlag bool, gobFile, serverName string,
 		}
 	} else {
 		scalarBytes, _ := surveySecret.MarshalBinary()
-		precomputeShuffle = CreatePrecomputedRandomize(SuiteT.Point().Base(), collectiveKey, SuiteT.XOF(scalarBytes), lineSize*2, 10)
+		precomputeShuffle = CreatePrecomputedRandomize(SuiTe.Point().Base(), collectiveKey, SuiTe.XOF(scalarBytes), lineSize*2, 10)
 	}
 	return precomputeShuffle
 }

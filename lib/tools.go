@@ -105,7 +105,7 @@ func DecodeCipherVectorScalar(eCV []CipherVectorScalarBytes) ([]CipherVectorScal
 		cV := CipherVectorScalar{}
 
 		for _, el := range v.S {
-			s := SuiteT.Scalar()
+			s := SuiTe.Scalar()
 			if err := s.UnmarshalBinary(el); err != nil {
 				return slice, err
 			}
@@ -114,12 +114,12 @@ func DecodeCipherVectorScalar(eCV []CipherVectorScalarBytes) ([]CipherVectorScal
 		}
 
 		for _, el := range v.CipherV {
-			k := SuiteT.Point()
+			k := SuiTe.Point()
 			if err := k.UnmarshalBinary(el[0]); err != nil {
 				return slice, err
 			}
 
-			c := SuiteT.Point()
+			c := SuiTe.Point()
 			if err := c.UnmarshalBinary(el[1]); err != nil {
 				return slice, err
 			}

@@ -7,15 +7,15 @@ import (
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/protocols"
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/dedis/crypto.v0/random"
-	"gopkg.in/dedis/onet.v1"
-	"gopkg.in/dedis/onet.v1/log"
-	"gopkg.in/dedis/onet.v1/network"
+	"github.com/dedis/onet"
+	"github.com/dedis/onet/log"
+	"github.com/dedis/onet/network"
 	"strconv"
+	"github.com/dedis/kyber/util/random"
 )
 
 func TestAddRmServer(t *testing.T) {
-	local := onet.NewLocalTest()
+	local := onet.NewLocalTest(libunlynx.SuiTe)
 	_, _, tree := local.GenTree(1, true)
 
 	defer local.CloseAll()
@@ -26,15 +26,15 @@ func TestAddRmServer(t *testing.T) {
 	}
 	protocol := rootInstance.(*protocolsunlynx.AddRmServerProtocol)
 
-	secKey := network.Suite.Scalar().Pick(random.Stream)
-	pubKey := network.Suite.Point().Mul(network.Suite.Point().Base(), secKey)
+	secKey := libunlynx.SuiTe.Scalar().Pick(random.New())
+	pubKey := libunlynx.SuiTe.Point().Mul(secKey, libunlynx.SuiTe.Point().Base())
 
-	secKeyAddRm := network.Suite.Scalar().Pick(random.Stream)
+	secKeyAddRm := libunlynx.SuiTe.Scalar().Pick(random.New())
 
 	//addition
-	//secKeyAfter := network.SuiteT.Scalar().Add(secKey, secKeyAddRm)
+	//secKeyAfter := libunlynx.SuiTe.Scalar().Add(secKey, secKeyAddRm)
 	//substraction
-	secKeyAfter := network.Suite.Scalar().Sub(secKey, secKeyAddRm)
+	secKeyAfter := libunlynx.SuiTe.Scalar().Sub(secKey, secKeyAddRm)
 
 	tab := []int64{10, 10}
 

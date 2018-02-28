@@ -115,18 +115,18 @@ func createPredicateKeySwitch() (predicate proof.Predicate) {
 func SwitchKeyProofCreation(cBef, cAft CipherText, newRandomness, k kyber.Scalar, originEphemKey, q kyber.Point) SwitchKeyProof {
 	predicate := createPredicateKeySwitch()
 
-	B := SuiteT.Point().Base()
-	c1 := SuiteT.Point().Sub(cAft.K, cBef.K)
-	c2 := SuiteT.Point().Sub(cAft.C, cBef.C)
-	b2 := SuiteT.Point().Neg(originEphemKey)
+	B := SuiTe.Point().Base()
+	c1 := SuiTe.Point().Sub(cAft.K, cBef.K)
+	c2 := SuiTe.Point().Sub(cAft.C, cBef.C)
+	b2 := SuiTe.Point().Neg(originEphemKey)
 
-	K := SuiteT.Point().Mul(k, SuiteT.Point().Base())
+	K := SuiTe.Point().Mul(k, SuiTe.Point().Base())
 
 	sval := map[string]kyber.Scalar{"k": k, "ri": newRandomness}
 	pval := map[string]kyber.Point{"B": B, "K": K, "Q": q, "b2": b2, "c2": c2, "c1": c1}
 
-	prover := predicate.Prover(SuiteT, sval, pval, nil) // computes: commitment, challenge, response
-	Proof, err := proof.HashProve(SuiteT, "proofTest", prover)
+	prover := predicate.Prover(SuiTe, sval, pval, nil) // computes: commitment, challenge, response
+	Proof, err := proof.HashProve(SuiTe, "proofTest", prover)
 
 	if err != nil {
 		log.Fatal("---------Prover:", err.Error())
@@ -163,13 +163,13 @@ func VectorSwitchKeyProofCreation(vBef, vAft CipherVector, newRandomnesses []kyb
 // SwitchKeyCheckProof checks one proof of key switching
 func SwitchKeyCheckProof(cp SwitchKeyProof, K, Q kyber.Point, cBef, cAft CipherText) bool {
 	predicate := createPredicateKeySwitch()
-	B := SuiteT.Point().Base()
-	c1 := SuiteT.Point().Sub(cAft.K, cBef.K)
-	c2 := SuiteT.Point().Sub(cAft.C, cBef.C)
+	B := SuiTe.Point().Base()
+	c1 := SuiTe.Point().Sub(cAft.K, cBef.K)
+	c2 := SuiTe.Point().Sub(cAft.C, cBef.C)
 
 	pval := map[string]kyber.Point{"B": B, "K": K, "Q": Q, "b2": cp.b2, "c2": c2, "c1": c1}
-	verifier := predicate.Verifier(SuiteT, pval)
-	if err := proof.HashVerify(SuiteT, "proofTest", verifier, cp.Proof); err != nil {
+	verifier := predicate.Verifier(SuiTe, pval)
+	if err := proof.HashVerify(SuiTe, "proofTest", verifier, cp.Proof); err != nil {
 		log.Error("---------Verifier:", err.Error())
 		return false
 	}
@@ -208,23 +208,23 @@ func createPredicateAddRm() (predicate proof.Predicate) {
 func AddRmProofCreation(cBef, cAft CipherText, k kyber.Scalar, toAdd bool) AddRmProof {
 	predicate := createPredicateAddRm()
 
-	B := SuiteT.Point().Base()
-	c2 := SuiteT.Point()
+	B := SuiTe.Point().Base()
+	c2 := SuiTe.Point()
 	if toAdd {
-		c2 = SuiteT.Point().Sub(cAft.C, cBef.C)
+		c2 = SuiTe.Point().Sub(cAft.C, cBef.C)
 	} else {
-		c2 = SuiteT.Point().Sub(cBef.C, cAft.C)
+		c2 = SuiTe.Point().Sub(cBef.C, cAft.C)
 	}
 
 	rB := cBef.K
 
-	K := SuiteT.Point().Mul(k, SuiteT.Point().Base())
+	K := SuiTe.Point().Mul(k, SuiTe.Point().Base())
 
 	sval := map[string]kyber.Scalar{"k": k}
 	pval := map[string]kyber.Point{"B": B, "Krm": K, "c2": c2, "rB": rB}
 
-	prover := predicate.Prover(SuiteT, sval, pval, nil) // computes: commitment, challenge, response
-	Proof, err := proof.HashProve(SuiteT, "proofTest", prover)
+	prover := predicate.Prover(SuiTe, sval, pval, nil) // computes: commitment, challenge, response
+	Proof, err := proof.HashProve(SuiTe, "proofTest", prover)
 
 	if err != nil {
 		log.Fatal("---------Prover:", err.Error())
@@ -265,17 +265,17 @@ func VectorAddRmProofCreation(vBef, vAft map[string]CipherText, k kyber.Scalar, 
 // AddRmCheckProof checks one rm/add proof
 func AddRmCheckProof(cp AddRmProof, K kyber.Point, cBef, cAft CipherText, toAdd bool) bool {
 	predicate := createPredicateAddRm()
-	B := SuiteT.Point().Base()
-	c2 := SuiteT.Point()
+	B := SuiTe.Point().Base()
+	c2 := SuiTe.Point()
 	if toAdd {
-		c2 = SuiteT.Point().Sub(cAft.C, cBef.C)
+		c2 = SuiTe.Point().Sub(cAft.C, cBef.C)
 	} else {
-		c2 = SuiteT.Point().Sub(cBef.C, cAft.C)
+		c2 = SuiTe.Point().Sub(cBef.C, cAft.C)
 	}
 
 	pval := map[string]kyber.Point{"B": B, "Krm": K, "c2": c2, "rB": cBef.K}
-	verifier := predicate.Verifier(SuiteT, pval)
-	if err := proof.HashVerify(SuiteT, "proofTest", verifier, cp.Proof); err != nil {
+	verifier := predicate.Verifier(SuiTe, pval)
+	if err := proof.HashVerify(SuiTe, "proofTest", verifier, cp.Proof); err != nil {
 		log.Error("---------Verifier:", err.Error())
 		return false
 	}
@@ -326,16 +326,16 @@ func DeterministicTagProofCreation(cBef, cAft CipherText, k, s kyber.Scalar) Det
 	ciminus11 := cBef.K
 	ci2 := cAft.C
 	ciminus12 := cBef.C
-	ciminus11Si := SuiteT.Point().Neg(SuiteT.Point().Mul(s, ciminus11))
-	K := SuiteT.Point().Mul(k, SuiteT.Point().Base())
-	B := SuiteT.Point().Base()
-	SB := SuiteT.Point().Mul(s, B)
+	ciminus11Si := SuiTe.Point().Neg(SuiTe.Point().Mul(s, ciminus11))
+	K := SuiTe.Point().Mul(k, SuiTe.Point().Base())
+	B := SuiTe.Point().Base()
+	SB := SuiTe.Point().Mul(s, B)
 
 	sval := map[string]kyber.Scalar{"k": k, "s": s}
 	pval := map[string]kyber.Point{"B": B, "K": K, "ciminus11Si": ciminus11Si, "ciminus12": ciminus12, "ciminus11": ciminus11, "ci2": ci2, "ci1": ci1}
 
-	prover := predicate.Prover(SuiteT, sval, pval, nil) // computes: commitment, challenge, response
-	Proof, err := proof.HashProve(SuiteT, "proofTest", prover)
+	prover := predicate.Prover(SuiTe, sval, pval, nil) // computes: commitment, challenge, response
+	Proof, err := proof.HashProve(SuiTe, "proofTest", prover)
 	if err != nil {
 		log.Fatal("---------Prover:", err.Error())
 	}
@@ -372,15 +372,15 @@ func VectorDeterministicTagProofCreation(vBef, vAft CipherVector, s, k kyber.Sca
 // DeterministicTagCheckProof checks one deterministic tagging proof
 func DeterministicTagCheckProof(cp DeterministicTaggingProof, K kyber.Point, cBef, cAft CipherText) bool {
 	predicate := createPredicateDeterministicTag()
-	B := SuiteT.Point().Base()
+	B := SuiTe.Point().Base()
 	ci1 := cAft.K
 	ciminus11 := cBef.K
 	ci2 := cAft.C
 	ciminus12 := cBef.C
 
 	pval := map[string]kyber.Point{"B": B, "K": K, "ciminus11Si": cp.ciminus11Si, "ciminus12": ciminus12, "ciminus11": ciminus11, "ci2": ci2, "ci1": ci1, "SB": cp.SB}
-	verifier := predicate.Verifier(SuiteT, pval)
-	if err := proof.HashVerify(SuiteT, "proofTest", verifier, cp.Proof); err != nil {
+	verifier := predicate.Verifier(SuiTe, pval)
+	if err := proof.HashVerify(SuiTe, "proofTest", verifier, cp.Proof); err != nil {
 		log.Error("---------Verifier:", err.Error())
 		return false
 	}
@@ -490,7 +490,7 @@ func shuffleProofCreation(inputList, outputList []ProcessResponse, beta [][]kybe
 
 	betaCompressed := CompressBeta(beta, e)
 
-	rand := SuiteT.RandomStream()
+	rand := SuiTe.RandomStream()
 
 	// do k-shuffle of ElGamal on the (Xhat,Yhat) and check it
 	k = len(Xhat)
@@ -498,13 +498,13 @@ func shuffleProofCreation(inputList, outputList []ProcessResponse, beta [][]kybe
 		panic("X,Y vectors have inconsistent lengths")
 	}
 	ps := shuffle.PairShuffle{}
-	ps.Init(SuiteT, k)
+	ps.Init(SuiTe, k)
 
 	prover := func(ctx proof.ProverContext) error {
 		return ps.Prove(pi, nil, h, betaCompressed, Xhat, Yhat, rand, ctx)
 	}
 
-	prf, err := proof.HashProve(SuiteT, "PairShuffle", prover)
+	prf, err := proof.HashProve(SuiTe, "PairShuffle", prover)
 	if err != nil {
 		panic("Shuffle proof failed: " + err.Error())
 	}
@@ -519,8 +519,8 @@ func ShufflingProofCreation(originalList, shuffledList []ProcessResponse, g, h k
 
 // checkShuffleProof verifies a shuffling proof
 func checkShuffleProof(g, h kyber.Point, Xhat, Yhat, XhatBar, YhatBar []kyber.Point, prf []byte) bool {
-	verifier := shuffle.Verifier(SuiteT, g, h, Xhat, Yhat, XhatBar, YhatBar)
-	err := proof.HashVerify(SuiteT, "PairShuffle", verifier, prf)
+	verifier := shuffle.Verifier(SuiTe, g, h, Xhat, Yhat, XhatBar, YhatBar)
+	err := proof.HashVerify(SuiTe, "PairShuffle", verifier, prf)
 
 	if err != nil {
 		log.LLvl1("-----------verify failed (with XharBar)")
@@ -569,12 +569,12 @@ func createPredicateDeterministicTagAddition() (predicate proof.Predicate) {
 // DetTagAdditionProofCreation creates proof for deterministic tagging addition on 1 kyber point
 func DetTagAdditionProofCreation(c1 kyber.Point, s kyber.Scalar, c2 kyber.Point, r kyber.Point) PublishedDetTagAdditionProof {
 	predicate := createPredicateDeterministicTagAddition()
-	B := SuiteT.Point().Base()
+	B := SuiTe.Point().Base()
 	sval := map[string]kyber.Scalar{"s": s}
 	pval := map[string]kyber.Point{"B": B, "c1": c1, "c2": c2, "r": r}
 
-	prover := predicate.Prover(SuiteT, sval, pval, nil) // computes: commitment, challenge, response
-	Proof, err := proof.HashProve(SuiteT, "proofTest", prover)
+	prover := predicate.Prover(SuiTe, sval, pval, nil) // computes: commitment, challenge, response
+	Proof, err := proof.HashProve(SuiTe, "proofTest", prover)
 	if err != nil {
 		log.Fatal("---------Prover:", err.Error())
 	}
@@ -585,11 +585,11 @@ func DetTagAdditionProofCreation(c1 kyber.Point, s kyber.Scalar, c2 kyber.Point,
 // DetTagAdditionProofVerification checks a deterministic tag addition proof
 func DetTagAdditionProofVerification(psap PublishedDetTagAdditionProof) bool {
 	predicate := createPredicateDeterministicTagAddition()
-	B := SuiteT.Point().Base()
+	B := SuiTe.Point().Base()
 	pval := map[string]kyber.Point{"B": B, "c1": psap.C1, "c2": psap.C2, "r": psap.R}
-	verifier := predicate.Verifier(SuiteT, pval)
+	verifier := predicate.Verifier(SuiTe, pval)
 	partProof := false
-	if err := proof.HashVerify(SuiteT, "proofTest", verifier, psap.Proof); err != nil {
+	if err := proof.HashVerify(SuiTe, "proofTest", verifier, psap.Proof); err != nil {
 		log.Error("---------Verifier:", err.Error())
 		return false
 	}
@@ -597,6 +597,6 @@ func DetTagAdditionProofVerification(psap PublishedDetTagAdditionProof) bool {
 	partProof = true
 	//log.LLvl1("Proof verified")
 
-	cv := SuiteT.Point().Add(psap.C1, psap.C2)
+	cv := SuiTe.Point().Add(psap.C1, psap.C2)
 	return partProof && reflect.DeepEqual(cv, psap.R)
 }

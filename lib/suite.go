@@ -5,7 +5,7 @@ import (
 	"github.com/dedis/kyber/suites"
 )
 
-// SuiteT defines the capabilities required by the lib package.
+// SuiTe defines the capabilities required by the lib package.
 type Suite interface {
 	kyber.Group
 	kyber.Random
@@ -14,5 +14,10 @@ type Suite interface {
 	kyber.XOFFactory
 }
 
-// SuiteT defines the Suite type/ curve (Ed25519, or other)
-var SuiteT = suites.MustFind("Ed25519") // Use the edwards25519-curve
+// SuiTe defines the Suite type/ curve (Ed25519, or other)
+var SuiTe = suites.MustFind("Ed25519") // Use the edwards25519-curve
+
+// ChooseSuite defines which suite to use for all the operations
+func ChooseSuite(suiteName string) {
+	SuiTe = suites.MustFind(suiteName)
+}

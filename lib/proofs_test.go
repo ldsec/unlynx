@@ -10,11 +10,11 @@ import (
 )
 
 //create variables
-var secKey = libunlynx.SuiteT.Scalar().Pick(random.New())
-var pubKey = libunlynx.SuiteT.Point().Mul(secKey, libunlynx.SuiteT.Point().Base())
+var secKey = libunlynx.SuiTe.Scalar().Pick(random.New())
+var pubKey = libunlynx.SuiTe.Point().Mul(secKey, libunlynx.SuiTe.Point().Base())
 
-var secKeyNew = libunlynx.SuiteT.Scalar().Pick(random.New())
-var pubKeyNew = libunlynx.SuiteT.Point().Mul(secKeyNew, libunlynx.SuiteT.Point().Base())
+var secKeyNew = libunlynx.SuiTe.Scalar().Pick(random.New())
+var pubKeyNew = libunlynx.SuiTe.Point().Mul(secKeyNew, libunlynx.SuiTe.Point().Base())
 
 var cipherOne = *libunlynx.EncryptInt(pubKey, 10)
 
@@ -47,7 +47,7 @@ func TestKeySwitchingProof(t *testing.T) {
 	cp = libunlynx.SwitchKeyProofCreation(cipherOne, *cipherOneSwitched, r, secKey, cipherOne.C, pubKeyNew)
 	assert.False(t, libunlynx.SwitchKeyCheckProof(cp, pubKey, pubKeyNew, cipherOne, *cipherOneSwitched))
 
-	cp = libunlynx.SwitchKeyProofCreation(cipherOne, *cipherOneSwitched, r, secKey, cipherOne.K, libunlynx.SuiteT.Point().Add(pubKeyNew, pubKeyNew))
+	cp = libunlynx.SwitchKeyProofCreation(cipherOne, *cipherOneSwitched, r, secKey, cipherOne.K, libunlynx.SuiTe.Point().Add(pubKeyNew, pubKeyNew))
 	assert.False(t, libunlynx.SwitchKeyCheckProof(cp, pubKey, pubKeyNew, cipherOne, *cipherOneSwitched))
 
 	// test key switching at ciphervector level
@@ -79,11 +79,11 @@ func TestAddRmProof(t *testing.T) {
 	cipherMap["0"] = cipherOne
 	cipherMap["1"] = cipherOne
 
-	tmp := libunlynx.SuiteT.Point().Mul(secKeyNew, cipherOne.K)
+	tmp := libunlynx.SuiTe.Point().Mul(secKeyNew, cipherOne.K)
 	result.K = cipherOne.K
 
 	//addition
-	result.C = libunlynx.SuiteT.Point().Add(cipherOne.C, tmp)
+	result.C = libunlynx.SuiTe.Point().Add(cipherOne.C, tmp)
 	prf := libunlynx.AddRmProofCreation(cipherOne, result, secKeyNew, true)
 	assert.True(t, libunlynx.AddRmCheckProof(prf, pubKeyNew, cipherOne, result, true))
 	assert.False(t, libunlynx.AddRmCheckProof(prf, pubKey, cipherOne, result, true))
@@ -94,9 +94,9 @@ func TestAddRmProof(t *testing.T) {
 	//subtraction
 	result = *libunlynx.NewCipherText()
 	cipherOne = *libunlynx.EncryptInt(pubKey, 10)
-	tmp = libunlynx.SuiteT.Point().Mul(secKeyNew, cipherOne.K)
+	tmp = libunlynx.SuiTe.Point().Mul(secKeyNew, cipherOne.K)
 	result.K = cipherOne.K
-	result.C = libunlynx.SuiteT.Point().Sub(cipherOne.C, tmp)
+	result.C = libunlynx.SuiTe.Point().Sub(cipherOne.C, tmp)
 	prf = libunlynx.AddRmProofCreation(cipherOne, result, secKeyNew, false)
 	assert.True(t, libunlynx.AddRmCheckProof(prf, pubKeyNew, cipherOne, result, false))
 	assert.False(t, libunlynx.AddRmCheckProof(prf, pubKey, cipherOne, result, false))
@@ -110,10 +110,10 @@ func TestAddRmProof(t *testing.T) {
 	for j := 0; j < len(cipherMap); j++ {
 		w := libunlynx.CipherText{K: cipherMap[strconv.Itoa(j)].K, C: cipherMap[strconv.Itoa(j)].C}
 
-		tmp := libunlynx.SuiteT.Point().Mul(secKeyNew, w.K)
+		tmp := libunlynx.SuiTe.Point().Mul(secKeyNew, w.K)
 
-		add := libunlynx.CipherText{K: w.K, C: libunlynx.SuiteT.Point().Add(w.C, tmp)}
-		sub := libunlynx.CipherText{K: w.K, C: libunlynx.SuiteT.Point().Sub(w.C, tmp)}
+		add := libunlynx.CipherText{K: w.K, C: libunlynx.SuiTe.Point().Add(w.C, tmp)}
+		sub := libunlynx.CipherText{K: w.K, C: libunlynx.SuiTe.Point().Sub(w.C, tmp)}
 
 		resultAdd[strconv.Itoa(j)] = add
 		resultSub[strconv.Itoa(j)] = sub
@@ -178,30 +178,30 @@ func TestDeterministicTaggingProof(t *testing.T) {
 	assert.True(t, result)
 
 	cps1 = libunlynx.VectorDeterministicTagProofCreation(cipherVect, *TagSwitchedVect, secKeyNew, secKey)
-	result, _ = libunlynx.PublishedDeterministicTaggingCheckProof(libunlynx.PublishedDeterministicTaggingProof{Dhp: cps1, VectBefore: cipherVect, VectAfter: *TagSwitchedVect, K: pubKey, SB: libunlynx.SuiteT.Point().Mul(secKeyNew, libunlynx.SuiteT.Point().Base())})
+	result, _ = libunlynx.PublishedDeterministicTaggingCheckProof(libunlynx.PublishedDeterministicTaggingProof{Dhp: cps1, VectBefore: cipherVect, VectAfter: *TagSwitchedVect, K: pubKey, SB: libunlynx.SuiTe.Point().Mul(secKeyNew, libunlynx.SuiTe.Point().Base())})
 	assert.True(t, result)
 
 	cps1 = libunlynx.VectorDeterministicTagProofCreation(cipherVect, *TagSwitchedVect, secKey, secKey)
-	result, _ = libunlynx.PublishedDeterministicTaggingCheckProof(libunlynx.PublishedDeterministicTaggingProof{Dhp: cps1, VectBefore: cipherVect, VectAfter: *TagSwitchedVect, K: pubKey, SB: libunlynx.SuiteT.Point().Mul(secKeyNew, libunlynx.SuiteT.Point().Base())})
+	result, _ = libunlynx.PublishedDeterministicTaggingCheckProof(libunlynx.PublishedDeterministicTaggingProof{Dhp: cps1, VectBefore: cipherVect, VectAfter: *TagSwitchedVect, K: pubKey, SB: libunlynx.SuiTe.Point().Mul(secKeyNew, libunlynx.SuiTe.Point().Base())})
 	assert.False(t, result)
 
 	cps1 = libunlynx.VectorDeterministicTagProofCreation(cipherVect, *TagSwitchedVect, secKeyNew, secKeyNew)
-	result, _ = libunlynx.PublishedDeterministicTaggingCheckProof(libunlynx.PublishedDeterministicTaggingProof{Dhp: cps1, VectBefore: cipherVect, VectAfter: *TagSwitchedVect, K: pubKey, SB: libunlynx.SuiteT.Point().Mul(secKeyNew, libunlynx.SuiteT.Point().Base())})
+	result, _ = libunlynx.PublishedDeterministicTaggingCheckProof(libunlynx.PublishedDeterministicTaggingProof{Dhp: cps1, VectBefore: cipherVect, VectAfter: *TagSwitchedVect, K: pubKey, SB: libunlynx.SuiTe.Point().Mul(secKeyNew, libunlynx.SuiTe.Point().Base())})
 	assert.False(t, result)
 
 	cps1 = libunlynx.VectorDeterministicTagProofCreation(cipherVect, *TagSwitchedVect, secKeyNew, secKey)
-	result, _ = libunlynx.PublishedDeterministicTaggingCheckProof(libunlynx.PublishedDeterministicTaggingProof{Dhp: cps1, VectBefore: cipherVect, VectAfter: *TagSwitchedVect, K: pubKeyNew, SB: libunlynx.SuiteT.Point().Mul(secKeyNew, libunlynx.SuiteT.Point().Base())})
+	result, _ = libunlynx.PublishedDeterministicTaggingCheckProof(libunlynx.PublishedDeterministicTaggingProof{Dhp: cps1, VectBefore: cipherVect, VectAfter: *TagSwitchedVect, K: pubKeyNew, SB: libunlynx.SuiTe.Point().Mul(secKeyNew, libunlynx.SuiTe.Point().Base())})
 	assert.False(t, result)
 
 	cps1 = libunlynx.VectorDeterministicTagProofCreation(cipherVect, *TagSwitchedVect, secKeyNew, secKey)
-	result, _ = libunlynx.PublishedDeterministicTaggingCheckProof(libunlynx.PublishedDeterministicTaggingProof{Dhp: cps1, VectBefore: cipherVect, VectAfter: *TagSwitchedVect, K: pubKey, SB: libunlynx.SuiteT.Point().Mul(secKey, libunlynx.SuiteT.Point().Base())})
+	result, _ = libunlynx.PublishedDeterministicTaggingCheckProof(libunlynx.PublishedDeterministicTaggingProof{Dhp: cps1, VectBefore: cipherVect, VectAfter: *TagSwitchedVect, K: pubKey, SB: libunlynx.SuiTe.Point().Mul(secKey, libunlynx.SuiTe.Point().Base())})
 	assert.False(t, result)
 }
 
 func TestDeterministicTaggingAdditionProof(t *testing.T) {
 	cipherOne = *libunlynx.EncryptInt(pubKey, 10)
-	toAdd := libunlynx.SuiteT.Point().Mul(secKey, libunlynx.SuiteT.Point().Base())
-	tmp := libunlynx.SuiteT.Point().Add(cipherOne.C, toAdd)
+	toAdd := libunlynx.SuiTe.Point().Mul(secKey, libunlynx.SuiTe.Point().Base())
+	tmp := libunlynx.SuiTe.Point().Add(cipherOne.C, toAdd)
 
 	prf := libunlynx.DetTagAdditionProofCreation(cipherOne.C, secKey, toAdd, tmp)
 	assert.True(t, libunlynx.DetTagAdditionProofVerification(prf))

@@ -12,8 +12,8 @@ import (
 func TestStoring(t *testing.T) {
 
 	// construction of variables
-	secKey := libunlynx.SuiteT.Scalar().Pick(random.New())
-	pubKey := libunlynx.SuiteT.Point().Mul(secKey, libunlynx.SuiteT.Point().Base())
+	secKey := libunlynx.SuiTe.Scalar().Pick(random.New())
+	pubKey := libunlynx.SuiTe.Point().Mul(secKey, libunlynx.SuiTe.Point().Base())
 
 	// Generate data for aggregating attributes
 	tab := []int64{1, 2, 3, 6}

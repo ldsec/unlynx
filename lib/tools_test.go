@@ -16,13 +16,13 @@ func TestWriteToGobFile(t *testing.T) {
 
 	cipher := libunlynx.CipherVectorScalar{}
 
-	v1 := libunlynx.SuiteT.Scalar().Pick(random.New())
-	v2 := libunlynx.SuiteT.Scalar().Pick(random.New())
+	v1 := libunlynx.SuiTe.Scalar().Pick(random.New())
+	v2 := libunlynx.SuiTe.Scalar().Pick(random.New())
 
 	cipher.S = append(cipher.S, v1, v2)
 
-	vK := libunlynx.SuiteT.Point()
-	vC := libunlynx.SuiteT.Point()
+	vK := libunlynx.SuiTe.Point()
+	vC := libunlynx.SuiTe.Point()
 
 	ct := libunlynx.CipherText{K: vK, C: vC}
 

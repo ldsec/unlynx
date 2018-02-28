@@ -15,10 +15,10 @@ func TestShuffleSequence(t *testing.T) {
 	k := 10
 
 	collectivePubKey, priv, _ := libunlynx.GenKeys(k)
-	collectivePrivKey := libunlynx.SuiteT.Scalar()
+	collectivePrivKey := libunlynx.SuiTe.Scalar()
 
 	for i := 0; i < len(priv); i++ {
-		collectivePrivKey = libunlynx.SuiteT.Scalar().Add(collectivePrivKey, priv[i])
+		collectivePrivKey = libunlynx.SuiTe.Scalar().Add(collectivePrivKey, priv[i])
 	}
 
 	inputList := make([]libunlynx.ProcessResponse, k)
@@ -61,12 +61,12 @@ func TestShuffleSequence(t *testing.T) {
 
 func TestPrecomputationWritingForShuffling(t *testing.T) {
 	os.Remove("pre_compute_multiplications.gob")
-	local := onet.NewLocalTest(libunlynx.SuiteT)
+	local := onet.NewLocalTest(libunlynx.SuiTe)
 	_, el, _ := local.GenTree(3, true)
 	defer local.CloseAll()
 
 	lineSize := 10
-	secret := libunlynx.SuiteT.Scalar().Pick(random.New())
+	secret := libunlynx.SuiTe.Scalar().Pick(random.New())
 
 	precompute := libunlynx.PrecomputationWritingForShuffling(false, "pre_compute_multiplications.gob", "test_server", secret, el.Aggregate, lineSize)
 	assert.Equal(t, len(precompute), lineSize)
