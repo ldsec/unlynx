@@ -11,14 +11,13 @@ package protocolsunlynx
 
 import (
 	"errors"
-
 	"github.com/lca1/unlynx/lib"
-	"gopkg.in/dedis/crypto.v0/abstract"
-	"gopkg.in/dedis/onet.v1"
-	"gopkg.in/dedis/onet.v1/log"
-	"gopkg.in/dedis/onet.v1/network"
+	"github.com/dedis/onet"
+	"github.com/dedis/onet/log"
+	"github.com/dedis/onet/network"
 	"sync"
 	"time"
+	"github.com/dedis/kyber"
 )
 
 // KeySwitchingProtocolName is the registered name for the key switching protocol.
@@ -37,8 +36,8 @@ func init() {
 // OriginalEphemeralKeys represents the original ephemeral keys which are needed for the servers to be able to remove
 // their secret contribution
 type OriginalEphemeralKeys struct {
-	GroupOriginalKeys []abstract.Point
-	AttrOriginalKeys  []abstract.Point
+	GroupOriginalKeys []kyber.Point
+	AttrOriginalKeys  []kyber.Point
 }
 
 // DataAndOriginalEphemeralKeys contains data being switched and the original ephemeral keys needed at each step
@@ -50,7 +49,7 @@ type DataAndOriginalEphemeralKeys struct {
 // KeySwitchedCipherMessage contains cipherVector under switching.
 type KeySwitchedCipherMessage struct {
 	DataKey []DataAndOriginalEphemeralKeys
-	NewKey  abstract.Point
+	NewKey  kyber.Point
 }
 
 // KeySwitchedCipherBytesMessage is the KeySwitchedCipherMessage in bytes.
@@ -101,7 +100,7 @@ type KeySwitchingProtocol struct {
 	// Protocol state data
 	nextNodeInCircuit *onet.TreeNode
 	TargetOfSwitch    *[]libunlynx.FilteredResponse
-	TargetPublicKey   *abstract.Point
+	TargetPublicKey   *kyber.Point
 	Proofs            bool
 }
 
@@ -139,11 +138,11 @@ func (p *KeySwitchingProtocol) Start() error {
 	startRound := libunlynx.StartTimer(p.Name() + "_KeySwitching(START)")
 
 	if p.TargetOfSwitch == nil {
-		return errors.New("No ciphertext given as key switching target")
+		return errors.New("no ciphertext given as key switching target")
 	}
 
 	if p.TargetPublicKey == nil {
-		return errors.New("No new public key to be switched on provided")
+		return errors.New("no new public key to be switched on provided")
 	}
 
 	p.ExecTime = 0
@@ -188,10 +187,10 @@ func (p *KeySwitchingProtocol) Start() error {
 }
 
 // getAttributesAndEphemKeys retrieves attributes and ephemeral keys in a CipherVector to be key switched
-func getAttributesAndEphemKeys(cv libunlynx.CipherVector) (libunlynx.CipherVector, []abstract.Point) {
+func getAttributesAndEphemKeys(cv libunlynx.CipherVector) (libunlynx.CipherVector, []kyber.Point) {
 	length := len(cv)
 	initialAttributes := *libunlynx.NewCipherVector(length)
-	originalEphemKeys := make([]abstract.Point, length)
+	originalEphemKeys := make([]kyber.Point, length)
 	for i, c := range cv {
 		initialAttributes[i].C = c.C
 		originalEphemKeys[i] = c.K
@@ -215,7 +214,7 @@ func (p *KeySwitchingProtocol) Dispatch() error {
 		origGrpEphemKeys := v.OriginalEphemeralKeys.GroupOriginalKeys
 		origAttrEphemKeys := v.OriginalEphemeralKeys.AttrOriginalKeys
 		if libunlynx.PARALLELIZE {
-			go func(i int, v DataAndOriginalEphemeralKeys, origGrpEphemKeys, origAttrEphemKeys []abstract.Point) {
+			go func(i int, v DataAndOriginalEphemeralKeys, origGrpEphemKeys, origAttrEphemKeys []kyber.Point) {
 				FilteredResponseKeySwitching(&keySwitchingTarget.DataKey[i].Response, v.Response, origGrpEphemKeys,
 					origAttrEphemKeys, keySwitchingTarget.NewKey, p.Private(), p.Proofs)
 				defer wg.Done()
@@ -263,7 +262,7 @@ func sending(p *KeySwitchingProtocol, kscm *KeySwitchedCipherMessage) {
 }
 
 //FilteredResponseKeySwitching applies key switching on a filtered response
-func FilteredResponseKeySwitching(cv *libunlynx.FilteredResponse, v libunlynx.FilteredResponse, origGrpEphemKeys, origAttrEphemKeys []abstract.Point, newKey abstract.Point, secretContrib abstract.Scalar, proofs bool) {
+func FilteredResponseKeySwitching(cv *libunlynx.FilteredResponse, v libunlynx.FilteredResponse, origGrpEphemKeys, origAttrEphemKeys []kyber.Point, newKey kyber.Point, secretContrib kyber.Scalar, proofs bool) {
 	tmp := libunlynx.NewCipherVector(len(v.AggregatingAttributes))
 	r1 := tmp.KeySwitching(v.AggregatingAttributes, origAttrEphemKeys, newKey, secretContrib)
 	cv.AggregatingAttributes = *tmp
@@ -276,7 +275,7 @@ func FilteredResponseKeySwitching(cv *libunlynx.FilteredResponse, v libunlynx.Fi
 		proofAggr := libunlynx.VectorSwitchKeyProofCreation(v.AggregatingAttributes, cv.AggregatingAttributes, r1, secretContrib, origAttrEphemKeys, newKey)
 		proofGrp := libunlynx.VectorSwitchKeyProofCreation(v.GroupByEnc, cv.GroupByEnc, r2, secretContrib, origGrpEphemKeys, newKey)
 		//create published value
-		pubKey := network.Suite.Point().Mul(network.Suite.Point().Base(), secretContrib)
+		pubKey := libunlynx.SuiTe.Point().Mul(secretContrib, libunlynx.SuiTe.Point().Base())
 		pub1 := libunlynx.PublishedSwitchKeyProof{Skp: proofAggr, VectBefore: v.AggregatingAttributes, VectAfter: cv.AggregatingAttributes, K: pubKey, Q: newKey}
 		pub2 := libunlynx.PublishedSwitchKeyProof{Skp: proofGrp, VectBefore: v.GroupByEnc, VectAfter: cv.GroupByEnc, K: pubKey, Q: newKey}
 		//publication
@@ -321,7 +320,7 @@ func (kscm *KeySwitchedCipherMessage) ToBytes() ([]byte, int, int, int, int, int
 
 	}
 	libunlynx.EndParallelize(wg)
-	nkb := libunlynx.AbstractPointsToBytes([]abstract.Point{(*kscm).NewKey})
+	nkb := libunlynx.AbstractPointsToBytes([]kyber.Point{(*kscm).NewKey})
 
 	b := make([]byte, 0)
 	for i := range bb {

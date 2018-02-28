@@ -3,7 +3,6 @@ package protocolsunlynx_test
 import (
 	"testing"
 	"time"
-
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/protocols"
 	"github.com/lca1/unlynx/services/default/data"

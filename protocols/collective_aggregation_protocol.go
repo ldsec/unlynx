@@ -10,9 +10,9 @@ import (
 	"errors"
 
 	"github.com/lca1/unlynx/lib"
-	"gopkg.in/dedis/onet.v1"
-	"gopkg.in/dedis/onet.v1/log"
-	"gopkg.in/dedis/onet.v1/network"
+	"github.com/dedis/onet"
+	"github.com/dedis/onet/log"
+	"github.com/dedis/onet/network"
 	"sync"
 )
 
@@ -126,7 +126,7 @@ func NewCollectiveAggregationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolIn
 // Start is called at the root to begin the execution of the protocol.
 func (p *CollectiveAggregationProtocol) Start() error {
 	if p.GroupedData == nil {
-		return errors.New("No data reference provided for aggregation")
+		return errors.New("no data reference provided for aggregation")
 	}
 	log.Lvl1(p.ServerIdentity(), " started a Colective Aggregation Protocol (", len(*p.GroupedData), "local group(s) )")
 	p.SendToChildren(&DataReferenceMessage{})
@@ -295,7 +295,7 @@ func (sm *ChildAggregatedDataMessage) ToBytes() ([]byte, int, int, int) {
 
 // FromBytes converts a byte array to a ChildAggregatedDataMessage. Note that you need to create the (empty) object beforehand.
 func (sm *ChildAggregatedDataMessage) FromBytes(data []byte, gacbLength, aabLength, dtbLength int) {
-	elementLength := (gacbLength*64 + aabLength*64 + dtbLength) //CAUTION: hardcoded 64 (size of el-gamal element C,K)
+	elementLength := gacbLength*64 + aabLength*64 + dtbLength //CAUTION: hardcoded 64 (size of el-gamal element C,K)
 
 	if elementLength != 0 && len(data) > 0 {
 		var nbrChildData int

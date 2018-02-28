@@ -4,17 +4,16 @@ import (
 	"reflect"
 	"testing"
 	"time"
-
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/protocols"
-	"gopkg.in/dedis/crypto.v0/random"
-	"gopkg.in/dedis/onet.v1"
-	"gopkg.in/dedis/onet.v1/log"
-	"gopkg.in/dedis/onet.v1/network"
+	"github.com/dedis/onet"
+	"github.com/dedis/onet/log"
+	"github.com/dedis/onet/network"
+	"github.com/dedis/kyber/util/random"
 )
 
 func TestKeySwitching(t *testing.T) {
-	local := onet.NewLocalTest()
+	local := onet.NewLocalTest(libunlynx.SuiTe)
 	_, entityList, tree := local.GenTree(5, true)
 
 	defer local.CloseAll()
@@ -24,8 +23,6 @@ func TestKeySwitching(t *testing.T) {
 		t.Fatal("Couldn't start protocol:", err)
 	}
 	protocol := rootInstance.(*protocolsunlynx.KeySwitchingProtocol)
-
-	suite := network.Suite
 	aggregateKey := entityList.Aggregate
 
 	//create data
@@ -39,8 +36,8 @@ func TestKeySwitching(t *testing.T) {
 	tabi[0] = libunlynx.FilteredResponse{GroupByEnc: testCipherVect1, AggregatingAttributes: testCipherVect}
 	tabi[1] = libunlynx.FilteredResponse{GroupByEnc: testCipherVect, AggregatingAttributes: testCipherVect1}
 
-	clientPrivate := suite.Scalar().Pick(random.Stream)
-	clientPublic := suite.Point().Mul(suite.Point().Base(), clientPrivate)
+	clientPrivate := libunlynx.SuiTe.Scalar().Pick(random.New())
+	clientPublic := libunlynx.SuiTe.Point().Mul(clientPrivate, libunlynx.SuiTe.Point().Base())
 
 	//protocol
 	protocol.TargetOfSwitch = &tabi

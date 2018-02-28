@@ -3,17 +3,16 @@ package protocolsunlynx_test
 import (
 	"testing"
 	"time"
-
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/protocols"
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/dedis/crypto.v0/random"
-	"gopkg.in/dedis/onet.v1"
-	"gopkg.in/dedis/onet.v1/network"
+	"github.com/dedis/onet"
+	"github.com/dedis/onet/network"
+	"github.com/dedis/kyber/util/random"
 )
 
 func TestLocalAggregation(t *testing.T) {
-	local := onet.NewLocalTest()
+	local := onet.NewLocalTest(libunlynx.SuiTe)
 	_, _, tree := local.GenTree(1, true)
 
 	defer local.CloseAll()
@@ -24,8 +23,8 @@ func TestLocalAggregation(t *testing.T) {
 	}
 	protocol := rootInstance.(*protocolsunlynx.LocalAggregationProtocol)
 
-	secKey := network.Suite.Scalar().Pick(random.Stream)
-	pubKey := network.Suite.Point().Mul(network.Suite.Point().Base(), secKey)
+	secKey := libunlynx.SuiTe.Scalar().Pick(random.New())
+	pubKey := libunlynx.SuiTe.Point().Mul(secKey, libunlynx.SuiTe.Point().Base())
 	cipherOne := *libunlynx.EncryptInt(pubKey, 10)
 	cipherVect := libunlynx.CipherVector{cipherOne, cipherOne}
 	cipherVect2 := *libunlynx.NewCipherVector(len(cipherVect))

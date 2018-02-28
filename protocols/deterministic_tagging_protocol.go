@@ -10,16 +10,15 @@ package protocolsunlynx
 
 import (
 	"errors"
-
 	"github.com/lca1/unlynx/lib"
-	"gopkg.in/dedis/crypto.v0/abstract"
-	"gopkg.in/dedis/onet.v1"
-	"gopkg.in/dedis/onet.v1/log"
-	"gopkg.in/dedis/onet.v1/network"
+	"github.com/dedis/onet"
+	"github.com/dedis/onet/log"
+	"github.com/dedis/onet/network"
 	"reflect"
 	"sync"
 	"time"
 	"unsafe"
+	"github.com/dedis/kyber"
 )
 
 // DeterministicTaggingProtocolName is the registered name for the deterministic tagging protocol.
@@ -89,7 +88,7 @@ type DeterministicTaggingProtocol struct {
 	// Protocol state data
 	nextNodeInCircuit *onet.TreeNode
 	TargetOfSwitch    *[]libunlynx.ProcessResponse
-	SurveySecretKey   *abstract.Scalar
+	SurveySecretKey   *kyber.Scalar
 	Proofs            bool
 
 	ExecTime time.Duration
@@ -128,10 +127,10 @@ func (p *DeterministicTaggingProtocol) Start() error {
 	roundTotalStart := libunlynx.StartTimer(p.Name() + "_DetTagging(START)")
 
 	if p.TargetOfSwitch == nil {
-		return errors.New("No data on which to do a deterministic tagging")
+		return errors.New("no data on which to do a deterministic tagging")
 	}
 	if p.SurveySecretKey == nil {
-		return errors.New("No survey secret key given")
+		return errors.New("no survey secret key given")
 	}
 
 	p.ExecTime = 0
@@ -163,13 +162,13 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 
 	startT := time.Now()
 	wg := libunlynx.StartParallelize(len(deterministicTaggingTargetBef.Data))
-	toAdd := network.Suite.Point().Mul(network.Suite.Point().Base(), *p.SurveySecretKey)
+	toAdd := libunlynx.SuiTe.Point().Mul(*p.SurveySecretKey, libunlynx.SuiTe.Point().Base())
 	for i := range deterministicTaggingTargetBef.Data {
 		if libunlynx.PARALLELIZE {
 			go func(v []GroupingAttributes, i int) {
 				defer wg.Done()
 				for j := range v[i].Vector {
-					tmp := network.Suite.Point().Add(v[i].Vector[j].C, toAdd)
+					tmp := libunlynx.SuiTe.Point().Add(v[i].Vector[j].C, toAdd)
 					if p.Proofs {
 						prf := libunlynx.DetTagAdditionProofCreation(v[i].Vector[j].C, *p.SurveySecretKey, toAdd, tmp)
 						//dummy proof publication
@@ -182,7 +181,7 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 
 		} else {
 			for j := range deterministicTaggingTargetBef.Data[i].Vector {
-				tmp := network.Suite.Point().Add(deterministicTaggingTargetBef.Data[i].Vector[j].C, toAdd)
+				tmp := libunlynx.SuiTe.Point().Add(deterministicTaggingTargetBef.Data[i].Vector[j].C, toAdd)
 				if p.Proofs {
 					prf := libunlynx.DetTagAdditionProofCreation(deterministicTaggingTargetBef.Data[i].Vector[j].C, *p.SurveySecretKey, toAdd, tmp)
 					_ = prf
@@ -293,7 +292,7 @@ func deterministicTagFormat(i int, v GroupingAttributes, targetofSwitch *[]libun
 		if j < len(tmp[i].GroupByEnc) {
 			deterministicGroupAttributes[j] = libunlynx.DeterministCipherText{Point: c.C}
 		} else if j < len(tmp[i].GroupByEnc)+len(tmp[i].WhereEnc) {
-			tmp1 := (libunlynx.DeterministCipherVector{libunlynx.DeterministCipherText{Point: c.C}})
+			tmp1 := libunlynx.DeterministCipherVector{libunlynx.DeterministCipherText{Point: c.C}}
 			deterministicWhereAttributes[j-len(tmp[i].GroupByEnc)] = tmp1.Key()
 		}
 
