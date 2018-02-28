@@ -61,7 +61,7 @@ func TestShuffleSequence(t *testing.T) {
 
 func TestPrecomputationWritingForShuffling(t *testing.T) {
 	os.Remove("pre_compute_multiplications.gob")
-	local := onet.NewLocalTest()
+	local := onet.NewLocalTest(libunlynx.SuiteT)
 	_, el, _ := local.GenTree(3, true)
 	defer local.CloseAll()
 
