@@ -3,8 +3,8 @@ package libunlynx_test
 import (
 	"fmt"
 	"github.com/dedis/kyber/util/random"
+	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
-	"gopkg.in/dedis/onet.v1/log"
 	"os"
 	"testing"
 )

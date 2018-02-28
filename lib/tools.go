@@ -3,8 +3,8 @@ package libunlynx
 import (
 	"encoding/gob"
 	"github.com/btcsuite/goleveldb/leveldb/errors"
-	"gopkg.in/dedis/onet.v1"
-	"gopkg.in/dedis/onet.v1/log"
+	"github.com/dedis/onet"
+	"github.com/dedis/onet/log"
 	"os"
 	"strings"
 )

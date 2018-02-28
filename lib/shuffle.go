@@ -3,7 +3,7 @@ package libunlynx
 import (
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/util/random"
-	"gopkg.in/dedis/onet.v1/log"
+	"github.com/dedis/onet/log"
 	"math/big"
 	"os"
 )

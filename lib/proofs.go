@@ -4,7 +4,7 @@ import (
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/proof"
 	"github.com/dedis/kyber/shuffle"
-	"gopkg.in/dedis/onet.v1/log"
+	"github.com/dedis/onet/log"
 	"reflect"
 	"sync"
 )

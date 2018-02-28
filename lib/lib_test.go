@@ -1,9 +1,8 @@
 package libunlynx_test
 
 import (
+	"github.com/dedis/onet/log"
 	"testing"
-
-	"gopkg.in/dedis/onet.v1/log"
 )
 
 func TestMain(m *testing.M) {
