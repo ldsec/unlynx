@@ -2,11 +2,11 @@
 package libunlynx
 
 import (
+	"crypto/cipher"
 	"github.com/dedis/kyber"
 	"strconv"
 	"strings"
 	"sync"
-	"crypto/cipher"
 )
 
 // Objects

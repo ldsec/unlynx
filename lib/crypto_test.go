@@ -1,12 +1,12 @@
 package libunlynx_test
 
 import (
+	"github.com/dedis/kyber"
+	"github.com/dedis/kyber/util/random"
 	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
 	"reflect"
 	"testing"
-	"github.com/dedis/kyber"
-	"github.com/dedis/kyber/util/random"
 )
 
 // TestNullCipherText verifies encryption, decryption and behavior of null ciphertexts.
@@ -176,7 +176,7 @@ func TestEqualDeterministCipherText(t *testing.T) {
 	assert.True(t, pdcv1.Equal(nilp))
 }
 
-// TestAbstractPointsConverter tests the abstract points array converter (to bytes)
+// TestAbstractPointsConverter tests the kyber points array converter (to bytes)
 func TestAbstractPointsConverter(t *testing.T) {
 	aps := make([]kyber.Point, 0)
 

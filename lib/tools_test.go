@@ -2,11 +2,11 @@ package libunlynx_test
 
 import (
 	"fmt"
+	"github.com/dedis/kyber/util/random"
+	"github.com/lca1/unlynx/lib"
 	"gopkg.in/dedis/onet.v1/log"
 	"os"
 	"testing"
-	"github.com/dedis/kyber/util/random"
-	"github.com/lca1/unlynx/lib"
 )
 
 const file = "pre_compute_multiplications.gob"

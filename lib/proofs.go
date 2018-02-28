@@ -1,12 +1,12 @@
 package libunlynx
 
 import (
-	"gopkg.in/dedis/onet.v1/log"
-	"reflect"
-	"sync"
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/proof"
 	"github.com/dedis/kyber/shuffle"
+	"gopkg.in/dedis/onet.v1/log"
+	"reflect"
+	"sync"
 )
 
 // SwitchKeyProof proof for key switching
@@ -566,7 +566,7 @@ func createPredicateDeterministicTagAddition() (predicate proof.Predicate) {
 	return
 }
 
-// DetTagAdditionProofCreation creates proof for deterministic tagging addition on 1 abstract point
+// DetTagAdditionProofCreation creates proof for deterministic tagging addition on 1 kyber point
 func DetTagAdditionProofCreation(c1 kyber.Point, s kyber.Scalar, c2 kyber.Point, r kyber.Point) PublishedDetTagAdditionProof {
 	predicate := createPredicateDeterministicTagAddition()
 	B := SuiteT.Point().Base()

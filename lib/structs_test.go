@@ -1,10 +1,10 @@
 package libunlynx_test
 
 import (
+	"github.com/dedis/kyber"
 	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
 	"testing"
-	"github.com/dedis/kyber"
 )
 
 // TestAddClientResponse tests the addition of two client response objects

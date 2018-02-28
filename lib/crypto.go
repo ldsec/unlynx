@@ -4,13 +4,13 @@ import (
 	"encoding"
 	"encoding/base64"
 	"fmt"
-	"github.com/fanliao/go-concurrentMap"
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/util/random"
+	"github.com/fanliao/go-concurrentMap"
 	"gopkg.in/dedis/onet.v1/log"
+	"math/big"
 	"strings"
 	"sync"
-	"math/big"
 )
 
 // MaxHomomorphicInt is upper bound for integers used in messages, a failed decryption will return this value.
@@ -477,9 +477,9 @@ func RandomPermutation(k int) []int {
 		pi[i] = i
 	}
 	for i := k - 1; i > 0; i-- {
-		randInt := random.Int(big.NewInt(int64(maxInt)),rand)
+		randInt := random.Int(big.NewInt(int64(maxInt)), rand)
 		// Shuffle by random swaps
-		j := int(randInt.Int64()) % (i+1)
+		j := int(randInt.Int64()) % (i + 1)
 		if j != i {
 			t := pi[j]
 			pi[j] = pi[i]

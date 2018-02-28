@@ -1,13 +1,13 @@
 package libunlynx_test
 
 import (
-	"github.com/lca1/unlynx/lib"
 	"github.com/dedis/kyber/util/random"
-	"github.com/stretchr/testify/assert"
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
-	"testing"
+	"github.com/lca1/unlynx/lib"
+	"github.com/stretchr/testify/assert"
 	"os"
+	"testing"
 )
 
 func TestShuffleSequence(t *testing.T) {

@@ -1,10 +1,11 @@
 package libunlynx
 
 import (
-	"gopkg.in/dedis/crypto.v0/random"
-	"gopkg.in/dedis/onet.v1/log"
-	"os"
 	"github.com/dedis/kyber"
+	"github.com/dedis/kyber/util/random"
+	"gopkg.in/dedis/onet.v1/log"
+	"math/big"
+	"os"
 )
 
 // compressCipherVector (slice of ciphertexts) into one ciphertext
@@ -122,7 +123,9 @@ func CompressBeta(beta [][]kyber.Scalar, e []kyber.Scalar) []kyber.Scalar {
 
 // ShuffleSequence applies shuffling to a list of process responses
 func ShuffleSequence(inputList []ProcessResponse, g, h kyber.Point, precomputed []CipherVectorScalar) ([]ProcessResponse, []int, [][]kyber.Scalar) {
-	//,  []byte) {
+	maxUint := ^uint(0)
+	maxInt := int(maxUint >> 1)
+
 	NQ1 := len(inputList[0].GroupByEnc)
 	NQ2 := len(inputList[0].WhereEnc)
 	NQ3 := len(inputList[0].AggregatingAttributes)
@@ -131,7 +134,7 @@ func ShuffleSequence(inputList []ProcessResponse, g, h kyber.Point, precomputed 
 	NQ := NQ1 + NQ2 + NQ3
 
 	k := len(inputList) // number of clients
-	
+
 	rand := SuiteT.RandomStream()
 	// Pick a fresh (or precomputed) ElGamal blinding factor for each pair
 	beta := make([][]kyber.Scalar, k)
@@ -140,7 +143,9 @@ func ShuffleSequence(inputList []ProcessResponse, g, h kyber.Point, precomputed 
 		if precomputed == nil {
 			beta[i] = RandomScalarSlice(NQ)
 		} else {
-			indice := int(random.Uint64(rand) % uint64(len(precomputed)))
+			randInt := random.Int(big.NewInt(int64(maxInt)), rand)
+
+			indice := int(randInt.Int64() % int64(len(precomputed)))
 			beta[i] = precomputed[indice].S[0:NQ] //if beta file is bigger than query line responses
 			precomputedPoints[i] = precomputed[indice].CipherV[0:NQ]
 		}

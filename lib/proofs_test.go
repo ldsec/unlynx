@@ -1,12 +1,12 @@
 package libunlynx_test
 
 import (
+	"github.com/dedis/kyber"
+	"github.com/dedis/kyber/util/random"
 	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
 	"strconv"
 	"testing"
-	"github.com/dedis/kyber"
-	"github.com/dedis/kyber/util/random"
 )
 
 //create variables
