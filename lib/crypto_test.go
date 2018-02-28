@@ -3,14 +3,11 @@ package libunlynx_test
 import (
 	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/dedis/crypto.v0/abstract"
-	"gopkg.in/dedis/crypto.v0/random"
-	"gopkg.in/dedis/onet.v1/network"
 	"reflect"
 	"testing"
+	"github.com/dedis/kyber"
+	"github.com/dedis/kyber/util/random"
 )
-
-var suite = network.Suite
 
 // TestNullCipherText verifies encryption, decryption and behavior of null ciphertexts.
 func TestNullCipherText(t *testing.T) {
@@ -24,7 +21,7 @@ func TestNullCipherText(t *testing.T) {
 		t.Fatal("Decryption of encryption of 0 should be 0, got", nullDec)
 	}
 
-	var twoTimesNullEnc = libunlynx.CipherText{K: suite.Point().Null(), C: suite.Point().Null()}
+	var twoTimesNullEnc = libunlynx.CipherText{K: libunlynx.SuiteT.Point().Null(), C: libunlynx.SuiteT.Point().Null()}
 	twoTimesNullEnc.Add(*nullEnc, *nullEnc)
 	twoTimesNullDec := libunlynx.DecryptInt(secKey, twoTimesNullEnc)
 
@@ -98,7 +95,7 @@ func TestHomomorphicOpp(t *testing.T) {
 	cv4 := libunlynx.NewCipherVector(5)
 	cv4.Sub(*cv1, *cv2)
 	cv5 := libunlynx.EncryptInt(pubKey, 2)
-	cv5.MulCipherTextbyScalar(*cv5, suite.Scalar().SetInt64(2))
+	cv5.MulCipherTextbyScalar(*cv5, libunlynx.SuiteT.Scalar().SetInt64(2))
 
 	pAdd := libunlynx.DecryptIntVector(secKey, cv3)
 	pSub := libunlynx.DecryptIntVector(secKey, cv4)
@@ -139,11 +136,11 @@ func TestCryptoKeySwitching(t *testing.T) {
 	target := []int64{1, 2, 3, 4, 5}
 	cv := libunlynx.EncryptIntVector(groupKey, target)
 
-	origEphem := make([]abstract.Point, len(*cv))
+	origEphem := make([]kyber.Point, len(*cv))
 	kscv := make(libunlynx.CipherVector, len(*cv))
 	for i, c := range *cv {
 		origEphem[i] = c.K
-		kscv[i].K = suite.Point().Null()
+		kscv[i].K = libunlynx.SuiteT.Point().Null()
 		kscv[i].C = c.C
 	}
 
@@ -158,8 +155,8 @@ func TestCryptoKeySwitching(t *testing.T) {
 
 // TestEqualDeterministCipherText tests equality between deterministic ciphertexts.
 func TestEqualDeterministCipherText(t *testing.T) {
-	dcv1 := libunlynx.DeterministCipherVector{libunlynx.DeterministCipherText{Point: suite.Point().Base()}, libunlynx.DeterministCipherText{Point: suite.Point().Null()}}
-	dcv2 := libunlynx.DeterministCipherVector{libunlynx.DeterministCipherText{Point: suite.Point().Base()}, libunlynx.DeterministCipherText{Point: suite.Point().Null()}}
+	dcv1 := libunlynx.DeterministCipherVector{libunlynx.DeterministCipherText{Point: libunlynx.SuiteT.Point().Base()}, libunlynx.DeterministCipherText{Point: libunlynx.SuiteT.Point().Null()}}
+	dcv2 := libunlynx.DeterministCipherVector{libunlynx.DeterministCipherText{Point: libunlynx.SuiteT.Point().Base()}, libunlynx.DeterministCipherText{Point: libunlynx.SuiteT.Point().Null()}}
 
 	assert.True(t, dcv1.Equal(&dcv2))
 	assert.True(t, dcv1.Equal(&dcv1))
@@ -181,21 +178,21 @@ func TestEqualDeterministCipherText(t *testing.T) {
 
 // TestAbstractPointsConverter tests the abstract points array converter (to bytes)
 func TestAbstractPointsConverter(t *testing.T) {
-	aps := make([]abstract.Point, 0)
+	aps := make([]kyber.Point, 0)
 
-	clientPrivate := network.Suite.Scalar().Pick(random.Stream)
+	clientPrivate := libunlynx.SuiteT.Scalar().Pick(random.New())
 
 	for i := 0; i < 4; i++ {
-		ap := network.Suite.Point().Mul(network.Suite.Point().Base(), clientPrivate)
+		ap := libunlynx.SuiteT.Point().Mul(clientPrivate, libunlynx.SuiteT.Point().Base())
 		aps = append(aps, ap)
 	}
 
-	aps_bytes := libunlynx.AbstractPointsToBytes(aps)
-	new_aps := libunlynx.BytesToAbstractPoints(aps_bytes)
+	apsBytes := libunlynx.AbstractPointsToBytes(aps)
+	newAps := libunlynx.BytesToAbstractPoints(apsBytes)
 
 	for i, el := range aps {
-		if !reflect.DeepEqual(el.String(), new_aps[i].String()) {
-			t.Fatal("Wrong results, expected", el, "but got", new_aps[i])
+		if !reflect.DeepEqual(el.String(), newAps[i].String()) {
+			t.Fatal("Wrong results, expected", el, "but got", newAps[i])
 		}
 	}
 
@@ -211,10 +208,10 @@ func TestCiphertextConverter(t *testing.T) {
 
 	ctb := ct.ToBytes()
 
-	new_ct := libunlynx.CipherText{}
-	new_ct.FromBytes(ctb)
+	newCT := libunlynx.CipherText{}
+	newCT.FromBytes(ctb)
 
-	p := libunlynx.DecryptInt(secKey, new_ct)
+	p := libunlynx.DecryptInt(secKey, newCT)
 
 	assert.Equal(t, target, p)
 }
@@ -228,10 +225,10 @@ func TestCipherVectorConverter(t *testing.T) {
 
 	cvb, length := cv.ToBytes()
 
-	new_cv := libunlynx.CipherVector{}
-	new_cv.FromBytes(cvb, length)
+	newCV := libunlynx.CipherVector{}
+	newCV.FromBytes(cvb, length)
 
-	p := libunlynx.DecryptIntVector(secKey, &new_cv)
+	p := libunlynx.DecryptIntVector(secKey, &newCV)
 
 	assert.Equal(t, target, p)
 }
@@ -242,10 +239,10 @@ func TestIntArrayToCipherVector(t *testing.T) {
 
 	cipherVect := libunlynx.IntArrayToCipherVector(integers)
 	for i, v := range cipherVect {
-		B := suite.Point().Base()
-		i := suite.Scalar().SetInt64(integers[i])
-		M := suite.Point().Mul(B, i)
-		N := suite.Point().Null()
+		B := libunlynx.SuiteT.Point().Base()
+		i := libunlynx.SuiteT.Scalar().SetInt64(integers[i])
+		M := libunlynx.SuiteT.Point().Mul(i, B)
+		N := libunlynx.SuiteT.Point().Null()
 		assert.Equal(t, v.C, M)
 		assert.Equal(t, v.K, N)
 	}

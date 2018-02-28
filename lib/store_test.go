@@ -3,18 +3,17 @@ package libunlynx_test
 import (
 	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/dedis/crypto.v0/random"
-	"gopkg.in/dedis/onet.v1/network"
 	"strconv"
 	"testing"
+	"github.com/dedis/kyber/util/random"
 )
 
 // TestStoring tests survey store and its methods.
 func TestStoring(t *testing.T) {
 
 	// construction of variables
-	secKey := network.Suite.Scalar().Pick(random.Stream)
-	pubKey := network.Suite.Point().Mul(network.Suite.Point().Base(), secKey)
+	secKey := libunlynx.SuiteT.Scalar().Pick(random.New())
+	pubKey := libunlynx.SuiteT.Point().Mul(secKey, libunlynx.SuiteT.Point().Base())
 
 	// Generate data for aggregating attributes
 	tab := []int64{1, 2, 3, 6}
@@ -61,7 +60,7 @@ func TestStoring(t *testing.T) {
 	// (1) Test Insert and Pull DpResponses
 	storage.InsertDpResponse(libunlynx.DpResponse{GroupByEnc: testEncMap, WhereClear: testClearMap, AggregatingAttributesEnc: testAggrMap1}, true, groupBy, sum, where)
 
-	assert.True(t, (len(storage.PullDpResponses()) == 1))
+	assert.True(t, len(storage.PullDpResponses()) == 1)
 	assert.Empty(t, storage.DpResponses)
 
 	// (2) Test Insert and Pull multiple DpResponses to check aggregation
@@ -75,7 +74,7 @@ func TestStoring(t *testing.T) {
 
 	result := storage.PullDpResponses()
 
-	assert.True(t, (len(result) == 1))
+	assert.True(t, len(result) == 1)
 	assert.Equal(t, result[0].AggregatingAttributes, *sum1)
 
 	// (3) Test empty

@@ -5,7 +5,6 @@ import (
 	"github.com/btcsuite/goleveldb/leveldb/errors"
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/log"
-	"gopkg.in/dedis/onet.v1/network"
 	"os"
 	"strings"
 )
@@ -106,7 +105,7 @@ func DecodeCipherVectorScalar(eCV []CipherVectorScalarBytes) ([]CipherVectorScal
 		cV := CipherVectorScalar{}
 
 		for _, el := range v.S {
-			s := network.Suite.Scalar()
+			s := SuiteT.Scalar()
 			if err := s.UnmarshalBinary(el); err != nil {
 				return slice, err
 			}
@@ -115,12 +114,12 @@ func DecodeCipherVectorScalar(eCV []CipherVectorScalarBytes) ([]CipherVectorScal
 		}
 
 		for _, el := range v.CipherV {
-			k := network.Suite.Point()
+			k := SuiteT.Point()
 			if err := k.UnmarshalBinary(el[0]); err != nil {
 				return slice, err
 			}
 
-			c := network.Suite.Point()
+			c := SuiteT.Point()
 			if err := c.UnmarshalBinary(el[1]); err != nil {
 				return slice, err
 			}

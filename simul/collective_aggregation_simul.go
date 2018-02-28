@@ -9,7 +9,7 @@ import (
 	"gopkg.in/dedis/onet.v1/network"
 )
 
-//var suite = network.Suite
+//var suite = network.SuiteT
 //var grpattr = lib.DeterministCipherText{Point: suite.Point().Base()}
 //var clientPrivate = suite.Scalar().One() //one -> to have the same for each node
 //var clientPublic = suite.Point().Mul(suite.Point().Base(), clientPrivate)

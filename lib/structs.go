@@ -2,12 +2,11 @@
 package libunlynx
 
 import (
-	"gopkg.in/dedis/crypto.v0/abstract"
-	"gopkg.in/dedis/crypto.v0/cipher"
-	"gopkg.in/dedis/onet.v1/network"
+	"github.com/dedis/kyber"
 	"strconv"
 	"strings"
 	"sync"
+	"crypto/cipher"
 )
 
 // Objects
@@ -23,7 +22,7 @@ type TempID uint64
 // corresponding to each element
 type CipherVectorScalar struct {
 	CipherV CipherVector
-	S       []abstract.Scalar
+	S       []kyber.Scalar
 }
 
 // CipherVectorScalarBytes is a CipherVectorScalar in bytes
@@ -150,11 +149,11 @@ func (cv *FilteredResponse) Add(cv1, cv2 FilteredResponse) *FilteredResponse {
 }
 
 // CipherVectorTag computes all the e for a process response based on a seed h
-func (cv *ProcessResponse) CipherVectorTag(h abstract.Point) []abstract.Scalar {
+func (cv *ProcessResponse) CipherVectorTag(h kyber.Point) []kyber.Scalar {
 	aggrAttrLen := len((*cv).AggregatingAttributes)
 	grpAttrLen := len((*cv).GroupByEnc)
 	whereAttrLen := len((*cv).WhereEnc)
-	es := make([]abstract.Scalar, aggrAttrLen+grpAttrLen+whereAttrLen)
+	es := make([]kyber.Scalar, aggrAttrLen+grpAttrLen+whereAttrLen)
 
 	seed, _ := h.MarshalBinary()
 	var wg sync.WaitGroup
@@ -164,7 +163,7 @@ func (cv *ProcessResponse) CipherVectorTag(h abstract.Point) []abstract.Scalar {
 			go func(i int) {
 				defer wg.Done()
 				for j := 0; j < VPARALLELIZE && (j+i < aggrAttrLen+grpAttrLen+whereAttrLen); j++ {
-					es[i+j] = ComputeE(i+j, (*cv), seed, aggrAttrLen, grpAttrLen)
+					es[i+j] = ComputeE(i+j, *cv, seed, aggrAttrLen, grpAttrLen)
 				}
 
 			}(i)
@@ -174,7 +173,7 @@ func (cv *ProcessResponse) CipherVectorTag(h abstract.Point) []abstract.Scalar {
 	} else {
 		for i := 0; i < aggrAttrLen+grpAttrLen+whereAttrLen; i++ {
 			//+detAttrLen
-			es[i] = ComputeE(i, (*cv), seed, aggrAttrLen, grpAttrLen)
+			es[i] = ComputeE(i, *cv, seed, aggrAttrLen, grpAttrLen)
 		}
 
 	}
@@ -182,11 +181,11 @@ func (cv *ProcessResponse) CipherVectorTag(h abstract.Point) []abstract.Scalar {
 }
 
 // ComputeE computes e used in a shuffle proof. Computation based on a public seed.
-func ComputeE(index int, cv ProcessResponse, seed []byte, aggrAttrLen, grpAttrLen int) abstract.Scalar {
+func ComputeE(index int, cv ProcessResponse, seed []byte, aggrAttrLen, grpAttrLen int) kyber.Scalar {
 	var dataC []byte
 	var dataK []byte
 
-	randomCipher := network.Suite.Cipher(seed)
+	randomCipher := SuiteT.XOF(seed)
 
 	if index < aggrAttrLen {
 		dataC, _ = cv.AggregatingAttributes[index].C.MarshalBinary()
@@ -199,34 +198,37 @@ func ComputeE(index int, cv ProcessResponse, seed []byte, aggrAttrLen, grpAttrLe
 		dataC, _ = cv.WhereEnc[index-aggrAttrLen-grpAttrLen].C.MarshalBinary()
 		dataK, _ = cv.WhereEnc[index-aggrAttrLen-grpAttrLen].K.MarshalBinary()
 	}
-	randomCipher.Message(nil, nil, dataC)
-	randomCipher.Message(nil, nil, dataK)
 
-	return network.Suite.Scalar().Pick(randomCipher)
+	randomCipher.Write(dataC)
+	randomCipher.Write(dataK)
+	//randomCipher.Message(nil, nil, dataC)
+	//randomCipher.Message(nil, nil, dataK)
+
+	return SuiteT.Scalar().Pick(randomCipher)
 }
 
 // DpClearResponse
 //______________________________________________________________________________________________________________________
 
 // EncryptDpClearResponse encrypts a DP response
-func EncryptDpClearResponse(ccr DpClearResponse, encryptionKey abstract.Point, count bool) DpResponseToSend {
+func EncryptDpClearResponse(ccr DpClearResponse, encryptionKey kyber.Point, count bool) DpResponseToSend {
 	cr := DpResponseToSend{}
 	cr.GroupByClear = ccr.GroupByClear
 	cr.GroupByEnc = make(map[string][]byte, len(ccr.GroupByEnc))
 	for i, v := range ccr.GroupByEnc {
-		cr.GroupByEnc[i] = ((*EncryptInt(encryptionKey, v)).ToBytes())
+		cr.GroupByEnc[i] = (*EncryptInt(encryptionKey, v)).ToBytes()
 	}
 	//cr.GroupByEnc = *EncryptIntVector(encryptionKey, ccr.GroupByEnc)
 	cr.WhereClear = ccr.WhereClear
 	cr.WhereEnc = make(map[string][]byte, len(ccr.WhereEnc))
 	for i, v := range ccr.WhereEnc {
-		cr.WhereEnc[i] = ((*EncryptInt(encryptionKey, v)).ToBytes())
+		cr.WhereEnc[i] = (*EncryptInt(encryptionKey, v)).ToBytes()
 	}
 	//cr.WhereEnc = *EncryptIntVector(encryptionKey, ccr.WhereEnc)
 	cr.AggregatingAttributesClear = ccr.AggregatingAttributesClear
 	cr.AggregatingAttributesEnc = make(map[string][]byte, len(ccr.AggregatingAttributesEnc))
 	for i, v := range ccr.AggregatingAttributesEnc {
-		cr.AggregatingAttributesEnc[i] = ((*EncryptInt(encryptionKey, v)).ToBytes())
+		cr.AggregatingAttributesEnc[i] = (*EncryptInt(encryptionKey, v)).ToBytes()
 	}
 	if count {
 		cr.AggregatingAttributesEnc["count"] = (*EncryptInt(encryptionKey, int64(1))).ToBytes()
@@ -239,34 +241,34 @@ func EncryptDpClearResponse(ccr DpClearResponse, encryptionKey abstract.Point, c
 //______________________________________________________________________________________________________________________
 
 // CreatePrecomputedRandomize creates precomputed values for shuffling using public key and size parameters
-func CreatePrecomputedRandomize(g, h abstract.Point, rand cipher.Stream, lineSize, nbrLines int) []CipherVectorScalar {
+func CreatePrecomputedRandomize(g, h kyber.Point, rand cipher.Stream, lineSize, nbrLines int) []CipherVectorScalar {
 	result := make([]CipherVectorScalar, nbrLines)
 	wg := StartParallelize(len(result))
 	var mutex sync.Mutex
 	for i := range result {
 		result[i].CipherV = make(CipherVector, lineSize)
-		result[i].S = make([]abstract.Scalar, lineSize)
+		result[i].S = make([]kyber.Scalar, lineSize)
 		if PARALLELIZE {
 			go func(i int) {
 				defer (*wg).Done()
 
 				for w := range result[i].CipherV {
 					mutex.Lock()
-					tmp := network.Suite.Scalar().Pick(rand)
+					tmp := SuiteT.Scalar().Pick(rand)
 					mutex.Unlock()
 
 					result[i].S[w] = tmp
-					result[i].CipherV[w].K = network.Suite.Point().Mul(g, tmp)
-					result[i].CipherV[w].C = network.Suite.Point().Mul(h, tmp)
+					result[i].CipherV[w].K = SuiteT.Point().Mul(tmp, g)
+					result[i].CipherV[w].C = SuiteT.Point().Mul(tmp, h)
 				}
 
 			}(i)
 		} else {
 			for w := range result[i].CipherV {
-				tmp := network.Suite.Scalar().Pick(rand)
+				tmp := SuiteT.Scalar().Pick(rand)
 				result[i].S[w] = tmp
-				result[i].CipherV[w].K = network.Suite.Point().Mul(g, tmp)
-				result[i].CipherV[w].C = network.Suite.Point().Mul(h, tmp)
+				result[i].CipherV[w].K = SuiteT.Point().Mul(tmp, g)
+				result[i].CipherV[w].C = SuiteT.Point().Mul(tmp, h)
 			}
 		}
 	}
@@ -299,8 +301,8 @@ func (cv *FilteredResponse) FromBytes(data []byte, aabLength, pgaebLength int) {
 	(*cv).AggregatingAttributes = make(CipherVector, aabLength)
 	(*cv).GroupByEnc = make(CipherVector, pgaebLength)
 
-	aabByteLength := (aabLength * 64) //CAREFUL: hardcoded 64 (size of el-gamal element C,K)
-	pgaebByteLength := (pgaebLength * 64)
+	aabByteLength := aabLength * 64 //CAREFUL: hardcoded 64 (size of el-gamal element C,K)
+	pgaebByteLength := pgaebLength * 64
 
 	aab := data[:aabByteLength]
 	pgaeb := data[aabByteLength : aabByteLength+pgaebByteLength]
@@ -326,8 +328,8 @@ func (crd *FilteredResponseDet) FromBytes(data []byte, gacbLength, aabLength, dt
 	(*crd).Fr.AggregatingAttributes = make(CipherVector, aabLength)
 	(*crd).Fr.GroupByEnc = make(CipherVector, gacbLength)
 
-	aabByteLength := (aabLength * 64) //CAREFUL: hardcoded 64 (size of el-gamal element C,K)
-	gacbByteLength := (gacbLength * 64)
+	aabByteLength := aabLength * 64 //CAREFUL: hardcoded 64 (size of el-gamal element C,K)
+	gacbByteLength := gacbLength * 64
 
 	aab := data[:aabByteLength]
 	gacb := data[aabByteLength : gacbByteLength+aabByteLength]
@@ -363,9 +365,9 @@ func (cv *ProcessResponse) FromBytes(data []byte, gacbLength, aabLength, pgaebLe
 	(*cv).WhereEnc = make(CipherVector, pgaebLength)
 	(*cv).GroupByEnc = make(CipherVector, gacbLength)
 
-	gacbByteLength := (gacbLength * 64)
-	aabByteLength := (aabLength * 64) //CAREFUL: hardcoded 64 (size of el-gamal element C,K)
-	pgaebByteLength := (pgaebLength * 64)
+	gacbByteLength := gacbLength * 64
+	aabByteLength := aabLength * 64 //CAREFUL: hardcoded 64 (size of el-gamal element C,K)
+	pgaebByteLength := pgaebLength * 64
 
 	gacb := data[:gacbByteLength]
 	aab := data[gacbByteLength : gacbByteLength+aabByteLength]
@@ -396,9 +398,9 @@ func (crd *ProcessResponseDet) FromBytes(data []byte, gacbLength, aabLength, pga
 	(*crd).PR.WhereEnc = make(CipherVector, pgaebLength)
 	(*crd).PR.GroupByEnc = make(CipherVector, gacbLength)
 
-	aabByteLength := (aabLength * 64) //CAREFUL: hardcoded 64 (size of el-gamal element C,K)
-	pgaebByteLength := (pgaebLength * 64)
-	gacbByteLength := (gacbLength * 64)
+	aabByteLength := aabLength * 64 //CAREFUL: hardcoded 64 (size of el-gamal element C,K)
+	pgaebByteLength := pgaebLength * 64
+	gacbByteLength := gacbLength * 64
 
 	gacb := data[:gacbByteLength]
 	aab := data[gacbByteLength : gacbByteLength+aabByteLength]
@@ -442,7 +444,7 @@ func (dr *DpResponse) FromDpResponseToSend(dprts DpResponseToSend) {
 }
 
 // joinAttributes joins clear and encrypted attributes into one encrypted container (CipherVector)
-func joinAttributes(clear, enc map[string]int64, identifier string, encryptionKey abstract.Point) CipherVector {
+func joinAttributes(clear, enc map[string]int64, identifier string, encryptionKey kyber.Point) CipherVector {
 	clearContainer := ConvertMapToData(clear, identifier, 0)
 	encContainer := ConvertMapToData(enc, identifier, len(clear))
 
@@ -459,7 +461,7 @@ func joinAttributes(clear, enc map[string]int64, identifier string, encryptionKe
 }
 
 // FromDpClearResponseToProcess converts a DpClearResponse struct to a ProcessResponse struct
-func (dcr *DpClearResponse) FromDpClearResponseToProcess(encryptionKey abstract.Point) ProcessResponse {
+func (dcr *DpClearResponse) FromDpClearResponseToProcess(encryptionKey kyber.Point) ProcessResponse {
 	result := ProcessResponse{}
 
 	result.AggregatingAttributes = joinAttributes(dcr.AggregatingAttributesClear, dcr.AggregatingAttributesEnc, "s", encryptionKey)

@@ -2,13 +2,12 @@ package libunlynx_test
 
 import (
 	"github.com/lca1/unlynx/lib"
+	"github.com/dedis/kyber/util/random"
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/dedis/crypto.v0/random"
-	"gopkg.in/dedis/onet.v1"
-	"gopkg.in/dedis/onet.v1/log"
-	"gopkg.in/dedis/onet.v1/network"
-	"os"
+	"github.com/dedis/onet"
+	"github.com/dedis/onet/log"
 	"testing"
+	"os"
 )
 
 func TestShuffleSequence(t *testing.T) {
@@ -16,10 +15,10 @@ func TestShuffleSequence(t *testing.T) {
 	k := 10
 
 	collectivePubKey, priv, _ := libunlynx.GenKeys(k)
-	collectivePrivKey := network.Suite.Scalar()
+	collectivePrivKey := libunlynx.SuiteT.Scalar()
 
 	for i := 0; i < len(priv); i++ {
-		collectivePrivKey = network.Suite.Scalar().Add(collectivePrivKey, priv[i])
+		collectivePrivKey = libunlynx.SuiteT.Scalar().Add(collectivePrivKey, priv[i])
 	}
 
 	inputList := make([]libunlynx.ProcessResponse, k)
@@ -67,7 +66,7 @@ func TestPrecomputationWritingForShuffling(t *testing.T) {
 	defer local.CloseAll()
 
 	lineSize := 10
-	secret := network.Suite.Scalar().Pick(random.Stream)
+	secret := libunlynx.SuiteT.Scalar().Pick(random.New())
 
 	precompute := libunlynx.PrecomputationWritingForShuffling(false, "pre_compute_multiplications.gob", "test_server", secret, el.Aggregate, lineSize)
 	assert.Equal(t, len(precompute), lineSize)

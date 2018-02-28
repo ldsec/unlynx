@@ -32,7 +32,7 @@ func TestAddRmServer(t *testing.T) {
 	secKeyAddRm := network.Suite.Scalar().Pick(random.Stream)
 
 	//addition
-	//secKeyAfter := network.Suite.Scalar().Add(secKey, secKeyAddRm)
+	//secKeyAfter := network.SuiteT.Scalar().Add(secKey, secKeyAddRm)
 	//substraction
 	secKeyAfter := network.Suite.Scalar().Sub(secKey, secKeyAddRm)
 
