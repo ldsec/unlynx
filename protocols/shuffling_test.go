@@ -7,34 +7,34 @@ import (
 
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/protocols"
-	"gopkg.in/dedis/crypto.v0/abstract"
-	"gopkg.in/dedis/crypto.v0/random"
-	"gopkg.in/dedis/onet.v1"
-	"gopkg.in/dedis/onet.v1/log"
-	"gopkg.in/dedis/onet.v1/network"
+	"github.com/dedis/kyber"
+	"github.com/dedis/onet"
+	"github.com/dedis/onet/network"
+	"github.com/dedis/onet/log"
 )
 
 var nbrNodes = 5
-var priv = make([]abstract.Scalar, nbrNodes)
-var pub = make([]abstract.Point, nbrNodes)
-var groupPub = network.Suite.Point().Null()
-var groupSec = network.Suite.Scalar().Zero()
+var priv = make([]kyber.Scalar, nbrNodes)
+var pub = make([]kyber.Point, nbrNodes)
+var groupPub = libunlynx.SuiTe.Point().Null()
+var groupSec = libunlynx.SuiTe.Scalar().Zero()
 
 var precomputes = make([][]libunlynx.CipherVectorScalar, nbrNodes)
 
 func TestShuffling(t *testing.T) {
 	defer log.AfterTest(t)
-	local := onet.NewLocalTest()
+	local := onet.NewLocalTest(libunlynx.SuiTe)
 	log.TestOutput(testing.Verbose(), 1)
 
 	for i := 0; i < nbrNodes; i++ {
-		priv[i] = network.Suite.Scalar().Pick(random.Stream)
-		pub[i] = network.Suite.Point().Mul(network.Suite.Point().Base(), priv[i])
+		priv[i] = libunlynx.SuiTe.Scalar().Pick(libunlynx.SuiTe.RandomStream())
+		pub[i] = libunlynx.SuiTe.Point().Mul(priv[i], libunlynx.SuiTe.Point().Base())
 		groupPub.Add(groupPub, pub[i])
 		groupSec.Add(groupSec, priv[i])
 	}
 	for i := 0; i < nbrNodes; i++ {
-		precomputes[i] = libunlynx.CreatePrecomputedRandomize(network.Suite.Point().Base(), groupPub, network.Suite.Cipher(priv[i].Bytes()), 4, 10)
+		privBytes, _ := priv[i].MarshalBinary()
+		precomputes[i] = libunlynx.CreatePrecomputedRandomize(libunlynx.SuiTe.Point().Base(), groupPub, libunlynx.SuiTe.XOF(privBytes), 4, 10)
 	}
 	aggregateKey := groupPub
 
