@@ -1,8 +1,6 @@
 package protocolsunlynx_test
 
 import (
-	"testing"
-	"time"
 	"github.com/dedis/kyber/util/random"
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
@@ -11,6 +9,8 @@ import (
 	"github.com/lca1/unlynx/protocols"
 	"github.com/stretchr/testify/assert"
 	"strconv"
+	"testing"
+	"time"
 )
 
 func TestAddRmServer(t *testing.T) {

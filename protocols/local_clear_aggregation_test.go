@@ -1,14 +1,14 @@
 package protocolsunlynx_test
 
 import (
-	"testing"
-	"time"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/protocols"
 	"github.com/lca1/unlynx/services/default/data"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/dedis/onet.v1"
 	"gopkg.in/dedis/onet.v1/network"
+	"testing"
+	"time"
 )
 
 func TestLocalClearAggregation(t *testing.T) {
