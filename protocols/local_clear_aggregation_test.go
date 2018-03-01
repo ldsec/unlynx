@@ -7,12 +7,12 @@ import (
 	"github.com/lca1/unlynx/protocols"
 	"github.com/lca1/unlynx/services/default/data"
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/dedis/onet.v1"
-	"gopkg.in/dedis/onet.v1/network"
+	"github.com/dedis/onet"
+	"github.com/dedis/onet/network"
 )
 
 func TestLocalClearAggregation(t *testing.T) {
-	local := onet.NewLocalTest()
+	local := onet.NewLocalTest(libunlynx.SuiTe)
 	_, _, tree := local.GenTree(1, true)
 
 	defer local.CloseAll()

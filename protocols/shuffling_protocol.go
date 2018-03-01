@@ -10,10 +10,10 @@ import (
 	"errors"
 
 	"github.com/lca1/unlynx/lib"
-	"gopkg.in/dedis/crypto.v0/abstract"
-	"gopkg.in/dedis/onet.v1"
-	"gopkg.in/dedis/onet.v1/log"
-	"gopkg.in/dedis/onet.v1/network"
+	"github.com/dedis/kyber"
+	"github.com/dedis/onet"
+	"github.com/dedis/onet/log"
+	"github.com/dedis/onet/network"
 	"sync"
 	"time"
 )
@@ -90,7 +90,7 @@ type ShufflingProtocol struct {
 	nextNodeInCircuit *onet.TreeNode
 	TargetOfShuffle   *[]libunlynx.ProcessResponse
 
-	CollectiveKey abstract.Point //only use in order to test the protocol
+	CollectiveKey kyber.Point //only use in order to test the protocol
 	Proofs        bool
 	Precomputed   []libunlynx.CipherVectorScalar
 }
@@ -224,7 +224,7 @@ func (p *ShufflingProtocol) Dispatch() error {
 
 	shuffledData := shufflingTarget
 	var pi []int
-	var beta [][]abstract.Scalar
+	var beta [][]kyber.Scalar
 
 	if !p.IsRoot() {
 		roundShuffle := libunlynx.StartTimer(p.Name() + "_Shuffling(DISPATCH-noProof)")
