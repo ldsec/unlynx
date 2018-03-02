@@ -4,10 +4,9 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/protocols"
-	"gopkg.in/dedis/crypto.v0/random"
-	"gopkg.in/dedis/onet.v1"
-	"gopkg.in/dedis/onet.v1/log"
-	"gopkg.in/dedis/onet.v1/network"
+	"github.com/dedis/kyber/util/random"
+	"github.com/dedis/onet"
+	"github.com/dedis/onet/log"
 	"strconv"
 )
 
@@ -67,9 +66,9 @@ func (sim *AddRmSimulation) Run(config *onet.SimulationConfig) error {
 
 		root := rooti.(*protocolsunlynx.AddRmServerProtocol)
 
-		secKey := network.Suite.Scalar().Pick(random.Stream)
-		newSecKey := network.Suite.Scalar().Pick(random.Stream)
-		pubKey := network.Suite.Point().Mul(network.Suite.Point().Base(), secKey)
+		secKey := libunlynx.SuiTe.Scalar().Pick(random.New())
+		newSecKey := libunlynx.SuiTe.Scalar().Pick(random.New())
+		pubKey := libunlynx.SuiTe.Point().Mul(secKey, libunlynx.SuiTe.Point().Base())
 
 		//generate set of grouping attributes (for this protocol they should all be encrypted)
 		group := make(map[string]libunlynx.CipherText)

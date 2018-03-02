@@ -4,20 +4,14 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/protocols"
-	"gopkg.in/dedis/onet.v1"
-	"gopkg.in/dedis/onet.v1/log"
-	"gopkg.in/dedis/onet.v1/network"
+	"github.com/dedis/onet"
+	"github.com/dedis/onet/log"
 )
 
-//var suite = network.SuiTe
-//var grpattr = lib.DeterministCipherText{Point: suite.Point().Base()}
-//var clientPrivate = suite.Scalar().One() //one -> to have the same for each node
-//var clientPublic = suite.Point().Mul(suite.Point().Base(), clientPrivate)
-
 func createDataSet(numberGroups, numberAttributes, numberGroupAttr int) map[libunlynx.GroupingKey]libunlynx.FilteredResponse {
-	var secContrib = network.Suite.Scalar().One()
-	var clientPrivate = network.Suite.Scalar().One() //one -> to have the same for each node
-	var clientPublic = network.Suite.Point().Mul(network.Suite.Point().Base(), clientPrivate)
+	var secContrib = libunlynx.SuiTe.Scalar().One()
+	var clientPrivate = libunlynx.SuiTe.Scalar().One() //one -> to have the same for each node
+	var clientPublic = libunlynx.SuiTe.Point().Mul(clientPrivate, libunlynx.SuiTe.Point().Base())
 
 	testCVMap := make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse)
 

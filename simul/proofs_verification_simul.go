@@ -4,12 +4,11 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/protocols"
-	"gopkg.in/dedis/crypto.v0/abstract"
-	"gopkg.in/dedis/crypto.v0/random"
-	"gopkg.in/dedis/onet.v1"
-	"gopkg.in/dedis/onet.v1/log"
-	"gopkg.in/dedis/onet.v1/network"
+	"github.com/dedis/onet"
+	"github.com/dedis/onet/log"
+	"github.com/dedis/kyber/util/random"
 	"math"
+	"github.com/dedis/kyber"
 )
 
 func init() {
@@ -60,10 +59,10 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 		}
 
 		root := rooti.(*protocolsunlynx.ProofsVerificationProtocol)
-		secKey := network.Suite.Scalar().Pick(random.Stream)
-		pubKey := network.Suite.Point().Mul(network.Suite.Point().Base(), secKey)
-		secKeyNew := network.Suite.Scalar().Pick(random.Stream)
-		pubKeyNew := network.Suite.Point().Mul(network.Suite.Point().Base(), secKeyNew)
+		secKey := libunlynx.SuiTe.Scalar().Pick(random.New())
+		pubKey := libunlynx.SuiTe.Point().Mul(secKey, libunlynx.SuiTe.Point().Base())
+		secKeyNew := libunlynx.SuiTe.Scalar().Pick(random.New())
+		pubKeyNew := libunlynx.SuiTe.Point().Mul(secKeyNew, libunlynx.SuiTe.Point().Base())
 		tab := make([]int64, sim.NbrAggrAttributes+sim.NbrGroupAttributes)
 
 		// key switching **********************************************************
@@ -72,7 +71,7 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 		}
 		cipherVect := *libunlynx.EncryptIntVector(pubKey, tab)
 
-		origEphemKeys := make([]abstract.Point, len(cipherVect))
+		origEphemKeys := make([]kyber.Point, len(cipherVect))
 		origCipherVector := *libunlynx.NewCipherVector(len(cipherVect))
 		for i, v := range cipherVect {
 			origEphemKeys[i] = v.K
@@ -99,7 +98,7 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 		tagSwitchedVect := libunlynx.NewCipherVector(len(cipherVect))
 		tagSwitchedVect.DeterministicTagging(&cipherVect, secKey, secKeyNew)
 		cps1 := libunlynx.VectorDeterministicTagProofCreation(cipherVect, *tagSwitchedVect, secKeyNew, secKey)
-		newContrib := network.Suite.Point().Mul(network.Suite.Point().Base(), secKeyNew)
+		newContrib := libunlynx.SuiTe.Point().Mul(secKeyNew, libunlynx.SuiTe.Point().Base())
 		pdhp := libunlynx.PublishedDeterministicTaggingProof{Dhp: cps1, VectBefore: cipherVect, VectAfter: *tagSwitchedVect, K: pubKey, SB: newContrib}
 		deterministicTaggingProofs := make([]libunlynx.PublishedDeterministicTaggingProof, sim.NbrResponses*sim.NbrServers)
 
@@ -115,10 +114,10 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 		cipherVect = *libunlynx.EncryptIntVector(pubKey, tab)
 
 		var deterministicTaggingAddProofs []libunlynx.PublishedDetTagAdditionProof
-		toAdd := network.Suite.Point().Mul(network.Suite.Point().Base(), secKeyNew)
+		toAdd := libunlynx.SuiTe.Point().Mul(secKeyNew, libunlynx.SuiTe.Point().Base())
 
 		for i := range cipherVect {
-			tmp := network.Suite.Point().Add(cipherVect[i].C, toAdd)
+			tmp := libunlynx.SuiTe.Point().Add(cipherVect[i].C, toAdd)
 			prf := libunlynx.DetTagAdditionProofCreation(cipherVect[i].C, secKeyNew, toAdd, tmp)
 			deterministicTaggingAddProofs = append(deterministicTaggingAddProofs, prf)
 		}
