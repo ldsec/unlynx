@@ -4,8 +4,8 @@ import (
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/services/default"
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/dedis/onet.v1"
-	"gopkg.in/dedis/onet.v1/log"
+	"github.com/dedis/onet"
+	"github.com/dedis/onet/log"
 	"os"
 	"reflect"
 	"strconv"
@@ -103,7 +103,7 @@ func TestServiceClearAttr(t *testing.T) {
 	log.Lvl1("***************************************************************************************************")
 	os.Remove("pre_compute_multiplications.gob")
 	log.SetDebugVisible(2)
-	local := onet.NewLocalTest()
+	local := onet.NewLocalTest(libunlynx.SuiTe)
 	// generate 5 hosts, they don't connect, they process messages, and they
 	// don't register the tree or entitylist
 	_, el, _ := local.GenTree(5, true)
@@ -209,7 +209,7 @@ func TestServiceClearGrpEncWhereAttr(t *testing.T) {
 	log.Lvl1("***************************************************************************************************")
 	os.Remove("pre_compute_multiplications.gob")
 	log.SetDebugVisible(2)
-	local := onet.NewLocalTest()
+	local := onet.NewLocalTest(libunlynx.SuiTe)
 	// generate 5 hosts, they don't connect, they process messages, and they
 	// don't register the tree or entitylist
 	_, el, _ := local.GenTree(5, true)
@@ -308,7 +308,7 @@ func TestServiceEncGrpClearWhereAttr(t *testing.T) {
 	log.Lvl1("***************************************************************************************************")
 	os.Remove("pre_compute_multiplications.gob")
 	log.SetDebugVisible(2)
-	local := onet.NewLocalTest()
+	local := onet.NewLocalTest(libunlynx.SuiTe)
 	// generate 5 hosts, they don't connect, they process messages, and they
 	// don't register the tree or entitylist
 	_, el, _ := local.GenTree(5, true)
@@ -408,7 +408,7 @@ func TestServiceEncGrpAndWhereAttr(t *testing.T) {
 	log.Lvl1("***************************************************************************************************")
 	os.Remove("pre_compute_multiplications.gob")
 	log.SetDebugVisible(2)
-	local := onet.NewLocalTest()
+	local := onet.NewLocalTest(libunlynx.SuiTe)
 	// generate 5 hosts, they don't connect, they process messages, and they
 	// don't register the tree or entitylist
 	_, el, _ := local.GenTree(5, true)
@@ -511,7 +511,7 @@ func TestServiceEverything(t *testing.T) {
 	log.Lvl1("***************************************************************************************************")
 	os.Remove("pre_compute_multiplications.gob")
 	log.SetDebugVisible(2)
-	local := onet.NewLocalTest()
+	local := onet.NewLocalTest(libunlynx.SuiTe)
 	// generate 5 hosts, they don't connect, they process messages, and they
 	// don't register the tree or entitylist
 	_, el, _ := local.GenTree(5, true)
@@ -610,7 +610,7 @@ func TestServiceEncGrpAndWhereAttrWithCount(t *testing.T) {
 	log.Lvl1("***************************************************************************************************")
 	os.Remove("pre_compute_multiplications.gob")
 	log.SetDebugVisible(2)
-	local := onet.NewLocalTest()
+	local := onet.NewLocalTest(libunlynx.SuiTe)
 	// generate 5 hosts, they don't connect, they process messages, and they
 	// don't register the tree or entitylist
 	_, el, _ := local.GenTree(5, true)
@@ -712,7 +712,7 @@ func TestAllServersNoDPs(t *testing.T) {
 	log.Lvl1("***************************************************************************************************")
 	os.Remove("pre_compute_multiplications.gob")
 	log.SetDebugVisible(2)
-	local := onet.NewLocalTest()
+	local := onet.NewLocalTest(libunlynx.SuiTe)
 	// generate 5 hosts, they don't connect, they process messages, and they
 	// don't register the tree or entitylist
 	_, el, _ := local.GenTree(5, true)
@@ -815,7 +815,7 @@ func TestAllServersRandomDPs(t *testing.T) {
 	log.Lvl1("***************************************************************************************************")
 	os.Remove("pre_compute_multiplications.gob")
 	log.SetDebugVisible(2)
-	local := onet.NewLocalTest()
+	local := onet.NewLocalTest(libunlynx.SuiTe)
 	// generate 5 hosts, they don't connect, they process messages, and they
 	// don't register the tree or entitylist
 	_, el, _ := local.GenTree(5, true)
@@ -929,7 +929,7 @@ func TestConcurrentSurveys(t *testing.T) {
 	log.Lvl1("***************************************************************************************************")
 	os.Remove("pre_compute_multiplications.gob")
 	log.SetDebugVisible(2)
-	local := onet.NewLocalTest()
+	local := onet.NewLocalTest(libunlynx.SuiTe)
 	// generate 5 hosts, they don't connect, they process messages, and they
 	// don't register the tree or entitylist
 	_, el, _ := local.GenTree(5, true)
