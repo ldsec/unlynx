@@ -21,7 +21,6 @@ type API struct {
 // NewUnLynxClient constructor of a client.
 func NewUnLynxClient(entryPoint *network.ServerIdentity, clientID string) *API {
 	keys := key.NewKeyPair(libunlynx.SuiTe)
-
 	newClient := &API{
 
 		Client:     onet.NewClient(libunlynx.SuiTe, ServiceName),

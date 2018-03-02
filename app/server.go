@@ -1,12 +1,11 @@
 package appunlynx
 
 import (
+	"github.com/dedis/onet/app"
 	"gopkg.in/urfave/cli.v1"
 
 	// Empty imports to have the init-functions called which should
 	// register the protocol
-	"github.com/dedis/onet/app"
-	// both these blank space imports are necessary to make the app work (onet requirement)
 	_ "github.com/lca1/unlynx/protocols"
 	_ "github.com/lca1/unlynx/services/default"
 )
