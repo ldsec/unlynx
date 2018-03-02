@@ -1,21 +1,20 @@
 package protocolsunlynx_test
 
 import (
-	"reflect"
-	"testing"
-	"time"
-
+	"github.com/dedis/kyber/util/random"
+	"github.com/dedis/onet"
+	"github.com/dedis/onet/log"
+	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/protocols"
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/dedis/crypto.v0/random"
-	"gopkg.in/dedis/onet.v1"
-	"gopkg.in/dedis/onet.v1/log"
-	"gopkg.in/dedis/onet.v1/network"
+	"reflect"
+	"testing"
+	"time"
 )
 
 func TestDeterministicTagging(t *testing.T) {
-	local := onet.NewLocalTest()
+	local := onet.NewLocalTest(libunlynx.SuiTe)
 
 	// You must register this protocol before creating the servers
 	onet.GlobalProtocolRegister("DeterministicTaggingTest", NewDeterministicTaggingTest)
@@ -107,11 +106,10 @@ func TestDeterministicTagging(t *testing.T) {
 
 // NewDeterministicTaggingTest is a special purpose protocol constructor specific to tests.
 func NewDeterministicTaggingTest(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
-
 	pi, err := protocolsunlynx.NewDeterministicTaggingProtocol(tni)
 	protocol := pi.(*protocolsunlynx.DeterministicTaggingProtocol)
 	protocol.Proofs = true
-	clientPrivate := network.Suite.Scalar().Pick(random.Stream)
+	clientPrivate := libunlynx.SuiTe.Scalar().Pick(random.New())
 	protocol.SurveySecretKey = &clientPrivate
 
 	return protocol, err

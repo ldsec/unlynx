@@ -3,9 +3,9 @@
 package protocolsunlynx
 
 import (
+	"github.com/dedis/onet"
+	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
-	"gopkg.in/dedis/onet.v1"
-	"gopkg.in/dedis/onet.v1/log"
 )
 
 // LocalClearAggregationProtocolName is the registered name for the local cleartext aggregation protocol.

@@ -2,13 +2,12 @@ package main
 
 import (
 	"github.com/BurntSushi/toml"
+	"github.com/dedis/kyber/util/random"
+	"github.com/dedis/onet"
+	"github.com/dedis/onet/log"
+	"github.com/dedis/onet/simul/monitor"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/protocols"
-	"gopkg.in/dedis/crypto.v0/random"
-	"gopkg.in/dedis/onet.v1"
-	"gopkg.in/dedis/onet.v1/log"
-	"gopkg.in/dedis/onet.v1/network"
-	"gopkg.in/dedis/onet.v1/simul/monitor"
 )
 
 func init() {
@@ -116,7 +115,7 @@ func NewDeterministicTaggingSimul(tni *onet.TreeNodeInstance, sim *Deterministic
 
 		pap.TargetOfSwitch = &processResponses
 	}
-	tempKey := network.Suite.Scalar().Pick(random.Stream)
+	tempKey := libunlynx.SuiTe.Scalar().Pick(random.New())
 	pap.SurveySecretKey = &tempKey
 
 	return pap, err

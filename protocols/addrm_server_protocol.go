@@ -4,11 +4,10 @@
 package protocolsunlynx
 
 import (
+	"github.com/dedis/kyber"
+	"github.com/dedis/onet"
+	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
-	"gopkg.in/dedis/crypto.v0/abstract"
-	"gopkg.in/dedis/onet.v1"
-	"gopkg.in/dedis/onet.v1/log"
-	"gopkg.in/dedis/onet.v1/network"
 )
 
 // AddRmServerProtocolName is the registered name for the local aggregation protocol.
@@ -30,7 +29,7 @@ type AddRmServerProtocol struct {
 
 	// Protocol state data
 	TargetOfTransformation []libunlynx.DpResponse
-	KeyToRm                abstract.Scalar
+	KeyToRm                kyber.Scalar
 	Proofs                 bool
 	Add                    bool
 }
@@ -119,24 +118,24 @@ func (p *AddRmServerProtocol) Dispatch() error {
 	return nil
 }
 
-func changeEncryptionKeyMapCipherTexts(cv map[string]libunlynx.CipherText, serverAddRmKey abstract.Scalar, toAdd bool) map[string]libunlynx.CipherText {
+func changeEncryptionKeyMapCipherTexts(cv map[string]libunlynx.CipherText, serverAddRmKey kyber.Scalar, toAdd bool) map[string]libunlynx.CipherText {
 	result := make(map[string]libunlynx.CipherText, len(cv))
 	for j, w := range cv {
-		tmp := network.Suite.Point().Mul(w.K, serverAddRmKey)
-		copy := result[j]
-		copy.K = w.K
+		tmp := libunlynx.SuiTe.Point().Mul(serverAddRmKey, w.K)
+		copyAux := result[j]
+		copyAux.K = w.K
 		if toAdd {
-			copy.C = network.Suite.Point().Add(w.C, tmp)
+			copyAux.C = libunlynx.SuiTe.Point().Add(w.C, tmp)
 
 		} else {
-			copy.C = network.Suite.Point().Sub(w.C, tmp)
+			copyAux.C = libunlynx.SuiTe.Point().Sub(w.C, tmp)
 		}
-		result[j] = copy
+		result[j] = copyAux
 	}
 	return result
 }
 
-func changeEncryption(response libunlynx.DpResponse, keyToRm abstract.Scalar, add bool) libunlynx.DpResponse {
+func changeEncryption(response libunlynx.DpResponse, keyToRm kyber.Scalar, add bool) libunlynx.DpResponse {
 	result := libunlynx.DpResponse{}
 
 	result.GroupByClear = response.GroupByClear
@@ -148,7 +147,7 @@ func changeEncryption(response libunlynx.DpResponse, keyToRm abstract.Scalar, ad
 	return result
 }
 
-func proofsCreation(pubs []libunlynx.PublishedAddRmProof, target, v libunlynx.DpResponse, keyToRm abstract.Scalar, add bool) {
+func proofsCreation(pubs []libunlynx.PublishedAddRmProof, target, v libunlynx.DpResponse, keyToRm kyber.Scalar, add bool) {
 	targetAggregatingAttributesEnc := target.AggregatingAttributesEnc
 	targetGroupingAttributes := target.GroupByEnc
 	targetWhereAttributes := target.WhereEnc
@@ -156,7 +155,7 @@ func proofsCreation(pubs []libunlynx.PublishedAddRmProof, target, v libunlynx.Dp
 	prfAggr := libunlynx.VectorAddRmProofCreation(targetAggregatingAttributesEnc, v.AggregatingAttributesEnc, keyToRm, add)
 	prfGrp := libunlynx.VectorAddRmProofCreation(targetGroupingAttributes, v.GroupByEnc, keyToRm, add)
 	prfWhere := libunlynx.VectorAddRmProofCreation(targetWhereAttributes, v.WhereEnc, keyToRm, add)
-	ktopub := network.Suite.Point().Mul(network.Suite.Point().Base(), keyToRm)
+	ktopub := libunlynx.SuiTe.Point().Mul(keyToRm, libunlynx.SuiTe.Point().Base())
 	pub1 := libunlynx.PublishedAddRmProof{Arp: prfAggr, VectBefore: targetAggregatingAttributesEnc, VectAfter: v.AggregatingAttributesEnc, Krm: ktopub, ToAdd: add}
 	pub2 := libunlynx.PublishedAddRmProof{Arp: prfGrp, VectBefore: v.GroupByEnc, VectAfter: v.GroupByEnc, Krm: ktopub, ToAdd: add}
 	pub3 := libunlynx.PublishedAddRmProof{Arp: prfWhere, VectBefore: v.WhereEnc, VectAfter: v.WhereEnc, Krm: ktopub, ToAdd: add}

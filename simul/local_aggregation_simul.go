@@ -2,12 +2,11 @@ package main
 
 import (
 	"github.com/BurntSushi/toml"
+	"github.com/dedis/kyber/util/random"
+	"github.com/dedis/onet"
+	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/protocols"
-	"gopkg.in/dedis/crypto.v0/random"
-	"gopkg.in/dedis/onet.v1"
-	"gopkg.in/dedis/onet.v1/log"
-	"gopkg.in/dedis/onet.v1/network"
 )
 
 func init() {
@@ -63,9 +62,9 @@ func (sim *LocalAggregationSimulation) Run(config *onet.SimulationConfig) error 
 
 		root := rooti.(*protocolsunlynx.LocalAggregationProtocol)
 
-		secKey := network.Suite.Scalar().Pick(random.Stream)
-		newSecKey := network.Suite.Scalar().Pick(random.Stream)
-		pubKey := network.Suite.Point().Mul(network.Suite.Point().Base(), secKey)
+		secKey := libunlynx.SuiTe.Scalar().Pick(random.New())
+		newSecKey := libunlynx.SuiTe.Scalar().Pick(random.New())
+		pubKey := libunlynx.SuiTe.Point().Mul(secKey, libunlynx.SuiTe.Point().Base())
 
 		//create data
 		tab := make([]int64, sim.NbrAggrAttributes)

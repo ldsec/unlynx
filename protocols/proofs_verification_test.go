@@ -4,17 +4,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/dedis/kyber"
+	"github.com/dedis/onet"
+	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/protocols"
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/dedis/crypto.v0/abstract"
-	"gopkg.in/dedis/crypto.v0/random"
-	"gopkg.in/dedis/onet.v1"
-	"gopkg.in/dedis/onet.v1/network"
 )
 
 func TestProofsVerification(t *testing.T) {
-	local := onet.NewLocalTest()
+	local := onet.NewLocalTest(libunlynx.SuiTe)
 	_, _, tree := local.GenTree(1, true)
 
 	defer local.CloseAll()
@@ -25,24 +24,24 @@ func TestProofsVerification(t *testing.T) {
 	}
 	protocol := rootInstance.(*protocolsunlynx.ProofsVerificationProtocol)
 
-	secKey := network.Suite.Scalar().Pick(random.Stream)
-	pubKey := network.Suite.Point().Mul(network.Suite.Point().Base(), secKey)
+	secKey := libunlynx.SuiTe.Scalar().Pick(libunlynx.SuiTe.RandomStream())
+	pubKey := libunlynx.SuiTe.Point().Mul(secKey, libunlynx.SuiTe.Point().Base())
 
-	secKeyNew := network.Suite.Scalar().Pick(random.Stream)
-	pubKeyNew := network.Suite.Point().Mul(network.Suite.Point().Base(), secKeyNew)
+	secKeyNew := libunlynx.SuiTe.Scalar().Pick(libunlynx.SuiTe.RandomStream())
+	pubKeyNew := libunlynx.SuiTe.Point().Mul(secKeyNew, libunlynx.SuiTe.Point().Base())
 
 	cipherOne := *libunlynx.EncryptInt(pubKey, 10)
 
 	cipherVect := libunlynx.CipherVector{cipherOne, cipherOne}
 
 	// key switching ***********************************************************************************************
-	origEphemKeys := []abstract.Point{cipherOne.K, cipherOne.K}
+	origEphemKeys := []kyber.Point{cipherOne.K, cipherOne.K}
 	switchedVect := libunlynx.NewCipherVector(2)
 	rs := switchedVect.KeySwitching(cipherVect, origEphemKeys, pubKeyNew, secKey)
 	cps := libunlynx.VectorSwitchKeyProofCreation(cipherVect, *switchedVect, rs, secKey, origEphemKeys, pubKeyNew)
 	pskp1 := libunlynx.PublishedSwitchKeyProof{Skp: cps, VectBefore: cipherVect, VectAfter: *switchedVect, K: pubKey, Q: pubKeyNew}
 
-	cps = libunlynx.VectorSwitchKeyProofCreation(cipherVect, *switchedVect, rs, secKey, []abstract.Point{cipherOne.K, cipherOne.K}, pubKey)
+	cps = libunlynx.VectorSwitchKeyProofCreation(cipherVect, *switchedVect, rs, secKey, []kyber.Point{cipherOne.K, cipherOne.K}, pubKey)
 	pskp2 := libunlynx.PublishedSwitchKeyProof{Skp: cps, VectBefore: cipherVect, VectAfter: *switchedVect, K: pubKeyNew, Q: pubKeyNew}
 
 	keySwitchingProofs := []libunlynx.PublishedSwitchKeyProof{pskp1, pskp2}
@@ -58,10 +57,10 @@ func TestProofsVerification(t *testing.T) {
 	pdhp1 := libunlynx.PublishedDeterministicTaggingProof{Dhp: cps1, VectBefore: cipherVect1, VectAfter: *tagSwitchedVect, K: pubKey, SB: nil}
 
 	cps1 = libunlynx.VectorDeterministicTagProofCreation(cipherVect1, *tagSwitchedVect, secKeyNew, secKey)
-	pdhp2 := libunlynx.PublishedDeterministicTaggingProof{Dhp: cps1, VectBefore: cipherVect1, VectAfter: *tagSwitchedVect, K: pubKey, SB: network.Suite.Point().Mul(network.Suite.Point().Base(), secKeyNew)}
+	pdhp2 := libunlynx.PublishedDeterministicTaggingProof{Dhp: cps1, VectBefore: cipherVect1, VectAfter: *tagSwitchedVect, K: pubKey, SB: libunlynx.SuiTe.Point().Mul(secKeyNew, libunlynx.SuiTe.Point().Base())}
 
 	cps1 = libunlynx.VectorDeterministicTagProofCreation(cipherVect1, *tagSwitchedVect, secKey, secKey)
-	pdhp3 := libunlynx.PublishedDeterministicTaggingProof{Dhp: cps1, VectBefore: cipherVect1, VectAfter: *tagSwitchedVect, K: pubKey, SB: network.Suite.Point().Mul(network.Suite.Point().Base(), secKeyNew)}
+	pdhp3 := libunlynx.PublishedDeterministicTaggingProof{Dhp: cps1, VectBefore: cipherVect1, VectAfter: *tagSwitchedVect, K: pubKey, SB: libunlynx.SuiTe.Point().Mul(secKeyNew, libunlynx.SuiTe.Point().Base())}
 
 	deterministicTaggingProofs := []libunlynx.PublishedDeterministicTaggingProof{pdhp1, pdhp2, pdhp3}
 
@@ -72,15 +71,15 @@ func TestProofsVerification(t *testing.T) {
 	}
 	cipherVect = *libunlynx.EncryptIntVector(pubKey, tab)
 	var deterministicTaggingAddProofs []libunlynx.PublishedDetTagAdditionProof
-	toAdd := network.Suite.Point().Mul(network.Suite.Point().Base(), secKeyNew)
-	toAddWrong := network.Suite.Point().Mul(network.Suite.Point().Base(), secKey)
+	toAdd := libunlynx.SuiTe.Point().Mul(secKeyNew, libunlynx.SuiTe.Point().Base())
+	toAddWrong := libunlynx.SuiTe.Point().Mul(secKey, libunlynx.SuiTe.Point().Base())
 	for j := 0; j < 2; j++ {
 		for i := range cipherVect {
-			tmp := network.Suite.Point()
+			tmp := libunlynx.SuiTe.Point()
 			if j%2 == 0 {
-				tmp = network.Suite.Point().Add(cipherVect[i].C, toAdd)
+				tmp = libunlynx.SuiTe.Point().Add(cipherVect[i].C, toAdd)
 			} else {
-				tmp = network.Suite.Point().Add(cipherVect[i].C, toAddWrong)
+				tmp = libunlynx.SuiTe.Point().Add(cipherVect[i].C, toAddWrong)
 			}
 
 			prf := libunlynx.DetTagAdditionProofCreation(cipherVect[i].C, secKeyNew, toAdd, tmp)

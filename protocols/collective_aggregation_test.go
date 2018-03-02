@@ -1,31 +1,29 @@
 package protocolsunlynx_test
 
 import (
-	"reflect"
-	"testing"
-	"time"
-
+	"github.com/dedis/kyber/util/random"
+	"github.com/dedis/onet"
+	"github.com/dedis/onet/log"
+	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/protocols"
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/dedis/crypto.v0/random"
-	"gopkg.in/dedis/onet.v1"
-	"gopkg.in/dedis/onet.v1/log"
-	"gopkg.in/dedis/onet.v1/network"
+	"reflect"
+	"testing"
+	"time"
 )
 
-var suite = network.Suite
-var clientPrivate = suite.Scalar().Pick(random.Stream)
-var clientPublic = suite.Point().Mul(suite.Point().Base(), clientPrivate)
-var grpattr1 = libunlynx.DeterministCipherText{Point: suite.Point().Base()}
-var grpattr2 = libunlynx.DeterministCipherText{Point: suite.Point().Null()}
+var clientPrivate = libunlynx.SuiTe.Scalar().Pick(random.New())
+var clientPublic = libunlynx.SuiTe.Point().Mul(clientPrivate, libunlynx.SuiTe.Point().Base())
+var grpattr1 = libunlynx.DeterministCipherText{Point: libunlynx.SuiTe.Point().Base()}
+var grpattr2 = libunlynx.DeterministCipherText{Point: libunlynx.SuiTe.Point().Null()}
 var groupingAttrA = libunlynx.DeterministCipherVector{grpattr1, grpattr1}
 var groupingAttrB = libunlynx.DeterministCipherVector{grpattr2, grpattr2}
 var groupingAttrC = libunlynx.DeterministCipherVector{grpattr1, grpattr2}
 
 //TestCollectiveAggregation tests collective aggregation protocol
 func TestCollectiveAggregation(t *testing.T) {
-	local := onet.NewLocalTest()
+	local := onet.NewLocalTest(libunlynx.SuiTe)
 
 	// You must register this protocol before creating the servers
 	onet.GlobalProtocolRegister("CollectiveAggregationTest", NewCollectiveAggregationTest)
@@ -45,9 +43,9 @@ func TestCollectiveAggregation(t *testing.T) {
 	feedback := protocol.FeedbackChannel
 
 	//verify results
-	expectedGroups := map[libunlynx.GroupingKey][]int64{groupingAttrA.Key(): []int64{1, 1},
-		groupingAttrB.Key(): []int64{1, 2},
-		groupingAttrC.Key(): []int64{3, 3}}
+	expectedGroups := map[libunlynx.GroupingKey][]int64{groupingAttrA.Key(): {1, 1},
+		groupingAttrB.Key(): {1, 2},
+		groupingAttrC.Key(): {3, 3}}
 
 	expectedResults := map[libunlynx.GroupingKey][]int64{groupingAttrA.Key(): {3, 5, 7, 9, 11},
 		groupingAttrB.Key(): {1, 2, 3, 4, 5},

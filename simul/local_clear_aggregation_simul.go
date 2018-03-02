@@ -2,11 +2,11 @@ package main
 
 import (
 	"github.com/BurntSushi/toml"
+	"github.com/dedis/onet"
+	"github.com/dedis/onet/log"
+	"github.com/dedis/onet/simul/monitor"
 	"github.com/lca1/unlynx/protocols"
 	"github.com/lca1/unlynx/services/default/data"
-	"gopkg.in/dedis/onet.v1"
-	"gopkg.in/dedis/onet.v1/log"
-	"gopkg.in/dedis/onet.v1/simul/monitor"
 )
 
 func init() {

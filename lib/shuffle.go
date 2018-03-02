@@ -1,15 +1,15 @@
 package libunlynx
 
 import (
-	"gopkg.in/dedis/crypto.v0/abstract"
-	"gopkg.in/dedis/crypto.v0/random"
-	"gopkg.in/dedis/onet.v1/log"
-	"gopkg.in/dedis/onet.v1/network"
+	"github.com/dedis/kyber"
+	"github.com/dedis/kyber/util/random"
+	"github.com/dedis/onet/log"
+	"math/big"
 	"os"
 )
 
 // compressCipherVector (slice of ciphertexts) into one ciphertext
-func compressCipherVector(ciphervector CipherVector, e []abstract.Scalar) CipherText {
+func compressCipherVector(ciphervector CipherVector, e []kyber.Scalar) CipherText {
 	k := len(ciphervector)
 
 	// check that e and cipher vectors have the same size
@@ -27,7 +27,7 @@ func compressCipherVector(ciphervector CipherVector, e []abstract.Scalar) Cipher
 }
 
 // CompressProcessResponse applies shuffling compression to a process response
-func CompressProcessResponse(processResponse ProcessResponse, e []abstract.Scalar) CipherText {
+func CompressProcessResponse(processResponse ProcessResponse, e []kyber.Scalar) CipherText {
 	m := len(processResponse.GroupByEnc)
 	n := len(processResponse.WhereEnc)
 	o := len(processResponse.AggregatingAttributes)
@@ -68,9 +68,9 @@ func CompressProcessResponse(processResponse ProcessResponse, e []abstract.Scala
 }
 
 // CompressListProcessResponse applies shuffling compression to a list of process responses
-func CompressListProcessResponse(processResponses []ProcessResponse, e []abstract.Scalar) ([]abstract.Point, []abstract.Point) {
-	xC := make([]abstract.Point, len(processResponses))
-	xK := make([]abstract.Point, len(processResponses))
+func CompressListProcessResponse(processResponses []ProcessResponse, e []kyber.Scalar) ([]kyber.Point, []kyber.Point) {
+	xC := make([]kyber.Point, len(processResponses))
+	xK := make([]kyber.Point, len(processResponses))
 
 	wg := StartParallelize(len(processResponses))
 	for i, v := range processResponses {
@@ -93,25 +93,25 @@ func CompressListProcessResponse(processResponses []ProcessResponse, e []abstrac
 }
 
 // CompressBeta applies shuffling compression to a list of list of scalars (beta)
-func CompressBeta(beta [][]abstract.Scalar, e []abstract.Scalar) []abstract.Scalar {
+func CompressBeta(beta [][]kyber.Scalar, e []kyber.Scalar) []kyber.Scalar {
 	k := len(beta)
 	NQ := len(beta[0])
-	betaCompressed := make([]abstract.Scalar, k)
+	betaCompressed := make([]kyber.Scalar, k)
 	wg := StartParallelize(k)
 	for i := 0; i < k; i++ {
-		betaCompressed[i] = network.Suite.Scalar().Zero()
+		betaCompressed[i] = SuiTe.Scalar().Zero()
 		if PARALLELIZE {
 			go func(i int) {
 				defer wg.Done()
 				for j := 0; j < NQ; j++ {
-					tmp := network.Suite.Scalar().Mul(beta[i][j], e[j])
-					betaCompressed[i] = network.Suite.Scalar().Add(betaCompressed[i], tmp)
+					tmp := SuiTe.Scalar().Mul(beta[i][j], e[j])
+					betaCompressed[i] = SuiTe.Scalar().Add(betaCompressed[i], tmp)
 				}
 			}(i)
 		} else {
 			for j := 0; j < NQ; j++ {
-				tmp := network.Suite.Scalar().Mul(beta[i][j], e[j])
-				betaCompressed[i] = network.Suite.Scalar().Add(betaCompressed[i], tmp)
+				tmp := SuiTe.Scalar().Mul(beta[i][j], e[j])
+				betaCompressed[i] = SuiTe.Scalar().Add(betaCompressed[i], tmp)
 			}
 		}
 
@@ -122,8 +122,10 @@ func CompressBeta(beta [][]abstract.Scalar, e []abstract.Scalar) []abstract.Scal
 }
 
 // ShuffleSequence applies shuffling to a list of process responses
-func ShuffleSequence(inputList []ProcessResponse, g, h abstract.Point, precomputed []CipherVectorScalar) ([]ProcessResponse, []int, [][]abstract.Scalar) {
-	//,  []byte) {
+func ShuffleSequence(inputList []ProcessResponse, g, h kyber.Point, precomputed []CipherVectorScalar) ([]ProcessResponse, []int, [][]kyber.Scalar) {
+	maxUint := ^uint(0)
+	maxInt := int(maxUint >> 1)
+
 	NQ1 := len(inputList[0].GroupByEnc)
 	NQ2 := len(inputList[0].WhereEnc)
 	NQ3 := len(inputList[0].AggregatingAttributes)
@@ -133,15 +135,17 @@ func ShuffleSequence(inputList []ProcessResponse, g, h abstract.Point, precomput
 
 	k := len(inputList) // number of clients
 
-	rand := network.Suite.Cipher(abstract.RandomKey)
+	rand := SuiTe.RandomStream()
 	// Pick a fresh (or precomputed) ElGamal blinding factor for each pair
-	beta := make([]([]abstract.Scalar), k)
+	beta := make([][]kyber.Scalar, k)
 	precomputedPoints := make([]CipherVector, k)
 	for i := 0; i < k; i++ {
 		if precomputed == nil {
 			beta[i] = RandomScalarSlice(NQ)
 		} else {
-			indice := int(random.Uint64(rand) % uint64(len(precomputed)))
+			randInt := random.Int(big.NewInt(int64(maxInt)), rand)
+
+			indice := int(randInt.Int64() % int64(len(precomputed)))
 			beta[i] = precomputed[indice].S[0:NQ] //if beta file is bigger than query line responses
 			precomputedPoints[i] = precomputed[indice].CipherV[0:NQ]
 		}
@@ -170,14 +174,14 @@ func ShuffleSequence(inputList []ProcessResponse, g, h abstract.Point, precomput
 }
 
 // ProcessResponseShuffling applies shuffling and rerandomization to a list of process responses
-func processResponseShuffling(pi []int, i int, inputList, outputList []ProcessResponse, NQ1, NQ2, NQ3, NQ int, beta [][]abstract.Scalar, precomputedPoints []CipherVector, g, h abstract.Point) {
+func processResponseShuffling(pi []int, i int, inputList, outputList []ProcessResponse, NQ1, NQ2, NQ3, NQ int, beta [][]kyber.Scalar, precomputedPoints []CipherVector, g, h kyber.Point) {
 	index := pi[i]
 	outputList[i].GroupByEnc = *NewCipherVector(NQ1)
 	outputList[i].WhereEnc = *NewCipherVector(NQ2)
 	outputList[i].AggregatingAttributes = *NewCipherVector(NQ3)
 	wg := StartParallelize(NQ)
 	for j := 0; j < NQ; j++ {
-		var b abstract.Scalar
+		var b kyber.Scalar
 		var cipher CipherText
 		if len(precomputedPoints[0]) == 0 {
 			b = beta[index][j]
@@ -210,7 +214,7 @@ func processResponseShuffling(pi []int, i int, inputList, outputList []ProcessRe
 }
 
 // CompressProcessResponseMultiple applies shuffling compression to 2 list of process responses corresponding to input and output of shuffling
-func CompressProcessResponseMultiple(inputList, outputList []ProcessResponse, i int, e []abstract.Scalar, Xhat, XhatBar, Yhat, YhatBar []abstract.Point) {
+func CompressProcessResponseMultiple(inputList, outputList []ProcessResponse, i int, e []kyber.Scalar, Xhat, XhatBar, Yhat, YhatBar []kyber.Point) {
 	tmp := CompressProcessResponse(inputList[i], e)
 	Xhat[i] = tmp.K
 	Yhat[i] = tmp.C
@@ -220,9 +224,10 @@ func CompressProcessResponseMultiple(inputList, outputList []ProcessResponse, i 
 }
 
 // PrecomputeForShuffling precomputes data to be used in the shuffling protocol (to make it faster) and saves it in a .gob file
-func PrecomputeForShuffling(serverName, gobFile string, surveySecret abstract.Scalar, collectiveKey abstract.Point, lineSize int) []CipherVectorScalar {
+func PrecomputeForShuffling(serverName, gobFile string, surveySecret kyber.Scalar, collectiveKey kyber.Point, lineSize int) []CipherVectorScalar {
 	log.Lvl1(serverName, " precomputes for shuffling")
-	precomputeShuffle := CreatePrecomputedRandomize(network.Suite.Point().Base(), collectiveKey, network.Suite.Cipher(surveySecret.Bytes()), lineSize*2, 10)
+	scalarBytes, _ := surveySecret.MarshalBinary()
+	precomputeShuffle := CreatePrecomputedRandomize(SuiTe.Point().Base(), collectiveKey, SuiTe.XOF(scalarBytes), lineSize*2, 10)
 
 	encoded, err := EncodeCipherVectorScalar(precomputeShuffle)
 
@@ -235,7 +240,7 @@ func PrecomputeForShuffling(serverName, gobFile string, surveySecret abstract.Sc
 }
 
 // PrecomputationWritingForShuffling reads the precomputation data from  .gob file if it already exists or generates a new one
-func PrecomputationWritingForShuffling(appFlag bool, gobFile, serverName string, surveySecret abstract.Scalar, collectiveKey abstract.Point, lineSize int) []CipherVectorScalar {
+func PrecomputationWritingForShuffling(appFlag bool, gobFile, serverName string, surveySecret kyber.Scalar, collectiveKey kyber.Point, lineSize int) []CipherVectorScalar {
 	log.Lvl1(serverName, " precomputes for shuffling")
 	var precomputeShuffle []CipherVectorScalar
 	if appFlag {
@@ -255,7 +260,8 @@ func PrecomputationWritingForShuffling(appFlag bool, gobFile, serverName string,
 			}
 		}
 	} else {
-		precomputeShuffle = CreatePrecomputedRandomize(network.Suite.Point().Base(), collectiveKey, network.Suite.Cipher(surveySecret.Bytes()), lineSize*2, 10)
+		scalarBytes, _ := surveySecret.MarshalBinary()
+		precomputeShuffle = CreatePrecomputedRandomize(SuiTe.Point().Base(), collectiveKey, SuiTe.XOF(scalarBytes), lineSize*2, 10)
 	}
 	return precomputeShuffle
 }

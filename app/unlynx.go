@@ -1,8 +1,9 @@
 package appunlynx
 
 import (
-	"gopkg.in/dedis/onet.v1/app"
-	"gopkg.in/dedis/onet.v1/log"
+	"github.com/dedis/onet/app"
+	"github.com/dedis/onet/log"
+	"github.com/lca1/unlynx/lib"
 	"gopkg.in/urfave/cli.v1"
 	"os"
 )
@@ -96,7 +97,6 @@ func main() {
 	serverFlags := []cli.Flag{
 		cli.StringFlag{
 			Name:  optionConfig + ", " + optionConfigShort,
-			Value: app.GetDefaultConfigFile(BinaryName),
 			Usage: "Configuration file of the server",
 		},
 	}
@@ -136,7 +136,7 @@ func main() {
 						if c.GlobalIsSet("debug") {
 							log.Fatal("[-] Debug option cannot be used for the 'setup' command")
 						}
-						app.InteractiveConfig(BinaryName)
+						app.InteractiveConfig(libunlynx.SuiTe, BinaryName)
 						return nil
 					},
 				},

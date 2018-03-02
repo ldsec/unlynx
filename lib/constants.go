@@ -1,9 +1,8 @@
 package libunlynx
 
 import (
+	"github.com/dedis/onet/simul/monitor"
 	"sync"
-
-	"gopkg.in/dedis/onet.v1/simul/monitor"
 )
 
 // Global Variables

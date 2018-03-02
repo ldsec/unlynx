@@ -2,12 +2,10 @@ package main
 
 import (
 	"github.com/BurntSushi/toml"
+	"github.com/dedis/onet"
+	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/protocols"
-	"gopkg.in/dedis/onet.v1"
-	"gopkg.in/dedis/onet.v1/log"
-
-	"gopkg.in/dedis/onet.v1/network"
 )
 
 func init() {
@@ -89,7 +87,11 @@ func NewShufflingSimul(tni *onet.TreeNodeInstance, sim *ShufflingSimulation) (on
 	pap := protocol.(*protocolsunlynx.ShufflingProtocol)
 	pap.Proofs = sim.Proofs
 	if sim.PreCompute {
-		pap.Precomputed = libunlynx.CreatePrecomputedRandomize(network.Suite.Point().Base(), tni.Roster().Aggregate, network.Suite.Cipher(tni.Private().Bytes()), int(sim.NbrGroupAttributes)+int(sim.NbrAggrAttributes), 10)
+		b, err := tni.Private().MarshalBinary()
+		if err != nil {
+			panic("error unmarshiling scalar")
+		}
+		pap.Precomputed = libunlynx.CreatePrecomputedRandomize(libunlynx.SuiTe.Point().Base(), tni.Roster().Aggregate, libunlynx.SuiTe.XOF(b), int(sim.NbrGroupAttributes)+int(sim.NbrAggrAttributes), 10)
 	}
 	if tni.IsRoot() {
 		aggregateKey := pap.Roster().Aggregate

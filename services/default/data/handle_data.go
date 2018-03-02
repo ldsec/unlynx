@@ -3,8 +3,8 @@ package dataunlynx
 import (
 	"bufio"
 	"fmt"
+	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
-	"gopkg.in/dedis/onet.v1/log"
 	"math"
 	"math/rand"
 	"os"

@@ -1,7 +1,7 @@
 package protocolsunlynx
 
 import (
-	"gopkg.in/dedis/onet.v1"
+	"github.com/dedis/onet"
 )
 
 // DROProtocolName is the registered name for the differential privacy protocol.

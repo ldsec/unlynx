@@ -2,11 +2,11 @@ package main
 
 import (
 	"github.com/BurntSushi/toml"
+	"github.com/dedis/kyber/util/random"
+	"github.com/dedis/onet"
+	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/protocols"
-	"gopkg.in/dedis/crypto.v0/random"
-	"gopkg.in/dedis/onet.v1"
-	"gopkg.in/dedis/onet.v1/log"
 )
 
 func init() {
@@ -76,8 +76,8 @@ func (sim *KeySwitchingSimulation) Run(config *onet.SimulationConfig) error {
 			responses[i] = libunlynx.FilteredResponse{GroupByEnc: *libunlynx.EncryptIntVector(aggregateKey, tabGrps), AggregatingAttributes: *libunlynx.EncryptIntVector(aggregateKey, tabAttrs)}
 		}
 
-		clientSecret := suite.Scalar().Pick(random.Stream)
-		clientPublic := suite.Point().Mul(suite.Point().Base(), clientSecret)
+		clientSecret := suite.Scalar().Pick(random.New())
+		clientPublic := suite.Point().Mul(clientSecret, suite.Point().Base())
 
 		root.ProtocolInstance().(*protocolsunlynx.KeySwitchingProtocol).TargetPublicKey = &clientPublic
 		log.Lvl1("Number of respones to key switch ", len(responses))
