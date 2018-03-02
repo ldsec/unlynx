@@ -176,7 +176,7 @@ func (s *Service) PushData(resp *SurveyResponseQuery, proofs bool) {
 //______________________________________________________________________________________________________________________
 
 // HandleSurveyCreationQuery handles the reception of a survey creation query by instantiating the corresponding survey.
-func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.Message, onet.ClientError) {
+func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.Message, error) {
 	log.Lvl1(s.ServerIdentity().String(), " received a Survey Creation Query")
 
 	// if this server is the one receiving the query from the client
@@ -238,7 +238,7 @@ func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.
 }
 
 // HandleSurveyResponseQuery handles a survey answers submission by a subject.
-func (s *Service) HandleSurveyResponseQuery(resp *SurveyResponseQuery) (network.Message, onet.ClientError) {
+func (s *Service) HandleSurveyResponseQuery(resp *SurveyResponseQuery) (network.Message, error) {
 	var el interface{}
 	el = nil
 	for el == nil {
@@ -270,7 +270,7 @@ func (s *Service) HandleSurveyResponseQuery(resp *SurveyResponseQuery) (network.
 }
 
 // HandleSurveyResultsQuery handles the survey result query by the surveyor.
-func (s *Service) HandleSurveyResultsQuery(resq *SurveyResultsQuery) (network.Message, onet.ClientError) {
+func (s *Service) HandleSurveyResultsQuery(resq *SurveyResultsQuery) (network.Message, error) {
 
 	log.Lvl1(s.ServerIdentity(), " received a survey result query")
 
@@ -301,7 +301,7 @@ func (s *Service) HandleSurveyResultsQuery(resq *SurveyResultsQuery) (network.Me
 }
 
 // HandleDDTfinished handles the message
-func (s *Service) HandleDDTfinished(recq *DDTfinished) (network.Message, onet.ClientError) {
+func (s *Service) HandleDDTfinished(recq *DDTfinished) (network.Message, error) {
 	castToSurvey(s.Survey.Get((string)(recq.SurveyID))).DDTChannel <- 1
 	return nil, nil
 }
