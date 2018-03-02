@@ -4,12 +4,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/dedis/kyber"
+	"github.com/dedis/onet"
+	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/protocols"
 	"github.com/stretchr/testify/assert"
-	"github.com/dedis/onet"
-	"github.com/dedis/onet/network"
-	"github.com/dedis/kyber"
 )
 
 func TestProofsVerification(t *testing.T) {

@@ -25,7 +25,7 @@
     0. Remove corresponding ssh keys from .ssh/know_hosts)
 
     1. inside simul/ execute (the numbers are relative to the number of each machine, e.g. iccluster029 -> 29):
-        ~/Go/src/gopkg.in/dedis/onet.v1/simul/platform/mininet/setup_iccluster.sh 29 30 31
+        ~/Go/src/github/dedis/onet/simul/platform/mininet/setup_iccluster.sh 29 30 31
 
         - Well! Now you just wait! :)
 

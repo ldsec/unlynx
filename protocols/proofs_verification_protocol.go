@@ -5,8 +5,8 @@
 package protocolsunlynx
 
 import (
-	"github.com/lca1/unlynx/lib"
 	"github.com/dedis/onet"
+	"github.com/lca1/unlynx/lib"
 )
 
 // ProofsVerificationProtocolName is the registered name for the proof verification protocol.

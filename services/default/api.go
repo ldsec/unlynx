@@ -1,12 +1,12 @@
 package servicesunlynxdefault
 
 import (
-	"github.com/lca1/unlynx/lib"
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/util/key"
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
+	"github.com/lca1/unlynx/lib"
 )
 
 // API represents a client with the server to which he is connected and its public/private key pair.

@@ -4,11 +4,11 @@ import (
 	"os"
 
 	"github.com/btcsuite/goleveldb/leveldb/errors"
+	"github.com/dedis/onet"
+	"github.com/dedis/onet/app"
+	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/services/default"
-	"gopkg.in/dedis/onet.v1"
-	"gopkg.in/dedis/onet.v1/app"
-	"gopkg.in/dedis/onet.v1/log"
 	"gopkg.in/urfave/cli.v1"
 	"regexp"
 	"strconv"
@@ -73,16 +73,16 @@ func openGroupToml(tomlFileName string) (*onet.Roster, error) {
 	if err != nil {
 		return nil, err
 	}
-	el, err := app.ReadGroupToml(f)
+	el, err := app.ReadGroupDescToml(f)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(el.List) <= 0 {
+	if len(el.Roster.List) <= 0 {
 		return nil, errors.New("Empty or invalid unlynx group file:" + tomlFileName)
 	}
 
-	return el, nil
+	return el.Roster, nil
 }
 
 func checkRegex(input, expression, errorMessage string) {

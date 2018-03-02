@@ -3,7 +3,7 @@ Servers = 3
 Bf = 2
 Suite = "Ed25519"
 Rounds = 1
-RunWait = 6000000
+RunWait = "24h"
 Bandwidth = 1000
 
 Hosts, NbrGroups, NbrGroupAttributes, NbrAggrAttributes, Proofs

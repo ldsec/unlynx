@@ -5,12 +5,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/protocols"
 	"github.com/dedis/kyber"
 	"github.com/dedis/onet"
-	"github.com/dedis/onet/network"
 	"github.com/dedis/onet/log"
+	"github.com/dedis/onet/network"
+	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/protocols"
 )
 
 var nbrNodes = 5

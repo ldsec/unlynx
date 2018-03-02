@@ -5,7 +5,7 @@ import (
 	"github.com/dedis/kyber/suites"
 )
 
-// SuiTe defines the capabilities required by the lib package.
+// Suite defines the capabilities required by the lib package.
 type Suite interface {
 	kyber.Group
 	kyber.Random

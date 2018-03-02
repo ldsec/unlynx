@@ -2,10 +2,10 @@ package main
 
 import (
 	"github.com/BurntSushi/toml"
-	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/protocols"
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
+	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/protocols"
 )
 
 func init() {
