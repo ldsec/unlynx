@@ -8,11 +8,10 @@ import (
 	"github.com/lca1/unlynx/protocols"
 	"github.com/lca1/unlynx/services/default/data"
 	"github.com/satori/go.uuid"
-	"gopkg.in/dedis/crypto.v0/abstract"
-	"gopkg.in/dedis/crypto.v0/random"
-	"gopkg.in/dedis/onet.v1"
-	"gopkg.in/dedis/onet.v1/log"
-	"gopkg.in/dedis/onet.v1/network"
+	"github.com/dedis/kyber"
+	"github.com/dedis/onet"
+	"github.com/dedis/onet/log"
+	"github.com/dedis/onet/network"
 	"strconv"
 	"time"
 )
@@ -29,7 +28,7 @@ type SurveyID string
 type SurveyCreationQuery struct {
 	SurveyID     SurveyID
 	Roster       onet.Roster
-	ClientPubKey abstract.Point
+	ClientPubKey kyber.Point
 	MapDPs       map[string]int64
 	Proofs       bool
 	AppFlag      bool
@@ -46,7 +45,7 @@ type SurveyCreationQuery struct {
 type Survey struct {
 	*libunlynx.Store
 	Query             SurveyCreationQuery
-	SurveySecretKey   abstract.Scalar
+	SurveySecretKey   kyber.Scalar
 	ShufflePrecompute []libunlynx.CipherVectorScalar
 
 	// channels
@@ -100,7 +99,7 @@ type SurveyResponseQuery struct {
 type SurveyResultsQuery struct {
 	IntraMessage bool
 	SurveyID     SurveyID
-	ClientPublic abstract.Point
+	ClientPublic kyber.Point
 }
 
 // ServiceState represents the service "state".
@@ -121,28 +120,29 @@ type Service struct {
 }
 
 // NewService constructor which registers the needed messages.
-func NewService(c *onet.Context) onet.Service {
+func NewService(c *onet.Context) (onet.Service, error) {
 	newUnLynxInstance := &Service{
 		ServiceProcessor: onet.NewServiceProcessor(c),
 		Survey:           concurrent.NewConcurrentMap(),
 	}
-	if cerr := newUnLynxInstance.RegisterHandler(newUnLynxInstance.HandleSurveyCreationQuery); cerr != nil {
+	var cerr error
+	if cerr = newUnLynxInstance.RegisterHandler(newUnLynxInstance.HandleSurveyCreationQuery); cerr != nil {
 		log.Fatal("Wrong Handler.", cerr)
 	}
-	if cerr := newUnLynxInstance.RegisterHandler(newUnLynxInstance.HandleSurveyResponseQuery); cerr != nil {
+	if cerr = newUnLynxInstance.RegisterHandler(newUnLynxInstance.HandleSurveyResponseQuery); cerr != nil {
 		log.Fatal("Wrong Handler.", cerr)
 	}
-	if cerr := newUnLynxInstance.RegisterHandler(newUnLynxInstance.HandleSurveyResultsQuery); cerr != nil {
+	if cerr = newUnLynxInstance.RegisterHandler(newUnLynxInstance.HandleSurveyResultsQuery); cerr != nil {
 		log.Fatal("Wrong Handler.", cerr)
 	}
-	if cerr := newUnLynxInstance.RegisterHandler(newUnLynxInstance.HandleDDTfinished); cerr != nil {
+	if cerr = newUnLynxInstance.RegisterHandler(newUnLynxInstance.HandleDDTfinished); cerr != nil {
 		log.Fatal("Wrong Handler.", cerr)
 	}
 
 	c.RegisterProcessor(newUnLynxInstance, msgTypes.msgSurveyCreationQuery)
 	c.RegisterProcessor(newUnLynxInstance, msgTypes.msgSurveyResultsQuery)
 	c.RegisterProcessor(newUnLynxInstance, msgTypes.msgDDTfinished)
-	return newUnLynxInstance
+	return newUnLynxInstance, cerr
 }
 
 // Process implements the processor interface and is used to recognize messages broadcasted between servers
@@ -176,7 +176,7 @@ func (s *Service) PushData(resp *SurveyResponseQuery, proofs bool) {
 //______________________________________________________________________________________________________________________
 
 // HandleSurveyCreationQuery handles the reception of a survey creation query by instantiating the corresponding survey.
-func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.Message, onet.ClientError) {
+func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.Message, error) {
 	log.Lvl1(s.ServerIdentity().String(), " received a Survey Creation Query")
 
 	// if this server is the one receiving the query from the client
@@ -197,7 +197,7 @@ func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.
 	}
 
 	// chooses an ephemeral secret for this survey
-	surveySecret := network.Suite.Scalar().Pick(random.Stream)
+	surveySecret := libunlynx.SuiTe.Scalar().Pick(libunlynx.SuiTe.RandomStream())
 
 	// prepares the precomputation for shuffling
 	lineSize := int(len(recq.Sum)) + int(len(recq.Where)) + int(len(recq.GroupBy)) + 1 // + 1 is for the possible count attribute
@@ -238,7 +238,7 @@ func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.
 }
 
 // HandleSurveyResponseQuery handles a survey answers submission by a subject.
-func (s *Service) HandleSurveyResponseQuery(resp *SurveyResponseQuery) (network.Message, onet.ClientError) {
+func (s *Service) HandleSurveyResponseQuery(resp *SurveyResponseQuery) (network.Message, error) {
 	var el interface{}
 	el = nil
 	for el == nil {
@@ -270,7 +270,7 @@ func (s *Service) HandleSurveyResponseQuery(resp *SurveyResponseQuery) (network.
 }
 
 // HandleSurveyResultsQuery handles the survey result query by the surveyor.
-func (s *Service) HandleSurveyResultsQuery(resq *SurveyResultsQuery) (network.Message, onet.ClientError) {
+func (s *Service) HandleSurveyResultsQuery(resq *SurveyResultsQuery) (network.Message, error) {
 
 	log.Lvl1(s.ServerIdentity(), " received a survey result query")
 
@@ -301,7 +301,7 @@ func (s *Service) HandleSurveyResultsQuery(resq *SurveyResultsQuery) (network.Me
 }
 
 // HandleDDTfinished handles the message
-func (s *Service) HandleDDTfinished(recq *DDTfinished) (network.Message, onet.ClientError) {
+func (s *Service) HandleDDTfinished(recq *DDTfinished) (network.Message, error) {
 	castToSurvey(s.Survey.Get((string)(recq.SurveyID))).DDTChannel <- 1
 	return nil, nil
 }

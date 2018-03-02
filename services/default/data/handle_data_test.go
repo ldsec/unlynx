@@ -4,7 +4,7 @@ import (
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/services/default/data"
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/dedis/onet.v1/log"
+	"github.com/dedis/onet/log"
 	"testing"
 )
 

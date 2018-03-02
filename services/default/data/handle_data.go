@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/lca1/unlynx/lib"
-	"gopkg.in/dedis/onet.v1/log"
+	"github.com/dedis/onet/log"
 	"math"
 	"math/rand"
 	"os"
