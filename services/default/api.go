@@ -2,11 +2,11 @@ package servicesunlynxdefault
 
 import (
 	"github.com/lca1/unlynx/lib"
-	"gopkg.in/dedis/crypto.v0/abstract"
-	"gopkg.in/dedis/crypto.v0/config"
-	"gopkg.in/dedis/onet.v1"
-	"gopkg.in/dedis/onet.v1/log"
-	"gopkg.in/dedis/onet.v1/network"
+	"github.com/dedis/kyber"
+	"github.com/dedis/kyber/util/key"
+	"github.com/dedis/onet"
+	"github.com/dedis/onet/log"
+	"github.com/dedis/onet/network"
 )
 
 // API represents a client with the server to which he is connected and its public/private key pair.
@@ -14,20 +14,21 @@ type API struct {
 	*onet.Client
 	clientID   string
 	entryPoint *network.ServerIdentity
-	public     abstract.Point
-	private    abstract.Scalar
+	public     kyber.Point
+	private    kyber.Scalar
 }
 
 // NewUnLynxClient constructor of a client.
 func NewUnLynxClient(entryPoint *network.ServerIdentity, clientID string) *API {
-	keys := config.NewKeyPair(network.Suite)
+	keys := key.NewKeyPair(libunlynx.SuiTe)
 
 	newClient := &API{
-		Client:     onet.NewClient(ServiceName),
+
+		Client:     onet.NewClient(libunlynx.SuiTe, ServiceName),
 		clientID:   clientID,
 		entryPoint: entryPoint,
 		public:     keys.Public,
-		private:    keys.Secret,
+		private:    keys.Private,
 	}
 	return newClient
 }
@@ -36,7 +37,7 @@ func NewUnLynxClient(entryPoint *network.ServerIdentity, clientID string) *API {
 //______________________________________________________________________________________________________________________
 
 // SendSurveyCreationQuery creates a survey based on a set of entities (servers) and a survey description.
-func (c *API) SendSurveyCreationQuery(entities *onet.Roster, surveyID SurveyID, clientPubKey abstract.Point, nbrDPs map[string]int64, proofs, appFlag bool, sum []string, count bool, where []libunlynx.WhereQueryAttribute, predicate string, groupBy []string) (*SurveyID, error) {
+func (c *API) SendSurveyCreationQuery(entities *onet.Roster, surveyID SurveyID, clientPubKey kyber.Point, nbrDPs map[string]int64, proofs, appFlag bool, sum []string, count bool, where []libunlynx.WhereQueryAttribute, predicate string, groupBy []string) (*SurveyID, error) {
 	log.Lvl1(c, "is creating a survey with id: ", surveyID)
 
 	var newSurveyID SurveyID
@@ -68,7 +69,7 @@ func (c *API) SendSurveyCreationQuery(entities *onet.Roster, surveyID SurveyID, 
 }
 
 // SendSurveyResponseQuery handles the encryption and sending of DP responses
-func (c *API) SendSurveyResponseQuery(surveyID SurveyID, clearClientResponses []libunlynx.DpClearResponse, groupKey abstract.Point, dataRepetitions int, count bool) error {
+func (c *API) SendSurveyResponseQuery(surveyID SurveyID, clearClientResponses []libunlynx.DpClearResponse, groupKey kyber.Point, dataRepetitions int, count bool) error {
 	log.Lvl1(c, " sends a result for survey ", surveyID)
 	var err error
 
@@ -110,7 +111,7 @@ func (c *API) SendSurveyResultsQuery(surveyID SurveyID) (*[][]int64, *[][]int64,
 //______________________________________________________________________________________________________________________
 
 // EncryptDataToSurvey is used to encrypt client responses with the collective key
-func EncryptDataToSurvey(name string, surveyID SurveyID, dpClearResponses []libunlynx.DpClearResponse, groupKey abstract.Point, dataRepetitions int, count bool) *SurveyResponseQuery {
+func EncryptDataToSurvey(name string, surveyID SurveyID, dpClearResponses []libunlynx.DpClearResponse, groupKey kyber.Point, dataRepetitions int, count bool) *SurveyResponseQuery {
 	nbrResponses := len(dpClearResponses)
 
 	log.Lvl1(name, " responds with ", nbrResponses, " response(s)")
