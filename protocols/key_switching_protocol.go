@@ -11,13 +11,13 @@ package protocolsunlynx
 
 import (
 	"errors"
-	"github.com/lca1/unlynx/lib"
+	"github.com/dedis/kyber"
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
+	"github.com/lca1/unlynx/lib"
 	"sync"
 	"time"
-	"github.com/dedis/kyber"
 )
 
 // KeySwitchingProtocolName is the registered name for the key switching protocol.

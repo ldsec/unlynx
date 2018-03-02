@@ -1,15 +1,15 @@
 package protocolsunlynx_test
 
 import (
-	"reflect"
-	"testing"
-	"time"
-	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/protocols"
+	"github.com/dedis/kyber/util/random"
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
-	"github.com/dedis/kyber/util/random"
+	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/protocols"
+	"reflect"
+	"testing"
+	"time"
 )
 
 func TestKeySwitching(t *testing.T) {
