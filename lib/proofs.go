@@ -39,9 +39,9 @@ type PublishedSwitchKeyProof struct {
 
 // PublishedAddRmProof contains all infos about proofs for adding/removing operations on a ciphervector
 type PublishedAddRmProof struct {
-	Arp        map[string]AddRmProof
-	VectBefore map[string]CipherText
-	VectAfter  map[string]CipherText
+	Arp        []AddRmProof
+	VectBefore []CipherText
+	VectAfter  []CipherText
 	Krm        kyber.Point
 	ToAdd      bool
 }
@@ -235,14 +235,15 @@ func AddRmProofCreation(cBef, cAft CipherText, k kyber.Scalar, toAdd bool) AddRm
 }
 
 // VectorAddRmProofCreation creates proof for add/rm server protocol on 1 ciphervector
-func VectorAddRmProofCreation(vBef, vAft map[string]CipherText, k kyber.Scalar, toAdd bool) map[string]AddRmProof {
-	result := make(map[string]AddRmProof, len(vBef))
+func VectorAddRmProofCreation(vBef, vAft []CipherText, k kyber.Scalar, toAdd bool) []AddRmProof {
 	var wg sync.WaitGroup
+	result := make([]AddRmProof, len(vBef))
+
 	if PARALLELIZE {
 		var mutexBf sync.Mutex
 		for i := range vBef {
 			wg.Add(1)
-			go func(i string) {
+			go func(i int) {
 				defer wg.Done()
 
 				proofAux := AddRmProofCreation(vBef[i], vAft[i], k, toAdd)
