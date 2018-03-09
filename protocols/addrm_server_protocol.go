@@ -129,33 +129,6 @@ func changeEncryptionKeyCipherTexts(cipherText libunlynx.CipherText, serverAddRm
 	return result
 }
 
-func changeEncryptionKeyMapCipherTexts(cv map[string]libunlynx.CipherText, serverAddRmKey kyber.Scalar, toAdd bool) map[string]libunlynx.CipherText {
-	result := make(map[string]libunlynx.CipherText, len(cv))
-	for j, w := range cv {
-		tmp := libunlynx.SuiTe.Point().Mul(serverAddRmKey, w.K)
-		copyAux := result[j]
-		copyAux.K = w.K
-		if toAdd {
-			copyAux.C = libunlynx.SuiTe.Point().Add(w.C, tmp)
-
-		} else {
-			copyAux.C = libunlynx.SuiTe.Point().Sub(w.C, tmp)
-		}
-		result[j] = copyAux
-	}
-	return result
-}
-
-func changeEncryption(cts []libunlynx.CipherText, keyToRm kyber.Scalar, add bool) []libunlynx.CipherText {
-
-	result := make([]libunlynx.CipherText, len(cts))
-	for i, v := range cts {
-		result[i] = changeEncryptionKeyCipherTexts(v, keyToRm, add)
-	}
-
-	return result
-}
-
 func proofsCreation(pubs []libunlynx.PublishedAddRmProof, target, ct libunlynx.CipherText, keyToRm kyber.Scalar, add bool) {
 	ktopub := libunlynx.SuiTe.Point().Mul(keyToRm, libunlynx.SuiTe.Point().Base())
 
