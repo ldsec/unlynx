@@ -51,10 +51,11 @@ func (p *AddRmServerProtocol) Start() error {
 
 	log.Lvl1(p.Name(), "starts a server adding/removing Protocol")
 	roundComput := libunlynx.StartTimer(p.Name() + "_AddRmServer(PROTOCOL)")
+	wg := libunlynx.StartParallelize(len(p.TargetOfTransformation))
 
 	result := make([]libunlynx.CipherText, len(p.TargetOfTransformation))
-
-	wg := libunlynx.StartParallelize(len(p.TargetOfTransformation))
+	result = changeEncryption(p.TargetOfTransformation, p.KeyToRm, p.Add)
+	/*
 	for i, v := range p.TargetOfTransformation {
 		if libunlynx.PARALLELIZE {
 			go func(i int, v libunlynx.CipherText) {
@@ -67,12 +68,19 @@ func (p *AddRmServerProtocol) Start() error {
 	}
 
 	libunlynx.EndParallelize(wg)
+	*/
 	libunlynx.EndTimer(roundComput)
 
 	roundProof := libunlynx.StartTimer(p.Name() + "_AddRmServer(PROOFS)")
 	pubs := make([]libunlynx.PublishedAddRmProof, 0)
 	if p.Proofs {
+		proofsCreation(pubs, p.TargetOfTransformation, result, p.KeyToRm, p.Add)
+		/*
 		wg := libunlynx.StartParallelize(len(result))
+		if libunlynx.PARALLELIZE {
+		} else {
+
+		}
 		for i, v := range result {
 			if libunlynx.PARALLELIZE {
 				go func(i int, v libunlynx.CipherText) {
@@ -86,6 +94,7 @@ func (p *AddRmServerProtocol) Start() error {
 
 		}
 		libunlynx.EndParallelize(wg)
+		*/
 	}
 
 	libunlynx.EndTimer(roundProof)
@@ -117,6 +126,24 @@ func (p *AddRmServerProtocol) Dispatch() error {
 	return nil
 }
 
+func changeEncryption(cipherTexts []libunlynx.CipherText, serverAddRmKey kyber.Scalar, toAdd bool) []libunlynx.CipherText {
+	result := make([]libunlynx.CipherText, len(cipherTexts))
+
+	wg := libunlynx.StartParallelize(len(cipherTexts))
+	for i, v := range cipherTexts {
+		if libunlynx.PARALLELIZE {
+			go func(i int, v libunlynx.CipherText) {
+				defer wg.Done()
+				result[i] = changeEncryptionKeyCipherTexts(v, serverAddRmKey, toAdd)
+			}(i, v)
+		} else {
+			result[i] = changeEncryptionKeyCipherTexts(v, serverAddRmKey, toAdd)
+		}
+	}
+	libunlynx.EndParallelize(wg)
+	return result
+}
+
 func changeEncryptionKeyCipherTexts(cipherText libunlynx.CipherText, serverAddRmKey kyber.Scalar, toAdd bool) libunlynx.CipherText {
 	tmp := libunlynx.SuiTe.Point().Mul(serverAddRmKey, cipherText.K)
 	result := libunlynx.CipherText{}
@@ -129,7 +156,7 @@ func changeEncryptionKeyCipherTexts(cipherText libunlynx.CipherText, serverAddRm
 	return result
 }
 
-func proofsCreation(pubs []libunlynx.PublishedAddRmProof, target, ct libunlynx.CipherText, keyToRm kyber.Scalar, add bool) {
+func proofsCreation(pubs []libunlynx.PublishedAddRmProof, target, ct []libunlynx.CipherText, keyToRm kyber.Scalar, add bool) {
 	ktopub := libunlynx.SuiTe.Point().Mul(keyToRm, libunlynx.SuiTe.Point().Base())
 
 	prf := libunlynx.VectorAddRmProofCreation(target, ct, keyToRm, add)
