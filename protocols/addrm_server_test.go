@@ -8,7 +8,6 @@ import (
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/protocols"
 	"github.com/stretchr/testify/assert"
-	"strconv"
 	"testing"
 	"time"
 )
@@ -37,21 +36,25 @@ func TestAddRmServer(t *testing.T) {
 
 	tab := []int64{10, 10}
 
-	expectedResults := make(map[string]int64)
-	expectedResults["0"] = 10
-	expectedResults["1"] = 10
+	expectedResults := make([]int64, len(tab))
+	expectedResults[0] = 10
+	expectedResults[1] = 10
 	//cipherVect := *lib.EncryptIntVector(pubKey, expectedResult)
 	//cipherVect2 := *lib.NewCipherVector(len(cipherVect)).Add(cipherVect, cipherVect)
 
 	//dummySurveyCreationQuery := lib.SurveyCreationQuery{Sum:[]string{"0","1"}, GroupBy:[]string{"0","1"}, Where:[]lib.WhereQueryAttribute{{"0", lib.CipherText{}},{"1", lib.CipherText{}}}}
+	/*
 	notEncrypted := make(map[string]int64)
 	for i, v := range tab {
 		notEncrypted[strconv.Itoa(i)] = v
 	}
-	encrypted := make(map[string]libunlynx.CipherText)
+	*/
+	encrypted := make([]libunlynx.CipherText, len(tab))
 	for i, v := range tab {
-		encrypted[strconv.Itoa(i)] = *libunlynx.EncryptInt(pubKey, v)
+		encrypted[i] = *libunlynx.EncryptInt(pubKey, v)
 	}
+
+	/*
 	// aggregation
 	dpResponses := make([]libunlynx.DpResponse, 3)
 	dpResponses[0] = libunlynx.DpResponse{GroupByClear: notEncrypted, GroupByEnc: encrypted, WhereClear: notEncrypted, WhereEnc: encrypted, AggregatingAttributesClear: notEncrypted, AggregatingAttributesEnc: encrypted}
@@ -60,8 +63,9 @@ func TestAddRmServer(t *testing.T) {
 
 	log.Lvl1("CipherTexts to transform ")
 	log.Lvl1(dpResponses)
+	*/
 
-	protocol.TargetOfTransformation = dpResponses
+	protocol.TargetOfTransformation = encrypted
 	protocol.Proofs = true
 	feedback := protocol.FeedbackChannel
 	protocol.Add = false
@@ -75,8 +79,8 @@ func TestAddRmServer(t *testing.T) {
 	case results := <-feedback:
 		log.Lvl1("Results: ")
 		log.Lvl1(results)
-		decryptedResult := make(map[string]int64)
-		for i, v := range results[0].AggregatingAttributesEnc {
+		decryptedResult := make([]int64, 2)
+		for i, v := range results {
 			decryptedResult[i] = libunlynx.DecryptInt(secKeyAfter, v)
 		}
 		//decryptedResult := lib.DecryptIntVector(secKeyAfter, &results[0].AggregatingAttributesEnc)
