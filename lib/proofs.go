@@ -12,6 +12,7 @@ import (
 	"math"
 	"gopkg.in/dedis/crypto.v0/random"
 	"golang.org/x/crypto/sha3"
+	"github.com/lca1/unlynx/lib"
 )
 
 // SwitchKeyProof proof for key switching
@@ -658,6 +659,8 @@ func InitRangeProofSignature(u int64) PublishSignature {
 	}
 	return PublishSignature{Signature: A, Public: y}
 }
+
+
 
 //AT DP ONLY
 
