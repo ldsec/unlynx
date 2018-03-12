@@ -1,9 +1,10 @@
-package encoding
+package encoding_test
 
 import (
 	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
 	"testing"
+	"github.com/lca1/unlynx/lib/encoding"
 )
 
 // TestEncodeDecodeSum tests EncodeSum and DecodeSum
@@ -19,9 +20,9 @@ func TestEncodeDecodeSum(t *testing.T) {
 	}
 
 	//function call
-	resultEncrypted := EncodeSum(inputValues, pubKey)
+	resultEncrypted := encoding.EncodeSum(inputValues, pubKey)
 
-	result := DecodeSum(*resultEncrypted, secKey)
+	result := encoding.DecodeSum(*resultEncrypted, secKey)
 
 	assert.Equal(t, expect, result)
 
