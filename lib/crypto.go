@@ -189,7 +189,13 @@ func decryptPoint(prikey kyber.Scalar, c CipherText) kyber.Point {
 // DecryptInt decrypts an integer from an ElGamal cipher text where integer are encoded in the exponent.
 func DecryptInt(prikey kyber.Scalar, cipher CipherText) int64 {
 	M := decryptPoint(prikey, cipher)
-	return discreteLog(M)
+	return discreteLog(M, false)
+}
+
+// DecryptIntWithNeg decrypts an integer from an ElGamal cipher text where integer are encoded in the exponent.
+func DecryptIntWithNeg(prikey kyber.Scalar, cipher CipherText) int64 {
+	M := decryptPoint(prikey, cipher)
+	return discreteLog(M, true)
 }
 
 // DecryptIntVector decrypts a cipherVector.
@@ -201,8 +207,17 @@ func DecryptIntVector(prikey kyber.Scalar, cipherVector *CipherVector) []int64 {
 	return result
 }
 
+// DecryptIntVector decrypts a cipherVector.
+func DecryptIntVectorWithNeg(prikey kyber.Scalar, cipherVector *CipherVector) []int64 {
+	result := make([]int64, len(*cipherVector))
+	for i, c := range *cipherVector {
+		result[i] = DecryptIntWithNeg(prikey, c)
+	}
+	return result
+}
+
 // Brute-Forces the discrete log for integer decoding.
-func discreteLog(P kyber.Point) int64 {
+func discreteLog(P kyber.Point, checkNeg bool) int64 {
 	B := SuiTe.Point().Base()
 	var Bi kyber.Point
 	var m int64
@@ -217,10 +232,16 @@ func discreteLog(P kyber.Point) int64 {
 		currentGreatestM = SuiTe.Point().Null()
 	}
 
-	for Bi, m = currentGreatestM, currentGreatestInt; !Bi.Equal(P) && m < MaxHomomorphicInt; Bi, m = Bi.Add(Bi, B), m+1 {
+	BiNeg := SuiTe.Point().Neg(B)
+	for Bi, m = currentGreatestM, currentGreatestInt; !Bi.Equal(P) && !SuiTe.Point().Neg(Bi).Equal(P) && m < MaxHomomorphicInt; Bi, m = Bi.Add(Bi, B), m+1 {
+		if checkNeg {
+			BiNeg := SuiTe.Point().Neg(Bi)
+			PointToInt.Put(BiNeg.String(), -m)
+		}
 		PointToInt.Put(Bi.String(), m)
 	}
 	currentGreatestM = Bi
+	PointToInt.Put(BiNeg.String(), -m)
 	PointToInt.Put(Bi.String(), m)
 	currentGreatestInt = m
 
@@ -230,6 +251,9 @@ func discreteLog(P kyber.Point) int64 {
 	}
 	mutex.Unlock()
 
+	if SuiTe.Point().Neg(Bi).Equal(P){
+		return -m
+	}
 	return m
 }
 
