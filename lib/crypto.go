@@ -146,6 +146,11 @@ func EncryptInt(pubkey kyber.Point, integer int64) *CipherText {
 	return encryptPoint(pubkey, IntToPoint(integer))
 }
 
+// EncryptScalar encodes i as iB, encrypt it into a CipherText and returns a pointer to it.
+func EncryptScalar(pubkey kyber.Point, scalar kyber.Scalar) *CipherText {
+	return encryptPoint(pubkey, SuiTe.Point().Mul(scalar, SuiTe.Point().Base()))
+}
+
 // EncryptIntVector encrypts a []int into a CipherVector and returns a pointer to it.
 func EncryptIntVector(pubkey kyber.Point, intArray []int64) *CipherVector {
 	var wg sync.WaitGroup
@@ -170,6 +175,32 @@ func EncryptIntVector(pubkey kyber.Point, intArray []int64) *CipherVector {
 
 	return &cv
 }
+
+// EncryptIntVector encrypts a []int into a CipherVector and returns a pointer to it.
+func EncryptScalarVector(pubkey kyber.Point, intArray []kyber.Scalar) *CipherVector {
+	var wg sync.WaitGroup
+	cv := make(CipherVector, len(intArray))
+	if PARALLELIZE {
+		for i := 0; i < len(intArray); i = i + VPARALLELIZE {
+			wg.Add(1)
+			go func(i int) {
+				for j := 0; j < VPARALLELIZE && (j+i < len(intArray)); j++ {
+					cv[j+i] = *EncryptScalar(pubkey, intArray[j+i])
+				}
+				defer wg.Done()
+			}(i)
+
+		}
+		wg.Wait()
+	} else {
+		for i, n := range intArray {
+			cv[i] = *EncryptScalar(pubkey, n)
+		}
+	}
+
+	return &cv
+}
+
 
 // NullCipherVector encrypts an 0-filled slice under the given public key.
 func NullCipherVector(length int, pubkey kyber.Point) *CipherVector {
@@ -207,7 +238,7 @@ func DecryptIntVector(prikey kyber.Scalar, cipherVector *CipherVector) []int64 {
 	return result
 }
 
-// DecryptIntVector decrypts a cipherVector.
+// DecryptIntVectorWithNeg decrypts a cipherVector.
 func DecryptIntVectorWithNeg(prikey kyber.Scalar, cipherVector *CipherVector) []int64 {
 	result := make([]int64, len(*cipherVector))
 	for i, c := range *cipherVector {
@@ -215,6 +246,27 @@ func DecryptIntVectorWithNeg(prikey kyber.Scalar, cipherVector *CipherVector) []
 	}
 	return result
 }
+
+// DecryptInt decrypts an integer from an ElGamal cipher text where integer are encoded in the exponent.
+func DecryptCheckZero(prikey kyber.Scalar, cipher CipherText) int64 {
+	M := decryptPoint(prikey, cipher)
+	result := int64(1)
+	if M.Equal(SuiTe.Point().Null()){
+		result = int64(0)
+	}
+	return result
+}
+
+// DecryptIntVectorWithNeg decrypts a cipherVector.
+func DecryptCheckZeroVector(prikey kyber.Scalar, cipherVector *CipherVector) []int64 {
+	result := make([]int64, len(*cipherVector))
+	for i, c := range *cipherVector {
+		result[i] = DecryptCheckZero(prikey, c)
+	}
+	return result
+}
+
+
 
 // Brute-Forces the discrete log for integer decoding.
 func discreteLog(P kyber.Point, checkNeg bool) int64 {
