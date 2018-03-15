@@ -2,7 +2,7 @@
 // to check all available proofs.
 // We suppose the existence of a database of all generated proofs and in this protocol, the server running it will
 // verify all the proofs.
-package protocolsunlynx
+package utils
 
 import (
 	"github.com/dedis/onet"

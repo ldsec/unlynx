@@ -1,6 +1,6 @@
 // Package protocolsunlynx contains LocalAggregationProtocol and its only purpose is to simulate aggregations done locally
 // For example, it can be used to simulate a data provider doing some pre-processing on its data
-package protocolsunlynx
+package utils
 
 import (
 	"github.com/dedis/onet"

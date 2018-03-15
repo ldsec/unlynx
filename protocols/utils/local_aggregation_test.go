@@ -1,4 +1,4 @@
-package protocolsunlynx_test
+package utils
 
 import (
 	"github.com/dedis/kyber/util/random"

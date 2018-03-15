@@ -1,4 +1,4 @@
-package protocolsunlynx_test
+package utils
 
 import (
 	"testing"
