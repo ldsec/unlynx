@@ -56,46 +56,12 @@ func (p *AddRmServerProtocol) Start() error {
 
 	result := make([]libunlynx.CipherText, len(p.TargetOfTransformation))
 	result = changeEncryption(p.TargetOfTransformation, p.KeyToRm, p.Add)
-	/*
-	for i, v := range p.TargetOfTransformation {
-		if libunlynx.PARALLELIZE {
-			go func(i int, v libunlynx.CipherText) {
-				defer wg.Done()
-				result[i] = changeEncryptionKeyCipherTexts(v, p.KeyToRm, p.Add)
-			}(i, v)
-		} else {
-			result[i] = changeEncryptionKeyCipherTexts(v, p.KeyToRm, p.Add)
-		}
-	}
-
-	libunlynx.EndParallelize(wg)
-	*/
 	libunlynx.EndTimer(roundComput)
 
 	roundProof := libunlynx.StartTimer(p.Name() + "_AddRmServer(PROOFS)")
 	pubs := make([]libunlynx.PublishedAddRmProof, 0)
 	if p.Proofs {
 		proofsCreation(pubs, p.TargetOfTransformation, result, p.KeyToRm, p.Add)
-		/*
-		wg := libunlynx.StartParallelize(len(result))
-		if libunlynx.PARALLELIZE {
-		} else {
-
-		}
-		for i, v := range result {
-			if libunlynx.PARALLELIZE {
-				go func(i int, v libunlynx.CipherText) {
-					defer wg.Done()
-					proofsCreation(pubs, p.TargetOfTransformation[i], v, p.KeyToRm, p.Add)
-				}(i, v)
-
-			} else {
-				proofsCreation(pubs, p.TargetOfTransformation[i], v, p.KeyToRm, p.Add)
-			}
-
-		}
-		libunlynx.EndParallelize(wg)
-		*/
 	}
 
 	libunlynx.EndTimer(roundProof)
@@ -131,7 +97,6 @@ func changeEncryption(cipherTexts []libunlynx.CipherText, serverAddRmKey kyber.S
 	result := make([]libunlynx.CipherText, len(cipherTexts))
 
 	var wg sync.WaitGroup
-	//wg := libunlynx.StartParallelize(len(cipherTexts))
 	if libunlynx.PARALLELIZE {
 		for i := 0 ; i < len(cipherTexts) ; i += libunlynx.VPARALLELIZE {
 			wg.Add(1)
