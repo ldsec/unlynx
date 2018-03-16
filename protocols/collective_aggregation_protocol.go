@@ -18,6 +18,7 @@ import (
 
 // CollectiveAggregationProtocolName is the registered name for the collective aggregation protocol.
 const CollectiveAggregationProtocolName = "CollectiveAggregation"
+const EMPTYKEY = ""
 
 func init() {
 	network.RegisterMessage(DataReferenceMessage{})
@@ -96,6 +97,7 @@ type CollectiveAggregationProtocol struct {
 
 	// Protocol state data
 	GroupedData *map[libunlynx.GroupingKey]libunlynx.FilteredResponse
+	SimpleData *[]libunlynx.CipherText
 	Proofs      bool
 }
 
@@ -243,6 +245,47 @@ func (p *CollectiveAggregationProtocol) ascendingAggregationPhase() *map[libunly
 	}
 
 	return p.GroupedData
+}
+
+// Setup and return the data needed in the aggregation to a usable format
+func (p *CollectiveAggregationProtocol) getData() (*map[libunlynx.GroupingKey]libunlynx.FilteredResponse, error) {
+	if p.GroupedData == nil && p.SimpleData == nil {
+		return nil, errors.New("no data reference is provided")
+	}
+
+	// If the two
+	if p.GroupedData != nil && p.SimpleData != nil {
+		return nil, errors.New("two data references are given in the struct")
+	}
+
+	if p.GroupedData != nil {
+		return p.GroupedData, nil
+	}
+
+	result := make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse, 1)
+	result[EMPTYKEY]= libunlynx.FilteredResponse{
+		GroupByEnc:make([]libunlynx.CipherText, len(*p.SimpleData)),
+	}
+	var wg sync.WaitGroup
+	if libunlynx.PARALLELIZE {
+		for i := 0; i < len(*p.SimpleData); i += libunlynx.VPARALLELIZE {
+			wg.Add(1)
+			go func(i int) {
+				for j := 0; j < libunlynx.VPARALLELIZE && (i+j) < len(*p.SimpleData); j++ {
+					result[EMPTYKEY].GroupByEnc[i+j] = (*p.SimpleData)[i+j]
+				}
+			}(i)
+		}
+		wg.Wait()
+	} else {
+		for i, v := range *p.SimpleData {
+			result[EMPTYKEY].GroupByEnc[i] = v
+		}
+	}
+	p.GroupedData = &result
+	p.SimpleData = nil
+
+	return p.GroupedData, nil
 }
 
 // Conversion
