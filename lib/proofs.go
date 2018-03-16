@@ -241,18 +241,18 @@ func VectorAddRmProofCreation(vBef, vAft []CipherText, k kyber.Scalar, toAdd boo
 
 	if PARALLELIZE {
 		var mutexBf sync.Mutex
-		for i := range vBef {
+		for i := 0; i < len(vBef); i += VPARALLELIZE {
 			wg.Add(1)
 			go func(i int) {
+				for j := 0; j < VPARALLELIZE && (i+j) < len(vBef); j++ {
+					proofAux := AddRmProofCreation(vBef[i+j], vAft[i+j], k, toAdd)
+
+					mutexBf.Lock()
+					result[i+j] = proofAux
+					mutexBf.Unlock()
+				}
 				defer wg.Done()
-
-				proofAux := AddRmProofCreation(vBef[i], vAft[i], k, toAdd)
-
-				mutexBf.Lock()
-				result[i] = proofAux
-				mutexBf.Unlock()
 			}(i)
-
 		}
 		wg.Wait()
 	} else {

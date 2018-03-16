@@ -8,6 +8,7 @@ import (
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
+	"sync"
 )
 
 // AddRmServerProtocolName is the registered name for the local aggregation protocol.
@@ -129,18 +130,24 @@ func (p *AddRmServerProtocol) Dispatch() error {
 func changeEncryption(cipherTexts []libunlynx.CipherText, serverAddRmKey kyber.Scalar, toAdd bool) []libunlynx.CipherText {
 	result := make([]libunlynx.CipherText, len(cipherTexts))
 
-	wg := libunlynx.StartParallelize(len(cipherTexts))
-	for i, v := range cipherTexts {
-		if libunlynx.PARALLELIZE {
-			go func(i int, v libunlynx.CipherText) {
+	var wg sync.WaitGroup
+	//wg := libunlynx.StartParallelize(len(cipherTexts))
+	if libunlynx.PARALLELIZE {
+		for i := 0 ; i < len(cipherTexts) ; i += libunlynx.VPARALLELIZE {
+			wg.Add(1)
+			go func(i int) {
+				for j := 0; j < libunlynx.VPARALLELIZE && (i+j) < len(cipherTexts); j++ {
+					result[i+j] = changeEncryptionKeyCipherTexts(cipherTexts[i+j], serverAddRmKey, toAdd)
+				}
 				defer wg.Done()
-				result[i] = changeEncryptionKeyCipherTexts(v, serverAddRmKey, toAdd)
-			}(i, v)
-		} else {
+			}(i)
+		}
+		wg.Wait()
+	} else {
+		for i, v := range cipherTexts {
 			result[i] = changeEncryptionKeyCipherTexts(v, serverAddRmKey, toAdd)
 		}
 	}
-	libunlynx.EndParallelize(wg)
 	return result
 }
 
