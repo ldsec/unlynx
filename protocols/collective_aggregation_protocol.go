@@ -127,8 +127,9 @@ func NewCollectiveAggregationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolIn
 
 // Start is called at the root to begin the execution of the protocol.
 func (p *CollectiveAggregationProtocol) Start() error {
-	if p.GroupedData == nil {
-		return errors.New("no data reference provided for aggregation")
+	_, err := p.getData()
+	if err != nil {
+		return err
 	}
 	log.Lvl1(p.ServerIdentity(), " started a Colective Aggregation Protocol (", len(*p.GroupedData), "local group(s) )")
 	p.SendToChildren(&DataReferenceMessage{})
@@ -264,23 +265,10 @@ func (p *CollectiveAggregationProtocol) getData() (*map[libunlynx.GroupingKey]li
 
 	result := make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse, 1)
 	result[EMPTYKEY]= libunlynx.FilteredResponse{
-		GroupByEnc:make([]libunlynx.CipherText, len(*p.SimpleData)),
+		AggregatingAttributes:make([]libunlynx.CipherText, len(*p.SimpleData)),
 	}
-	var wg sync.WaitGroup
-	if libunlynx.PARALLELIZE {
-		for i := 0; i < len(*p.SimpleData); i += libunlynx.VPARALLELIZE {
-			wg.Add(1)
-			go func(i int) {
-				for j := 0; j < libunlynx.VPARALLELIZE && (i+j) < len(*p.SimpleData); j++ {
-					result[EMPTYKEY].GroupByEnc[i+j] = (*p.SimpleData)[i+j]
-				}
-			}(i)
-		}
-		wg.Wait()
-	} else {
-		for i, v := range *p.SimpleData {
-			result[EMPTYKEY].GroupByEnc[i] = v
-		}
+	for i, v := range *p.SimpleData {
+		result[EMPTYKEY].AggregatingAttributes[i] = v
 	}
 	p.GroupedData = &result
 	p.SimpleData = nil
