@@ -15,6 +15,7 @@ import (
 
 // MaxHomomorphicInt is upper bound for integers used in messages, a failed decryption will return this value.
 const MaxHomomorphicInt int64 = 100000
+const ByteArraySize int = 64
 
 // PointToInt creates a map between EC points and integers.
 //var PointToInt = make(map[string]int64, MaxHomomorphicInt)
@@ -506,9 +507,9 @@ func (cv *CipherVector) ToBytes() ([]byte, int) {
 // FromBytes converts a byte array to a CipherVector. Note that you need to create the (empty) object beforehand.
 func (cv *CipherVector) FromBytes(data []byte, length int) {
 	*cv = make(CipherVector, length)
-	for i, pos := 0, 0; i < length*64; i, pos = i+64, pos+1 {
+	for i, pos := 0, 0; i < length*ByteArraySize; i, pos = i+ByteArraySize, pos+1 {
 		ct := CipherText{}
-		ct.FromBytes(data[i : i+64])
+		ct.FromBytes(data[i : i+ByteArraySize])
 		(*cv)[pos] = ct
 	}
 }
@@ -533,8 +534,8 @@ func (c *CipherText) FromBytes(data []byte) {
 	(*c).K = SuiTe.Point()
 	(*c).C = SuiTe.Point()
 
-	(*c).K.UnmarshalBinary(data[:32])
-	(*c).C.UnmarshalBinary(data[32:])
+	(*c).K.UnmarshalBinary(data[:ByteArraySize/2])
+	(*c).C.UnmarshalBinary(data[ByteArraySize/2:])
 }
 
 // Serialize encodes a CipherText in a base64 string
