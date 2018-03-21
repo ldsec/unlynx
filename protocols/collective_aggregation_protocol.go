@@ -142,6 +142,10 @@ func (p *CollectiveAggregationProtocol) Dispatch() error {
 	// 1. Aggregation announcement phase
 	if !p.IsRoot() {
 		p.aggregationAnnouncementPhase()
+		_, err := p.getData()
+		if err != nil {
+			return err
+		}
 	}
 
 	// 2. Ascending aggregation phase
