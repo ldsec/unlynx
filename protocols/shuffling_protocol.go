@@ -95,6 +95,16 @@ type ShufflingProtocol struct {
 	Precomputed   []libunlynx.CipherVectorScalar
 }
 
+func adaptCipherTextArray(cipherTexts []libunlynx.CipherText) [][]libunlynx.CipherText {
+	result := make([][]libunlynx.CipherText, len(cipherTexts))
+	for i, v := range cipherTexts {
+		result[i] = make([]libunlynx.CipherText, 1)
+		result[i][0] = v
+	}
+
+	return result
+}
+
 // NewShufflingProtocol constructs neff shuffle protocol instances.
 func NewShufflingProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 	dsp := &ShufflingProtocol{
