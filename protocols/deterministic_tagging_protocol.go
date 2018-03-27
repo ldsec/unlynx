@@ -135,10 +135,22 @@ func DetCipherTextToProcessResponseDet(detCt libunlynx.DeterministCipherVector, 
 	targetOfSwitch []libunlynx.ProcessResponse) []libunlynx.ProcessResponseDet {
 	result := make([]libunlynx.ProcessResponseDet, len(length))
 
-	for _, v := range targetOfSwitch {
-		deterministicWhereAttributes := make([]libunlynx.GroupingKey, len(v.WhereEnc))
+	pos := 0
+	for i := range result {
+		deterministicGroupAttributes := make(libunlynx.DeterministCipherVector, length[i][0])
+		copy(deterministicGroupAttributes, detCt[pos : pos+length[i][0]])
+		pos += length[i][0]
+
+		deterministicWhereAttributes := make([]libunlynx.GroupingKey, length[i][1])
+		for j, c := range detCt[pos : pos+length[i][1]] {
+			deterministicWhereAttributes[j] = libunlynx.GroupingKey(c.String())
+		}
+
 		result = append(result,
-			libunlynx.ProcessResponseDet{PR: v, DetTagGroupBy: detCt.Key(), DetTagWhere: deterministicWhereAttributes})
+			libunlynx.ProcessResponseDet{PR: targetOfSwitch[i], DetTagGroupBy: deterministicGroupAttributes.Key(),
+			DetTagWhere: deterministicWhereAttributes} )
+
+		pos += length[i][1] + length[i][2]
 	}
 
 	return result
