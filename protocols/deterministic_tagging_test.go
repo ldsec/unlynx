@@ -49,7 +49,7 @@ func TestDeterministicTagging(t *testing.T) {
 	select {
 	case encryptedResult := <-feedback:
 		for i, v := range encryptedResult {
-			if !reflect.DeepEqual(v.PR, testCipherVect[i]) {
+			if !reflect.DeepEqual(v, testCipherVect[i]) {
 				t.Fatal("DP responses changed and shouldn't")
 			}
 		}
@@ -58,10 +58,10 @@ func TestDeterministicTagging(t *testing.T) {
 		for i, v := range encryptedResult {
 			for j, w := range encryptedResult {
 				//TODO : Change when change the struct of ProcessResponseDet
-				if j != i && reflect.DeepEqual(v.DetTagGroupBy, w.DetTagGroupBy) {
+				if j != i && reflect.DeepEqual(v, w) {
 					threeSame++
 				}
-				if j != i && reflect.DeepEqual(v.DetTagWhere, w.DetTagWhere) {
+				if j != i && reflect.DeepEqual(v, w) {
 					threeSame1++
 				}
 			}

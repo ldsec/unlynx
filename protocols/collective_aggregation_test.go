@@ -168,12 +168,13 @@ func NewCollectiveAggregationTestSimple(tni *onet.TreeNodeInstance) (onet.Protoc
 		log.Lvl1("5")
 		toAdd := libunlynx.EncryptIntVector(clientPublic, []int64{0, 1, 0, 1, 0})
 		simpleSlice = append(simpleSlice, *toAdd...)
-	case 6:
-		log.Lvl1("6")
+	case 9:
+		log.Lvl1("9")
 		toAdd := libunlynx.EncryptIntVector(clientPublic, []int64{1, 0, 1, 0, 1})
 		simpleSlice = append(simpleSlice, *toAdd...)
 	default:
 	}
+
 	protocol.SimpleData = &simpleSlice
 	protocol.GroupedData = nil
 
