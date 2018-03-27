@@ -95,7 +95,7 @@ type DeterministicTaggingProtocol struct {
 	ExecTime time.Duration
 }
 
-func ProcessResponseToCipherTextArray(p []libunlynx.ProcessResponse) ([]libunlynx.CipherText, [][]int) {
+func PRToCipherTextArray(p []libunlynx.ProcessResponse) ([]libunlynx.CipherText, [][]int) {
 	cipherTexts := make([]libunlynx.CipherText, 0)
 	lengths := make([][]int, len(p))
 
@@ -112,7 +112,7 @@ func ProcessResponseToCipherTextArray(p []libunlynx.ProcessResponse) ([]libunlyn
 	return cipherTexts, lengths
 }
 
-func CipherTextArrayToProcessResponse(ct []libunlynx.CipherText, lengths [][]int) []libunlynx.ProcessResponse {
+func CTAToProcessResponse(ct []libunlynx.CipherText, lengths [][]int) []libunlynx.ProcessResponse {
 	result := make([]libunlynx.ProcessResponse, len(lengths))
 
 	pos := 0
@@ -131,7 +131,7 @@ func CipherTextArrayToProcessResponse(ct []libunlynx.CipherText, lengths [][]int
 	return result
 }
 
-func DetCipherTextToProcessResponseDet(detCt libunlynx.DeterministCipherVector, length [][]int,
+func DCVToProcessResponseDet(detCt libunlynx.DeterministCipherVector, length [][]int,
 	targetOfSwitch []libunlynx.ProcessResponse) []libunlynx.ProcessResponseDet {
 	result := make([]libunlynx.ProcessResponseDet, len(length))
 
