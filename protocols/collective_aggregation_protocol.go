@@ -171,7 +171,6 @@ func (p *CollectiveAggregationProtocol) ascendingAggregationPhase() *map[libunly
 		emptyMap := make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse, 0)
 		p.GroupedData = &emptyMap
 	}
-	//log.Lvl1(p.ServerIdentity().Address , p.GroupedData)
 
 	roundTotComput := libunlynx.StartTimer(p.Name() + "_CollectiveAggregation(ascendingAggregation)")
 
@@ -267,7 +266,7 @@ func (p *CollectiveAggregationProtocol) getData() (*map[libunlynx.GroupingKey]li
 
 	result := make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse)
 	if len(*p.SimpleData) > 0 {
-		result[EMPTYKEY]= libunlynx.FilteredResponse{
+		result[EMPTYKEY] = libunlynx.FilteredResponse{
 			AggregatingAttributes:make([]libunlynx.CipherText, len(*p.SimpleData)),
 		}
 		for i, v := range *p.SimpleData {

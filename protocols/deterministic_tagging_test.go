@@ -32,15 +32,36 @@ func TestDeterministicTagging(t *testing.T) {
 	aggregateKey := entityList.Aggregate
 
 	//create data for test
-	testCipherVect := make([]libunlynx.CipherText, 4)
-	expRes := []int64{1, 1, 2, 1}
+	testCipherVect := make(libunlynx.CipherVector, 1)
+	expRes := []int64{1}
 	for i, p := range expRes {
 		testCipherVect[i] = *libunlynx.EncryptInt(aggregateKey, p)
 	}
+	processResponse1 := libunlynx.ProcessResponse{GroupByEnc: testCipherVect, WhereEnc: testCipherVect, AggregatingAttributes: testCipherVect}
 
-	log.Lvl1("Data to be Tagged ", testCipherVect)
+	testCipherVect1 := make(libunlynx.CipherVector, 1)
+	expRes1 := []int64{1}
+	for i, p := range expRes1 {
+		testCipherVect1[i] = *libunlynx.EncryptInt(aggregateKey, p)
+	}
+	processResponse2 := libunlynx.ProcessResponse{GroupByEnc: testCipherVect1, WhereEnc: testCipherVect1, AggregatingAttributes: testCipherVect1}
 
-	protocol.TargetOfSwitch = &testCipherVect
+	testCipherVect2 := make(libunlynx.CipherVector, 1)
+	expRes2 := []int64{2}
+	for i, p := range expRes2 {
+		testCipherVect2[i] = *libunlynx.EncryptInt(aggregateKey, p)
+	}
+	processResponse3 := libunlynx.ProcessResponse{GroupByEnc: testCipherVect2, WhereEnc: testCipherVect2, AggregatingAttributes: testCipherVect2}
+
+	mapi := make([]libunlynx.ProcessResponse, 4)
+	mapi[0] = processResponse1
+	mapi[1] = processResponse2
+	mapi[2] = processResponse3
+	mapi[3] = processResponse1
+
+	log.Lvl1("Data to be Tagged ", mapi)
+	cta, lengths := protocolsunlynx.PRToCipherTextArray(mapi)
+	protocol.TargetOfSwitch = &cta
 	feedback := protocol.FeedbackChannel
 	go protocol.Start()
 
@@ -48,27 +69,33 @@ func TestDeterministicTagging(t *testing.T) {
 
 	select {
 	case encryptedResult := <-feedback:
-		for i, v := range encryptedResult {
-			if !reflect.DeepEqual(v, testCipherVect[i]) {
+		goodFormatResult := protocolsunlynx.DCVToProcessResponseDet(encryptedResult, lengths, mapi)
+		for _, v := range goodFormatResult {
+			present := false
+			for _, w := range mapi {
+				if reflect.DeepEqual(v.PR, w) {
+					present = true
+				}
+			}
+			if !present {
 				t.Fatal("DP responses changed and shouldn't")
 			}
 		}
 		threeSame := 0
 		threeSame1 := 0
-		for i, v := range encryptedResult {
-			for j, w := range encryptedResult {
-				//TODO : Change when change the struct of ProcessResponseDet
-				if j != i && reflect.DeepEqual(v, w) {
+		for i, v := range goodFormatResult {
+			for j, w := range goodFormatResult {
+				if reflect.DeepEqual(v.DetTagGroupBy, w.DetTagGroupBy) && j != i {
 					threeSame++
 				}
-				if j != i && reflect.DeepEqual(v, w) {
+				if reflect.DeepEqual(v.DetTagWhere, w.DetTagWhere) && j != i {
 					threeSame1++
 				}
 			}
 		}
 		assert.True(t, threeSame == 6)
 		assert.True(t, threeSame1 == 6)
-		for _, v := range encryptedResult {
+		for _, v := range goodFormatResult {
 			log.Lvl1(v)
 		}
 
