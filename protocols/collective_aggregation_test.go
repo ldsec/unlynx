@@ -26,11 +26,11 @@ func TestCollectiveAggregationGroup(t *testing.T) {
 	local := onet.NewLocalTest(libunlynx.SuiTe)
 
 	// You must register this protocol before creating the servers
-	onet.GlobalProtocolRegister("CollectiveAggregationTest", NewCollectiveAggregationTestGroups)
+	onet.GlobalProtocolRegister("CollectiveAggregationTestGroup", NewCollectiveAggregationTestGroups)
 	_, _, tree := local.GenTree(10, true)
 	defer local.CloseAll()
 
-	p, err := local.CreateProtocol("CollectiveAggregationTest", tree)
+	p, err := local.CreateProtocol("CollectiveAggregationTestGroup", tree)
 	if err != nil {
 		t.Fatal("Couldn't start protocol:", err)
 	}
@@ -114,11 +114,11 @@ func TestCollectiveAggregationSimple(t *testing.T) {
 	local := onet.NewLocalTest(libunlynx.SuiTe)
 
 	// You must register this protocol before creating the servers
-	onet.GlobalProtocolRegister("CollectiveAggregationTest", NewCollectiveAggregationTestSimple)
+	onet.GlobalProtocolRegister("CollectiveAggregationTestSimple", NewCollectiveAggregationTestSimple)
 	_, _, tree := local.GenTree(10, true)
 	defer local.CloseAll()
 
-	p, err := local.CreateProtocol("CollectiveAggregationTest", tree)
+	p, err := local.CreateProtocol("CollectiveAggregationTestSimple", tree)
 	if err != nil {
 		t.Fatal("Couldn't start protocol:", err)
 	}
