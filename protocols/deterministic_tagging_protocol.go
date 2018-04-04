@@ -146,9 +146,8 @@ func DCVToProcessResponseDet(detCt libunlynx.DeterministCipherVector, length [][
 			deterministicWhereAttributes[j] = libunlynx.GroupingKey(c.String())
 		}
 
-		result = append(result,
-			libunlynx.ProcessResponseDet{PR: targetOfSwitch[i], DetTagGroupBy: deterministicGroupAttributes.Key(),
-			DetTagWhere: deterministicWhereAttributes} )
+		result[i] = libunlynx.ProcessResponseDet{PR: targetOfSwitch[i], DetTagGroupBy: deterministicGroupAttributes.Key(),
+			DetTagWhere: deterministicWhereAttributes}
 
 		pos += length[i][1] + length[i][2]
 	}
@@ -197,9 +196,9 @@ func (p *DeterministicTaggingProtocol) Start() error {
 
 	p.ExecTime = 0
 
-	nbrProcessResponses := len(*p.TargetOfSwitch)
+	nbrCipherText := len(*p.TargetOfSwitch)
 
-	log.Lvl1("["+p.Name()+"]", " starts a Deterministic Tagging Protocol on ", nbrProcessResponses, " element(s)")
+	log.Lvl1("["+p.Name()+"]", " starts a Deterministic Tagging Protocol on ", nbrCipherText, " element(s)")
 
 	// create process response with deterministic tag, at first step the tag creation part is a copy of the proba
 	// grouping attributes
@@ -273,14 +272,16 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 	if libunlynx.PARALLELIZE {
 		var wg sync.WaitGroup
 		for i := 0; i < len(deterministicTaggingTarget.Data); i += libunlynx.VPARALLELIZE {
+			wg.Add(1)
 			go func(i int) {
 				defer wg.Done()
-				j := int(math.Max(float64(i + libunlynx.VPARALLELIZE), float64(len(deterministicTaggingTarget.Data))))
+				j := int(math.Min(float64(i + libunlynx.VPARALLELIZE), float64(len(deterministicTaggingTarget.Data))))
 				tmp := make(libunlynx.CipherVector, j - i)
 				copy(tmp, deterministicTaggingTarget.Data[i:j])
 				tmp.TaggingDet(p.Private(), *p.SurveySecretKey, p.Public(), p.Proofs)
 			}(i)
 		}
+		wg.Wait()
 	} else {
 		tmp := libunlynx.CipherVector(deterministicTaggingTarget.Data)
 		tmp.TaggingDet(p.Private(), *p.SurveySecretKey, p.Public(), p.Proofs)
@@ -290,29 +291,11 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 
 	if p.IsRoot() {
 		detCreatedData := deterministicTaggingTarget.Data
-		TaggedData = make([]libunlynx.DeterministCipherText, len(*p.TargetOfSwitch))
+		TaggedData = make(libunlynx.DeterministCipherVector, len(*p.TargetOfSwitch))
 
 		for i, v := range detCreatedData {
 			TaggedData[i] = libunlynx.DeterministCipherText{Point: v.C}
 		}
-
-		/**
-		wg1 := libunlynx.StartParallelize(len(detCreatedData))
-		for i, v := range detCreatedData {
-			tmp := make([]libunlynx.CipherText, 1)
-			tmp[0] = v
-			if libunlynx.PARALLELIZE {
-				go func(i int, v libunlynx.CipherText) {
-					defer wg1.Done()
-					TaggedData[i] = *deterministicTagFormat(i, libunlynx.CipherVector(tmp), p.TargetOfSwitch)
-				}(i, v)
-			} else {
-				TaggedData[i] = *deterministicTagFormat(i, libunlynx.CipherVector(tmp), p.TargetOfSwitch)
-			}
-
-		}
-		libunlynx.EndParallelize(wg1)
-		**/
 
 		log.Lvl1(p.ServerIdentity(), " completed deterministic Tagging (", len(detCreatedData), "row )")
 	} else {
@@ -355,11 +338,6 @@ func sendingDet(p DeterministicTaggingProtocol, detTarget DeterministicTaggingMe
 // DeterministicTagFormat creates a response with a deterministic tag
 func deterministicTagFormat(i int, v libunlynx.CipherVector, targetofSwitch *[]libunlynx.CipherText) *libunlynx.ProcessResponseDet {
 	tmp := *targetofSwitch
-
-	result := make([]libunlynx.DeterministCipherText, len(tmp))
-	for j, c := range tmp {
-
-	}
 
 	deterministicGroupAttributes := make(libunlynx.DeterministCipherVector, len(tmp[i].GroupByEnc))
 	deterministicWhereAttributes := make([]libunlynx.GroupingKey, len(tmp[i].WhereEnc))
@@ -417,7 +395,7 @@ func (dtm *DeterministicTaggingMessage) ToBytes() []byte {
 					mutexD.Lock()
 					data := (*dtm).Data[i+j]
 					mutexD.Unlock()
-					bb[i] = data.ToBytes()
+					bb[i+j] = data.ToBytes()
 				}
 				defer wg.Done()
 			}(i)
