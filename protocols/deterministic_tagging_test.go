@@ -85,10 +85,10 @@ func TestDeterministicTagging(t *testing.T) {
 		threeSame1 := 0
 		for i, v := range goodFormatResult {
 			for j, w := range goodFormatResult {
-				if reflect.DeepEqual(v.DetTagGroupBy, w.DetTagGroupBy) && j != i {
+				if j != i && reflect.DeepEqual(v.DetTagGroupBy, w.DetTagGroupBy) {
 					threeSame++
 				}
-				if reflect.DeepEqual(v.DetTagWhere, w.DetTagWhere) && j != i {
+				if j != i &&reflect.DeepEqual(v.DetTagWhere, w.DetTagWhere) {
 					threeSame1++
 				}
 			}
