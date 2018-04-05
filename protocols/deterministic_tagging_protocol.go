@@ -19,7 +19,6 @@ import (
 	"sync"
 	"time"
 	"unsafe"
-	"math"
 )
 
 // DeterministicTaggingProtocolName is the registered name for the deterministic tagging protocol.
@@ -137,19 +136,19 @@ func DCVToProcessResponseDet(detCt libunlynx.DeterministCipherVector, length [][
 
 	pos := 0
 	for i := range result {
-		deterministicGroupAttributes := make(libunlynx.DeterministCipherVector, length[i][0])
-		copy(deterministicGroupAttributes, detCt[pos : pos+length[i][0]])
-		pos += length[i][0]
-
-		deterministicWhereAttributes := make([]libunlynx.GroupingKey, length[i][1])
-		for j, c := range detCt[pos : pos+length[i][1]] {
+		deterministicWhereAttributes := make([]libunlynx.GroupingKey, length[i][0])
+		for j, c := range detCt[pos : pos+length[i][0]] {
 			deterministicWhereAttributes[j] = libunlynx.GroupingKey(c.String())
 		}
+		pos += length[i][0]
+
+		deterministicGroupAttributes := make(libunlynx.DeterministCipherVector, length[i][1])
+		copy(deterministicGroupAttributes, detCt[pos : pos+length[i][1]])
+		pos += length[i][1] + length[i][2]
 
 		result[i] = libunlynx.ProcessResponseDet{PR: targetOfSwitch[i], DetTagGroupBy: deterministicGroupAttributes.Key(),
 			DetTagWhere: deterministicWhereAttributes}
 
-		pos += length[i][1] + length[i][2]
 	}
 
 	return result
@@ -275,7 +274,12 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 			wg.Add(1)
 			go func(i int) {
 				defer wg.Done()
-				j := int(math.Min(float64(i + libunlynx.VPARALLELIZE), float64(len(deterministicTaggingTarget.Data))))
+				var j int
+				if i + libunlynx.VPARALLELIZE < len(deterministicTaggingTarget.Data) {
+					j = i + libunlynx.VPARALLELIZE
+				} else {
+					j = len(deterministicTaggingTarget.Data)
+				}
 				tmp := make(libunlynx.CipherVector, j - i)
 				copy(tmp, deterministicTaggingTarget.Data[i:j])
 				tmp.TaggingDet(p.Private(), *p.SurveySecretKey, p.Public(), p.Proofs)
