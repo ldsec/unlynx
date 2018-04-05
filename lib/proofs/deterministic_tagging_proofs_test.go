@@ -56,3 +56,25 @@ func TestDeterministicTaggingProof(t *testing.T) {
     result, _ = PublishedDeterministicTaggingCheckProof(PublishedDeterministicTaggingProof{Dhp: cps1, VectBefore: cipherVect, VectAfter: *TagSwitchedVect, K: pubKey, SB: libunlynx.SuiTe.Point().Mul(secKey, libunlynx.SuiTe.Point().Base())})
     assert.False(t, result)
 }
+
+func TestDeterministicTaggingAdditionProof(t *testing.T) {
+    cipherOne = *libunlynx.EncryptInt(pubKey, 10)
+    toAdd := libunlynx.SuiTe.Point().Mul(secKey, libunlynx.SuiTe.Point().Base())
+    tmp := libunlynx.SuiTe.Point().Add(cipherOne.C, toAdd)
+
+    prf := libunlynx.DetTagAdditionProofCreation(cipherOne.C, secKey, toAdd, tmp)
+    assert.True(t, libunlynx.DetTagAdditionProofVerification(prf))
+
+    prf = libunlynx.DetTagAdditionProofCreation(toAdd, secKey, toAdd, tmp)
+    assert.False(t, libunlynx.DetTagAdditionProofVerification(prf))
+
+    prf = libunlynx.DetTagAdditionProofCreation(cipherOne.C, secKeyNew, toAdd, tmp)
+    assert.False(t, libunlynx.DetTagAdditionProofVerification(prf))
+
+    prf = libunlynx.DetTagAdditionProofCreation(cipherOne.C, secKey, cipherOne.C, tmp)
+    assert.False(t, libunlynx.DetTagAdditionProofVerification(prf))
+
+    prf = libunlynx.DetTagAdditionProofCreation(cipherOne.C, secKey, toAdd, toAdd)
+    assert.False(t, libunlynx.DetTagAdditionProofVerification(prf))
+}
+
