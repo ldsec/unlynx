@@ -8,6 +8,7 @@ import (
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/proofs"
 	"sync"
 )
 
@@ -59,7 +60,7 @@ func (p *AddRmServerProtocol) Start() error {
 	libunlynx.EndTimer(roundComput)
 
 	roundProof := libunlynx.StartTimer(p.Name() + "_AddRmServer(PROOFS)")
-	pubs := make([]libunlynx.PublishedAddRmProof, 0)
+	pubs := make([]proofs.PublishedAddRmProof, 0)
 	if p.Proofs {
 		proofsCreation(pubs, p.TargetOfTransformation, result, p.KeyToRm, p.Add)
 	}
@@ -70,12 +71,12 @@ func (p *AddRmServerProtocol) Start() error {
 	wg = libunlynx.StartParallelize(len(pubs))
 	for _, v := range pubs {
 		if libunlynx.PARALLELIZE {
-			go func(v libunlynx.PublishedAddRmProof) {
+			go func(v proofs.PublishedAddRmProof) {
 				defer wg.Done()
-				libunlynx.PublishedAddRmCheckProof(v)
+				proofs.PublishedAddRmCheckProof(v)
 			}(v)
 		} else {
-			libunlynx.PublishedAddRmCheckProof(v)
+			proofs.PublishedAddRmCheckProof(v)
 		}
 
 	}
@@ -128,11 +129,11 @@ func changeEncryptionKeyCipherTexts(cipherText libunlynx.CipherText, serverAddRm
 	return result
 }
 
-func proofsCreation(pubs []libunlynx.PublishedAddRmProof, target, ct []libunlynx.CipherText, keyToRm kyber.Scalar, add bool) {
+func proofsCreation(pubs []proofs.PublishedAddRmProof, target, ct []libunlynx.CipherText, keyToRm kyber.Scalar, add bool) {
 	ktopub := libunlynx.SuiTe.Point().Mul(keyToRm, libunlynx.SuiTe.Point().Base())
 
-	prf := libunlynx.VectorAddRmProofCreation(target, ct, keyToRm, add)
-	pub := libunlynx.PublishedAddRmProof{Arp: prf, VectBefore: ct, VectAfter: ct, Krm:ktopub, ToAdd:add}
+	prf := proofs.VectorAddRmProofCreation(target, ct, keyToRm, add)
+	pub := proofs.PublishedAddRmProof{Arp: prf, VectBefore: ct, VectAfter: ct, Krm:ktopub, ToAdd:add}
 
 	pubs = append(pubs, pub)
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/proofs"
 	"sync"
 )
 
@@ -215,7 +216,7 @@ func (p *CollectiveAggregationProtocol) ascendingAggregationPhase() *map[libunly
 			libunlynx.EndTimer(roundComput)
 			roundProofs2 := libunlynx.StartTimer(p.Name() + "_CollectiveAggregation(Proof-2ndPart)")
 			if p.Proofs {
-				PublishedCollectiveAggregationProof := libunlynx.CollectiveAggregationProofCreation(c1, childrenContribution.ChildData, *p.GroupedData)
+				PublishedCollectiveAggregationProof := proofs.CollectiveAggregationProofCreation(c1, childrenContribution.ChildData, *p.GroupedData)
 				//publication
 				_ = PublishedCollectiveAggregationProof
 			}

@@ -14,6 +14,7 @@ import (
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/proofs"
 	"sync"
 	"time"
 )
@@ -178,7 +179,7 @@ func (p *ShufflingProtocol) Start() error {
 	roundShufflingStartProof := libunlynx.StartTimer(p.Name() + "_Shuffling(START-Proof)")
 
 	if p.Proofs {
-		proof := libunlynx.ShufflingProofCreation(shuffleTarget, shuffledData, nil, collectiveKey, beta, pi)
+		proof := proofs.ShufflingProofCreation(shuffleTarget, shuffledData, nil, collectiveKey, beta, pi)
 		//dummy publication
 		_ = proof
 	}
@@ -245,7 +246,7 @@ func (p *ShufflingProtocol) Dispatch() error {
 		roundShuffleProof := libunlynx.StartTimer("_Shuffling(DISPATCH-Proof)")
 
 		if p.Proofs {
-			proof := libunlynx.ShufflingProofCreation(shufflingTarget, shuffledData, nil, collectiveKey, beta, pi)
+			proof := proofs.ShufflingProofCreation(shufflingTarget, shuffledData, nil, collectiveKey, beta, pi)
 			//dummy publication
 			_ = proof
 		}

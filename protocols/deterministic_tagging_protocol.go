@@ -15,6 +15,7 @@ import (
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/proofs"
 	"reflect"
 	"sync"
 	"time"
@@ -230,7 +231,7 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 				for j := 0; j < libunlynx.VPARALLELIZE && (i+j) < len(deterministicTaggingTargetBef.Data); j++ {
 					tmp := libunlynx.SuiTe.Point().Add(deterministicTaggingTargetBef.Data[i+j].C, toAdd)
 					if p.Proofs {
-						prf := libunlynx.DetTagAdditionProofCreation(deterministicTaggingTargetBef.Data[i+j].C,
+						prf := proofs.DetTagAdditionProofCreation(deterministicTaggingTargetBef.Data[i+j].C,
 							*p.SurveySecretKey, toAdd, tmp)
 						//TODO: proof publication
 						_ = prf
@@ -244,7 +245,7 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 		for i, v := range deterministicTaggingTargetBef.Data {
 			tmp := libunlynx.SuiTe.Point().Add(v.C, toAdd)
 			if p.Proofs {
-				prf := libunlynx.DetTagAdditionProofCreation(v.C, *p.SurveySecretKey, toAdd, tmp)
+				prf := proofs.DetTagAdditionProofCreation(v.C, *p.SurveySecretKey, toAdd, tmp)
 				_ = prf
 			}
 			deterministicTaggingTargetBef.Data[i].C = tmp
