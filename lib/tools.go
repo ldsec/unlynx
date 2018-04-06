@@ -7,6 +7,8 @@ import (
 	"github.com/dedis/onet/log"
 	"os"
 	"strings"
+	"fmt"
+	"strconv"
 )
 
 // SendISMOthers sends a message to all other services
@@ -26,6 +28,67 @@ func SendISMOthers(s *onet.ServiceProcessor, el *onet.Roster, msg interface{}) e
 		err = errors.New(strings.Join(errStrs, "\n"))
 	}
 	return err
+}
+
+// AddInMap permits to add a filtered response with its deterministic tag in a map
+func AddInMap(s map[GroupingKey]FilteredResponse, key GroupingKey, added FilteredResponse) {
+	if localResult, ok := s[key]; !ok {
+		s[key] = added
+	} else {
+		tmp := NewFilteredResponse(len(added.GroupByEnc), len(added.AggregatingAttributes))
+		s[key] = *tmp.Add(localResult, added)
+	}
+}
+
+// int64ArrayToString transforms an integer array into a string
+func Int64ArrayToString(s []int64) string {
+	if len(s) == 0 {
+		return ""
+	}
+
+	result := ""
+	for _, elem := range s {
+		result += fmt.Sprintf("%v ", elem)
+	}
+	return result
+}
+
+// StringToInt64Array transforms a string ("1 0 1 0") to an integer array
+func StringToInt64Array(s string) []int64 {
+	if len(s) == 0 {
+		return make([]int64, 0)
+	}
+
+	container := strings.Split(s, " ")
+
+	result := make([]int64, 0)
+	for _, elem := range container {
+		if elem != "" {
+			aux, _ := strconv.ParseInt(elem, 10, 64)
+			result = append(result, aux)
+		}
+	}
+	return result
+}
+
+// ConvertDataToMap a converts an array of integers to a map of id -> integer
+func ConvertDataToMap(data []int64, first string, start int) map[string]int64 {
+	result := make(map[string]int64)
+	for _, el := range data {
+		result[first+strconv.Itoa(start)] = el
+		start++
+	}
+	return result
+}
+
+// ConvertMapToData converts the map into a slice of int64 (to ease out printing and aggregation)
+func ConvertMapToData(data map[string]int64, first string, start int) []int64 {
+	result := make([]int64, len(data))
+	for i := 0; i < len(data); i++ {
+		result[i] = data[first+strconv.Itoa(start)]
+		start++
+	}
+	return result
 }
 
 // WriteToGobFile stores object (e.g. lib.Enc_CipherVectorScalar) in a gob file. Note that the object must contain serializable stuff, for example byte arrays.
