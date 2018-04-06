@@ -1,8 +1,9 @@
-package proofs
+package proofs_test
 
 import (
     "testing"
     "github.com/lca1/unlynx/lib"
+    "github.com/lca1/unlynx/lib/proofs"
     "github.com/stretchr/testify/assert"
 )
 
@@ -19,9 +20,9 @@ func TestShufflingProof(t *testing.T) {
     responses[2] = libunlynx.ProcessResponse{GroupByEnc: testCipherVect2, AggregatingAttributes: testCipherVect1}
 
     responsesShuffled, pi, beta := libunlynx.ShuffleSequence(responses, nil, pubKey, nil)
-    PublishedShufflingProof := ShufflingProofCreation(responses, responsesShuffled, nil, pubKey, beta, pi)
-    assert.True(t, ShufflingProofVerification(PublishedShufflingProof, pubKey))
+    PublishedShufflingProof := proofs.ShufflingProofCreation(responses, responsesShuffled, nil, pubKey, beta, pi)
+    assert.True(t, proofs.ShufflingProofVerification(PublishedShufflingProof, pubKey))
 
-    PublishedShufflingProof = ShufflingProofCreation(responses, responses, nil, pubKey, beta, pi)
-    assert.False(t, ShufflingProofVerification(PublishedShufflingProof, pubKey))
+    PublishedShufflingProof = proofs.ShufflingProofCreation(responses, responses, nil, pubKey, beta, pi)
+    assert.False(t, proofs.ShufflingProofVerification(PublishedShufflingProof, pubKey))
 }

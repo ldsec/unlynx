@@ -1,7 +1,8 @@
-package proofs
+package proofs_test
 
 import (
     "github.com/lca1/unlynx/lib"
+    "github.com/lca1/unlynx/lib/proofs"
     "github.com/stretchr/testify/assert"
     "testing"
 )
@@ -55,9 +56,9 @@ func TestCollectiveAggregationProof(t *testing.T) {
         libunlynx.AddInMap(resultingMap, i, v)
     }
 
-    PublishedCollectiveAggregationProof := CollectiveAggregationProofCreation(comparisonMap, detResponses, resultingMap)
-    assert.True(t, CollectiveAggregationProofVerification(PublishedCollectiveAggregationProof))
+    PublishedCollectiveAggregationProof := proofs.CollectiveAggregationProofCreation(comparisonMap, detResponses, resultingMap)
+    assert.True(t, proofs.CollectiveAggregationProofVerification(PublishedCollectiveAggregationProof))
 
-    PublishedCollectiveAggregationProof = CollectiveAggregationProofCreation(resultingMap, detResponses, comparisonMap)
-    assert.False(t, CollectiveAggregationProofVerification(PublishedCollectiveAggregationProof))
+    PublishedCollectiveAggregationProof = proofs.CollectiveAggregationProofCreation(resultingMap, detResponses, comparisonMap)
+    assert.False(t, proofs.CollectiveAggregationProofVerification(PublishedCollectiveAggregationProof))
 }
