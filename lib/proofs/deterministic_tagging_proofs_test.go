@@ -62,19 +62,19 @@ func TestDeterministicTaggingAdditionProof(t *testing.T) {
     toAdd := libunlynx.SuiTe.Point().Mul(secKey, libunlynx.SuiTe.Point().Base())
     tmp := libunlynx.SuiTe.Point().Add(cipherOne.C, toAdd)
 
-    prf := DetTagAdditionProofCreation(cipherOne.C, secKey, toAdd, tmp)
-    assert.True(t, DetTagAdditionProofVerification(prf))
+    prf := libunlynx.DetTagAdditionProofCreation(cipherOne.C, secKey, toAdd, tmp)
+    assert.True(t, libunlynx.DetTagAdditionProofVerification(prf))
 
-    prf = DetTagAdditionProofCreation(toAdd, secKey, toAdd, tmp)
-    assert.False(t, DetTagAdditionProofVerification(prf))
+    prf = libunlynx.DetTagAdditionProofCreation(toAdd, secKey, toAdd, tmp)
+    assert.False(t, libunlynx.DetTagAdditionProofVerification(prf))
 
-    prf = DetTagAdditionProofCreation(cipherOne.C, secKeyNew, toAdd, tmp)
-    assert.False(t, DetTagAdditionProofVerification(prf))
+    prf = libunlynx.DetTagAdditionProofCreation(cipherOne.C, secKeyNew, toAdd, tmp)
+    assert.False(t, libunlynx.DetTagAdditionProofVerification(prf))
 
-    prf = DetTagAdditionProofCreation(cipherOne.C, secKey, cipherOne.C, tmp)
-    assert.False(t, DetTagAdditionProofVerification(prf))
+    prf = libunlynx.DetTagAdditionProofCreation(cipherOne.C, secKey, cipherOne.C, tmp)
+    assert.False(t, libunlynx.DetTagAdditionProofVerification(prf))
 
-    prf = DetTagAdditionProofCreation(cipherOne.C, secKey, toAdd, toAdd)
-    assert.False(t, DetTagAdditionProofVerification(prf))
+    prf = libunlynx.DetTagAdditionProofCreation(cipherOne.C, secKey, toAdd, toAdd)
+    assert.False(t, libunlynx.DetTagAdditionProofVerification(prf))
 }
 

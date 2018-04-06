@@ -6,7 +6,6 @@ import (
     "github.com/lca1/unlynx/lib"
     "github.com/dedis/kyber"
     "github.com/dedis/onet/log"
-    "reflect"
 )
 
 // DeterministicTaggingProof proof for tag creation operation
@@ -24,22 +23,6 @@ type PublishedDeterministicTaggingProof struct {
     K          kyber.Point
     SB         kyber.Point
 }
-
-// PublishedDetTagAdditionProof contains all infos about proofs for addition in det, tagging of one element
-type PublishedDetTagAdditionProof struct {
-    C1    kyber.Point
-    C2    kyber.Point
-    R     kyber.Point
-    Proof []byte
-}
-
-// PublishedSimpleAdditionProof contains the two added ciphervectors and the resulting ciphervector
-type PublishedSimpleAdditionProof struct {
-    C1       libunlynx.CipherVector
-    C2       libunlynx.CipherVector
-    C1PlusC2 libunlynx.CipherVector
-}
-
 
 // createPredicateDeterministicTag creates predicate for deterministic tagging proof
 func createPredicateDeterministicTag() (predicate proof.Predicate) {
@@ -142,49 +125,4 @@ func PublishedDeterministicTaggingCheckProof(php PublishedDeterministicTaggingPr
         }
     }
     return true, php.SB
-}
-
-// createPredicateDeterministicTagAddition creates predicate for deterministic tagging addition proof
-func createPredicateDeterministicTagAddition() (predicate proof.Predicate) {
-    // For ZKP
-    log1 := proof.Rep("c2", "s", "B")
-
-    predicate = proof.And(log1)
-
-    return
-}
-
-// DetTagAdditionProofCreation creates proof for deterministic tagging addition on 1 kyber point
-func DetTagAdditionProofCreation(c1 kyber.Point, s kyber.Scalar, c2 kyber.Point, r kyber.Point) PublishedDetTagAdditionProof {
-    predicate := createPredicateDeterministicTagAddition()
-    B := libunlynx.SuiTe.Point().Base()
-    sval := map[string]kyber.Scalar{"s": s}
-    pval := map[string]kyber.Point{"B": B, "c1": c1, "c2": c2, "r": r}
-
-    prover := predicate.Prover(libunlynx.SuiTe, sval, pval, nil) // computes: commitment, challenge, response
-    Proof, err := proof.HashProve(libunlynx.SuiTe, "proofTest", prover)
-    if err != nil {
-        log.Fatal("---------Prover:", err.Error())
-    }
-
-    return PublishedDetTagAdditionProof{Proof: Proof, C1: c1, C2: c2, R: r}
-}
-
-// DetTagAdditionProofVerification checks a deterministic tag addition proof
-func DetTagAdditionProofVerification(psap PublishedDetTagAdditionProof) bool {
-    predicate := createPredicateDeterministicTagAddition()
-    B := libunlynx.SuiTe.Point().Base()
-    pval := map[string]kyber.Point{"B": B, "c1": psap.C1, "c2": psap.C2, "r": psap.R}
-    verifier := predicate.Verifier(libunlynx.SuiTe, pval)
-    partProof := false
-    if err := proof.HashVerify(libunlynx.SuiTe, "proofTest", verifier, psap.Proof); err != nil {
-        log.Error("---------Verifier:", err.Error())
-        return false
-    }
-
-    partProof = true
-    //log.LLvl1("Proof verified")
-
-    cv := libunlynx.SuiTe.Point().Add(psap.C1, psap.C2)
-    return partProof && reflect.DeepEqual(cv, psap.R)
 }

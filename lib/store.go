@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"github.com/lca1/unlynx/lib/proofs"
 )
 
 // Store contains all the elements of a survey, it consists of the data structure that each cothority has to
@@ -65,7 +64,7 @@ func proccessParameters(data []string, clear map[string]int64, encrypted map[str
 }
 
 // InsertDpResponse handles the local storage of a new DP response in aggregation or grouping cases.
-func (s *Store) InsertDpResponse(cr DpResponse, proofsB bool, groupBy, sum []string, where []WhereQueryAttribute) {
+func (s *Store) InsertDpResponse(cr DpResponse, proofs bool, groupBy, sum []string, where []WhereQueryAttribute) {
 	newResp := ProcessResponse{}
 	clearGrp := []int64{}
 	clearWhr := []int64{}
@@ -91,8 +90,8 @@ func (s *Store) InsertDpResponse(cr DpResponse, proofsB bool, groupBy, sum []str
 			mapValue.AggregatingAttributes = *tmp
 			s.DpResponsesAggr[GroupingKeyTuple{Key(clearGrp), Key(clearWhr)}] = mapValue
 
-			if proofsB {
-				publishedAggregationProof := proofs.PublishedSimpleAdditionProof{value.AggregatingAttributes, newResp.AggregatingAttributes, mapValue.AggregatingAttributes}
+			if proofs {
+				publishedAggregationProof := PublishedSimpleAdditionProof{value.AggregatingAttributes, newResp.AggregatingAttributes, mapValue.AggregatingAttributes}
 				_ = publishedAggregationProof
 			}
 
@@ -132,7 +131,7 @@ func (s *Store) PullShuffledProcessResponses() []ProcessResponse {
 }
 
 // PushDeterministicFilteredResponses permits to store results of deterministic tagging
-func (s *Store) PushDeterministicFilteredResponses(detFilteredResponses []FilteredResponseDet, serverName string, proofsB bool) {
+func (s *Store) PushDeterministicFilteredResponses(detFilteredResponses []FilteredResponseDet, serverName string, proofs bool) {
 
 	round := StartTimer(serverName + "_ServerLocalAggregation")
 
@@ -141,8 +140,8 @@ func (s *Store) PushDeterministicFilteredResponses(detFilteredResponses []Filter
 		AddInMap(s.LocAggregatedProcessResponse, v.DetTagGroupBy, v.Fr)
 		s.Mutex.Unlock()
 	}
-	if proofsB {
-		PublishedAggregationProof := proofs.AggregationProofCreation(detFilteredResponses, s.LocAggregatedProcessResponse)
+	if proofs {
+		PublishedAggregationProof := AggregationProofCreation(detFilteredResponses, s.LocAggregatedProcessResponse)
 		//publication
 		_ = PublishedAggregationProof
 	}
