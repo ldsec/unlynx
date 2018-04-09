@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
+	"github.com/lca1/unlynx/lib/proofs"
 )
 
 func TestShuffleSequence(t *testing.T) {
@@ -37,9 +38,9 @@ func TestShuffleSequence(t *testing.T) {
 	outputlist, pi, beta := libunlynx.ShuffleSequence(inputList, nil, collectivePubKey, nil)
 
 	//with proof
-	shuffleProof := libunlynx.ShufflingProofCreation(inputList, outputlist, nil, collectivePubKey, beta, pi)
+	shuffleProof := proofs.ShufflingProofCreation(inputList, outputlist, nil, collectivePubKey, beta, pi)
 	//shuffleProof = lib.ShufflingProofCreation(inputList, inputList, nil, collectivePubKey, beta, pi)
-	log.Lvl1(libunlynx.ShufflingProofVerification(shuffleProof, collectivePubKey))
+	log.Lvl1(proofs.ShufflingProofVerification(shuffleProof, collectivePubKey))
 
 	piinv := make([]int, k)
 	for i := 0; i < k; i++ {
