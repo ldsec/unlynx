@@ -147,6 +147,11 @@ func EncryptInt(pubkey kyber.Point, integer int64) *CipherText {
 	return encryptPoint(pubkey, IntToPoint(integer))
 }
 
+// EncryptScalar encodes i as iB, encrypt it into a CipherText and returns a pointer to it.
+func EncryptScalar(pubkey kyber.Point, scalar kyber.Scalar) *CipherText {
+	return encryptPoint(pubkey, SuiTe.Point().Mul(scalar, SuiTe.Point().Base()))
+}
+
 // EncryptIntVector encrypts a []int into a CipherVector and returns a pointer to it.
 func EncryptIntVector(pubkey kyber.Point, intArray []int64) *CipherVector {
 	var wg sync.WaitGroup
@@ -172,6 +177,32 @@ func EncryptIntVector(pubkey kyber.Point, intArray []int64) *CipherVector {
 	return &cv
 }
 
+// EncryptIntVector encrypts a []int into a CipherVector and returns a pointer to it.
+func EncryptScalarVector(pubkey kyber.Point, intArray []kyber.Scalar) *CipherVector {
+	var wg sync.WaitGroup
+	cv := make(CipherVector, len(intArray))
+	if PARALLELIZE {
+		for i := 0; i < len(intArray); i = i + VPARALLELIZE {
+			wg.Add(1)
+			go func(i int) {
+				for j := 0; j < VPARALLELIZE && (j+i < len(intArray)); j++ {
+					cv[j+i] = *EncryptScalar(pubkey, intArray[j+i])
+				}
+				defer wg.Done()
+			}(i)
+
+		}
+		wg.Wait()
+	} else {
+		for i, n := range intArray {
+			cv[i] = *EncryptScalar(pubkey, n)
+		}
+	}
+
+	return &cv
+}
+
+
 // NullCipherVector encrypts an 0-filled slice under the given public key.
 func NullCipherVector(length int, pubkey kyber.Point) *CipherVector {
 	return EncryptIntVector(pubkey, make([]int64, length))
@@ -190,7 +221,13 @@ func decryptPoint(prikey kyber.Scalar, c CipherText) kyber.Point {
 // DecryptInt decrypts an integer from an ElGamal cipher text where integer are encoded in the exponent.
 func DecryptInt(prikey kyber.Scalar, cipher CipherText) int64 {
 	M := decryptPoint(prikey, cipher)
-	return discreteLog(M)
+	return discreteLog(M, false)
+}
+
+// DecryptIntWithNeg decrypts an integer from an ElGamal cipher text where integer are encoded in the exponent.
+func DecryptIntWithNeg(prikey kyber.Scalar, cipher CipherText) int64 {
+	M := decryptPoint(prikey, cipher)
+	return discreteLog(M, true)
 }
 
 // DecryptIntVector decrypts a cipherVector.
@@ -202,8 +239,38 @@ func DecryptIntVector(prikey kyber.Scalar, cipherVector *CipherVector) []int64 {
 	return result
 }
 
+// DecryptIntVectorWithNeg decrypts a cipherVector.
+func DecryptIntVectorWithNeg(prikey kyber.Scalar, cipherVector *CipherVector) []int64 {
+	result := make([]int64, len(*cipherVector))
+	for i, c := range *cipherVector {
+		result[i] = DecryptIntWithNeg(prikey, c)
+	}
+	return result
+}
+
+// DecryptInt decrypts an integer from an ElGamal cipher text where integer are encoded in the exponent.
+func DecryptCheckZero(prikey kyber.Scalar, cipher CipherText) int64 {
+	M := decryptPoint(prikey, cipher)
+	result := int64(1)
+	if M.Equal(SuiTe.Point().Null()){
+		result = int64(0)
+	}
+	return result
+}
+
+// DecryptIntVectorWithNeg decrypts a cipherVector.
+func DecryptCheckZeroVector(prikey kyber.Scalar, cipherVector *CipherVector) []int64 {
+	result := make([]int64, len(*cipherVector))
+	for i, c := range *cipherVector {
+		result[i] = DecryptCheckZero(prikey, c)
+	}
+	return result
+}
+
+
+
 // Brute-Forces the discrete log for integer decoding.
-func discreteLog(P kyber.Point) int64 {
+func discreteLog(P kyber.Point, checkNeg bool) int64 {
 	B := SuiTe.Point().Base()
 	var Bi kyber.Point
 	var m int64
@@ -218,10 +285,16 @@ func discreteLog(P kyber.Point) int64 {
 		currentGreatestM = SuiTe.Point().Null()
 	}
 
-	for Bi, m = currentGreatestM, currentGreatestInt; !Bi.Equal(P) && m < MaxHomomorphicInt; Bi, m = Bi.Add(Bi, B), m+1 {
+	BiNeg := SuiTe.Point().Neg(B)
+	for Bi, m = currentGreatestM, currentGreatestInt; !Bi.Equal(P) && !SuiTe.Point().Neg(Bi).Equal(P) && m < MaxHomomorphicInt; Bi, m = Bi.Add(Bi, B), m+1 {
+		if checkNeg {
+			BiNeg := SuiTe.Point().Neg(Bi)
+			PointToInt.Put(BiNeg.String(), -m)
+		}
 		PointToInt.Put(Bi.String(), m)
 	}
 	currentGreatestM = Bi
+	PointToInt.Put(BiNeg.String(), -m)
 	PointToInt.Put(Bi.String(), m)
 	currentGreatestInt = m
 
@@ -231,6 +304,9 @@ func discreteLog(P kyber.Point) int64 {
 	}
 	mutex.Unlock()
 
+	if SuiTe.Point().Neg(Bi).Equal(P){
+		return -m
+	}
 	return m
 }
 

@@ -59,6 +59,31 @@ func TestDecryptionConcurrent(t *testing.T) {
 	}
 }
 
+// TestDecryptionConcurrent test the multiple encryptions/decryptions at the same time
+func TestDecryptionNegConcurrent(t *testing.T) {
+	numThreads := 5
+
+	sec, pubKey := libunlynx.GenKey()
+
+	libunlynx.StartParallelize(numThreads)
+
+	for i := 0; i < numThreads; i++ {
+		go func() {
+			ct := libunlynx.EncryptInt(pubKey, 3)
+			val := libunlynx.DecryptIntWithNeg(sec, *ct)
+			assert.Equal(t, val, int64(3))
+
+			ct = libunlynx.EncryptInt(pubKey, 3)
+			val = libunlynx.DecryptInt(sec, *ct)
+			assert.Equal(t, val, int64(3))
+
+			ct = libunlynx.EncryptInt(pubKey, -3)
+			val = libunlynx.DecryptIntWithNeg(sec, *ct)
+			assert.Equal(t, val, int64(-3))
+		}()
+	}
+}
+
 // TestNullCipherText verifies encryption, decryption and behavior of null cipherVectors.
 func TestNullCipherVector(t *testing.T) {
 	secKey, pubKey := libunlynx.GenKey()
