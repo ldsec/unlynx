@@ -44,7 +44,7 @@ type GroupingAttributes struct {
 // DeterministicTaggingMessage represents a deterministic tagging message containing the processed cipher vectors DP
 // responses.
 type DeterministicTaggingMessage struct {
-	Data []libunlynx.CipherText
+	Data libunlynx.CipherVector
 }
 
 // DeterministicTaggingBytesMessage represents a deterministic tagging message in bytes
@@ -100,35 +100,14 @@ func PRToCipherTextArray(p []libunlynx.ProcessResponse) ([]libunlynx.CipherText,
 	lengths := make([][]int, len(p))
 
 	for i, v := range p {
-		lengths[i] = make([]int, 4)
+		lengths[i] = make([]int, 2)
 		cipherTexts = append(cipherTexts, v.WhereEnc...)
 		lengths[i][0] = len(v.WhereEnc)
 		cipherTexts = append(cipherTexts, v.GroupByEnc...)
 		lengths[i][1] = len(v.GroupByEnc)
-		cipherTexts = append(cipherTexts, v.AggregatingAttributes...)
-		lengths[i][2] = len(v.AggregatingAttributes)
 	}
 
 	return cipherTexts, lengths
-}
-
-func CTAToProcessResponse(ct []libunlynx.CipherText, lengths [][]int) []libunlynx.ProcessResponse {
-	result := make([]libunlynx.ProcessResponse, len(lengths))
-
-	pos := 0
-	for i, v := range result {
-		v.WhereEnc = make(libunlynx.CipherVector, lengths[i][0])
-		copy(v.WhereEnc, ct[pos : pos+lengths[i][0]])
-		pos += lengths[i][0]
-		v.GroupByEnc = make(libunlynx.CipherVector, lengths[i][1])
-		copy(v.GroupByEnc, ct[pos : pos+lengths[i][1]])
-		pos += lengths[i][1]
-		v.AggregatingAttributes = make(libunlynx.CipherVector, lengths[i][2])
-		copy(v.WhereEnc, ct[pos : pos+lengths[i][2]])
-		pos += lengths[i][2]
-	}
-
-	return result
 }
 
 func DCVToProcessResponseDet(detCt libunlynx.DeterministCipherVector, length [][]int,
@@ -145,11 +124,10 @@ func DCVToProcessResponseDet(detCt libunlynx.DeterministCipherVector, length [][
 
 		deterministicGroupAttributes := make(libunlynx.DeterministCipherVector, length[i][1])
 		copy(deterministicGroupAttributes, detCt[pos : pos+length[i][1]])
-		pos += length[i][1] + length[i][2]
+		pos += length[i][1]
 
 		result[i] = libunlynx.ProcessResponseDet{PR: targetOfSwitch[i], DetTagGroupBy: deterministicGroupAttributes.Key(),
 			DetTagWhere: deterministicWhereAttributes}
-
 	}
 
 	return result
@@ -214,13 +192,11 @@ func (p *DeterministicTaggingProtocol) Start() error {
 // Dispatch is called on each tree node. It waits for incoming messages and handles them.
 func (p *DeterministicTaggingProtocol) Dispatch() error {
 	//************ ----- first round, add value derivated from ephemeral secret to message ---- ********************
-	//lengthBef := <-p.LengthNodeChannel
 	deterministicTaggingTargetBytesBef := <-p.PreviousNodeInPathChannel
 	deterministicTaggingTargetBef := DeterministicTaggingMessage{Data: make([]libunlynx.CipherText, 0)}
 	deterministicTaggingTargetBef.FromBytes(deterministicTaggingTargetBytesBef.Data)
 
 	startT := time.Now()
-	//:= libunlynx.StartParallelize(len(deterministicTaggingTargetBef.Data))
 	toAdd := libunlynx.SuiTe.Point().Mul(*p.SurveySecretKey, libunlynx.SuiTe.Point().Base())
 	if libunlynx.PARALLELIZE {
 		var wg sync.WaitGroup
@@ -251,8 +227,6 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 			deterministicTaggingTargetBef.Data[i].C = tmp
 		}
 	}
-	/*
-	*/
 	log.Lvl1(p.ServerIdentity(), " preparation round for deterministic tagging")
 
 	if p.IsRoot() {
@@ -261,7 +235,6 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 	sendingDet(*p, deterministicTaggingTargetBef)
 
 	//************ ----- second round, deterministic tag creation  ---- ********************
-	//length := <-p.LengthNodeChannel
 	deterministicTaggingTargetBytes := <-p.PreviousNodeInPathChannel
 	deterministicTaggingTarget := DeterministicTaggingMessage{Data: make([]libunlynx.CipherText, 0)}
 	deterministicTaggingTarget.FromBytes(deterministicTaggingTargetBytes.Data)
@@ -275,21 +248,18 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 			wg.Add(1)
 			go func(i int) {
 				defer wg.Done()
-				var j int
-				if i + libunlynx.VPARALLELIZE < len(deterministicTaggingTarget.Data) {
-					j = i + libunlynx.VPARALLELIZE
-				} else {
+				j := i + libunlynx.VPARALLELIZE
+				if j > len(deterministicTaggingTarget.Data) {
 					j = len(deterministicTaggingTarget.Data)
 				}
-				tmp := make(libunlynx.CipherVector, j - i)
-				copy(tmp, deterministicTaggingTarget.Data[i:j])
+				tmp := deterministicTaggingTarget.Data[i:j]
 				tmp.TaggingDet(p.Private(), *p.SurveySecretKey, p.Public(), p.Proofs)
+				copy(deterministicTaggingTarget.Data[i:j], tmp)
 			}(i)
 		}
 		wg.Wait()
 	} else {
-		tmp := libunlynx.CipherVector(deterministicTaggingTarget.Data)
-		tmp.TaggingDet(p.Private(), *p.SurveySecretKey, p.Public(), p.Proofs)
+		deterministicTaggingTarget.Data.TaggingDet(p.Private(), *p.SurveySecretKey, p.Public(), p.Proofs)
 	}
 
 	var TaggedData []libunlynx.DeterministCipherText
@@ -338,26 +308,6 @@ func sendingDet(p DeterministicTaggingProtocol, detTarget DeterministicTaggingMe
 	data := detTarget.ToBytes()
 	p.sendToNext(&DeterministicTaggingBytesMessage{Data: data})
 }
-
-/*
-// DeterministicTagFormat creates a response with a deterministic tag
-func deterministicTagFormat(i int, v libunlynx.CipherVector, targetofSwitch *[]libunlynx.CipherText) *libunlynx.ProcessResponseDet {
-	tmp := *targetofSwitch
-
-	deterministicGroupAttributes := make(libunlynx.DeterministCipherVector, len(tmp[i].GroupByEnc))
-	deterministicWhereAttributes := make([]libunlynx.GroupingKey, len(tmp[i].WhereEnc))
-	for j, c := range v {
-		if j < len(tmp[i].GroupByEnc) {
-			deterministicGroupAttributes[j] = libunlynx.DeterministCipherText{Point: c.C}
-		} else if j < len(tmp[i].GroupByEnc)+len(tmp[i].WhereEnc) {
-			tmp1 := libunlynx.DeterministCipherVector{libunlynx.DeterministCipherText{Point: c.C}}
-			deterministicWhereAttributes[j-len(tmp[i].GroupByEnc)] = tmp1.Key()
-		}
-
-	}
-	return &libunlynx.ProcessResponseDet{PR: (*targetofSwitch)[i], DetTagGroupBy: deterministicGroupAttributes.Key(), DetTagWhere: deterministicWhereAttributes}
-}
-*/
 
 // Conversion
 //______________________________________________________________________________________________________________________
