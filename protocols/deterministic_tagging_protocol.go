@@ -95,44 +95,6 @@ type DeterministicTaggingProtocol struct {
 	ExecTime time.Duration
 }
 
-func PRToCipherTextArray(p []libunlynx.ProcessResponse) ([]libunlynx.CipherText, [][]int) {
-	cipherTexts := make([]libunlynx.CipherText, 0)
-	lengths := make([][]int, len(p))
-
-	for i, v := range p {
-		lengths[i] = make([]int, 2)
-		cipherTexts = append(cipherTexts, v.WhereEnc...)
-		lengths[i][0] = len(v.WhereEnc)
-		cipherTexts = append(cipherTexts, v.GroupByEnc...)
-		lengths[i][1] = len(v.GroupByEnc)
-	}
-
-	return cipherTexts, lengths
-}
-
-func DCVToProcessResponseDet(detCt libunlynx.DeterministCipherVector, length [][]int,
-	targetOfSwitch []libunlynx.ProcessResponse) []libunlynx.ProcessResponseDet {
-	result := make([]libunlynx.ProcessResponseDet, len(length))
-
-	pos := 0
-	for i := range result {
-		deterministicWhereAttributes := make([]libunlynx.GroupingKey, length[i][0])
-		for j, c := range detCt[pos : pos+length[i][0]] {
-			deterministicWhereAttributes[j] = libunlynx.GroupingKey(c.String())
-		}
-		pos += length[i][0]
-
-		deterministicGroupAttributes := make(libunlynx.DeterministCipherVector, length[i][1])
-		copy(deterministicGroupAttributes, detCt[pos : pos+length[i][1]])
-		pos += length[i][1]
-
-		result[i] = libunlynx.ProcessResponseDet{PR: targetOfSwitch[i], DetTagGroupBy: deterministicGroupAttributes.Key(),
-			DetTagWhere: deterministicWhereAttributes}
-	}
-
-	return result
-}
-
 // NewDeterministicTaggingProtocol constructs tagging switching protocol instances.
 func NewDeterministicTaggingProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 	dsp := &DeterministicTaggingProtocol{

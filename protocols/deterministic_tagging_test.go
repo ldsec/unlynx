@@ -60,7 +60,7 @@ func TestDeterministicTagging(t *testing.T) {
 	mapi[3] = processResponse1
 
 	log.Lvl1("Data to be Tagged ", mapi)
-	cta, lengths := protocolsunlynx.PRToCipherTextArray(mapi)
+	cta := protocolsunlynx.PRToCipherTextArray(mapi)
 	protocol.TargetOfSwitch = &cta
 	feedback := protocol.FeedbackChannel
 	go protocol.Start()
@@ -69,7 +69,7 @@ func TestDeterministicTagging(t *testing.T) {
 
 	select {
 	case encryptedResult := <-feedback:
-		goodFormatResult := protocolsunlynx.DCVToProcessResponseDet(encryptedResult, lengths, mapi)
+		goodFormatResult := protocolsunlynx.DCVToProcessResponseDet(encryptedResult, mapi)
 		for _, v := range goodFormatResult {
 			present := false
 			for _, w := range mapi {
@@ -86,7 +86,6 @@ func TestDeterministicTagging(t *testing.T) {
 		for i, v := range goodFormatResult {
 			for j, w := range goodFormatResult {
 				if i != j {
-					log.Lvl1(i, v.DetTagGroupBy, j, w.DetTagGroupBy)
 					if reflect.DeepEqual(v.DetTagGroupBy, w.DetTagGroupBy) {
 						threeSame++
 					}
@@ -96,7 +95,6 @@ func TestDeterministicTagging(t *testing.T) {
 				}
 			}
 		}
-		log.Lvl1(threeSame, threeSame1)
 		assert.True(t, threeSame == 6)
 		assert.True(t, threeSame1 == 6)
 		for _, v := range goodFormatResult {
