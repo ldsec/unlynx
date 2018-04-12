@@ -60,7 +60,7 @@ type KeySwitchedCipherBytesMessage struct {
 
 // KSCBLengthMessage represents a message containing the lengths needed to read the KeySwitchedCipherBytesMessage
 type KSCBLengthMessage struct {
-	lenB int
+	LenB int
 }
 
 // Structs
@@ -187,9 +187,10 @@ func getAttributesAndEphemKeys(ct libunlynx.CipherText) (libunlynx.CipherText, k
 func (p *KeySwitchingProtocol) Dispatch() error {
 
 	length := <-p.LengthNodeChannel
+	log.Lvl1("dispatch :", length.LenB)
 	keySwitchingTargetBytes := (<-p.PreviousNodeInPathChannel).KeySwitchedCipherBytesMessage.Data
 	keySwitchingTarget := &KeySwitchedCipherMessage{}
-	(*keySwitchingTarget).FromBytes(keySwitchingTargetBytes, length.lenB)
+	(*keySwitchingTarget).FromBytes(keySwitchingTargetBytes, length.LenB)
 	round := libunlynx.StartTimer(p.Name() + "_KeySwitching(DISPATCH)")
 	startT := time.Now()
 
@@ -245,7 +246,8 @@ func (p *KeySwitchingProtocol) sendToNext(msg interface{}) {
 // sending sends KeySwitchedCipherBytes messages
 func sending(p *KeySwitchingProtocol, kscm *KeySwitchedCipherMessage) {
 	data, lenB := kscm.ToBytes()
-	p.sendToNext(&KSCBLengthMessage{lenB: lenB})
+	log.Lvl1("sending :", lenB)
+	p.sendToNext(&KSCBLengthMessage{LenB: lenB})
 	p.sendToNext(&KeySwitchedCipherBytesMessage{data})
 }
 
