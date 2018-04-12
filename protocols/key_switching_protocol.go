@@ -185,9 +185,7 @@ func getAttributesAndEphemKeys(ct libunlynx.CipherText) (libunlynx.CipherText, k
 
 // Dispatch is called on each node. It waits for incoming messages and handles them.
 func (p *KeySwitchingProtocol) Dispatch() error {
-
 	length := <-p.LengthNodeChannel
-	log.Lvl1("dispatch :", length.LenB)
 	keySwitchingTargetBytes := (<-p.PreviousNodeInPathChannel).KeySwitchedCipherBytesMessage.Data
 	keySwitchingTarget := &KeySwitchedCipherMessage{}
 	(*keySwitchingTarget).FromBytes(keySwitchingTargetBytes, length.LenB)
@@ -246,7 +244,6 @@ func (p *KeySwitchingProtocol) sendToNext(msg interface{}) {
 // sending sends KeySwitchedCipherBytes messages
 func sending(p *KeySwitchingProtocol, kscm *KeySwitchedCipherMessage) {
 	data, lenB := kscm.ToBytes()
-	log.Lvl1("sending :", lenB)
 	p.sendToNext(&KSCBLengthMessage{LenB: lenB})
 	p.sendToNext(&KeySwitchedCipherBytesMessage{data})
 }
@@ -367,18 +364,20 @@ func (kscm *KeySwitchedCipherMessage) ToBytes() ([]byte, int) {
 
 // FromBytes converts a byte array to a KeySwitchedCipherMessage. Note that you need to create the (empty) object beforehand.
 func (kscm *KeySwitchedCipherMessage) FromBytes(data []byte, lenb int) {
+	elementSize := libunlynx.ByteArraySize + (libunlynx.ByteArraySize / 2)
 	nkb := data[lenb:]
 	(*kscm).NewKey = libunlynx.BytesToAbstractPoints(nkb)[0]
+	(*kscm).DataKey = make([]DataAndOriginalEphemeralKeys, lenb / elementSize)
 
 	if libunlynx.PARALLELIZE {
 		var wg sync.WaitGroup
-	    for i := 0; i < lenb; i += libunlynx.ByteArraySize * libunlynx.VPARALLELIZE {
+	    for i := 0; i < lenb; i += elementSize * libunlynx.VPARALLELIZE {
 			wg.Add(1)
 			go func(i int) {
-				for j := 0; j < libunlynx.ByteArraySize*libunlynx.VPARALLELIZE && (i+j < lenb); j += libunlynx.ByteArraySize {
-					tmp := data[(i+j):(i+j+libunlynx.ByteArraySize)]
-					(*kscm).DataKey[(i+j) / libunlynx.ByteArraySize] = DataAndOriginalEphemeralKeys{}
-					(*kscm).DataKey[(i+j) / libunlynx.ByteArraySize].FromBytes(tmp)
+				for j := 0; j < elementSize * libunlynx.VPARALLELIZE && (i+j < lenb); j += elementSize {
+					tmp := data[(i+j):(i+j+elementSize)]
+					(*kscm).DataKey[(i+j) / elementSize] = DataAndOriginalEphemeralKeys{}
+					(*kscm).DataKey[(i+j) / elementSize].FromBytes(tmp)
 				}
 				defer wg.Done()
 			}(i)
@@ -409,6 +408,7 @@ func (daoek *DataAndOriginalEphemeralKeys) ToBytes() []byte  {
 // FromBytes converts a byte array to a DataAndOriginalEphemeralKeys. Note that you need to create the (empty) object beforehand.
 func (daoek *DataAndOriginalEphemeralKeys) FromBytes(data []byte) {
 	(*daoek).Response.FromBytes(data[:libunlynx.ByteArraySize])
+	(*daoek).OriginalEphemeralKey = libunlynx.SuiTe.Point()
 	(*daoek).OriginalEphemeralKey.UnmarshalBinary(data[libunlynx.ByteArraySize:])
 }
 
