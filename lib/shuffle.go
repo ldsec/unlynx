@@ -122,16 +122,12 @@ func CompressBeta(beta [][]kyber.Scalar, e []kyber.Scalar) []kyber.Scalar {
 }
 
 // ShuffleSequence applies shuffling to a list of process responses
-func ShuffleSequence(inputList []ProcessResponse, g, h kyber.Point, precomputed []CipherVectorScalar) ([]ProcessResponse, []int, [][]kyber.Scalar) {
+func ShuffleSequence(inputList []CipherVector, g, h kyber.Point, precomputed []CipherVectorScalar) ([]CipherVector, []int, [][]kyber.Scalar) {
 	maxUint := ^uint(0)
 	maxInt := int(maxUint >> 1)
 
-	NQ1 := len(inputList[0].GroupByEnc)
-	NQ2 := len(inputList[0].WhereEnc)
-	NQ3 := len(inputList[0].AggregatingAttributes)
-
 	// number of elgamal pairs
-	NQ := NQ1 + NQ2 + NQ3
+	NQ := len(inputList[0])
 
 	k := len(inputList) // number of clients
 
@@ -155,17 +151,17 @@ func ShuffleSequence(inputList []ProcessResponse, g, h kyber.Point, precomputed 
 	// Pick a random permutation
 	pi := RandomPermutation(k)
 
-	outputList := make([]ProcessResponse, k)
+	outputList := make([]CipherVector, k)
 
 	wg := StartParallelize(k)
 	for i := 0; i < k; i++ {
 		if PARALLELIZE {
-			go func(outputList []ProcessResponse, i int) {
+			go func(outputList []CipherVector, i int) {
 				defer wg.Done()
-				processResponseShuffling(pi, i, inputList, outputList, NQ1, NQ2, NQ3, NQ, beta, precomputedPoints, g, h)
+				processResponseShuffling(pi, i, inputList, outputList, NQ, beta, precomputedPoints, g, h)
 			}(outputList, i)
 		} else {
-			processResponseShuffling(pi, i, inputList, outputList, NQ1, NQ2, NQ3, NQ, beta, precomputedPoints, g, h)
+			processResponseShuffling(pi, i, inputList, outputList, NQ, beta, precomputedPoints, g, h)
 		}
 	}
 	EndParallelize(wg)
@@ -174,11 +170,8 @@ func ShuffleSequence(inputList []ProcessResponse, g, h kyber.Point, precomputed 
 }
 
 // ProcessResponseShuffling applies shuffling and rerandomization to a list of process responses
-func processResponseShuffling(pi []int, i int, inputList, outputList []ProcessResponse, NQ1, NQ2, NQ3, NQ int, beta [][]kyber.Scalar, precomputedPoints []CipherVector, g, h kyber.Point) {
+func processResponseShuffling(pi []int, i int, inputList, outputList []CipherVector, NQ int, beta [][]kyber.Scalar, precomputedPoints []CipherVector, g, h kyber.Point) {
 	index := pi[i]
-	outputList[i].GroupByEnc = *NewCipherVector(NQ1)
-	outputList[i].WhereEnc = *NewCipherVector(NQ2)
-	outputList[i].AggregatingAttributes = *NewCipherVector(NQ3)
 	wg := StartParallelize(NQ)
 	for j := 0; j < NQ; j++ {
 		var b kyber.Scalar
@@ -191,22 +184,10 @@ func processResponseShuffling(pi []int, i int, inputList, outputList []ProcessRe
 		if PARALLELIZE {
 			go func(j int) {
 				defer wg.Done()
-				if j < NQ1 {
-					outputList[i].GroupByEnc.Rerandomize(inputList[index].GroupByEnc, b, b, cipher, g, h, j)
-				} else if j < NQ1+NQ2 {
-					outputList[i].WhereEnc.Rerandomize(inputList[index].WhereEnc, b, b, cipher, g, h, j-NQ1)
-				} else {
-					outputList[i].AggregatingAttributes.Rerandomize(inputList[index].AggregatingAttributes, b, b, cipher, g, h, j-(NQ1+NQ2))
-				}
+				outputList[i].Rerandomize(inputList[index], b, b, cipher, g, h, j)
 			}(j)
 		} else {
-			if j < NQ1 {
-				outputList[i].GroupByEnc.Rerandomize(inputList[index].GroupByEnc, b, b, cipher, g, h, j)
-			} else if j < NQ1+NQ2 {
-				outputList[i].WhereEnc.Rerandomize(inputList[index].WhereEnc, b, b, cipher, g, h, j-NQ1)
-			} else {
-				outputList[i].AggregatingAttributes.Rerandomize(inputList[index].AggregatingAttributes, b, b, cipher, g, h, j-(NQ1+NQ2))
-			}
+			outputList[i].Rerandomize(inputList[index], b, b, cipher, g, h, j)
 		}
 
 	}
