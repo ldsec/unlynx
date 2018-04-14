@@ -5,6 +5,8 @@ import (
     "github.com/lca1/unlynx/lib"
 )
 
+// _____________________ DETERMINISTIC_TAGGING PROTOCOL _____________________
+
 // CypherTextArray build from a ProcessResponse array
 func PRToCipherTextArray(p []libunlynx.ProcessResponse) []libunlynx.CipherText {
     cipherTexts := make([]libunlynx.CipherText, 0)
@@ -43,6 +45,8 @@ func DCVToProcessResponseDet(detCt libunlynx.DeterministCipherVector,
     return result
 }
 
+// _____________________ KEY_SWITCHING PROTOCOL _____________________
+
 // FilterResponse transformed into a CipherVector. Return also the lengths necessary to rebuild the function
 func FilteredResponseToCipherVector(fr []libunlynx.FilteredResponse) (libunlynx.CipherVector, [][]int) {
     cv := make(libunlynx.CipherVector, 0)
@@ -75,4 +79,53 @@ func CipherVectorToFilteredResponse(cv libunlynx.CipherVector, lengths [][]int) 
     }
 
     return filteredResponse
+}
+
+// _____________________ SHUFFLING PROTOCOL _____________________
+
+func ProcessResponseToMatrixCipherText(pr []libunlynx.ProcessResponse) ([]libunlynx.CipherVector, [][]int) {
+    // We take care that array with one element have at least 2 with inserting a new 0 value
+    if len(pr) == 1 {
+        toAddPr := libunlynx.ProcessResponse{}
+        toAddPr.GroupByEnc = pr[0].GroupByEnc
+        toAddPr.WhereEnc = pr[0].WhereEnc
+        toAddPr.AggregatingAttributes = make(libunlynx.CipherVector, len(pr[0].AggregatingAttributes))
+        for i := range pr[0].AggregatingAttributes {
+            toAddPr.AggregatingAttributes[i] = libunlynx.IntToCipherText(0)
+        }
+        pr = append(pr, toAddPr)
+    }
+
+    cv := make([]libunlynx.CipherVector, len(pr))
+    lengths := make([][]int, len(pr))
+    for i, v := range pr {
+        lengths[i] = make([]int, 3)
+        cv[i] = v.GroupByEnc
+        lengths[i][0] = len(v.GroupByEnc)
+        cv[i] = append(cv[i], v.WhereEnc...)
+        lengths[i][1] = len(v.WhereEnc)
+        cv[i] = append(cv[i], v.AggregatingAttributes...)
+        lengths[i][2] = len(v.AggregatingAttributes)
+    }
+
+    return cv, lengths
+}
+
+func MatrixCipherTextToProcessResponse(cv []libunlynx.CipherVector, lengths [][]int) []libunlynx.ProcessResponse {
+    pr := make([]libunlynx.ProcessResponse, len(cv))
+    for i, v := range cv {
+        pr[i].GroupByEnc = v[0:lengths[i][0]]
+        pr[i].WhereEnc = v[lengths[i][0]:lengths[i][1]]
+        pr[i].AggregatingAttributes = v[lengths[i][1]:lengths[i][2]]
+    }
+    return pr
+}
+
+func adaptCipherTextArray(cipherTexts []libunlynx.CipherText) []libunlynx.CipherVector {
+    result := make([]libunlynx.CipherVector, len(cipherTexts))
+    for i, v := range cipherTexts {
+        result[i] = make([]libunlynx.CipherText, 1)
+        result[i][0] = v
+    }
+    return result
 }

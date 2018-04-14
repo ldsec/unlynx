@@ -14,7 +14,6 @@ import (
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/lib/proofs"
 	"sync"
 	"time"
 )
@@ -34,7 +33,7 @@ func init() {
 
 // ShufflingMessage represents a message containing data to shuffle
 type ShufflingMessage struct {
-	Data []libunlynx.ProcessResponse
+	Data []libunlynx.CipherVector
 }
 
 // ShufflingBytesMessage represents a shuffling message in bytes
@@ -44,9 +43,7 @@ type ShufflingBytesMessage struct {
 
 // SBLengthMessage is a message containing the lengths to read a shuffling message in bytes
 type SBLengthMessage struct {
-	GacbLength  int
-	AabLength   int
-	PgaebLength int
+	CVLengths []byte
 }
 
 // Structs
@@ -78,7 +75,7 @@ type ShufflingProtocol struct {
 	*onet.TreeNodeInstance
 
 	// Protocol feedback channel
-	FeedbackChannel chan []libunlynx.ProcessResponse
+	FeedbackChannel chan []libunlynx.CipherVector
 
 	// Protocol communication channels
 	LengthNodeChannel         chan sbLengthStruct
@@ -89,28 +86,18 @@ type ShufflingProtocol struct {
 
 	// Protocol state data
 	nextNodeInCircuit *onet.TreeNode
-	TargetOfShuffle   *[]libunlynx.ProcessResponse
+	TargetOfShuffle   *[]libunlynx.CipherVector
 
 	CollectiveKey kyber.Point //only use in order to test the protocol
 	Proofs        bool
 	Precomputed   []libunlynx.CipherVectorScalar
 }
 
-func adaptCipherTextArray(cipherTexts []libunlynx.CipherText) [][]libunlynx.CipherText {
-	result := make([][]libunlynx.CipherText, len(cipherTexts))
-	for i, v := range cipherTexts {
-		result[i] = make([]libunlynx.CipherText, 1)
-		result[i][0] = v
-	}
-
-	return result
-}
-
 // NewShufflingProtocol constructs neff shuffle protocol instances.
 func NewShufflingProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 	dsp := &ShufflingProtocol{
 		TreeNodeInstance: n,
-		FeedbackChannel:  make(chan []libunlynx.ProcessResponse),
+		FeedbackChannel:  make(chan []libunlynx.CipherVector),
 	}
 
 	if err := dsp.RegisterChannel(&dsp.PreviousNodeInPathChannel); err != nil {
@@ -151,17 +138,6 @@ func (p *ShufflingProtocol) Start() error {
 
 	shuffleTarget := *p.TargetOfShuffle
 
-	if len(shuffleTarget) == 1 { //cannot shuffle 1 -> add a dummy response with 0s
-		pr := libunlynx.ProcessResponse{}
-		pr.GroupByEnc = shuffleTarget[0].GroupByEnc
-		pr.WhereEnc = shuffleTarget[0].WhereEnc
-		pr.AggregatingAttributes = make(libunlynx.CipherVector, len(shuffleTarget[0].AggregatingAttributes))
-		for i := range shuffleTarget[0].AggregatingAttributes {
-			pr.AggregatingAttributes[i] = libunlynx.IntToCipherText(int64(0))
-		}
-		shuffleTarget = append(shuffleTarget, pr)
-	}
-
 	collectiveKey := p.Roster().Aggregate
 	if p.CollectiveKey != nil {
 		//test
@@ -175,14 +151,20 @@ func (p *ShufflingProtocol) Start() error {
 	}
 
 	shuffledData, pi, beta := libunlynx.ShuffleSequence(shuffleTarget, nil, collectiveKey, p.Precomputed)
+	_ = pi
+	_ = beta
+
+
 	libunlynx.EndTimer(roundShufflingStart)
 	roundShufflingStartProof := libunlynx.StartTimer(p.Name() + "_Shuffling(START-Proof)")
 
+	/*
 	if p.Proofs {
 		proof := proofs.ShufflingProofCreation(shuffleTarget, shuffledData, nil, collectiveKey, beta, pi)
 		//dummy publication
 		_ = proof
 	}
+	*/
 
 	libunlynx.EndTimer(roundShufflingStartProof)
 	libunlynx.EndTimer(roundTotalStart)
@@ -191,12 +173,12 @@ func (p *ShufflingProtocol) Start() error {
 	//sendingStart := lib.StartTimer(p.Name() + "_Sending")
 
 	message := ShufflingBytesMessage{}
-	var cgaLength, eaaLength, egaLength int
-	message.Data, cgaLength, eaaLength, egaLength = (&ShufflingMessage{shuffledData}).ToBytes()
+	var cvLengthsByte []byte
+	message.Data, cvLengthsByte = (&ShufflingMessage{shuffledData}).ToBytes()
 
 	sendingStart := libunlynx.StartTimer(p.Name() + "_Sending")
 
-	p.sendToNext(&SBLengthMessage{cgaLength, eaaLength, egaLength})
+	p.sendToNext(&SBLengthMessage{CVLengths: cvLengthsByte})
 	p.sendToNext(&message)
 
 	libunlynx.EndTimer(sendingStart)
@@ -215,7 +197,7 @@ func (p *ShufflingProtocol) Dispatch() error {
 	libunlynx.EndTimer(receiving)
 
 	sm := ShufflingMessage{}
-	sm.FromBytes(tmp.Data, shufflingLength.GacbLength, shufflingLength.AabLength, shufflingLength.PgaebLength)
+	sm.FromBytes(tmp.Data, shufflingLength.CVLengths)
 	shufflingTarget := sm.Data
 
 	startT := time.Now()
@@ -234,6 +216,7 @@ func (p *ShufflingProtocol) Dispatch() error {
 	}
 
 	shuffledData := shufflingTarget
+
 	var pi []int
 	var beta [][]kyber.Scalar
 
@@ -241,15 +224,19 @@ func (p *ShufflingProtocol) Dispatch() error {
 		roundShuffle := libunlynx.StartTimer(p.Name() + "_Shuffling(DISPATCH-noProof)")
 
 		shuffledData, pi, beta = libunlynx.ShuffleSequence(shufflingTarget, nil, collectiveKey, p.Precomputed)
+		_ = pi
+		_ = beta
 
 		libunlynx.EndTimer(roundShuffle)
 		roundShuffleProof := libunlynx.StartTimer("_Shuffling(DISPATCH-Proof)")
 
+		/*
 		if p.Proofs {
 			proof := proofs.ShufflingProofCreation(shufflingTarget, shuffledData, nil, collectiveKey, beta, pi)
 			//dummy publication
 			_ = proof
 		}
+		*/
 		libunlynx.EndTimer(roundShuffleProof)
 
 	}
@@ -272,12 +259,12 @@ func (p *ShufflingProtocol) Dispatch() error {
 		//sending := lib.StartTimer(p.Name() + "_Sending")
 
 		message := ShufflingBytesMessage{}
-		var cgaLength, eaaLength, egaLength int
-		message.Data, cgaLength, eaaLength, egaLength = (&ShufflingMessage{shuffledData}).ToBytes()
+		var cvBytesLengths []byte
+		message.Data, cvBytesLengths = (&ShufflingMessage{shuffledData}).ToBytes()
 
 		sending := libunlynx.StartTimer(p.Name() + "_Sending")
 
-		p.sendToNext(&SBLengthMessage{cgaLength, eaaLength, egaLength})
+		p.sendToNext(&SBLengthMessage{cvBytesLengths})
 		p.sendToNext(&message)
 
 		libunlynx.EndTimer(sending)
@@ -299,10 +286,37 @@ func (p *ShufflingProtocol) sendToNext(msg interface{}) {
 //______________________________________________________________________________________________________________________
 
 // ToBytes converts a ShufflingMessage to a byte array
-func (sm *ShufflingMessage) ToBytes() ([]byte, int, int, int) {
-	b := make([]byte, 0)
-	bb := make([][]byte, len((*sm).Data))
+func (sm *ShufflingMessage) ToBytes() ([]byte, []byte) {
+	length := len((*sm).Data)
 
+	b := make([]byte, 0)
+	bb := make([][]byte, length)
+	cvLengths := make([]int, length)
+
+	wg := libunlynx.StartParallelize(length)
+	var mutexD sync.Mutex
+	for i := range (*sm).Data {
+		if libunlynx.PARALLELIZE {
+			go func(i int) {
+				defer wg.Done()
+
+				mutexD.Lock()
+				data := (*sm).Data[i]
+				mutexD.Unlock()
+				bb[i], cvLengths[i] = data.ToBytes()
+			}(i)
+		} else {
+			bb[i], cvLengths[i] = (*sm).Data[i].ToBytes()
+		}
+
+	}
+	libunlynx.EndParallelize(wg)
+	for _, v := range bb {
+		b = append(b, v...)
+	}
+	return b, UnsafeCastIntsToBytes(cvLengths)
+
+	/*
 	var gacbLength int
 	var aabLength int
 	var pgaebLength int
@@ -339,16 +353,48 @@ func (sm *ShufflingMessage) ToBytes() ([]byte, int, int, int) {
 	}
 
 	return b, gacbLength, aabLength, pgaebLength
+	*/
 }
 
 // FromBytes converts a byte array to a ShufflingMessage. Note that you need to create the (empty) object beforehand.
-func (sm *ShufflingMessage) FromBytes(data []byte, gacbLength, aabLength, pgaebLength int) {
+func (sm *ShufflingMessage) FromBytes(data []byte, cvLengthsByte []byte) {
+	cvLengths := UnsafeCastBytesToInts(cvLengthsByte)
+	(*sm).Data = make([]libunlynx.CipherVector, len(cvLengths))
+
+	wg := libunlynx.StartParallelize(len(cvLengths))
+
+	// iter over each value in the flatten data byte array
+	bytePos := 0
+	for i := 0; i < len(cvLengths); i++ {
+		nextBytePos := bytePos + cvLengths[i]*libunlynx.ByteArraySize
+
+		cv := make(libunlynx.CipherVector, cvLengths[i])
+		v := data[bytePos:nextBytePos]
+
+		if libunlynx.PARALLELIZE {
+			go func(v []byte, i int) {
+				defer wg.Done()
+				cv.FromBytes(v, cvLengths[i])
+				(*sm).Data[i] = cv
+			}(v, i)
+		} else {
+			cv.FromBytes(v, cvLengths[i])
+			(*sm).Data[i] = cv
+		}
+
+		// advance pointer
+		bytePos = nextBytePos
+	}
+	libunlynx.EndParallelize(wg)
+
+
+	/*
 	var nbrData int
 
 	elementLength := (gacbLength*64 + aabLength*64 + pgaebLength*64) //CAUTION: hardcoded 64 (size of el-gamal element C,K)
 	nbrData = len(data) / elementLength
 
-	(*sm).Data = make([]libunlynx.ProcessResponse, nbrData)
+	(*sm).Data = make([]libunlynx.CipherVector, nbrData)
 	wg := libunlynx.StartParallelize(nbrData)
 	for i := 0; i < nbrData; i++ {
 		v := data[i*elementLength : i*elementLength+elementLength]
@@ -360,7 +406,8 @@ func (sm *ShufflingMessage) FromBytes(data []byte, gacbLength, aabLength, pgaebL
 		} else {
 			(*sm).Data[i].FromBytes(v, gacbLength, aabLength, pgaebLength)
 		}
-
 	}
 	libunlynx.EndParallelize(wg)
+	*/
 }
+
