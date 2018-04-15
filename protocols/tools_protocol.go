@@ -83,7 +83,7 @@ func CipherVectorToFilteredResponse(cv libunlynx.CipherVector, lengths [][]int) 
 
 // _____________________ SHUFFLING PROTOCOL _____________________
 
-func ProcessResponseToMatrixCipherText(pr []libunlynx.ProcessResponse) ([]libunlynx.CipherVector, [][]int) {
+func ProcessResponseToMatrixCipherText(pr []libunlynx.ProcessResponse) []libunlynx.CipherVector {
     // We take care that array with one element have at least 2 with inserting a new 0 value
     if len(pr) == 1 {
         toAddPr := libunlynx.ProcessResponse{}
@@ -96,27 +96,22 @@ func ProcessResponseToMatrixCipherText(pr []libunlynx.ProcessResponse) ([]libunl
         pr = append(pr, toAddPr)
     }
 
-    cv := make([]libunlynx.CipherVector, len(pr))
-    lengths := make([][]int, len(pr))
+    cv := make([]libunlynx.CipherVector, len(pr) * 3)
     for i, v := range pr {
-        lengths[i] = make([]int, 3)
         cv[i] = v.GroupByEnc
-        lengths[i][0] = len(v.GroupByEnc)
-        cv[i] = append(cv[i], v.WhereEnc...)
-        lengths[i][1] = len(v.WhereEnc)
-        cv[i] = append(cv[i], v.AggregatingAttributes...)
-        lengths[i][2] = len(v.AggregatingAttributes)
+        cv[i+1] = v.WhereEnc
+        cv[i+2] = v.AggregatingAttributes
     }
 
-    return cv, lengths
+    return cv
 }
 
-func MatrixCipherTextToProcessResponse(cv []libunlynx.CipherVector, lengths [][]int) []libunlynx.ProcessResponse {
-    pr := make([]libunlynx.ProcessResponse, len(cv))
-    for i, v := range cv {
-        pr[i].GroupByEnc = v[0:lengths[i][0]]
-        pr[i].WhereEnc = v[lengths[i][0]:lengths[i][1]]
-        pr[i].AggregatingAttributes = v[lengths[i][1]:lengths[i][2]]
+func MatrixCipherTextToProcessResponse(cv []libunlynx.CipherVector) []libunlynx.ProcessResponse {
+    pr := make([]libunlynx.ProcessResponse, len(cv)/3)
+    for i := range pr {
+        pr[i].GroupByEnc = cv[3*i]
+        pr[i].WhereEnc = cv[3*i + 1]
+        pr[i].AggregatingAttributes = cv[3*i + 2]
     }
     return pr
 }
