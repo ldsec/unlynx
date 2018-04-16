@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/store"
 	"math"
 	"math/rand"
 	"os"
@@ -305,7 +306,7 @@ func ComputeExpectedResult(testData map[string][]libunlynx.DpClearResponse, data
 			allData = append(allData, elem)
 		}
 	}
-	expectedResult := libunlynx.AddInClear(allData)
+	expectedResult := store.AddInClear(allData)
 
 	// Toggle the clearing function (necessary for the service simulation)
 	if clear {

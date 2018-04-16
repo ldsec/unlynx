@@ -101,18 +101,18 @@ func ProcessResponseToMatrixCipherText(pr []libunlynx.ProcessResponse) ([]libunl
     lengthPr := len(pr)
     cv := make([]libunlynx.CipherVector, lengthPr)
     if oneVal {
-        lengthPr -= 1
+        lengthPr = 1
     }
     lengths := make([][]int, lengthPr)
     for i, v := range pr {
-        if !(i > 1 && oneVal) {
+        cv[i] = append(cv[i], v.GroupByEnc...)
+        cv[i] = append(cv[i], v.WhereEnc...)
+        cv[i] = append(cv[i], v.AggregatingAttributes...)
+        if !oneVal || i == 0 {
             lengths[i] = make([]int, 2)
             lengths[i][0] = len(v.GroupByEnc)
             lengths[i][1] = len(v.WhereEnc)
         }
-        cv[i] = append(cv[i], v.GroupByEnc...)
-        cv[i] = append(cv[i], v.WhereEnc...)
-        cv[i] = append(cv[i], v.AggregatingAttributes...)
     }
 
     return cv, lengths
