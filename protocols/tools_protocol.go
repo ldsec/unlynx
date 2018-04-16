@@ -85,7 +85,9 @@ func CipherVectorToFilteredResponse(cv libunlynx.CipherVector, lengths [][]int) 
 
 func ProcessResponseToMatrixCipherText(pr []libunlynx.ProcessResponse) ([]libunlynx.CipherVector, [][]int) {
     // We take care that array with one element have at least 2 with inserting a new 0 value
+    oneVal := false
     if len(pr) == 1 {
+        oneVal = true
         toAddPr := libunlynx.ProcessResponse{}
         toAddPr.GroupByEnc = pr[0].GroupByEnc
         toAddPr.WhereEnc = pr[0].WhereEnc
@@ -96,13 +98,20 @@ func ProcessResponseToMatrixCipherText(pr []libunlynx.ProcessResponse) ([]libunl
         pr = append(pr, toAddPr)
     }
 
-    cv := make([]libunlynx.CipherVector, len(pr))
-    lengths := make([][]int, len(pr))
+    lengthPr := len(pr)
+    cv := make([]libunlynx.CipherVector, lengthPr)
+    if oneVal {
+        lengthPr -= 1
+    }
+    lengths := make([][]int, lengthPr)
     for i, v := range pr {
-        lengths[i] = make([]int, 2)
-        lengths[i][0] = len(v.GroupByEnc)
-        lengths[i][1] = len(v.WhereEnc)
-        cv[i] = append(v.GroupByEnc, v.WhereEnc...)
+        if !(i > 1 && oneVal) {
+            lengths[i] = make([]int, 2)
+            lengths[i][0] = len(v.GroupByEnc)
+            lengths[i][1] = len(v.WhereEnc)
+        }
+        cv[i] = append(cv[i], v.GroupByEnc...)
+        cv[i] = append(cv[i], v.WhereEnc...)
         cv[i] = append(cv[i], v.AggregatingAttributes...)
     }
 
@@ -110,11 +119,13 @@ func ProcessResponseToMatrixCipherText(pr []libunlynx.ProcessResponse) ([]libunl
 }
 
 func MatrixCipherTextToProcessResponse(cv []libunlynx.CipherVector, lengths [][]int) []libunlynx.ProcessResponse {
-    pr := make([]libunlynx.ProcessResponse, len(cv))
-    for i := range pr {
-        pr[i].GroupByEnc = cv[i][0:lengths[i][0]]
-        pr[i].WhereEnc = cv[i][lengths[i][0]:lengths[i][1]]
-        pr[i].AggregatingAttributes = cv[i][lengths[i][1]:]
+    pr := make([]libunlynx.ProcessResponse, len(lengths))
+    for i, length := range lengths {
+        groupByEncPos := length[0]
+        whereEncPos := groupByEncPos + length[1]
+        pr[i].GroupByEnc = cv[i][:groupByEncPos]
+        pr[i].WhereEnc = cv[i][groupByEncPos:whereEncPos]
+        pr[i].AggregatingAttributes = cv[i][whereEncPos:]
     }
     return pr
 }

@@ -92,7 +92,6 @@ func TestShuffling(t *testing.T) {
 
 		for _, v := range formatedResult {
 			decryptedVAggr := libunlynx.DecryptIntVector(groupSec, &v.AggregatingAttributes)
-			log.Lvl1(decryptedVAggr)
 			decryptedVGrp := libunlynx.DecryptIntVector(groupSec, &v.GroupByEnc)
 			present := false
 			for _, w := range mapi {
