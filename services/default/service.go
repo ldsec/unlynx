@@ -9,6 +9,7 @@ import (
 	"github.com/dedis/onet/network"
 	"github.com/fanliao/go-concurrentMap"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/store"
 	"github.com/lca1/unlynx/protocols"
 	"github.com/lca1/unlynx/services/default/data"
 	"github.com/satori/go.uuid"
@@ -43,7 +44,7 @@ type SurveyCreationQuery struct {
 
 // Survey represents a survey with the corresponding params
 type Survey struct {
-	*libunlynx.Store
+	*store.Store
 	Query             SurveyCreationQuery
 	SurveySecretKey   kyber.Scalar
 	ShufflePrecompute []libunlynx.CipherVectorScalar
@@ -205,7 +206,7 @@ func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.
 
 	// survey instantiation
 	s.Survey.Put((string)(recq.SurveyID), Survey{
-		Store:             libunlynx.NewStore(),
+		Store:             store.NewStore(),
 		Query:             *recq,
 		SurveySecretKey:   surveySecret,
 		ShufflePrecompute: precomputeShuffle,

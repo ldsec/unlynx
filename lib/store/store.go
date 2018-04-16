@@ -140,7 +140,7 @@ func (s *Store) PushDeterministicFilteredResponses(detFilteredResponses []libunl
 		s.Mutex.Unlock()
 	}
 	if proofsB {
-		PublishedAggregationProof := libunlynx.AggregationProofCreation(detFilteredResponses, s.LocAggregatedProcessResponse)
+		PublishedAggregationProof := proofs.AggregationProofCreation(detFilteredResponses, s.LocAggregatedProcessResponse)
 		//publication
 		_ = PublishedAggregationProof
 	}
