@@ -128,7 +128,6 @@ func ShuffleSequence(inputList []CipherVector, g, h kyber.Point, precomputed []C
 
 	// number of elgamal pairs
 	NQ := len(inputList[0])
-
 	k := len(inputList) // number of clients
 
 	rand := SuiTe.RandomStream()
@@ -172,6 +171,7 @@ func ShuffleSequence(inputList []CipherVector, g, h kyber.Point, precomputed []C
 // ProcessResponseShuffling applies shuffling and rerandomization to a list of process responses
 func processResponseShuffling(pi []int, i int, inputList, outputList []CipherVector, NQ int, beta [][]kyber.Scalar, precomputedPoints []CipherVector, g, h kyber.Point) {
 	index := pi[i]
+	outputList[i] = *NewCipherVector(NQ)
 	wg := StartParallelize(NQ)
 	for j := 0; j < NQ; j++ {
 		var b kyber.Scalar

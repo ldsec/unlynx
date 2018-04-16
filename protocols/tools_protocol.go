@@ -100,11 +100,10 @@ func ProcessResponseToMatrixCipherText(pr []libunlynx.ProcessResponse) ([]libunl
     lengths := make([][]int, len(pr))
     for i, v := range pr {
         lengths[i] = make([]int, 2)
-        cv[i] = v.GroupByEnc
         lengths[i][0] = len(v.GroupByEnc)
-        cv[i] = v.WhereEnc
         lengths[i][1] = len(v.WhereEnc)
-        cv[i] = v.AggregatingAttributes
+        cv[i] = append(v.GroupByEnc, v.WhereEnc...)
+        cv[i] = append(cv[i], v.AggregatingAttributes...)
     }
 
     return cv, lengths
