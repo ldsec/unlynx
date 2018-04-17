@@ -10,15 +10,15 @@ import (
 
 // PublishedShufflingProof contains all infos about proofs for shuffling of a ciphervector
 type PublishedShufflingProof struct {
-    OriginalList []libunlynx.ProcessResponse
-    ShuffledList []libunlynx.ProcessResponse
+    OriginalList []libunlynx.CipherVector
+    ShuffledList []libunlynx.CipherVector
     G            kyber.Point
     H            kyber.Point
     HashProof    []byte
 }
 
 // ShuffleProofCreation creates a proof for one shuffle on a list of process response
-func shuffleProofCreation(inputList, outputList []libunlynx.ProcessResponse, beta [][]kyber.Scalar, pi []int, h kyber.Point) []byte {
+func shuffleProofCreation(inputList, outputList []libunlynx.CipherVector, beta [][]kyber.Scalar, pi []int, h kyber.Point) []byte {
     e := inputList[0].CipherVectorTag(h)
     k := len(inputList)
     // compress data for each line (each list) into one element
@@ -31,7 +31,7 @@ func shuffleProofCreation(inputList, outputList []libunlynx.ProcessResponse, bet
     wg1 := libunlynx.StartParallelize(k)
     for i := 0; i < k; i++ {
         if libunlynx.PARALLELIZE {
-            go func(inputList, outputList []libunlynx.ProcessResponse, i int) {
+            go func(inputList, outputList []libunlynx.CipherVector, i int) {
                 defer (*wg1).Done()
                 libunlynx.CompressProcessResponseMultiple(inputList, outputList, i, e, Xhat, XhatBar, Yhat, YhatBar)
             }(inputList, outputList, i)
@@ -65,7 +65,7 @@ func shuffleProofCreation(inputList, outputList []libunlynx.ProcessResponse, bet
 }
 
 // ShufflingProofCreation creates a shuffle proof in its publishable version
-func ShufflingProofCreation(originalList, shuffledList []libunlynx.ProcessResponse, g, h kyber.Point, beta [][]kyber.Scalar, pi []int) PublishedShufflingProof {
+func ShufflingProofCreation(originalList, shuffledList []libunlynx.CipherVector, g, h kyber.Point, beta [][]kyber.Scalar, pi []int) PublishedShufflingProof {
     prf := shuffleProofCreation(originalList, shuffledList, beta, pi, h)
     return PublishedShufflingProof{originalList, shuffledList, g, h, prf}
 }

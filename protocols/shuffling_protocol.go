@@ -16,6 +16,7 @@ import (
 	"github.com/lca1/unlynx/lib"
 	"sync"
 	"time"
+	"github.com/lca1/unlynx/lib/proofs"
 )
 
 // ShufflingProtocolName is the registered name for the neff shuffle protocol.
@@ -158,13 +159,13 @@ func (p *ShufflingProtocol) Start() error {
 	libunlynx.EndTimer(roundShufflingStart)
 	roundShufflingStartProof := libunlynx.StartTimer(p.Name() + "_Shuffling(START-Proof)")
 
-	/*
+
 	if p.Proofs {
-		proof := proofs.ShufflingProofCreation(shuffleTarget, shuffledData, nil, collectiveKey, beta, pi)
+		proof := libunlynxproofs.ShufflingProofCreation(shuffleTarget, shuffledData, nil, collectiveKey, beta, pi)
 		//dummy publication
 		_ = proof
 	}
-	*/
+
 
 	libunlynx.EndTimer(roundShufflingStartProof)
 	libunlynx.EndTimer(roundTotalStart)

@@ -26,63 +26,23 @@ func compressCipherVector(ciphervector CipherVector, e []kyber.Scalar) CipherTex
 	return ciphertext
 }
 
-// CompressProcessResponse applies shuffling compression to a process response
-func CompressProcessResponse(processResponse ProcessResponse, e []kyber.Scalar) CipherText {
-	m := len(processResponse.GroupByEnc)
-	n := len(processResponse.WhereEnc)
-	o := len(processResponse.AggregatingAttributes)
-
-	// check size of e
-	if len(e) != m+n+o {
-		//+o
-		panic("e is not the same size as the list")
-	}
-
-	sum := *NewCipherText()
-	var sum1, sum2, sum3 CipherText
-	if PARALLELIZE {
-		wg := StartParallelize(3)
-		go func() {
-			sum1 = compressCipherVector(processResponse.GroupByEnc, e[0:m])
-			defer wg.Done()
-		}()
-		go func() {
-			sum2 = compressCipherVector(processResponse.WhereEnc, e[m:m+n])
-			defer wg.Done()
-		}()
-		go func() {
-			sum3 = compressCipherVector(processResponse.AggregatingAttributes, e[m+n:m+n+o])
-			defer wg.Done()
-		}()
-		EndParallelize(wg)
-	} else {
-		sum1 = compressCipherVector(processResponse.GroupByEnc, e[0:m])
-		sum2 = compressCipherVector(processResponse.WhereEnc, e[m:m+n])
-		sum3 = compressCipherVector(processResponse.AggregatingAttributes, e[m+n:m+n+o])
-	}
-
-	sum.Add(sum1, sum2)
-	sum.Add(sum, sum3)
-
-	return sum
-}
 
 // CompressListProcessResponse applies shuffling compression to a list of process responses
-func CompressListProcessResponse(processResponses []ProcessResponse, e []kyber.Scalar) ([]kyber.Point, []kyber.Point) {
+func CompressListProcessResponse(processResponses []CipherVector, e []kyber.Scalar) ([]kyber.Point, []kyber.Point) {
 	xC := make([]kyber.Point, len(processResponses))
 	xK := make([]kyber.Point, len(processResponses))
 
 	wg := StartParallelize(len(processResponses))
 	for i, v := range processResponses {
 		if PARALLELIZE {
-			go func(i int, v ProcessResponse) {
-				tmp := CompressProcessResponse(v, e)
+			go func(i int, v CipherVector) {
+				tmp := compressCipherVector(v, e)
 				xK[i] = tmp.K
 				xC[i] = tmp.C
 				defer wg.Done()
 			}(i, v)
 		} else {
-			tmp := CompressProcessResponse(v, e)
+			tmp := compressCipherVector(v, e)
 			xK[i] = tmp.K
 			xC[i] = tmp.C
 		}
@@ -195,11 +155,11 @@ func processResponseShuffling(pi []int, i int, inputList, outputList []CipherVec
 }
 
 // CompressProcessResponseMultiple applies shuffling compression to 2 list of process responses corresponding to input and output of shuffling
-func CompressProcessResponseMultiple(inputList, outputList []ProcessResponse, i int, e []kyber.Scalar, Xhat, XhatBar, Yhat, YhatBar []kyber.Point) {
-	tmp := CompressProcessResponse(inputList[i], e)
+func CompressProcessResponseMultiple(inputList, outputList []CipherVector, i int, e []kyber.Scalar, Xhat, XhatBar, Yhat, YhatBar []kyber.Point) {
+	tmp := compressCipherVector(inputList[i], e)
 	Xhat[i] = tmp.K
 	Yhat[i] = tmp.C
-	tmpBar := CompressProcessResponse(outputList[i], e)
+	tmpBar := compressCipherVector(outputList[i], e)
 	XhatBar[i] = tmpBar.K
 	YhatBar[i] = tmpBar.C
 }

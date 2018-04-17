@@ -102,7 +102,6 @@ func TestCountDPs(t *testing.T) {
 func TestServiceClearAttr(t *testing.T) {
 	log.Lvl1("***************************************************************************************************")
 	os.Remove("pre_compute_multiplications.gob")
-	log.SetDebugVisible(2)
 	local := onet.NewLocalTest(libunlynx.SuiTe)
 	// generate 5 hosts, they don't connect, they process messages, and they
 	// don't register the tree or entitylist
