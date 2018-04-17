@@ -48,6 +48,8 @@ type Survey struct {
 	Query             SurveyCreationQuery
 	SurveySecretKey   kyber.Scalar
 	ShufflePrecompute []libunlynx.CipherVectorScalar
+	Lengths           [][]int
+	TargetOfSwitch    []libunlynx.ProcessResponse
 
 	// channels
 	SurveyChannel chan int // To wait for the survey to be created before loading data
@@ -118,8 +120,6 @@ type Service struct {
 	*onet.ServiceProcessor
 
 	Survey *concurrent.ConcurrentMap
-	Lengths			  [][]int
-	TargetOfSwitch	  []libunlynx.ProcessResponse
 }
 
 // NewService constructor which registers the needed messages.
@@ -335,7 +335,7 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 		if tn.IsRoot() {
 			dpResponses := survey.PullDpResponses()
 			var toShuffleCV []libunlynx.CipherVector
-			toShuffleCV, s.Lengths = protocolsunlynx.ProcessResponseToMatrixCipherText(dpResponses)
+			toShuffleCV, survey.Lengths = protocolsunlynx.ProcessResponseToMatrixCipherText(dpResponses)
 			shuffle.TargetOfShuffle = &toShuffleCV
 
 			s.Survey.Put(string(target), survey)
@@ -362,7 +362,7 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 			}
 			shuffledClientResponses = append(queryWhereToTag, shuffledClientResponses...)
 			tmpDeterministicTOS := protocolsunlynx.PRToCipherTextArray(shuffledClientResponses)
-			s.TargetOfSwitch = shuffledClientResponses
+			survey.TargetOfSwitch = shuffledClientResponses
 			hashCreation.TargetOfSwitch = &tmpDeterministicTOS
 		}
 
@@ -401,7 +401,7 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 				clientResponses = append(clientResponses, libunlynx.ProcessResponse{GroupByEnc: nil, AggregatingAttributes: libunlynx.IntArrayToCipherVector([]int64{int64(v)})})
 			}
 			var toShuffleCV []libunlynx.CipherVector
-			toShuffleCV , s.Lengths = protocolsunlynx.ProcessResponseToMatrixCipherText(clientResponses)
+			toShuffleCV , survey.Lengths = protocolsunlynx.ProcessResponseToMatrixCipherText(clientResponses)
 			shuffle.TargetOfShuffle = &toShuffleCV
 		}
 		return pi, nil
@@ -423,7 +423,7 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 				coaggr = survey.PullCothorityAggregatedFilteredResponses(false, libunlynx.CipherText{})
 			}
 			var tmpKeySwitchingCV libunlynx.CipherVector
-			tmpKeySwitchingCV, s.Lengths = protocolsunlynx.FilteredResponseToCipherVector(coaggr)
+			tmpKeySwitchingCV, survey.Lengths = protocolsunlynx.FilteredResponseToCipherVector(coaggr)
 			keySwitch.TargetOfSwitch = &tmpKeySwitchingCV
 			tmp := survey.Query.ClientPubKey
 			keySwitch.TargetPublicKey = &tmp
@@ -555,7 +555,7 @@ func (s *Service) ShufflingPhase(targetSurvey SurveyID) error {
 		return err
 	}
 	tmpShufflingResult := <-pi.(*protocolsunlynx.ShufflingProtocol).FeedbackChannel
-	shufflingResult := protocolsunlynx.MatrixCipherTextToProcessResponse(tmpShufflingResult, s.Lengths)
+	shufflingResult := protocolsunlynx.MatrixCipherTextToProcessResponse(tmpShufflingResult, survey.Lengths)
 
 	survey.PushShuffledProcessResponses(shufflingResult)
 	s.Survey.Put(string(targetSurvey), survey)
@@ -577,7 +577,7 @@ func (s *Service) TaggingPhase(targetSurvey SurveyID) error {
 	}
 
 	tmpDeterministicTaggingResult := <-pi.(*protocolsunlynx.DeterministicTaggingProtocol).FeedbackChannel
-	deterministicTaggingResult := protocolsunlynx.DCVToProcessResponseDet(tmpDeterministicTaggingResult, s.TargetOfSwitch)
+	deterministicTaggingResult := protocolsunlynx.DCVToProcessResponseDet(tmpDeterministicTaggingResult, survey.TargetOfSwitch)
 
 	var queryWhereTag []libunlynx.WhereQueryAttributeTagged
 	for i, v := range deterministicTaggingResult[:len(survey.Query.Where)] {
@@ -619,10 +619,11 @@ func (s *Service) DROPhase(targetSurvey SurveyID) error {
 		return err
 	}
 
-	tmpShufflingResult := <-pi.(*protocolsunlynx.ShufflingProtocol).FeedbackChannel
-	shufflingResult := protocolsunlynx.MatrixCipherTextToProcessResponse(tmpShufflingResult, s.Lengths)
-
 	survey := castToSurvey(s.Survey.Get((string)(targetSurvey)))
+
+	tmpShufflingResult := <-pi.(*protocolsunlynx.ShufflingProtocol).FeedbackChannel
+	shufflingResult := protocolsunlynx.MatrixCipherTextToProcessResponse(tmpShufflingResult, survey.Lengths)
+
 	survey.Noise = shufflingResult[0].AggregatingAttributes[0]
 	s.Survey.Put(string(targetSurvey), survey)
 	return nil
@@ -634,10 +635,12 @@ func (s *Service) KeySwitchingPhase(targetSurvey SurveyID) error {
 	if err != nil {
 		return err
 	}
-	tmpKeySwitchedAggregatedResponses := <-pi.(*protocolsunlynx.KeySwitchingProtocol).FeedbackChannel
-	keySwitchedAggregatedResponses := protocolsunlynx.CipherVectorToFilteredResponse(tmpKeySwitchedAggregatedResponses, s.Lengths)
 
 	survey := castToSurvey(s.Survey.Get((string)(targetSurvey)))
+
+	tmpKeySwitchedAggregatedResponses := <-pi.(*protocolsunlynx.KeySwitchingProtocol).FeedbackChannel
+	keySwitchedAggregatedResponses := protocolsunlynx.CipherVectorToFilteredResponse(tmpKeySwitchedAggregatedResponses, survey.Lengths)
+
 	survey.PushQuerierKeyEncryptedResponses(keySwitchedAggregatedResponses)
 	s.Survey.Put(string(targetSurvey), survey)
 	return err
