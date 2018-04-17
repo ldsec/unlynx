@@ -85,9 +85,7 @@ func CipherVectorToFilteredResponse(cv libunlynx.CipherVector, lengths [][]int) 
 
 func ProcessResponseToMatrixCipherText(pr []libunlynx.ProcessResponse) ([]libunlynx.CipherVector, [][]int) {
     // We take care that array with one element have at least 2 with inserting a new 0 value
-    oneVal := false
     if len(pr) == 1 {
-        oneVal = true
         toAddPr := libunlynx.ProcessResponse{}
         toAddPr.GroupByEnc = pr[0].GroupByEnc
         toAddPr.WhereEnc = pr[0].WhereEnc
@@ -100,19 +98,14 @@ func ProcessResponseToMatrixCipherText(pr []libunlynx.ProcessResponse) ([]libunl
 
     lengthPr := len(pr)
     cv := make([]libunlynx.CipherVector, lengthPr)
-    if oneVal {
-        lengthPr = 1
-    }
     lengths := make([][]int, lengthPr)
     for i, v := range pr {
         cv[i] = append(cv[i], v.GroupByEnc...)
         cv[i] = append(cv[i], v.WhereEnc...)
         cv[i] = append(cv[i], v.AggregatingAttributes...)
-        if !oneVal || i == 0 {
-            lengths[i] = make([]int, 2)
-            lengths[i][0] = len(v.GroupByEnc)
-            lengths[i][1] = len(v.WhereEnc)
-        }
+        lengths[i] = make([]int, 2)
+        lengths[i][0] = len(v.GroupByEnc)
+        lengths[i][1] = len(v.WhereEnc)
     }
 
     return cv, lengths
