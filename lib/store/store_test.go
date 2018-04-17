@@ -1,4 +1,4 @@
-package store_test
+package libunlynxstore_test
 
 import (
 	"github.com/dedis/kyber/util/random"
@@ -56,7 +56,7 @@ func TestStoring(t *testing.T) {
 	where := []libunlynx.WhereQueryAttribute{{Name: "0", Value: libunlynx.CipherText{}}, {Name: "1", Value: libunlynx.CipherText{}}}
 
 	// Constructor Test
-	storage := store.NewStore()
+	storage := libunlynxstore.NewStore()
 
 	// (1) Test Insert and Pull DpResponses
 	storage.InsertDpResponse(libunlynx.DpResponse{GroupByEnc: testEncMap, WhereClear: testClearMap, AggregatingAttributesEnc: testAggrMap1}, true, groupBy, sum, where)
@@ -82,7 +82,7 @@ func TestStoring(t *testing.T) {
 	storage.PullLocallyAggregatedResponses()
 
 	// (4) Test Insert and Pull DpResponses but with different parameters
-	storage = store.NewStore()
+	storage = libunlynxstore.NewStore()
 
 	storage.InsertDpResponse(libunlynx.DpResponse{GroupByClear: testClearMap, GroupByEnc: testEncMap, WhereClear: testClearMap, WhereEnc: testEncMap, AggregatingAttributesEnc: testAggrMap2}, true, groupBy, sum, where)
 	storage.InsertDpResponse(libunlynx.DpResponse{GroupByEnc: testEncMap, AggregatingAttributesEnc: testAggrMap2}, false, groupBy, sum, where)

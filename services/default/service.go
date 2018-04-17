@@ -44,7 +44,7 @@ type SurveyCreationQuery struct {
 
 // Survey represents a survey with the corresponding params
 type Survey struct {
-	*store.Store
+	*libunlynxstore.Store
 	Query             SurveyCreationQuery
 	SurveySecretKey   kyber.Scalar
 	ShufflePrecompute []libunlynx.CipherVectorScalar
@@ -208,7 +208,7 @@ func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.
 
 	// survey instantiation
 	s.Survey.Put((string)(recq.SurveyID), Survey{
-		Store:             store.NewStore(),
+		Store:             libunlynxstore.NewStore(),
 		Query:             *recq,
 		SurveySecretKey:   surveySecret,
 		ShufflePrecompute: precomputeShuffle,

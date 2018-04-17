@@ -1,4 +1,4 @@
-package store
+package libunlynxstore
 
 import (
 	"github.com/lca1/unlynx/lib"
