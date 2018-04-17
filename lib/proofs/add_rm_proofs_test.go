@@ -1,4 +1,4 @@
-package proofs_test
+package libunlynxproofs_test
 
 import (
     "github.com/lca1/unlynx/lib"
@@ -32,12 +32,12 @@ func TestAddRmProof(t *testing.T) {
 
     //addition
     result.C = libunlynx.SuiTe.Point().Add(cipherOne.C, tmp)
-    prf := proofs.AddRmProofCreation(cipherOne, result, secKeyNew, true)
-    assert.True(t, proofs.AddRmCheckProof(prf, pubKeyNew, cipherOne, result, true))
-    assert.False(t, proofs.AddRmCheckProof(prf, pubKey, cipherOne, result, true))
-    assert.False(t, proofs.AddRmCheckProof(prf, pubKeyNew, result, result, true))
-    assert.False(t, proofs.AddRmCheckProof(prf, pubKeyNew, cipherOne, cipherOne, true))
-    assert.False(t, proofs.AddRmCheckProof(prf, pubKeyNew, cipherOne, result, false))
+    prf := libunlynxproofs.AddRmProofCreation(cipherOne, result, secKeyNew, true)
+    assert.True(t, libunlynxproofs.AddRmCheckProof(prf, pubKeyNew, cipherOne, result, true))
+    assert.False(t, libunlynxproofs.AddRmCheckProof(prf, pubKey, cipherOne, result, true))
+    assert.False(t, libunlynxproofs.AddRmCheckProof(prf, pubKeyNew, result, result, true))
+    assert.False(t, libunlynxproofs.AddRmCheckProof(prf, pubKeyNew, cipherOne, cipherOne, true))
+    assert.False(t, libunlynxproofs.AddRmCheckProof(prf, pubKeyNew, cipherOne, result, false))
 
     //subtraction
     result = *libunlynx.NewCipherText()
@@ -45,12 +45,12 @@ func TestAddRmProof(t *testing.T) {
     tmp = libunlynx.SuiTe.Point().Mul(secKeyNew, cipherOne.K)
     result.K = cipherOne.K
     result.C = libunlynx.SuiTe.Point().Sub(cipherOne.C, tmp)
-    prf = proofs.AddRmProofCreation(cipherOne, result, secKeyNew, false)
-    assert.True(t, proofs.AddRmCheckProof(prf, pubKeyNew, cipherOne, result, false))
-    assert.False(t, proofs.AddRmCheckProof(prf, pubKey, cipherOne, result, false))
-    assert.False(t, proofs.AddRmCheckProof(prf, pubKeyNew, result, result, false))
-    assert.False(t, proofs.AddRmCheckProof(prf, pubKeyNew, cipherOne, cipherOne, false))
-    assert.False(t, proofs.AddRmCheckProof(prf, pubKeyNew, cipherOne, result, true))
+    prf = libunlynxproofs.AddRmProofCreation(cipherOne, result, secKeyNew, false)
+    assert.True(t, libunlynxproofs.AddRmCheckProof(prf, pubKeyNew, cipherOne, result, false))
+    assert.False(t, libunlynxproofs.AddRmCheckProof(prf, pubKey, cipherOne, result, false))
+    assert.False(t, libunlynxproofs.AddRmCheckProof(prf, pubKeyNew, result, result, false))
+    assert.False(t, libunlynxproofs.AddRmCheckProof(prf, pubKeyNew, cipherOne, cipherOne, false))
+    assert.False(t, libunlynxproofs.AddRmCheckProof(prf, pubKeyNew, cipherOne, result, true))
 
     resultAdd := make([]libunlynx.CipherText, 2)
     resultSub := make([]libunlynx.CipherText, 2)
@@ -66,31 +66,31 @@ func TestAddRmProof(t *testing.T) {
         resultAdd[j] = add
         resultSub[j] = sub
     }
-    prfVectAdd := proofs.VectorAddRmProofCreation(cipherArray, resultAdd, secKeyNew, true)
-    prfVectAddPub := proofs.PublishedAddRmProof{Arp: prfVectAdd, VectBefore: cipherArray, VectAfter: resultAdd, Krm: pubKeyNew, ToAdd: true}
-    prfVectSub := proofs.VectorAddRmProofCreation(cipherArray, resultSub, secKeyNew, false)
-    prfVectSubPub := proofs.PublishedAddRmProof{Arp: prfVectSub, VectBefore: cipherArray, VectAfter: resultSub, Krm: pubKeyNew, ToAdd: false}
-    assert.True(t, proofs.PublishedAddRmCheckProof(prfVectAddPub))
-    assert.True(t, proofs.PublishedAddRmCheckProof(prfVectSubPub))
+    prfVectAdd := libunlynxproofs.VectorAddRmProofCreation(cipherArray, resultAdd, secKeyNew, true)
+    prfVectAddPub := libunlynxproofs.PublishedAddRmProof{Arp: prfVectAdd, VectBefore: cipherArray, VectAfter: resultAdd, Krm: pubKeyNew, ToAdd: true}
+    prfVectSub := libunlynxproofs.VectorAddRmProofCreation(cipherArray, resultSub, secKeyNew, false)
+    prfVectSubPub := libunlynxproofs.PublishedAddRmProof{Arp: prfVectSub, VectBefore: cipherArray, VectAfter: resultSub, Krm: pubKeyNew, ToAdd: false}
+    assert.True(t, libunlynxproofs.PublishedAddRmCheckProof(prfVectAddPub))
+    assert.True(t, libunlynxproofs.PublishedAddRmCheckProof(prfVectSubPub))
 
-    prfVectAddPub = proofs.PublishedAddRmProof{Arp: prfVectAdd, VectBefore: resultAdd, VectAfter: resultAdd, Krm: pubKeyNew, ToAdd: true}
-    prfVectSubPub = proofs.PublishedAddRmProof{Arp: prfVectSub, VectBefore: resultAdd, VectAfter: resultSub, Krm: pubKeyNew, ToAdd: false}
-    assert.False(t, proofs.PublishedAddRmCheckProof(prfVectAddPub))
-    assert.False(t, proofs.PublishedAddRmCheckProof(prfVectSubPub))
+    prfVectAddPub = libunlynxproofs.PublishedAddRmProof{Arp: prfVectAdd, VectBefore: resultAdd, VectAfter: resultAdd, Krm: pubKeyNew, ToAdd: true}
+    prfVectSubPub = libunlynxproofs.PublishedAddRmProof{Arp: prfVectSub, VectBefore: resultAdd, VectAfter: resultSub, Krm: pubKeyNew, ToAdd: false}
+    assert.False(t, libunlynxproofs.PublishedAddRmCheckProof(prfVectAddPub))
+    assert.False(t, libunlynxproofs.PublishedAddRmCheckProof(prfVectSubPub))
 
-    prfVectAddPub = proofs.PublishedAddRmProof{Arp: prfVectAdd, VectBefore: cipherArray, VectAfter: resultSub, Krm: pubKeyNew, ToAdd: true}
-    prfVectSubPub = proofs.PublishedAddRmProof{Arp: prfVectSub, VectBefore: cipherArray, VectAfter: resultAdd, Krm: pubKeyNew, ToAdd: false}
-    assert.False(t, proofs.PublishedAddRmCheckProof(prfVectAddPub))
-    assert.False(t, proofs.PublishedAddRmCheckProof(prfVectSubPub))
+    prfVectAddPub = libunlynxproofs.PublishedAddRmProof{Arp: prfVectAdd, VectBefore: cipherArray, VectAfter: resultSub, Krm: pubKeyNew, ToAdd: true}
+    prfVectSubPub = libunlynxproofs.PublishedAddRmProof{Arp: prfVectSub, VectBefore: cipherArray, VectAfter: resultAdd, Krm: pubKeyNew, ToAdd: false}
+    assert.False(t, libunlynxproofs.PublishedAddRmCheckProof(prfVectAddPub))
+    assert.False(t, libunlynxproofs.PublishedAddRmCheckProof(prfVectSubPub))
 
-    prfVectAddPub = proofs.PublishedAddRmProof{Arp: prfVectAdd, VectBefore: cipherArray, VectAfter: resultAdd, Krm: pubKey, ToAdd: true}
-    prfVectSubPub = proofs.PublishedAddRmProof{Arp: prfVectSub, VectBefore: cipherArray, VectAfter: resultSub, Krm: pubKey, ToAdd: false}
-    assert.False(t, proofs.PublishedAddRmCheckProof(prfVectAddPub))
-    assert.False(t, proofs.PublishedAddRmCheckProof(prfVectSubPub))
+    prfVectAddPub = libunlynxproofs.PublishedAddRmProof{Arp: prfVectAdd, VectBefore: cipherArray, VectAfter: resultAdd, Krm: pubKey, ToAdd: true}
+    prfVectSubPub = libunlynxproofs.PublishedAddRmProof{Arp: prfVectSub, VectBefore: cipherArray, VectAfter: resultSub, Krm: pubKey, ToAdd: false}
+    assert.False(t, libunlynxproofs.PublishedAddRmCheckProof(prfVectAddPub))
+    assert.False(t, libunlynxproofs.PublishedAddRmCheckProof(prfVectSubPub))
 
-    prfVectAddPub = proofs.PublishedAddRmProof{Arp: prfVectAdd, VectBefore: cipherArray, VectAfter: resultAdd, Krm: pubKeyNew, ToAdd: false}
-    prfVectSubPub = proofs.PublishedAddRmProof{Arp: prfVectSub, VectBefore: cipherArray, VectAfter: resultSub, Krm: pubKeyNew, ToAdd: true}
-    assert.False(t, proofs.PublishedAddRmCheckProof(prfVectAddPub))
-    assert.False(t, proofs.PublishedAddRmCheckProof(prfVectSubPub))
+    prfVectAddPub = libunlynxproofs.PublishedAddRmProof{Arp: prfVectAdd, VectBefore: cipherArray, VectAfter: resultAdd, Krm: pubKeyNew, ToAdd: false}
+    prfVectSubPub = libunlynxproofs.PublishedAddRmProof{Arp: prfVectSub, VectBefore: cipherArray, VectAfter: resultSub, Krm: pubKeyNew, ToAdd: true}
+    assert.False(t, libunlynxproofs.PublishedAddRmCheckProof(prfVectAddPub))
+    assert.False(t, libunlynxproofs.PublishedAddRmCheckProof(prfVectSubPub))
 
 }

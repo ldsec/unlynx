@@ -1,4 +1,4 @@
-package proofs_test
+package libunlynxproofs_test
 
 import (
     "github.com/lca1/unlynx/lib"
@@ -56,9 +56,9 @@ func TestCollectiveAggregationProof(t *testing.T) {
         libunlynx.AddInMap(resultingMap, i, v)
     }
 
-    PublishedCollectiveAggregationProof := proofs.CollectiveAggregationProofCreation(comparisonMap, detResponses, resultingMap)
-    assert.True(t, proofs.CollectiveAggregationProofVerification(PublishedCollectiveAggregationProof))
+    PublishedCollectiveAggregationProof := libunlynxproofs.CollectiveAggregationProofCreation(comparisonMap, detResponses, resultingMap)
+    assert.True(t, libunlynxproofs.CollectiveAggregationProofVerification(PublishedCollectiveAggregationProof))
 
-    PublishedCollectiveAggregationProof = proofs.CollectiveAggregationProofCreation(resultingMap, detResponses, comparisonMap)
-    assert.False(t, proofs.CollectiveAggregationProofVerification(PublishedCollectiveAggregationProof))
+    PublishedCollectiveAggregationProof = libunlynxproofs.CollectiveAggregationProofCreation(resultingMap, detResponses, comparisonMap)
+    assert.False(t, libunlynxproofs.CollectiveAggregationProofVerification(PublishedCollectiveAggregationProof))
 }

@@ -60,7 +60,7 @@ func (p *AddRmServerProtocol) Start() error {
 	libunlynx.EndTimer(roundComput)
 
 	roundProof := libunlynx.StartTimer(p.Name() + "_AddRmServer(PROOFS)")
-	pubs := make([]proofs.PublishedAddRmProof, 0)
+	pubs := make([]libunlynxproofs.PublishedAddRmProof, 0)
 	if p.Proofs {
 		proofsCreation(pubs, p.TargetOfTransformation, result, p.KeyToRm, p.Add)
 	}
@@ -71,12 +71,12 @@ func (p *AddRmServerProtocol) Start() error {
 	wg = libunlynx.StartParallelize(len(pubs))
 	for _, v := range pubs {
 		if libunlynx.PARALLELIZE {
-			go func(v proofs.PublishedAddRmProof) {
+			go func(v libunlynxproofs.PublishedAddRmProof) {
 				defer wg.Done()
-				proofs.PublishedAddRmCheckProof(v)
+				libunlynxproofs.PublishedAddRmCheckProof(v)
 			}(v)
 		} else {
-			proofs.PublishedAddRmCheckProof(v)
+			libunlynxproofs.PublishedAddRmCheckProof(v)
 		}
 
 	}
@@ -129,11 +129,11 @@ func changeEncryptionKeyCipherTexts(cipherText libunlynx.CipherText, serverAddRm
 	return result
 }
 
-func proofsCreation(pubs []proofs.PublishedAddRmProof, target, ct []libunlynx.CipherText, keyToRm kyber.Scalar, add bool) {
+func proofsCreation(pubs []libunlynxproofs.PublishedAddRmProof, target, ct []libunlynx.CipherText, keyToRm kyber.Scalar, add bool) {
 	ktopub := libunlynx.SuiTe.Point().Mul(keyToRm, libunlynx.SuiTe.Point().Base())
 
-	prf := proofs.VectorAddRmProofCreation(target, ct, keyToRm, add)
-	pub := proofs.PublishedAddRmProof{Arp: prf, VectBefore: ct, VectAfter: ct, Krm:ktopub, ToAdd:add}
+	prf := libunlynxproofs.VectorAddRmProofCreation(target, ct, keyToRm, add)
+	pub := libunlynxproofs.PublishedAddRmProof{Arp: prf, VectBefore: ct, VectAfter: ct, Krm:ktopub, ToAdd:add}
 
 	pubs = append(pubs, pub)
 }

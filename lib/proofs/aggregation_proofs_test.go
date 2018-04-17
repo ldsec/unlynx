@@ -1,4 +1,4 @@
-package proofs_test
+package libunlynxproofs_test
 
 import (
     "github.com/lca1/unlynx/lib"
@@ -50,10 +50,10 @@ func TestAggregationProof(t *testing.T) {
         libunlynx.AddInMap(comparisonMap, v.DetTagGroupBy, v.Fr)
     }
 
-    PublishedAggregationProof := proofs.AggregationProofCreation(detResponses, comparisonMap)
-    assert.True(t, proofs.AggregationProofVerification(PublishedAggregationProof))
+    PublishedAggregationProof := libunlynxproofs.AggregationProofCreation(detResponses, comparisonMap)
+    assert.True(t, libunlynxproofs.AggregationProofVerification(PublishedAggregationProof))
 
     detResponses[0] = detResponses[1]
-    PublishedAggregationProof = proofs.AggregationProofCreation(detResponses, comparisonMap)
-    assert.False(t, proofs.AggregationProofVerification(PublishedAggregationProof))
+    PublishedAggregationProof = libunlynxproofs.AggregationProofCreation(detResponses, comparisonMap)
+    assert.False(t, libunlynxproofs.AggregationProofVerification(PublishedAggregationProof))
 }

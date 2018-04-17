@@ -169,7 +169,7 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 				for j := 0; j < libunlynx.VPARALLELIZE && (i+j) < len(deterministicTaggingTargetBef.Data); j++ {
 					tmp := libunlynx.SuiTe.Point().Add(deterministicTaggingTargetBef.Data[i+j].C, toAdd)
 					if p.Proofs {
-						prf := proofs.DetTagAdditionProofCreation(deterministicTaggingTargetBef.Data[i+j].C,
+						prf := libunlynxproofs.DetTagAdditionProofCreation(deterministicTaggingTargetBef.Data[i+j].C,
 							*p.SurveySecretKey, toAdd, tmp)
 						//TODO: proof publication
 						_ = prf
@@ -183,7 +183,7 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 		for i, v := range deterministicTaggingTargetBef.Data {
 			tmp := libunlynx.SuiTe.Point().Add(v.C, toAdd)
 			if p.Proofs {
-				prf := proofs.DetTagAdditionProofCreation(v.C, *p.SurveySecretKey, toAdd, tmp)
+				prf := libunlynxproofs.DetTagAdditionProofCreation(v.C, *p.SurveySecretKey, toAdd, tmp)
 				_ = prf
 			}
 			deterministicTaggingTargetBef.Data[i].C = tmp

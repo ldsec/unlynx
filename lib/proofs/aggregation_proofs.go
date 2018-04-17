@@ -1,9 +1,10 @@
-package proofs
+package libunlynxproofs
 
 import (
-    "reflect"
     "github.com/lca1/unlynx/lib"
+    "reflect"
 )
+
 
 // PublishedAggregationProof contains all infos about proofs for aggregation of two filtered responses
 type PublishedAggregationProof struct {

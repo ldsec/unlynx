@@ -216,7 +216,7 @@ func (p *CollectiveAggregationProtocol) ascendingAggregationPhase() *map[libunly
 			libunlynx.EndTimer(roundComput)
 			roundProofs2 := libunlynx.StartTimer(p.Name() + "_CollectiveAggregation(Proof-2ndPart)")
 			if p.Proofs {
-				PublishedCollectiveAggregationProof := proofs.CollectiveAggregationProofCreation(c1, childrenContribution.ChildData, *p.GroupedData)
+				PublishedCollectiveAggregationProof := libunlynxproofs.CollectiveAggregationProofCreation(c1, childrenContribution.ChildData, *p.GroupedData)
 				//publication
 				_ = PublishedCollectiveAggregationProof
 			}

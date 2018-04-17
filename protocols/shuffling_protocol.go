@@ -232,7 +232,7 @@ func (p *ShufflingProtocol) Dispatch() error {
 
 		/*
 		if p.Proofs {
-			proof := proofs.ShufflingProofCreation(shufflingTarget, shuffledData, nil, collectiveKey, beta, pi)
+			proof := libunlynxproofs.ShufflingProofCreation(shufflingTarget, shuffledData, nil, collectiveKey, beta, pi)
 			//dummy publication
 			_ = proof
 		}

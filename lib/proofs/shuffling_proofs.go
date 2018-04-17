@@ -1,4 +1,4 @@
-package proofs
+package libunlynxproofs
 
 import (
     "github.com/dedis/kyber"

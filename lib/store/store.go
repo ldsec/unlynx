@@ -90,7 +90,7 @@ func (s *Store) InsertDpResponse(cr libunlynx.DpResponse, proofsB bool, groupBy,
 			s.DpResponsesAggr[GroupingKeyTuple{libunlynx.Key(clearGrp), libunlynx.Key(clearWhr)}] = mapValue
 
 			if proofsB {
-				publishedAggregationProof := proofs.PublishedSimpleAdditionProof{value.AggregatingAttributes, newResp.AggregatingAttributes, mapValue.AggregatingAttributes}
+				publishedAggregationProof := libunlynxproofs.PublishedSimpleAdditionProof{value.AggregatingAttributes, newResp.AggregatingAttributes, mapValue.AggregatingAttributes}
 				_ = publishedAggregationProof
 			}
 
@@ -140,7 +140,7 @@ func (s *Store) PushDeterministicFilteredResponses(detFilteredResponses []libunl
 		s.Mutex.Unlock()
 	}
 	if proofsB {
-		PublishedAggregationProof := proofs.AggregationProofCreation(detFilteredResponses, s.LocAggregatedProcessResponse)
+		PublishedAggregationProof := libunlynxproofs.AggregationProofCreation(detFilteredResponses, s.LocAggregatedProcessResponse)
 		//publication
 		_ = PublishedAggregationProof
 	}

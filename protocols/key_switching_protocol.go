@@ -286,9 +286,9 @@ func FilteredResponseKeySwitching(keySwitchingTarget *KeySwitchedCipherMessage, 
 	}
 
 	if proofsB {
-		proof := proofs.VectorSwitchKeyProofCreation(oldCv, newCv, r, secretContrib, originalEphemeralKeys, keySwitchingTarget.NewKey)
+		proof := libunlynxproofs.VectorSwitchKeyProofCreation(oldCv, newCv, r, secretContrib, originalEphemeralKeys, keySwitchingTarget.NewKey)
 		pubKey := libunlynx.SuiTe.Point().Mul(secretContrib, libunlynx.SuiTe.Point().Base())
-		pub := proofs.PublishedSwitchKeyProof{Skp: proof, VectBefore: oldCv, VectAfter: newCv, K: pubKey, Q: keySwitchingTarget.NewKey}
+		pub := libunlynxproofs.PublishedSwitchKeyProof{Skp: proof, VectBefore: oldCv, VectAfter: newCv, K: pubKey, Q: keySwitchingTarget.NewKey}
 		_ = pub
 	}
 }
