@@ -10,7 +10,7 @@ import (
 
 // _____________________ COLLECTIVE_AGGREGATION PROTOCOL _____________________
 
-func retrieveSimpleDataFromMap(groupedData map[libunlynx.GroupingKey]libunlynx.FilteredResponse) ([]libunlynx.CipherText, error) {
+func RetrieveSimpleDataFromMap(groupedData map[libunlynx.GroupingKey]libunlynx.FilteredResponse) ([]libunlynx.CipherText, error) {
     if len(groupedData) != 1 {
         return nil, errors.New("the map given in arguments is empty or have more than one key")
     }
@@ -145,7 +145,7 @@ func MatrixCipherTextToProcessResponse(cv []libunlynx.CipherVector, lengths [][]
     return pr
 }
 
-func adaptCipherTextArray(cipherTexts []libunlynx.CipherText) []libunlynx.CipherVector {
+func AdaptCipherTextArray(cipherTexts []libunlynx.CipherText) []libunlynx.CipherVector {
     result := make([]libunlynx.CipherVector, len(cipherTexts))
     for i, v := range cipherTexts {
         result[i] = make([]libunlynx.CipherText, 1)
