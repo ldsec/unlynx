@@ -7,7 +7,7 @@ import (
 
 // _____________________ DETERMINISTIC_TAGGING PROTOCOL _____________________
 
-// CypherTextArray build from a ProcessResponse array
+// CipherTextArray build from a ProcessResponse array
 func PRToCipherTextArray(p []libunlynx.ProcessResponse) []libunlynx.CipherText {
     cipherTexts := make([]libunlynx.CipherText, 0)
 

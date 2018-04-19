@@ -364,7 +364,8 @@ func (kscm *KeySwitchedCipherMessage) ToBytes() ([]byte, int) {
 
 // FromBytes converts a byte array to a KeySwitchedCipherMessage. Note that you need to create the (empty) object beforehand.
 func (kscm *KeySwitchedCipherMessage) FromBytes(data []byte, lenb int) {
-	elementSize := libunlynx.ByteArraySize + (libunlynx.ByteArraySize / 2)
+	cipherTextSize := libunlynx.CipherTextByteSize()
+	elementSize := cipherTextSize + (cipherTextSize / 2)
 	nkb := data[lenb:]
 	(*kscm).NewKey = libunlynx.BytesToAbstractPoints(nkb)[0]
 	(*kscm).DataKey = make([]DataAndOriginalEphemeralKeys, lenb / elementSize)
@@ -384,10 +385,10 @@ func (kscm *KeySwitchedCipherMessage) FromBytes(data []byte, lenb int) {
 		}
 		wg.Wait()
 	} else {
-		for i := 0; i < lenb; i += libunlynx.ByteArraySize {
-			tmp := data[i:i+libunlynx.ByteArraySize]
-			(*kscm).DataKey[i / libunlynx.ByteArraySize] = DataAndOriginalEphemeralKeys{}
-			(*kscm).DataKey[i / libunlynx.ByteArraySize].FromBytes(tmp)
+		for i := 0; i < lenb; i += cipherTextSize {
+			tmp := data[i:i+cipherTextSize]
+			(*kscm).DataKey[i / cipherTextSize] = DataAndOriginalEphemeralKeys{}
+			(*kscm).DataKey[i / cipherTextSize].FromBytes(tmp)
 		}
 	}
 }
@@ -407,9 +408,10 @@ func (daoek *DataAndOriginalEphemeralKeys) ToBytes() []byte  {
 
 // FromBytes converts a byte array to a DataAndOriginalEphemeralKeys. Note that you need to create the (empty) object beforehand.
 func (daoek *DataAndOriginalEphemeralKeys) FromBytes(data []byte) {
-	(*daoek).Response.FromBytes(data[:libunlynx.ByteArraySize])
+	cipherTextSize := libunlynx.CipherTextByteSize()
+	(*daoek).Response.FromBytes(data[:cipherTextSize])
 	(*daoek).OriginalEphemeralKey = libunlynx.SuiTe.Point()
-	(*daoek).OriginalEphemeralKey.UnmarshalBinary(data[libunlynx.ByteArraySize:])
+	(*daoek).OriginalEphemeralKey.UnmarshalBinary(data[cipherTextSize:])
 }
 
 /*

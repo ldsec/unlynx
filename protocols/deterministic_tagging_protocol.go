@@ -334,28 +334,29 @@ func (dtm *DeterministicTaggingMessage) ToBytes() []byte {
 func (dtm *DeterministicTaggingMessage) FromBytes (data []byte)  {
 
 	//cvLengths := UnsafeCastBytesToInts(cvLengthsByte)
-	(*dtm).Data = make([]libunlynx.CipherText, len(data) / libunlynx.ByteArraySize)
+	elementSize := libunlynx.CipherTextByteSize()
+	(*dtm).Data = make([]libunlynx.CipherText, len(data) / elementSize)
 
 	// iter over each value in the flatten data byte array
 	if libunlynx.PARALLELIZE {
 		var wg sync.WaitGroup
-		for i := 0; i < len(data); i += libunlynx.ByteArraySize * libunlynx.VPARALLELIZE {
+		for i := 0; i < len(data); i += elementSize * libunlynx.VPARALLELIZE {
 			wg.Add(1)
 			go func(i int) {
-				for j := 0; j < libunlynx.ByteArraySize*libunlynx.VPARALLELIZE && i+j < len(data); j += libunlynx.ByteArraySize {
-					tmp := make([]byte, libunlynx.ByteArraySize)
-					copy(tmp, data[i+j:i+j+libunlynx.ByteArraySize])
-					(*dtm).Data[(i+j)/libunlynx.ByteArraySize].FromBytes(tmp)
+				for j := 0; j < elementSize*libunlynx.VPARALLELIZE && i+j < len(data); j += elementSize {
+					tmp := make([]byte, elementSize)
+					copy(tmp, data[i+j:i+j+elementSize])
+					(*dtm).Data[(i+j)/elementSize].FromBytes(tmp)
 				}
 				defer wg.Done()
 			}(i)
 		}
 		wg.Wait()
 	} else {
-		for i := 0; i < len(data); i += libunlynx.ByteArraySize {
-			tmp := make([]byte, libunlynx.ByteArraySize)
-			copy(tmp, data[i:i+libunlynx.ByteArraySize])
-			(*dtm).Data[i/libunlynx.ByteArraySize].FromBytes(tmp)
+		for i := 0; i < len(data); i += elementSize {
+			tmp := make([]byte, elementSize)
+			copy(tmp, data[i:i+elementSize])
+			(*dtm).Data[i/elementSize].FromBytes(tmp)
 		}
 	}
 }

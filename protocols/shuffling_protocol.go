@@ -361,13 +361,14 @@ func (sm *ShufflingMessage) ToBytes() ([]byte, []byte) {
 func (sm *ShufflingMessage) FromBytes(data []byte, cvLengthsByte []byte) {
 	cvLengths := UnsafeCastBytesToInts(cvLengthsByte)
 	(*sm).Data = make([]libunlynx.CipherVector, len(cvLengths))
+	elementSize := libunlynx.CipherTextByteSize()
 
 	wg := libunlynx.StartParallelize(len(cvLengths))
 
 	// iter over each value in the flatten data byte array
 	bytePos := 0
 	for i := 0; i < len(cvLengths); i++ {
-		nextBytePos := bytePos + cvLengths[i]*libunlynx.ByteArraySize
+		nextBytePos := bytePos + cvLengths[i]*elementSize
 
 		cv := make(libunlynx.CipherVector, cvLengths[i])
 		v := data[bytePos:nextBytePos]

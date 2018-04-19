@@ -15,7 +15,6 @@ import (
 
 // MaxHomomorphicInt is upper bound for integers used in messages, a failed decryption will return this value.
 const MaxHomomorphicInt int64 = 100000
-const ByteArraySize int = 64
 
 // PointToInt creates a map between EC points and integers.
 //var PointToInt = make(map[string]int64, MaxHomomorphicInt)
@@ -569,6 +568,10 @@ func RandomPermutation(k int) []int {
 // Conversion
 //______________________________________________________________________________________________________________________
 
+func CipherTextByteSize() int {
+	return 2 * SuiTe.PointLen()
+}
+
 // ToBytes converts a CipherVector to a byte array
 func (cv *CipherVector) ToBytes() ([]byte, int) {
 	b := make([]byte, 0)
@@ -583,9 +586,10 @@ func (cv *CipherVector) ToBytes() ([]byte, int) {
 // FromBytes converts a byte array to a CipherVector. Note that you need to create the (empty) object beforehand.
 func (cv *CipherVector) FromBytes(data []byte, length int) {
 	*cv = make(CipherVector, length)
-	for i, pos := 0, 0; i < length*ByteArraySize; i, pos = i+ByteArraySize, pos+1 {
+	elementSize := CipherTextByteSize()
+	for i, pos := 0, 0; i < length*elementSize; i, pos = i+elementSize, pos+1 {
 		ct := CipherText{}
-		ct.FromBytes(data[i : i+ByteArraySize])
+		ct.FromBytes(data[i : i+elementSize])
 		(*cv)[pos] = ct
 	}
 }
@@ -610,8 +614,8 @@ func (c *CipherText) FromBytes(data []byte) {
 	(*c).K = SuiTe.Point()
 	(*c).C = SuiTe.Point()
 
-	(*c).K.UnmarshalBinary(data[:ByteArraySize/2])
-	(*c).C.UnmarshalBinary(data[ByteArraySize/2:])
+	(*c).K.UnmarshalBinary(data[:SuiTe.PointLen()])
+	(*c).C.UnmarshalBinary(data[SuiTe.PointLen():])
 }
 
 // Serialize encodes a CipherText in a base64 string
