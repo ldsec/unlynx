@@ -16,10 +16,8 @@ import (
 	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/proofs"
-	"reflect"
 	"sync"
 	"time"
-	"unsafe"
 )
 
 // DeterministicTaggingProtocolName is the registered name for the deterministic tagging protocol.
@@ -141,7 +139,6 @@ func (p *DeterministicTaggingProtocol) Start() error {
 	log.Lvl1("["+p.Name()+"]", " starts a Deterministic Tagging Protocol on ", nbrCipherText, " element(s)")
 
 	// create process response with deterministic tag, at first step the tag creation part is a copy of the proba
-	// grouping attributes
 	detTarget := make([]libunlynx.CipherText, len(*p.TargetOfSwitch))
 	copy(detTarget, *p.TargetOfSwitch)
 	libunlynx.EndTimer(roundTotalStart)
@@ -274,25 +271,6 @@ func sendingDet(p DeterministicTaggingProtocol, detTarget DeterministicTaggingMe
 // Conversion
 //______________________________________________________________________________________________________________________
 
-// cast using reflect []int <-> []byte
-// from http://stackoverflow.com/questions/17539001/converting-int32-to-byte-array-in-go
-
-// IntByteSize is the byte size of an int in memory
-const IntByteSize = int(unsafe.Sizeof(int(0)))
-
-// UnsafeCastIntsToBytes casts a slice of ints to a slice of bytes
-func UnsafeCastIntsToBytes(ints []int) []byte {
-	length := len(ints) * IntByteSize
-	hdr := reflect.SliceHeader{Data: uintptr(unsafe.Pointer(&ints[0])), Len: length, Cap: length}
-	return *(*[]byte)(unsafe.Pointer(&hdr))
-}
-
-// UnsafeCastBytesToInts casts a slice of bytes to a slice of ints
-func UnsafeCastBytesToInts(bytes []byte) []int {
-	length := len(bytes) / IntByteSize
-	hdr := reflect.SliceHeader{Data: uintptr(unsafe.Pointer(&bytes[0])), Len: length, Cap: length}
-	return *(*[]int)(unsafe.Pointer(&hdr))
-}
 
 // ToBytes converts a DeterministicTaggingMessage to a byte array
 func (dtm *DeterministicTaggingMessage) ToBytes() []byte {

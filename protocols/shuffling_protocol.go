@@ -231,13 +231,11 @@ func (p *ShufflingProtocol) Dispatch() error {
 		libunlynx.EndTimer(roundShuffle)
 		roundShuffleProof := libunlynx.StartTimer("_Shuffling(DISPATCH-Proof)")
 
-		/*
 		if p.Proofs {
 			proof := libunlynxproofs.ShufflingProofCreation(shufflingTarget, shuffledData, nil, collectiveKey, beta, pi)
 			//dummy publication
 			_ = proof
 		}
-		*/
 		libunlynx.EndTimer(roundShuffleProof)
 
 	}
@@ -388,28 +386,5 @@ func (sm *ShufflingMessage) FromBytes(data []byte, cvLengthsByte []byte) {
 		bytePos = nextBytePos
 	}
 	libunlynx.EndParallelize(wg)
-
-
-	/*
-	var nbrData int
-
-	elementLength := (gacbLength*64 + aabLength*64 + pgaebLength*64) //CAUTION: hardcoded 64 (size of el-gamal element C,K)
-	nbrData = len(data) / elementLength
-
-	(*sm).Data = make([]libunlynx.CipherVector, nbrData)
-	wg := libunlynx.StartParallelize(nbrData)
-	for i := 0; i < nbrData; i++ {
-		v := data[i*elementLength : i*elementLength+elementLength]
-		if libunlynx.PARALLELIZE {
-			go func(v []byte, i int) {
-				defer wg.Done()
-				(*sm).Data[i].FromBytes(v, gacbLength, aabLength, pgaebLength)
-			}(v, i)
-		} else {
-			(*sm).Data[i].FromBytes(v, gacbLength, aabLength, pgaebLength)
-		}
-	}
-	libunlynx.EndParallelize(wg)
-	*/
 }
 

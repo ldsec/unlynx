@@ -29,8 +29,6 @@ func TestAddRmServer(t *testing.T) {
 
 	secKeyAddRm := libunlynx.SuiTe.Scalar().Pick(random.New())
 
-	//addition
-	//secKeyAfter := libunlynx.SuiTe.Scalar().Add(secKey, secKeyAddRm)
 	//substraction
 	secKeyAfter := libunlynx.SuiTe.Scalar().Sub(secKey, secKeyAddRm)
 
@@ -39,31 +37,10 @@ func TestAddRmServer(t *testing.T) {
 	expectedResults := make([]int64, len(tab))
 	expectedResults[0] = 10
 	expectedResults[1] = 10
-	//cipherVect := *lib.EncryptIntVector(pubKey, expectedResult)
-	//cipherVect2 := *lib.NewCipherVector(len(cipherVect)).Add(cipherVect, cipherVect)
-
-	//dummySurveyCreationQuery := lib.SurveyCreationQuery{Sum:[]string{"0","1"}, GroupBy:[]string{"0","1"}, Where:[]lib.WhereQueryAttribute{{"0", lib.CipherText{}},{"1", lib.CipherText{}}}}
-	/*
-	notEncrypted := make(map[string]int64)
-	for i, v := range tab {
-		notEncrypted[strconv.Itoa(i)] = v
-	}
-	*/
 	encrypted := make([]libunlynx.CipherText, len(tab))
 	for i, v := range tab {
 		encrypted[i] = *libunlynx.EncryptInt(pubKey, v)
 	}
-
-	/*
-	// aggregation
-	dpResponses := make([]libunlynx.DpResponse, 3)
-	dpResponses[0] = libunlynx.DpResponse{GroupByClear: notEncrypted, GroupByEnc: encrypted, WhereClear: notEncrypted, WhereEnc: encrypted, AggregatingAttributesClear: notEncrypted, AggregatingAttributesEnc: encrypted}
-	dpResponses[1] = libunlynx.DpResponse{GroupByClear: notEncrypted, GroupByEnc: encrypted, WhereClear: notEncrypted, WhereEnc: encrypted, AggregatingAttributesClear: notEncrypted, AggregatingAttributesEnc: encrypted}
-	dpResponses[2] = libunlynx.DpResponse{GroupByClear: notEncrypted, GroupByEnc: encrypted, WhereClear: notEncrypted, WhereEnc: encrypted, AggregatingAttributesClear: notEncrypted, AggregatingAttributesEnc: encrypted}
-
-	log.Lvl1("CipherTexts to transform ")
-	log.Lvl1(dpResponses)
-	*/
 
 	protocol.TargetOfTransformation = encrypted
 	protocol.Proofs = true
@@ -83,7 +60,6 @@ func TestAddRmServer(t *testing.T) {
 		for i, v := range results {
 			decryptedResult[i] = libunlynx.DecryptInt(secKeyAfter, v)
 		}
-		//decryptedResult := lib.DecryptIntVector(secKeyAfter, &results[0].AggregatingAttributesEnc)
 		assert.Equal(t, decryptedResult, expectedResults)
 	case <-time.After(timeout):
 		t.Fatal("Didn't finish in time")

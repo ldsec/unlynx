@@ -175,7 +175,7 @@ func (p *KeySwitchingProtocol) Start() error {
 	return nil
 }
 
-// getAttributesAndEphemKeys retrieves attributes and ephemeral keys in a CipherVector to be key switched
+// getAttributesAndEphemKeys retrieves attributes and ephemeral keys in a CipherText to be key switched
 func getAttributesAndEphemKeys(ct libunlynx.CipherText) (libunlynx.CipherText, kyber.Point) {
 	initialAttribute := *libunlynx.NewCipherText()
 	initialAttribute.C = ct.C
@@ -192,25 +192,6 @@ func (p *KeySwitchingProtocol) Dispatch() error {
 	round := libunlynx.StartTimer(p.Name() + "_KeySwitching(DISPATCH)")
 	startT := time.Now()
 
-
-	/*
-	wg := libunlynx.StartParallelize(len(keySwitchingTarget.DataKey))
-
-	for i, v := range keySwitchingTarget.DataKey {
-		origGrpEphemKeys := v.OriginalEphemeralKeys.GroupOriginalKeys
-		origAttrEphemKeys := v.OriginalEphemeralKeys.AttrOriginalKeys
-		if libunlynx.PARALLELIZE {
-			go func(i int, v DataAndOriginalEphemeralKeys, origGrpEphemKeys, origAttrEphemKeys []kyber.Point) {
-				FilteredResponseKeySwitching(&keySwitchingTarget.DataKey[i].Response, v.Response, origGrpEphemKeys,
-					origAttrEphemKeys, keySwitchingTarget.NewKey, p.Private(), p.Proofs)
-				defer wg.Done()
-			}(i, v, origGrpEphemKeys, origAttrEphemKeys)
-		} else {
-			FilteredResponseKeySwitching(&keySwitchingTarget.DataKey[i].Response, v.Response, origGrpEphemKeys,
-				origAttrEphemKeys, keySwitchingTarget.NewKey, p.Private(), p.Proofs)
-		}
-	}
-	*/
 	FilteredResponseKeySwitching(keySwitchingTarget, p.Private(), p.Proofs)
 
 	libunlynx.EndTimer(round)
@@ -292,33 +273,6 @@ func FilteredResponseKeySwitching(keySwitchingTarget *KeySwitchedCipherMessage, 
 		_ = pub
 	}
 }
-
-/*
-//FilteredResponseKeySwitching applies key switching on a filtered response
-func FilteredResponseKeySwitching(cv *libunlynx.FilteredResponse, v libunlynx.FilteredResponse, origGrpEphemKeys, origAttrEphemKeys []kyber.Point, newKey kyber.Point, secretContrib kyber.Scalar, proofsB bool) {
-	tmp := libunlynx.NewCipherVector(len(v.AggregatingAttributes))
-	r1 := tmp.KeySwitching(v.AggregatingAttributes, origAttrEphemKeys, newKey, secretContrib)
-	cv.AggregatingAttributes = *tmp
-
-	tmp1 := libunlynx.NewCipherVector(len(v.GroupByEnc))
-	r2 := tmp1.KeySwitching(v.GroupByEnc, origGrpEphemKeys, newKey, secretContrib)
-	cv.GroupByEnc = *tmp1
-
-
-
-	if proofsB {
-		proofAggr := proofs.VectorSwitchKeyProofCreation(v.AggregatingAttributes, cv.AggregatingAttributes, r1, secretContrib, origAttrEphemKeys, newKey)
-		proofGrp := proofs.VectorSwitchKeyProofCreation(v.GroupByEnc, cv.GroupByEnc, r2, secretContrib, origGrpEphemKeys, newKey)
-		//create published value
-		pubKey := libunlynx.SuiTe.Point().Mul(secretContrib, libunlynx.SuiTe.Point().Base())
-		pub1 := proofs.PublishedSwitchKeyProof{Skp: proofAggr, VectBefore: v.AggregatingAttributes, VectAfter: cv.AggregatingAttributes, K: pubKey, Q: newKey}
-		pub2 := proofs.PublishedSwitchKeyProof{Skp: proofGrp, VectBefore: v.GroupByEnc, VectAfter: cv.GroupByEnc, K: pubKey, Q: newKey}
-		//publication
-		_ = pub1
-		_ = pub2
-	}
-}
-*/
 
 // Conversion
 //______________________________________________________________________________________________________________________
@@ -414,20 +368,3 @@ func (daoek *DataAndOriginalEphemeralKeys) FromBytes(data []byte) {
 	(*daoek).OriginalEphemeralKey.UnmarshalBinary(data[cipherTextSize:])
 }
 
-/*
-// ToBytes converts a OriginalEphemeralKeys to a byte array
-func (oek *OriginalEphemeralKeys) ToBytes() ([]byte, int, int) {
-	groupBytes := libunlynx.AbstractPointsToBytes(oek.GroupOriginalKeys)
-	aggrBytes := libunlynx.AbstractPointsToBytes(oek.AttrOriginalKeys)
-	return append(groupBytes, aggrBytes...), len(groupBytes), len(aggrBytes)
-}
-
-// FromBytes converts a byte array to a OriginalEphemeralKeys. Note that you need to create the (empty) object beforehand.
-func (oek *OriginalEphemeralKeys) FromBytes(data []byte, groupLength int) {
-	group := libunlynx.BytesToAbstractPoints(data[:groupLength])
-	aggr := libunlynx.BytesToAbstractPoints(data[groupLength:])
-
-	(*oek).GroupOriginalKeys = group
-	(*oek).AttrOriginalKeys = aggr
-}
-*/
