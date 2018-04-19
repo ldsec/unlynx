@@ -86,7 +86,7 @@ type DeterministicTaggingProtocol struct {
 
 	// Protocol state data
 	nextNodeInCircuit *onet.TreeNode
-	TargetOfSwitch    *[]libunlynx.CipherText
+	TargetOfSwitch    *libunlynx.CipherVector
 	SurveySecretKey   *kyber.Scalar
 	Proofs            bool
 
@@ -139,7 +139,7 @@ func (p *DeterministicTaggingProtocol) Start() error {
 	log.Lvl1("["+p.Name()+"]", " starts a Deterministic Tagging Protocol on ", nbrCipherText, " element(s)")
 
 	// create process response with deterministic tag, at first step the tag creation part is a copy of the proba
-	detTarget := make([]libunlynx.CipherText, len(*p.TargetOfSwitch))
+	detTarget := make(libunlynx.CipherVector, len(*p.TargetOfSwitch))
 	copy(detTarget, *p.TargetOfSwitch)
 	libunlynx.EndTimer(roundTotalStart)
 

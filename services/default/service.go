@@ -361,7 +361,7 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 				queryWhereToTag = append(queryWhereToTag, libunlynx.ProcessResponse{WhereEnc: tmp, GroupByEnc: nil, AggregatingAttributes: nil})
 			}
 			shuffledClientResponses = append(queryWhereToTag, shuffledClientResponses...)
-			tmpDeterministicTOS := protocolsunlynx.PRToCipherTextArray(shuffledClientResponses)
+			tmpDeterministicTOS := protocolsunlynx.ProcessResponseToCipherVector(shuffledClientResponses)
 			survey.TargetOfSwitch = shuffledClientResponses
 			hashCreation.TargetOfSwitch = &tmpDeterministicTOS
 		}
@@ -577,7 +577,7 @@ func (s *Service) TaggingPhase(targetSurvey SurveyID) error {
 	}
 
 	tmpDeterministicTaggingResult := <-pi.(*protocolsunlynx.DeterministicTaggingProtocol).FeedbackChannel
-	deterministicTaggingResult := protocolsunlynx.DCVToProcessResponseDet(tmpDeterministicTaggingResult, survey.TargetOfSwitch)
+	deterministicTaggingResult := protocolsunlynx.DeterCipherVectorToProcessResponseDet(tmpDeterministicTaggingResult, survey.TargetOfSwitch)
 
 	var queryWhereTag []libunlynx.WhereQueryAttributeTagged
 	for i, v := range deterministicTaggingResult[:len(survey.Query.Where)] {

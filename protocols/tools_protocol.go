@@ -30,19 +30,19 @@ func retrieveSimpleDataFromMap(groupedData map[libunlynx.GroupingKey]libunlynx.F
 // _____________________ DETERMINISTIC_TAGGING PROTOCOL _____________________
 
 // CipherTextArray build from a ProcessResponse array
-func PRToCipherTextArray(p []libunlynx.ProcessResponse) []libunlynx.CipherText {
-    cipherTexts := make([]libunlynx.CipherText, 0)
+func ProcessResponseToCipherVector(p []libunlynx.ProcessResponse) libunlynx.CipherVector {
+    cv := make(libunlynx.CipherVector, 0)
 
     for _, v := range p {
-        cipherTexts = append(cipherTexts, v.WhereEnc...)
-        cipherTexts = append(cipherTexts, v.GroupByEnc...)
+        cv = append(cv, v.WhereEnc...)
+        cv = append(cv, v.GroupByEnc...)
     }
 
-    return cipherTexts
+    return cv
 }
 
 // ProcessResponseDet build from DeterministicCipherVector and the ProcessResponse
-func DCVToProcessResponseDet(detCt libunlynx.DeterministCipherVector,
+func DeterCipherVectorToProcessResponseDet(detCt libunlynx.DeterministCipherVector,
     targetOfSwitch []libunlynx.ProcessResponse) []libunlynx.ProcessResponseDet {
     result := make([]libunlynx.ProcessResponseDet, len(targetOfSwitch))
 
