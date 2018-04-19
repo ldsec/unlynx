@@ -5,7 +5,27 @@ import (
     "github.com/lca1/unlynx/lib"
     "unsafe"
     "reflect"
+    "errors"
 )
+
+// _____________________ COLLECTIVE_AGGREGATION PROTOCOL _____________________
+
+func retrieveSimpleDataFromMap(groupedData map[libunlynx.GroupingKey]libunlynx.FilteredResponse) ([]libunlynx.CipherText, error) {
+    if len(groupedData) != 1 {
+        return nil, errors.New("the map given in arguments is empty or have more than one key")
+    }
+
+    filteredResp, present := groupedData[EMPTYKEY]
+    if present {
+        result := make([]libunlynx.CipherText, len(filteredResp.AggregatingAttributes))
+        for i, v := range filteredResp.AggregatingAttributes {
+            result[i] = v
+        }
+        return result, nil
+    } else {
+        return nil, errors.New("the map element doesn't have key with value EMPTYKEY")
+    }
+}
 
 // _____________________ DETERMINISTIC_TAGGING PROTOCOL _____________________
 
