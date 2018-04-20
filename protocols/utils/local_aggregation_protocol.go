@@ -1,11 +1,12 @@
 // Package protocolsunlynx contains LocalAggregationProtocol and its only purpose is to simulate aggregations done locally
 // For example, it can be used to simulate a data provider doing some pre-processing on its data
-package utils
+package protocolsunlynxutils
 
 import (
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/proofs"
 )
 
 // LocalAggregationProtocolName is the registered name for the local aggregation protocol.
@@ -58,7 +59,7 @@ func (p *LocalAggregationProtocol) Start() error {
 	roundProof := libunlynx.StartTimer(p.Name() + "_LocalAggregation(PROOFS)")
 
 	if p.Proofs {
-		PublishedAggregationProof := libunlynx.AggregationProofCreation(p.TargetOfAggregation, resultingMap)
+		PublishedAggregationProof := libunlynxproofs.AggregationProofCreation(p.TargetOfAggregation, resultingMap)
 		//publication
 		_ = PublishedAggregationProof
 	}

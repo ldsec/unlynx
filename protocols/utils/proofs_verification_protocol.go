@@ -2,11 +2,12 @@
 // to check all available proofs.
 // We suppose the existence of a database of all generated proofs and in this protocol, the server running it will
 // verify all the proofs.
-package utils
+package protocolsunlynxutils
 
 import (
 	"github.com/dedis/onet"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/proofs"
 )
 
 // ProofsVerificationProtocolName is the registered name for the proof verification protocol.
@@ -21,12 +22,12 @@ func init() {
 
 // ProofsToVerify contains all proofs which have to be checked
 type ProofsToVerify struct {
-	KeySwitchingProofs          []libunlynx.PublishedSwitchKeyProof
-	DeterministicTaggingProofs  []libunlynx.PublishedDeterministicTaggingProof
-	DetTagAdditionProofs        []libunlynx.PublishedDetTagAdditionProof
-	AggregationProofs           []libunlynx.PublishedAggregationProof
-	ShufflingProofs             []libunlynx.PublishedShufflingProof
-	CollectiveAggregationProofs []libunlynx.PublishedCollectiveAggregationProof
+	KeySwitchingProofs          []libunlynxproofs.PublishedSwitchKeyProof
+	DeterministicTaggingProofs  []libunlynxproofs.PublishedDeterministicTaggingProof
+	DetTagAdditionProofs        []libunlynxproofs.PublishedDetTagAdditionProof
+	AggregationProofs           []libunlynxproofs.PublishedAggregationProof
+	ShufflingProofs             []libunlynxproofs.PublishedShufflingProof
+	CollectiveAggregationProofs []libunlynxproofs.PublishedCollectiveAggregationProof
 }
 
 // ProofsVerificationProtocol is a struct holding the state of a protocol instance.
@@ -72,12 +73,12 @@ func (p *ProofsVerificationProtocol) Start() error {
 	keySwitchTime := libunlynx.StartTimer(p.Name() + "_KeySwitchingVerif")
 	for i, v := range p.TargetOfVerification.KeySwitchingProofs {
 		if libunlynx.PARALLELIZE {
-			go func(i int, v libunlynx.PublishedSwitchKeyProof) {
-				result[i] = libunlynx.PublishedSwitchKeyCheckProof(v)
+			go func(i int, v libunlynxproofs.PublishedSwitchKeyProof) {
+				result[i] = libunlynxproofs.PublishedSwitchKeyCheckProof(v)
 				defer wg.Done()
 			}(i, v)
 		} else {
-			result[i] = libunlynx.PublishedSwitchKeyCheckProof(v)
+			result[i] = libunlynxproofs.PublishedSwitchKeyCheckProof(v)
 		}
 
 	}
@@ -89,12 +90,12 @@ func (p *ProofsVerificationProtocol) Start() error {
 	detTagTime := libunlynx.StartTimer(p.Name() + "_DetTagVerif")
 	for i, v := range p.TargetOfVerification.DeterministicTaggingProofs {
 		if libunlynx.PARALLELIZE {
-			go func(i int, v libunlynx.PublishedDeterministicTaggingProof) {
-				result[nbrKsProofs+i], _ = libunlynx.PublishedDeterministicTaggingCheckProof(v)
+			go func(i int, v libunlynxproofs.PublishedDeterministicTaggingProof) {
+				result[nbrKsProofs+i], _ = libunlynxproofs.PublishedDeterministicTaggingCheckProof(v)
 				defer wg.Done()
 			}(i, v)
 		} else {
-			result[nbrKsProofs+i], _ = libunlynx.PublishedDeterministicTaggingCheckProof(v)
+			result[nbrKsProofs+i], _ = libunlynxproofs.PublishedDeterministicTaggingCheckProof(v)
 		}
 	}
 
@@ -106,12 +107,12 @@ func (p *ProofsVerificationProtocol) Start() error {
 	detTagAddTime := libunlynx.StartTimer(p.Name() + "_DetTagAddVerif")
 	for i, v := range p.TargetOfVerification.DetTagAdditionProofs {
 		if libunlynx.PARALLELIZE {
-			go func(i int, v libunlynx.PublishedDetTagAdditionProof) {
-				result[nbrKsProofs+nbrDtProofs+i] = libunlynx.DetTagAdditionProofVerification(v)
+			go func(i int, v libunlynxproofs.PublishedDetTagAdditionProof) {
+				result[nbrKsProofs+nbrDtProofs+i] = libunlynxproofs.DetTagAdditionProofVerification(v)
 				defer wg.Done()
 			}(i, v)
 		} else {
-			result[nbrKsProofs+nbrDtProofs+i] = libunlynx.DetTagAdditionProofVerification(v)
+			result[nbrKsProofs+nbrDtProofs+i] = libunlynxproofs.DetTagAdditionProofVerification(v)
 		}
 	}
 
@@ -124,12 +125,12 @@ func (p *ProofsVerificationProtocol) Start() error {
 	localAggrTime := libunlynx.StartTimer(p.Name() + "_LocalAggrVerif")
 	for i, v := range p.TargetOfVerification.AggregationProofs {
 		if libunlynx.PARALLELIZE {
-			go func(i int, v libunlynx.PublishedAggregationProof) {
-				result[nbrKsProofs+nbrDtProofs+nbrDetTagAddProofs+i] = libunlynx.AggregationProofVerification(v)
+			go func(i int, v libunlynxproofs.PublishedAggregationProof) {
+				result[nbrKsProofs+nbrDtProofs+nbrDetTagAddProofs+i] = libunlynxproofs.AggregationProofVerification(v)
 				defer wg.Done()
 			}(i, v)
 		} else {
-			result[nbrKsProofs+nbrDtProofs+nbrDetTagAddProofs+i] = libunlynx.AggregationProofVerification(v)
+			result[nbrKsProofs+nbrDtProofs+nbrDetTagAddProofs+i] = libunlynxproofs.AggregationProofVerification(v)
 		}
 	}
 
@@ -141,12 +142,12 @@ func (p *ProofsVerificationProtocol) Start() error {
 	shufflingTime := libunlynx.StartTimer(p.Name() + "_ShufflingVerif")
 	for i, v := range p.TargetOfVerification.ShufflingProofs {
 		if libunlynx.PARALLELIZE {
-			go func(i int, v libunlynx.PublishedShufflingProof) {
-				result[nbrKsProofs+nbrDtProofs+nbrDetTagAddProofs+nbrAggrProofs+i] = libunlynx.ShufflingProofVerification(v, p.Roster().Aggregate)
+			go func(i int, v libunlynxproofs.PublishedShufflingProof) {
+				result[nbrKsProofs+nbrDtProofs+nbrDetTagAddProofs+nbrAggrProofs+i] = libunlynxproofs.ShufflingProofVerification(v, p.Roster().Aggregate)
 				defer wg.Done()
 			}(i, v)
 		} else {
-			result[nbrKsProofs+nbrDtProofs+nbrDetTagAddProofs+nbrAggrProofs+i] = libunlynx.ShufflingProofVerification(v, p.Roster().Aggregate)
+			result[nbrKsProofs+nbrDtProofs+nbrDetTagAddProofs+nbrAggrProofs+i] = libunlynxproofs.ShufflingProofVerification(v, p.Roster().Aggregate)
 
 		}
 	}
@@ -159,12 +160,12 @@ func (p *ProofsVerificationProtocol) Start() error {
 	collAggrTime := libunlynx.StartTimer(p.Name() + "_CollectiveAggrVerif")
 	for i, v := range p.TargetOfVerification.CollectiveAggregationProofs {
 		if libunlynx.PARALLELIZE {
-			go func(i int, v libunlynx.PublishedCollectiveAggregationProof) {
-				result[nbrKsProofs+nbrDtProofs+nbrDetTagAddProofs+nbrAggrProofs+nbrShuffleProofs+i] = libunlynx.CollectiveAggregationProofVerification(v)
+			go func(i int, v libunlynxproofs.PublishedCollectiveAggregationProof) {
+				result[nbrKsProofs+nbrDtProofs+nbrDetTagAddProofs+nbrAggrProofs+nbrShuffleProofs+i] = libunlynxproofs.CollectiveAggregationProofVerification(v)
 				defer wg.Done()
 			}(i, v)
 		} else {
-			result[nbrKsProofs+nbrDtProofs+nbrDetTagAddProofs+nbrAggrProofs+nbrShuffleProofs+i] = libunlynx.CollectiveAggregationProofVerification(v)
+			result[nbrKsProofs+nbrDtProofs+nbrDetTagAddProofs+nbrAggrProofs+nbrShuffleProofs+i] = libunlynxproofs.CollectiveAggregationProofVerification(v)
 
 		}
 	}
