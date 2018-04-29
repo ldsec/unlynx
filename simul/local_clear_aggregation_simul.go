@@ -5,7 +5,7 @@ import (
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/simul/monitor"
-	"github.com/lca1/unlynx/protocols"
+	"github.com/lca1/unlynx/protocols/utils"
 	"github.com/lca1/unlynx/services/default/data"
 )
 
@@ -61,7 +61,7 @@ func (sim *LocalClearAggregationSimulation) Run(config *onet.SimulationConfig) e
 			return err
 		}
 
-		root := rooti.(*protocolsunlynx.LocalClearAggregationProtocol)
+		root := rooti.(*protocolsunlynxutils.LocalClearAggregationProtocol)
 
 		types := make([]int64, sim.NbrGroupAttributes)
 		dataunlynx.FillInt64Slice(types, 1)
@@ -75,11 +75,11 @@ func (sim *LocalClearAggregationSimulation) Run(config *onet.SimulationConfig) e
 		log.Lvl1("starting protocol with ", len(testData), " responses")
 
 		//protocol
-		root.ProtocolInstance().(*protocolsunlynx.LocalClearAggregationProtocol).TargetOfAggregation = testData["0"]
+		root.ProtocolInstance().(*protocolsunlynxutils.LocalClearAggregationProtocol).TargetOfAggregation = testData["0"]
 
 		round := monitor.NewTimeMeasure("LocalClearAggregation(SIMULATION)")
 		root.Start()
-		results := <-root.ProtocolInstance().(*protocolsunlynx.LocalClearAggregationProtocol).FeedbackChannel
+		results := <-root.ProtocolInstance().(*protocolsunlynxutils.LocalClearAggregationProtocol).FeedbackChannel
 		log.Lvl1("Number of aggregated lines (groups): ", len(results))
 
 		// Test Simulation

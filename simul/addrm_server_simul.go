@@ -7,7 +7,6 @@ import (
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/protocols"
-	"strconv"
 )
 
 func init() {
@@ -19,10 +18,7 @@ func init() {
 type AddRmSimulation struct {
 	onet.SimulationBFTree
 
-	NbrResponses       int
-	NbrGroupAttributes int //to make sense all the different attributes are encrypted
-	NbrWhereAttributes int
-	NbrAggrAttributes  int
+	NbrResponses       int //to make sense all the different attributes are encrypted
 	Proofs             bool
 	Add                bool
 }
@@ -70,33 +66,14 @@ func (sim *AddRmSimulation) Run(config *onet.SimulationConfig) error {
 		newSecKey := libunlynx.SuiTe.Scalar().Pick(random.New())
 		pubKey := libunlynx.SuiTe.Point().Mul(secKey, libunlynx.SuiTe.Point().Base())
 
-		//generate set of grouping attributes (for this protocol they should all be encrypted)
-		group := make(map[string]libunlynx.CipherText)
-		for i := 0; i < sim.NbrGroupAttributes; i++ {
-			group[""+strconv.Itoa(i)] = *libunlynx.EncryptInt(pubKey, 1)
+		ct := make(libunlynx.CipherVector, sim.NbrResponses)
+		for i := range ct {
+			ct[i] = *libunlynx.EncryptInt(pubKey, 1)
 		}
 
-		//generate set of aggregating attributes (for this protocol they should all be encrypted)
-		aggr := make(map[string]libunlynx.CipherText)
-		for i := 0; i < sim.NbrAggrAttributes; i++ {
-			aggr[""+strconv.Itoa(i)] = *libunlynx.EncryptInt(pubKey, 1)
-		}
+		log.Lvl1("starting protocol with ", len(ct), " responses")
 
-		//generate set of where attributes (for this protocol they should all be encrypted)
-		where := make(map[string]libunlynx.CipherText)
-		for i := 0; i < sim.NbrWhereAttributes; i++ {
-			where[""+strconv.Itoa(i)] = *libunlynx.EncryptInt(pubKey, 1)
-		}
-
-		cr := libunlynx.DpResponse{GroupByEnc: group, AggregatingAttributesEnc: aggr, WhereEnc: where}
-		detResponses := make([]libunlynx.DpResponse, 0)
-		for i := 0; i < sim.NbrResponses; i++ {
-			detResponses = append(detResponses, cr)
-		}
-
-		log.Lvl1("starting protocol with ", len(detResponses), " responses")
-
-		root.ProtocolInstance().(*protocolsunlynx.AddRmServerProtocol).TargetOfTransformation = detResponses
+		root.ProtocolInstance().(*protocolsunlynx.AddRmServerProtocol).TargetOfTransformation = ct
 		root.ProtocolInstance().(*protocolsunlynx.AddRmServerProtocol).Proofs = sim.Proofs
 		root.ProtocolInstance().(*protocolsunlynx.AddRmServerProtocol).Add = sim.Add
 		root.ProtocolInstance().(*protocolsunlynx.AddRmServerProtocol).KeyToRm = newSecKey

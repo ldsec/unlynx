@@ -6,7 +6,7 @@ import (
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/protocols"
+	"github.com/lca1/unlynx/protocols/utils"
 )
 
 func init() {
@@ -60,7 +60,7 @@ func (sim *LocalAggregationSimulation) Run(config *onet.SimulationConfig) error 
 			return err
 		}
 
-		root := rooti.(*protocolsunlynx.LocalAggregationProtocol)
+		root := rooti.(*protocolsunlynxutils.LocalAggregationProtocol)
 
 		secKey := libunlynx.SuiTe.Scalar().Pick(random.New())
 		newSecKey := libunlynx.SuiTe.Scalar().Pick(random.New())
@@ -102,13 +102,13 @@ func (sim *LocalAggregationSimulation) Run(config *onet.SimulationConfig) error 
 
 		log.Lvl1("starting protocol with ", len(detResponses), " responses")
 
-		root.ProtocolInstance().(*protocolsunlynx.LocalAggregationProtocol).TargetOfAggregation = detResponses
-		root.ProtocolInstance().(*protocolsunlynx.LocalAggregationProtocol).Proofs = sim.Proofs
+		root.ProtocolInstance().(*protocolsunlynxutils.LocalAggregationProtocol).TargetOfAggregation = detResponses
+		root.ProtocolInstance().(*protocolsunlynxutils.LocalAggregationProtocol).Proofs = sim.Proofs
 
 		round := libunlynx.StartTimer("_LocalAggregation(Simulation")
 
 		root.Start()
-		results := <-root.ProtocolInstance().(*protocolsunlynx.LocalAggregationProtocol).FeedbackChannel
+		results := <-root.ProtocolInstance().(*protocolsunlynxutils.LocalAggregationProtocol).FeedbackChannel
 		log.Lvl1("Number of aggregated lines: ", len(results))
 
 		libunlynx.EndTimer(round)
