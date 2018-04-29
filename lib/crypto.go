@@ -201,7 +201,6 @@ func EncryptScalarVector(pubkey kyber.Point, intArray []kyber.Scalar) *CipherVec
 	return &cv
 }
 
-
 // NullCipherVector encrypts an 0-filled slice under the given public key.
 func NullCipherVector(length int, pubkey kyber.Point) *CipherVector {
 	return EncryptIntVector(pubkey, make([]int64, length))
@@ -251,7 +250,7 @@ func DecryptIntVectorWithNeg(prikey kyber.Scalar, cipherVector *CipherVector) []
 func DecryptCheckZero(prikey kyber.Scalar, cipher CipherText) int64 {
 	M := decryptPoint(prikey, cipher)
 	result := int64(1)
-	if M.Equal(SuiTe.Point().Null()){
+	if M.Equal(SuiTe.Point().Null()) {
 		result = int64(0)
 	}
 	return result
@@ -265,8 +264,6 @@ func DecryptCheckZeroVector(prikey kyber.Scalar, cipherVector *CipherVector) []i
 	}
 	return result
 }
-
-
 
 // Brute-Forces the discrete log for integer decoding.
 func discreteLog(P kyber.Point, checkNeg bool) int64 {
@@ -303,7 +300,7 @@ func discreteLog(P kyber.Point, checkNeg bool) int64 {
 	}
 	mutex.Unlock()
 
-	if SuiTe.Point().Neg(Bi).Equal(P){
+	if SuiTe.Point().Neg(Bi).Equal(P) {
 		return -m
 	}
 	return m

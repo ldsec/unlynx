@@ -271,7 +271,6 @@ func sendingDet(p DeterministicTaggingProtocol, detTarget DeterministicTaggingMe
 // Conversion
 //______________________________________________________________________________________________________________________
 
-
 // ToBytes converts a DeterministicTaggingMessage to a byte array
 func (dtm *DeterministicTaggingMessage) ToBytes() []byte {
 
@@ -309,11 +308,11 @@ func (dtm *DeterministicTaggingMessage) ToBytes() []byte {
 }
 
 // FromBytes converts a byte array to a DeterministicTaggingMessage. Note that you need to create the (empty) object beforehand.
-func (dtm *DeterministicTaggingMessage) FromBytes (data []byte)  {
+func (dtm *DeterministicTaggingMessage) FromBytes(data []byte) {
 
 	//cvLengths := UnsafeCastBytesToInts(cvLengthsByte)
 	elementSize := libunlynx.CipherTextByteSize()
-	(*dtm).Data = make([]libunlynx.CipherText, len(data) / elementSize)
+	(*dtm).Data = make([]libunlynx.CipherText, len(data)/elementSize)
 
 	// iter over each value in the flatten data byte array
 	if libunlynx.PARALLELIZE {

@@ -14,9 +14,9 @@ import (
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/proofs"
 	"sync"
 	"time"
-	"github.com/lca1/unlynx/lib/proofs"
 )
 
 // ShufflingProtocolName is the registered name for the neff shuffle protocol.
@@ -155,17 +155,14 @@ func (p *ShufflingProtocol) Start() error {
 	_ = pi
 	_ = beta
 
-
 	libunlynx.EndTimer(roundShufflingStart)
 	roundShufflingStartProof := libunlynx.StartTimer(p.Name() + "_Shuffling(START-Proof)")
-
 
 	if p.Proofs {
 		proof := libunlynxproofs.ShufflingProofCreation(shuffleTarget, shuffledData, nil, collectiveKey, beta, pi)
 		//dummy publication
 		_ = proof
 	}
-
 
 	libunlynx.EndTimer(roundShufflingStartProof)
 	libunlynx.EndTimer(roundTotalStart)
@@ -316,42 +313,42 @@ func (sm *ShufflingMessage) ToBytes() ([]byte, []byte) {
 	return b, UnsafeCastIntsToBytes(cvLengths)
 
 	/*
-	var gacbLength int
-	var aabLength int
-	var pgaebLength int
+		var gacbLength int
+		var aabLength int
+		var pgaebLength int
 
-	wg := libunlynx.StartParallelize(len((*sm).Data))
-	var mutexD sync.Mutex
-	for i := range (*sm).Data {
-		if libunlynx.PARALLELIZE {
-			go func(i int) {
-				defer wg.Done()
+		wg := libunlynx.StartParallelize(len((*sm).Data))
+		var mutexD sync.Mutex
+		for i := range (*sm).Data {
+			if libunlynx.PARALLELIZE {
+				go func(i int) {
+					defer wg.Done()
 
-				mutexD.Lock()
-				data := (*sm).Data[i]
-				mutexD.Unlock()
+					mutexD.Lock()
+					data := (*sm).Data[i]
+					mutexD.Unlock()
 
-				aux, gacbAux, aabAux, pgaebAux := data.ToBytes()
+					aux, gacbAux, aabAux, pgaebAux := data.ToBytes()
 
-				mutexD.Lock()
-				bb[i] = aux
-				gacbLength = gacbAux
-				aabLength = aabAux
-				pgaebLength = pgaebAux
-				mutexD.Unlock()
-			}(i)
-		} else {
-			bb[i], gacbLength, aabLength, pgaebLength = (*sm).Data[i].ToBytes()
+					mutexD.Lock()
+					bb[i] = aux
+					gacbLength = gacbAux
+					aabLength = aabAux
+					pgaebLength = pgaebAux
+					mutexD.Unlock()
+				}(i)
+			} else {
+				bb[i], gacbLength, aabLength, pgaebLength = (*sm).Data[i].ToBytes()
+			}
+
+		}
+		libunlynx.EndParallelize(wg)
+
+		for _, el := range bb {
+			b = append(b, el...)
 		}
 
-	}
-	libunlynx.EndParallelize(wg)
-
-	for _, el := range bb {
-		b = append(b, el...)
-	}
-
-	return b, gacbLength, aabLength, pgaebLength
+		return b, gacbLength, aabLength, pgaebLength
 	*/
 }
 
@@ -387,4 +384,3 @@ func (sm *ShufflingMessage) FromBytes(data []byte, cvLengthsByte []byte) {
 	}
 	libunlynx.EndParallelize(wg)
 }
-

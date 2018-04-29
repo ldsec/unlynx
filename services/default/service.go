@@ -401,7 +401,7 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 				clientResponses = append(clientResponses, libunlynx.ProcessResponse{GroupByEnc: nil, AggregatingAttributes: libunlynx.IntArrayToCipherVector([]int64{int64(v)})})
 			}
 			var toShuffleCV []libunlynx.CipherVector
-			toShuffleCV , survey.Lengths = protocolsunlynx.ProcessResponseToMatrixCipherText(clientResponses)
+			toShuffleCV, survey.Lengths = protocolsunlynx.ProcessResponseToMatrixCipherText(clientResponses)
 			shuffle.TargetOfShuffle = &toShuffleCV
 		}
 		return pi, nil

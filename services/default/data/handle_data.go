@@ -4,14 +4,14 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/dedis/onet/log"
+	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/store"
 	"math"
 	"math/rand"
 	"os"
 	"reflect"
 	"strings"
 	"time"
-	"github.com/lca1/unlynx/lib/store"
-	"github.com/lca1/unlynx/lib"
 )
 
 // Groups identifies all different groups to be added to the test data file

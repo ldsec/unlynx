@@ -5,10 +5,10 @@ import (
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/proofs"
 	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
-	"github.com/lca1/unlynx/lib/proofs"
 )
 
 func TestShuffleSequence(t *testing.T) {
@@ -27,7 +27,7 @@ func TestShuffleSequence(t *testing.T) {
 	for i := 0; i < k; i++ {
 		inputList[i] = make(libunlynx.CipherVector, k)
 
-		for ii := range inputList[i]{
+		for ii := range inputList[i] {
 			inputList[i][ii] = *libunlynx.EncryptInt(collectivePubKey, int64(i+1))
 		}
 

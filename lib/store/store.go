@@ -1,9 +1,9 @@
 package libunlynxstore
 
 import (
+	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/proofs"
-	"github.com/dedis/onet/log"
 	"sync"
 )
 
@@ -90,12 +90,12 @@ func (s *Store) InsertDpResponse(cr libunlynx.DpResponse, proofsB bool, groupBy,
 			s.DpResponsesAggr[GroupingKeyTuple{libunlynx.Key(clearGrp), libunlynx.Key(clearWhr)}] = mapValue
 
 			if proofsB {
-				publishedAggregationProof := libunlynxproofs.PublishedSimpleAdditionProof{value.AggregatingAttributes, newResp.AggregatingAttributes, mapValue.AggregatingAttributes}
+				publishedAggregationProof := libunlynxproofs.PublishedSimpleAdditionProof{C1: value.AggregatingAttributes, C2: newResp.AggregatingAttributes, C1PlusC2: mapValue.AggregatingAttributes}
 				_ = publishedAggregationProof
 			}
 
 		} else {
-			s.DpResponsesAggr[GroupingKeyTuple{libunlynx.Key(clearGrp),libunlynx.Key(clearWhr)}] = libunlynx.ProcessResponse{GroupByEnc: libunlynx.IntArrayToCipherVector(clearGrp), WhereEnc: libunlynx.IntArrayToCipherVector(clearWhr), AggregatingAttributes: newResp.AggregatingAttributes}
+			s.DpResponsesAggr[GroupingKeyTuple{libunlynx.Key(clearGrp), libunlynx.Key(clearWhr)}] = libunlynx.ProcessResponse{GroupByEnc: libunlynx.IntArrayToCipherVector(clearGrp), WhereEnc: libunlynx.IntArrayToCipherVector(clearWhr), AggregatingAttributes: newResp.AggregatingAttributes}
 		}
 
 	}

@@ -16,9 +16,9 @@ import (
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/proofs"
 	"sync"
 	"time"
-	"github.com/lca1/unlynx/lib/proofs"
 )
 
 // KeySwitchingProtocolName is the registered name for the key switching protocol.
@@ -43,8 +43,8 @@ type OriginalEphemeralKeys struct {
 
 // DataAndOriginalEphemeralKeys contains data being switched and the original ephemeral key needed at each step
 type DataAndOriginalEphemeralKeys struct {
-	Response				libunlynx.CipherText
-	OriginalEphemeralKey	kyber.Point
+	Response             libunlynx.CipherText
+	OriginalEphemeralKey kyber.Point
 }
 
 // KeySwitchedCipherMessage contains cipherVector under switching.
@@ -157,7 +157,7 @@ func (p *KeySwitchingProtocol) Start() error {
 			go func(i int) {
 				for j := 0; j < libunlynx.VPARALLELIZE && (j+i < len(*p.TargetOfSwitch)); j++ {
 					initialAttribute, originalEphemKey := getAttributesAndEphemKeys((*p.TargetOfSwitch)[i+j])
-					initialTab[i+j] = DataAndOriginalEphemeralKeys{ Response: initialAttribute, OriginalEphemeralKey: originalEphemKey }
+					initialTab[i+j] = DataAndOriginalEphemeralKeys{Response: initialAttribute, OriginalEphemeralKey: originalEphemKey}
 				}
 				defer wg.Done()
 			}(i)
@@ -166,7 +166,7 @@ func (p *KeySwitchingProtocol) Start() error {
 	} else {
 		for k, v := range *p.TargetOfSwitch {
 			initialAttribute, originalEphemKey := getAttributesAndEphemKeys(v)
-			initialTab[k] = DataAndOriginalEphemeralKeys{ Response:	initialAttribute, OriginalEphemeralKey:originalEphemKey }
+			initialTab[k] = DataAndOriginalEphemeralKeys{Response: initialAttribute, OriginalEphemeralKey: originalEphemKey}
 		}
 	}
 	libunlynx.EndTimer(startRound)
@@ -232,7 +232,7 @@ func sending(p *KeySwitchingProtocol, kscm *KeySwitchedCipherMessage) {
 //FilteredResponseKeySwitching applies key switching on a ciphervector
 func FilteredResponseKeySwitching(keySwitchingTarget *KeySwitchedCipherMessage, secretContrib kyber.Scalar, proofsB bool) {
 
-    length := len(keySwitchingTarget.DataKey)
+	length := len(keySwitchingTarget.DataKey)
 	r := make([]kyber.Scalar, length)
 	originalEphemeralKeys := make([]kyber.Point, length)
 	newCv := make(libunlynx.CipherVector, length)
@@ -241,7 +241,7 @@ func FilteredResponseKeySwitching(keySwitchingTarget *KeySwitchedCipherMessage, 
 		var wg sync.WaitGroup
 		for i := 0; i < len(keySwitchingTarget.DataKey); i += libunlynx.VPARALLELIZE {
 			wg.Add(1)
-			go func(i int){
+			go func(i int) {
 				for j := 0; j < libunlynx.VPARALLELIZE && (i+j) < len(keySwitchingTarget.DataKey); j++ {
 					tmp := libunlynx.NewCipherText()
 					oldCv[i+j] = keySwitchingTarget.DataKey[i+j].Response
@@ -259,7 +259,7 @@ func FilteredResponseKeySwitching(keySwitchingTarget *KeySwitchedCipherMessage, 
 		for i, v := range keySwitchingTarget.DataKey {
 			tmp := libunlynx.NewCipherText()
 			oldCv[i] = v.Response
-			r[i] = tmp.KeySwitching(keySwitchingTarget.DataKey[i].Response, v.OriginalEphemeralKey, keySwitchingTarget.NewKey , secretContrib)
+			r[i] = tmp.KeySwitching(keySwitchingTarget.DataKey[i].Response, v.OriginalEphemeralKey, keySwitchingTarget.NewKey, secretContrib)
 			keySwitchingTarget.DataKey[i].Response = *tmp
 			originalEphemeralKeys[i] = v.OriginalEphemeralKey
 			newCv[i] = *tmp
@@ -322,17 +322,17 @@ func (kscm *KeySwitchedCipherMessage) FromBytes(data []byte, lenb int) {
 	elementSize := cipherTextSize + (cipherTextSize / 2)
 	nkb := data[lenb:]
 	(*kscm).NewKey = libunlynx.BytesToAbstractPoints(nkb)[0]
-	(*kscm).DataKey = make([]DataAndOriginalEphemeralKeys, lenb / elementSize)
+	(*kscm).DataKey = make([]DataAndOriginalEphemeralKeys, lenb/elementSize)
 
 	if libunlynx.PARALLELIZE {
 		var wg sync.WaitGroup
-	    for i := 0; i < lenb; i += elementSize * libunlynx.VPARALLELIZE {
+		for i := 0; i < lenb; i += elementSize * libunlynx.VPARALLELIZE {
 			wg.Add(1)
 			go func(i int) {
-				for j := 0; j < elementSize * libunlynx.VPARALLELIZE && (i+j < lenb); j += elementSize {
-					tmp := data[(i+j):(i+j+elementSize)]
-					(*kscm).DataKey[(i+j) / elementSize] = DataAndOriginalEphemeralKeys{}
-					(*kscm).DataKey[(i+j) / elementSize].FromBytes(tmp)
+				for j := 0; j < elementSize*libunlynx.VPARALLELIZE && (i+j < lenb); j += elementSize {
+					tmp := data[(i + j):(i + j + elementSize)]
+					(*kscm).DataKey[(i+j)/elementSize] = DataAndOriginalEphemeralKeys{}
+					(*kscm).DataKey[(i+j)/elementSize].FromBytes(tmp)
 				}
 				defer wg.Done()
 			}(i)
@@ -340,15 +340,15 @@ func (kscm *KeySwitchedCipherMessage) FromBytes(data []byte, lenb int) {
 		wg.Wait()
 	} else {
 		for i := 0; i < lenb; i += cipherTextSize {
-			tmp := data[i:i+cipherTextSize]
-			(*kscm).DataKey[i / cipherTextSize] = DataAndOriginalEphemeralKeys{}
-			(*kscm).DataKey[i / cipherTextSize].FromBytes(tmp)
+			tmp := data[i : i+cipherTextSize]
+			(*kscm).DataKey[i/cipherTextSize] = DataAndOriginalEphemeralKeys{}
+			(*kscm).DataKey[i/cipherTextSize].FromBytes(tmp)
 		}
 	}
 }
 
 // ToBytes converts a DataAndOriginalEphemeralKeys to a byte array
-func (daoek *DataAndOriginalEphemeralKeys) ToBytes() []byte  {
+func (daoek *DataAndOriginalEphemeralKeys) ToBytes() []byte {
 	b := make([]byte, 0)
 	bResponse := (*daoek).Response.ToBytes()
 	bEphKey, errBin := daoek.OriginalEphemeralKey.MarshalBinary()
@@ -367,4 +367,3 @@ func (daoek *DataAndOriginalEphemeralKeys) FromBytes(data []byte) {
 	(*daoek).OriginalEphemeralKey = libunlynx.SuiTe.Point()
 	(*daoek).OriginalEphemeralKey.UnmarshalBinary(data[cipherTextSize:])
 }
-

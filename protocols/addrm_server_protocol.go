@@ -99,7 +99,7 @@ func changeEncryption(cipherTexts []libunlynx.CipherText, serverAddRmKey kyber.S
 
 	var wg sync.WaitGroup
 	if libunlynx.PARALLELIZE {
-		for i := 0 ; i < len(cipherTexts) ; i += libunlynx.VPARALLELIZE {
+		for i := 0; i < len(cipherTexts); i += libunlynx.VPARALLELIZE {
 			wg.Add(1)
 			go func(i int) {
 				for j := 0; j < libunlynx.VPARALLELIZE && (i+j) < len(cipherTexts); j++ {
@@ -133,7 +133,7 @@ func proofsCreation(pubs []libunlynxproofs.PublishedAddRmProof, target, ct []lib
 	ktopub := libunlynx.SuiTe.Point().Mul(keyToRm, libunlynx.SuiTe.Point().Base())
 
 	prf := libunlynxproofs.VectorAddRmProofCreation(target, ct, keyToRm, add)
-	pub := libunlynxproofs.PublishedAddRmProof{Arp: prf, VectBefore: ct, VectAfter: ct, Krm:ktopub, ToAdd:add}
+	pub := libunlynxproofs.PublishedAddRmProof{Arp: prf, VectBefore: ct, VectAfter: ct, Krm: ktopub, ToAdd: add}
 
 	pubs = append(pubs, pub)
 }

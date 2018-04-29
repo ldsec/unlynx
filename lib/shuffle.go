@@ -26,7 +26,6 @@ func compressCipherVector(ciphervector CipherVector, e []kyber.Scalar) CipherTex
 	return ciphertext
 }
 
-
 // CompressListProcessResponse applies shuffling compression to a list of process responses
 func CompressListProcessResponse(processResponses []CipherVector, e []kyber.Scalar) ([]kyber.Point, []kyber.Point) {
 	xC := make([]kyber.Point, len(processResponses))

@@ -2,13 +2,13 @@ package libunlynx
 
 import (
 	"encoding/gob"
+	"fmt"
 	"github.com/btcsuite/goleveldb/leveldb/errors"
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
 	"os"
-	"strings"
-	"fmt"
 	"strconv"
+	"strings"
 )
 
 // SendISMOthers sends a message to all other services

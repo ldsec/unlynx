@@ -2,9 +2,9 @@ package encoding_test
 
 import (
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/encoding"
 	"github.com/stretchr/testify/assert"
 	"testing"
-	"github.com/lca1/unlynx/lib/encoding"
 )
 
 // TestEncodeDecodeSum tests EncodeSum and DecodeSum

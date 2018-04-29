@@ -98,7 +98,7 @@ type CollectiveAggregationProtocol struct {
 
 	// Protocol state data
 	GroupedData *map[libunlynx.GroupingKey]libunlynx.FilteredResponse
-	SimpleData 	*[]libunlynx.CipherText
+	SimpleData  *[]libunlynx.CipherText
 	Proofs      bool
 }
 
@@ -268,7 +268,7 @@ func (p *CollectiveAggregationProtocol) getData() (*map[libunlynx.GroupingKey]li
 	result := make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse)
 	if len(*p.SimpleData) > 0 {
 		result[EMPTYKEY] = libunlynx.FilteredResponse{
-			AggregatingAttributes:make([]libunlynx.CipherText, len(*p.SimpleData)),
+			AggregatingAttributes: make([]libunlynx.CipherText, len(*p.SimpleData)),
 		}
 		for i, v := range *p.SimpleData {
 			result[EMPTYKEY].AggregatingAttributes[i] = v
