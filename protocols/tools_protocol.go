@@ -41,7 +41,7 @@ func ProcessResponseToCipherVector(p []libunlynx.ProcessResponse) libunlynx.Ciph
     return cv
 }
 
-// ProcessResponseDet build from DeterministicCipherVector and the ProcessResponse
+// ProcessResponseDet build from DeterministCipherVector and the ProcessResponse
 func DeterCipherVectorToProcessResponseDet(detCt libunlynx.DeterministCipherVector,
     targetOfSwitch []libunlynx.ProcessResponse) []libunlynx.ProcessResponseDet {
     result := make([]libunlynx.ProcessResponseDet, len(targetOfSwitch))

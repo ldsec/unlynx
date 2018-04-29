@@ -138,8 +138,8 @@ func (p *DeterministicTaggingProtocol) Start() error {
 
 	log.Lvl1("["+p.Name()+"]", " starts a Deterministic Tagging Protocol on ", nbrCipherText, " element(s)")
 
-	// create process response with deterministic tag, at first step the tag creation part is a copy of the proba
-	detTarget := make(libunlynx.CipherVector, len(*p.TargetOfSwitch))
+	// create CipherVector with deterministic tag, at first step the tag creation part is a copy of the proba
+	detTarget := make(libunlynx.CipherVector, nbrCipherText)
 	copy(detTarget, *p.TargetOfSwitch)
 	libunlynx.EndTimer(roundTotalStart)
 
