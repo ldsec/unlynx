@@ -268,6 +268,70 @@ func DecryptCheckZeroVector(prikey kyber.Scalar, cipherVector *CipherVector) []i
 // Brute-Forces the discrete log for integer decoding.
 func discreteLog(P kyber.Point, checkNeg bool) int64 {
 	B := SuiTe.Point().Base()
+
+	//check if the point is already in the table
+	decrypted, ok := PointToInt.Get(P.String())
+	if ok == nil && decrypted != nil {
+		return decrypted.(int64)
+	}
+
+	//otherwise, we complete/create the table while decrypting
+	mutex.Lock()
+
+	//initialise
+	if currentGreatestInt == 0 {
+		currentGreatestM = SuiTe.Point().Null()
+	}
+	foundPos := false
+	foundNeg := false
+	guess := currentGreatestM
+	guessInt := currentGreatestInt
+	guessNeg := SuiTe.Point().Null()
+	guessInt_minus := int64(0)
+
+	start := true
+	for i := guessInt; i < MaxHomomorphicInt && !foundPos && ! foundNeg; i = i+ 1 {
+		// check for 0 first
+		if !start {
+			guess = SuiTe.Point().Add(guess, B)
+		}
+		start = false
+
+		guessInt = i
+		PointToInt.Put(guess.String(), guessInt)
+		if checkNeg {
+			guessInt_minus = -guessInt
+			guessNeg = SuiTe.Point().Mul(SuiTe.Scalar().SetInt64(guessInt_minus), B)
+			PointToInt.Put(guessNeg.String(), guessInt_minus)
+
+			if guessNeg.Equal(P) {
+				foundNeg = true
+			}
+		}
+		if !foundNeg && guess.Equal(P){
+			foundPos = true
+		}
+	}
+	currentGreatestM = guess
+	currentGreatestInt = guessInt
+	mutex.Unlock()
+
+	if !foundPos && !foundNeg {
+		log.LLvl1("out of bound encryption, bound is ", MaxHomomorphicInt)
+		return 0
+	} else {
+		if foundNeg{
+			return guessInt_minus
+		} else {
+			return guessInt
+		}
+	}
+}
+
+//OLD, TODO remove when sure new one is ok
+// Brute-Forces the discrete log for integer decoding.
+/*func discreteLog(P kyber.Point, checkNeg bool) int64 {
+	B := SuiTe.Point().Base()
 	var Bi kyber.Point
 	var m int64
 
@@ -304,7 +368,7 @@ func discreteLog(P kyber.Point, checkNeg bool) int64 {
 		return -m
 	}
 	return m
-}
+}*/
 
 // DeterministicTagging is a distributed deterministic Tagging switching, removes server contribution and multiplies
 func (c *CipherText) DeterministicTagging(gc *CipherText, private, secretContrib kyber.Scalar) {
