@@ -10,6 +10,7 @@ import (
 	"github.com/lca1/unlynx/lib/proofs"
 	"github.com/lca1/unlynx/protocols/utils"
 	"math"
+	"github.com/lca1/unlynx/protocols"
 )
 
 func init() {
@@ -182,9 +183,10 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 			responsesToShuffle[i] = libunlynx.ProcessResponse{GroupByEnc: cipherVectGr, AggregatingAttributes: testCipherVect1}
 		}
 
-		clientResponsesShuffled, pi, beta := libunlynx.ShuffleSequence(responsesToShuffle, nil, root.Roster().Aggregate, nil)
+		cv , _ := protocolsunlynx.ProcessResponseToMatrixCipherText(responsesToShuffle)
+		clientResponsesShuffled, pi, beta := libunlynx.ShuffleSequence(cv, nil, root.Roster().Aggregate, nil)
 		log.Lvl1("Starting shuffling proof creation")
-		shufflingProof := libunlynxproofs.ShufflingProofCreation(responsesToShuffle, clientResponsesShuffled, nil, root.Roster().Aggregate, beta, pi)
+		shufflingProof := libunlynxproofs.ShufflingProofCreation(cv, clientResponsesShuffled, nil, root.Roster().Aggregate, beta, pi)
 		shufflingProofs := make([]libunlynxproofs.PublishedShufflingProof, sim.NbrServers*sim.NbrServers)
 		for i := range shufflingProofs {
 			shufflingProofs[i] = shufflingProof

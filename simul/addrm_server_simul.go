@@ -18,9 +18,9 @@ func init() {
 type AddRmSimulation struct {
 	onet.SimulationBFTree
 
-	NbrResponses       int //to make sense all the different attributes are encrypted
-	Proofs             bool
-	Add                bool
+	NbrResponses int //to make sense all the different attributes are encrypted
+	Proofs       bool
+	Add          bool
 }
 
 // NewAddRmSimulation constructs an adding/removing protocol simulation.
