@@ -40,7 +40,7 @@ func AddInMap(s map[GroupingKey]FilteredResponse, key GroupingKey, added Filtere
 	}
 }
 
-// int64ArrayToString transforms an integer array into a string
+// Int64ArrayToString transforms an integer array into a string
 func Int64ArrayToString(s []int64) string {
 	if len(s) == 0 {
 		return ""

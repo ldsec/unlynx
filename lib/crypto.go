@@ -176,7 +176,7 @@ func EncryptIntVector(pubkey kyber.Point, intArray []int64) *CipherVector {
 	return &cv
 }
 
-// EncryptIntVector encrypts a []int into a CipherVector and returns a pointer to it.
+// EncryptScalarVector encrypts a []kyber.Scalar into a CipherVector and returns a pointer to it.
 func EncryptScalarVector(pubkey kyber.Point, intArray []kyber.Scalar) *CipherVector {
 	var wg sync.WaitGroup
 	cv := make(CipherVector, len(intArray))
@@ -246,7 +246,7 @@ func DecryptIntVectorWithNeg(prikey kyber.Scalar, cipherVector *CipherVector) []
 	return result
 }
 
-// DecryptInt decrypts an integer from an ElGamal cipher text where integer are encoded in the exponent.
+// DecryptCheckZero decrypts an ElGamal cipher text and return 0 if it's a base point
 func DecryptCheckZero(prikey kyber.Scalar, cipher CipherText) int64 {
 	M := decryptPoint(prikey, cipher)
 	result := int64(1)
@@ -256,7 +256,7 @@ func DecryptCheckZero(prikey kyber.Scalar, cipher CipherText) int64 {
 	return result
 }
 
-// DecryptIntVectorWithNeg decrypts a cipherVector.
+// DecryptCheckZeroVector decrypts a cipherVector with 0 and 1 depending if the decode points are base points.
 func DecryptCheckZeroVector(prikey kyber.Scalar, cipherVector *CipherVector) []int64 {
 	result := make([]int64, len(*cipherVector))
 	for i, c := range *cipherVector {
@@ -565,6 +565,7 @@ func RandomPermutation(k int) []int {
 // Conversion
 //______________________________________________________________________________________________________________________
 
+// CipherTextByteSize return the length of one CipherText element transform into []byte
 func CipherTextByteSize() int {
 	return 2 * SuiTe.PointLen()
 }

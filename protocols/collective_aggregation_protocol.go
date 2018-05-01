@@ -19,6 +19,8 @@ import (
 
 // CollectiveAggregationProtocolName is the registered name for the collective aggregation protocol.
 const CollectiveAggregationProtocolName = "CollectiveAggregation"
+
+// EMPTYKEY Const string to use as default key when use SimpleData array
 const EMPTYKEY = ""
 
 func init() {

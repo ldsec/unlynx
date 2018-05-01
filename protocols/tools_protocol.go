@@ -1,4 +1,5 @@
-//Go file that regroup different tools functions used in the protocols
+// Package protocolsunlynx contains different tools functions in order to adapt
+// elements between different protocols
 package protocolsunlynx
 
 import (
@@ -10,6 +11,7 @@ import (
 
 // _____________________ COLLECTIVE_AGGREGATION PROTOCOL _____________________
 
+// RetrieveSimpleDataFromMap extract the data from a map into an array
 func RetrieveSimpleDataFromMap(groupedData map[libunlynx.GroupingKey]libunlynx.FilteredResponse) ([]libunlynx.CipherText, error) {
 	if len(groupedData) != 1 {
 		return nil, errors.New("the map given in arguments is empty or have more than one key")
@@ -22,14 +24,14 @@ func RetrieveSimpleDataFromMap(groupedData map[libunlynx.GroupingKey]libunlynx.F
 			result[i] = v
 		}
 		return result, nil
-	} else {
-		return nil, errors.New("the map element doesn't have key with value EMPTYKEY")
 	}
+
+	return nil, errors.New("the map element doesn't have key with value EMPTYKEY")
 }
 
 // _____________________ DETERMINISTIC_TAGGING PROTOCOL _____________________
 
-// CipherTextArray build from a ProcessResponse array
+// ProcessResponseToCipherVector build from a ProcessResponse array a CipherVector
 func ProcessResponseToCipherVector(p []libunlynx.ProcessResponse) libunlynx.CipherVector {
 	cv := make(libunlynx.CipherVector, 0)
 
@@ -41,7 +43,8 @@ func ProcessResponseToCipherVector(p []libunlynx.ProcessResponse) libunlynx.Ciph
 	return cv
 }
 
-// ProcessResponseDet build from DeterministCipherVector and the ProcessResponse
+// DeterCipherVectorToProcessResponseDet build from DeterministCipherVector and ProcessResponse a ProcessResponseDet
+// array
 func DeterCipherVectorToProcessResponseDet(detCt libunlynx.DeterministCipherVector,
 	targetOfSwitch []libunlynx.ProcessResponse) []libunlynx.ProcessResponseDet {
 	result := make([]libunlynx.ProcessResponseDet, len(targetOfSwitch))
@@ -69,7 +72,7 @@ func DeterCipherVectorToProcessResponseDet(detCt libunlynx.DeterministCipherVect
 
 // _____________________ KEY_SWITCHING PROTOCOL _____________________
 
-// FilterResponse transformed into a CipherVector. Return also the lengths necessary to rebuild the function
+// FilteredResponseToCipherVector transform a FilteredResponse into a CipherVector. Return also the lengths necessary to rebuild the function
 func FilteredResponseToCipherVector(fr []libunlynx.FilteredResponse) (libunlynx.CipherVector, [][]int) {
 	cv := make(libunlynx.CipherVector, 0)
 	lengths := make([][]int, len(fr))
@@ -85,7 +88,7 @@ func FilteredResponseToCipherVector(fr []libunlynx.FilteredResponse) (libunlynx.
 	return cv, lengths
 }
 
-//CipherVector rebuild a FilteredResponse with the length of the FilteredResponse given in FilteredResponseToCipherVector
+//CipherVectorToFilteredResponse rebuild a FilteredResponse array with some lengths and a cipherVector source
 func CipherVectorToFilteredResponse(cv libunlynx.CipherVector, lengths [][]int) []libunlynx.FilteredResponse {
 	filteredResponse := make([]libunlynx.FilteredResponse, len(lengths))
 
@@ -105,6 +108,7 @@ func CipherVectorToFilteredResponse(cv libunlynx.CipherVector, lengths [][]int) 
 
 // _____________________ SHUFFLING PROTOCOL _____________________
 
+// ProcessResponseToMatrixCipherText transform a process response to an array of CipherVector
 func ProcessResponseToMatrixCipherText(pr []libunlynx.ProcessResponse) ([]libunlynx.CipherVector, [][]int) {
 	// We take care that array with one element have at least 2 with inserting a new 0 value
 	if len(pr) == 1 {
@@ -133,6 +137,7 @@ func ProcessResponseToMatrixCipherText(pr []libunlynx.ProcessResponse) ([]libunl
 	return cv, lengths
 }
 
+// MatrixCipherTextToProcessResponse transform the CipherVector array (with the lengths of the previous process response) back into a ProcessReponse
 func MatrixCipherTextToProcessResponse(cv []libunlynx.CipherVector, lengths [][]int) []libunlynx.ProcessResponse {
 	pr := make([]libunlynx.ProcessResponse, len(lengths))
 	for i, length := range lengths {
@@ -145,6 +150,7 @@ func MatrixCipherTextToProcessResponse(cv []libunlynx.CipherVector, lengths [][]
 	return pr
 }
 
+// AdaptCipherTextArray adapt an a CipherText array into a CipherTextMatrix
 func AdaptCipherTextArray(cipherTexts []libunlynx.CipherText) []libunlynx.CipherVector {
 	result := make([]libunlynx.CipherVector, len(cipherTexts))
 	for i, v := range cipherTexts {
