@@ -311,45 +311,6 @@ func (sm *ShufflingMessage) ToBytes() ([]byte, []byte) {
 		b = append(b, v...)
 	}
 	return b, UnsafeCastIntsToBytes(cvLengths)
-
-	/*
-		var gacbLength int
-		var aabLength int
-		var pgaebLength int
-
-		wg := libunlynx.StartParallelize(len((*sm).Data))
-		var mutexD sync.Mutex
-		for i := range (*sm).Data {
-			if libunlynx.PARALLELIZE {
-				go func(i int) {
-					defer wg.Done()
-
-					mutexD.Lock()
-					data := (*sm).Data[i]
-					mutexD.Unlock()
-
-					aux, gacbAux, aabAux, pgaebAux := data.ToBytes()
-
-					mutexD.Lock()
-					bb[i] = aux
-					gacbLength = gacbAux
-					aabLength = aabAux
-					pgaebLength = pgaebAux
-					mutexD.Unlock()
-				}(i)
-			} else {
-				bb[i], gacbLength, aabLength, pgaebLength = (*sm).Data[i].ToBytes()
-			}
-
-		}
-		libunlynx.EndParallelize(wg)
-
-		for _, el := range bb {
-			b = append(b, el...)
-		}
-
-		return b, gacbLength, aabLength, pgaebLength
-	*/
 }
 
 // FromBytes converts a byte array to a ShufflingMessage. Note that you need to create the (empty) object beforehand.
