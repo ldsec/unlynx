@@ -87,7 +87,7 @@ func (sim *LocalAggregationSimulation) Run(config *onet.SimulationConfig) error 
 			groupCipherVect = *tmp
 			cr := libunlynx.FilteredResponse{GroupByEnc: testCipherVect1, AggregatingAttributes: testCipherVect1}
 			det1 := groupCipherVect
-			protocolsunlynx.TaggingDet(det1, secKey, newSecKey, pubKey, sim.Proofs)
+			protocolsunlynx.TaggingDet(&det1, secKey, newSecKey, pubKey, sim.Proofs)
 
 			deterministicGroupAttributes := make(libunlynx.DeterministCipherVector, len(det1))
 			for j, c := range det1 {

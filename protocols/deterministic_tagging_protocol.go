@@ -212,13 +212,13 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 					j = len(deterministicTaggingTarget.Data)
 				}
 				tmp := deterministicTaggingTarget.Data[i:j]
-				TaggingDet(tmp, p.Private(), *p.SurveySecretKey, p.Public(), p.Proofs)
+				TaggingDet(&tmp, p.Private(), *p.SurveySecretKey, p.Public(), p.Proofs)
 				copy(deterministicTaggingTarget.Data[i:j], tmp)
 			}(i)
 		}
 		wg.Wait()
 	} else {
-		TaggingDet(deterministicTaggingTarget.Data, p.Private(), *p.SurveySecretKey, p.Public(), p.Proofs)
+		TaggingDet(&deterministicTaggingTarget.Data, p.Private(), *p.SurveySecretKey, p.Public(), p.Proofs)
 	}
 
 	var TaggedData []libunlynx.DeterministCipherText
@@ -269,24 +269,24 @@ func sendingDet(p DeterministicTaggingProtocol, detTarget DeterministicTaggingMe
 }
 
 // TaggingDet performs one step in the distributed deterministic tagging process and creates corresponding proof
-func TaggingDet(cv libunlynx.CipherVector, privKey, secretContrib kyber.Scalar, pubKey kyber.Point, proofs bool) {
-	switchedVect := libunlynx.NewCipherVector(len(cv))
-	switchedVect.DeterministicTagging(&cv, privKey, secretContrib)
+func TaggingDet(cv *libunlynx.CipherVector, privKey, secretContrib kyber.Scalar, pubKey kyber.Point, proofs bool) {
+	switchedVect := libunlynx.NewCipherVector(len(*cv))
+	switchedVect.DeterministicTagging(cv, privKey, secretContrib)
 
 	if proofs {
-		p1 := libunlynxproofs.VectorDeterministicTagProofCreation(cv, *switchedVect, secretContrib, privKey)
+		p1 := libunlynxproofs.VectorDeterministicTagProofCreation(*cv, *switchedVect, secretContrib, privKey)
 		//proof publication
 		commitSecret := libunlynx.SuiTe.Point().Mul(secretContrib, libunlynx.SuiTe.Point().Base())
-		publishedProof := libunlynxproofs.PublishedDeterministicTaggingProof{Dhp: p1, VectBefore: cv, VectAfter: *switchedVect, K: pubKey, SB: commitSecret}
+		publishedProof := libunlynxproofs.PublishedDeterministicTaggingProof{Dhp: p1, VectBefore: *cv, VectAfter: *switchedVect, K: pubKey, SB: commitSecret}
 		_ = publishedProof
 	}
 
-	cv = *switchedVect
+	*cv = *switchedVect
 }
 
 // CipherVectorToDeterministicTag creates a tag (grouping key) from a cipher vector
 func CipherVectorToDeterministicTag(cipherVect libunlynx.CipherVector, privKey, secContrib kyber.Scalar, pubKey kyber.Point, proofs bool) libunlynx.GroupingKey {
-	TaggingDet(cipherVect, privKey, secContrib, pubKey, proofs)
+	TaggingDet(&cipherVect, privKey, secContrib, pubKey, proofs)
 	deterministicGroupAttributes := make(libunlynx.DeterministCipherVector, len(cipherVect))
 	for j, c := range cipherVect {
 		deterministicGroupAttributes[j] = libunlynx.DeterministCipherText{Point: c.C}
