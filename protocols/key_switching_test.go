@@ -73,7 +73,3 @@ func TestKeySwitching(t *testing.T) {
 		t.Fatal("Didn't finish in time")
 	}
 }
-
-func TestToBytesFromBytes(t *testing.T) {
-
-}

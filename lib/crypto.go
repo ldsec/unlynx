@@ -326,48 +326,6 @@ func discreteLog(P kyber.Point, checkNeg bool) int64 {
 	return guessInt
 }
 
-//OLD, TODO remove when sure new one is ok
-// Brute-Forces the discrete log for integer decoding.
-/*func discreteLog(P kyber.Point, checkNeg bool) int64 {
-	B := SuiTe.Point().Base()
-	var Bi kyber.Point
-	var m int64
-
-	object, ok := PointToInt.Get(P.String())
-	if ok == nil && object != nil {
-		return object.(int64)
-	}
-
-	mutex.Lock()
-	if currentGreatestInt == 0 {
-		currentGreatestM = SuiTe.Point().Null()
-	}
-
-	BiNeg := SuiTe.Point().Neg(B)
-	for Bi, m = currentGreatestM, currentGreatestInt; !Bi.Equal(P) && !SuiTe.Point().Neg(Bi).Equal(P) && m < MaxHomomorphicInt; Bi, m = Bi.Add(Bi, B), m+1 {
-		if checkNeg {
-			BiNeg := SuiTe.Point().Neg(Bi)
-			PointToInt.Put(BiNeg.String(), -m)
-		}
-		PointToInt.Put(Bi.String(), m)
-	}
-	currentGreatestM = Bi
-	PointToInt.Put(BiNeg.String(), -m)
-	PointToInt.Put(Bi.String(), m)
-	currentGreatestInt = m
-
-	//no negative responses
-	if m == MaxHomomorphicInt {
-		return 0
-	}
-	mutex.Unlock()
-
-	if SuiTe.Point().Neg(Bi).Equal(P) {
-		return -m
-	}
-	return m
-}*/
-
 // DeterministicTagging is a distributed deterministic Tagging switching, removes server contribution and multiplies
 func (c *CipherText) DeterministicTagging(gc *CipherText, private, secretContrib kyber.Scalar) {
 	c.K = SuiTe.Point().Mul(secretContrib, gc.K)

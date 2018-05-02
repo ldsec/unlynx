@@ -68,11 +68,6 @@ type dataReferenceStruct struct {
 	DataReferenceMessage
 }
 
-type childAggregatedDataStruct struct {
-	*onet.TreeNode
-	ChildAggregatedDataMessage
-}
-
 type childAggregatedDataBytesStruct struct {
 	*onet.TreeNode
 	ChildAggregatedDataBytesMessage
