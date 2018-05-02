@@ -358,22 +358,6 @@ func (cv *CipherVector) DeterministicTagging(cipher *CipherVector, private, secr
 	}
 }
 
-// TaggingDet performs one step in the distributed deterministic tagging process and creates corresponding proof
-func (cv *CipherVector) TaggingDet(privKey, secretContrib kyber.Scalar, pubKey kyber.Point, proofs bool) {
-	switchedVect := NewCipherVector(len(*cv))
-	switchedVect.DeterministicTagging(cv, privKey, secretContrib)
-
-	if proofs {
-		/*p1 := VectorDeterministicTagProofCreation(*cv, *switchedVect, secretContrib, privKey)
-		//proof publication
-		commitSecret := SuiTe.Point().Mul(secretContrib, SuiTe.Point().Base())
-		publishedProof := PublishedDeterministicTaggingProof{Dhp: p1, VectBefore: *cv, VectAfter: *switchedVect, K: pubKey, SB: commitSecret}
-		_ = publishedProof*/
-	}
-
-	*cv = *switchedVect
-}
-
 // ReplaceContribution computes the new CipherText with the old mask contribution replaced by new and save in receiver.
 func (c *CipherText) ReplaceContribution(cipher CipherText, old, new kyber.Point) {
 	c.C.Sub(cipher.C, old)
@@ -486,16 +470,6 @@ func (cv *CipherVector) Sub(cv1, cv2 CipherVector) {
 
 // Representation
 //______________________________________________________________________________________________________________________
-
-// CipherVectorToDeterministicTag creates a tag (grouping key) from a cipher vector
-func CipherVectorToDeterministicTag(cipherVect CipherVector, privKey, secContrib kyber.Scalar, pubKey kyber.Point, proofs bool) GroupingKey {
-	cipherVect.TaggingDet(privKey, secContrib, pubKey, proofs)
-	deterministicGroupAttributes := make(DeterministCipherVector, len(cipherVect))
-	for j, c := range cipherVect {
-		deterministicGroupAttributes[j] = DeterministCipherText{Point: c.C}
-	}
-	return deterministicGroupAttributes.Key()
-}
 
 // Key is used in order to get a map-friendly representation of grouping attributes to be used as keys.
 func (dcv *DeterministCipherVector) Key() GroupingKey {

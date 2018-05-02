@@ -3,6 +3,7 @@ package libunlynxproofs_test
 import (
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/proofs"
+	"github.com/lca1/unlynx/protocols"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -18,14 +19,14 @@ func TestAggregationProof(t *testing.T) {
 	det2 := testCipherVect1
 	det3 := testCipherVect2
 
-	det1.TaggingDet(secKey, secKey, pubKey, true)
+	protocolsunlynx.TaggingDet(det1, secKey, secKey, pubKey, true)
 	deterministicGroupAttributes := make(libunlynx.DeterministCipherVector, len(det1))
 	for j, c := range det1 {
 		deterministicGroupAttributes[j] = libunlynx.DeterministCipherText{Point: c.C}
 	}
 	newDetResponse1 := libunlynx.FilteredResponseDet{Fr: libunlynx.FilteredResponse{GroupByEnc: testCipherVect2, AggregatingAttributes: testCipherVect1}, DetTagGroupBy: deterministicGroupAttributes.Key()}
 
-	det2.TaggingDet(secKey, secKey, pubKey, true)
+	protocolsunlynx.TaggingDet(det2, secKey, secKey, pubKey, true)
 
 	deterministicGroupAttributes = make(libunlynx.DeterministCipherVector, len(det2))
 	for j, c := range det2 {
@@ -33,7 +34,7 @@ func TestAggregationProof(t *testing.T) {
 	}
 	newDetResponse2 := libunlynx.FilteredResponseDet{Fr: libunlynx.FilteredResponse{GroupByEnc: testCipherVect1, AggregatingAttributes: testCipherVect1}, DetTagGroupBy: deterministicGroupAttributes.Key()}
 
-	det3.TaggingDet(secKey, secKey, pubKey, true)
+	protocolsunlynx.TaggingDet(det3, secKey, secKey, pubKey, true)
 	deterministicGroupAttributes = make(libunlynx.DeterministCipherVector, len(det3))
 	for j, c := range det3 {
 		deterministicGroupAttributes[j] = libunlynx.DeterministCipherText{Point: c.C}

@@ -4,6 +4,7 @@ import (
 	"github.com/dedis/kyber/util/random"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/store"
+	"github.com/lca1/unlynx/protocols"
 	"github.com/stretchr/testify/assert"
 	"strconv"
 	"testing"
@@ -104,9 +105,9 @@ func TestStoring(t *testing.T) {
 	// (5) Test Deterministic Tagging pull and push functions
 
 	detResponses := make([]libunlynx.FilteredResponseDet, 3)
-	detResponses[0] = libunlynx.FilteredResponseDet{Fr: libunlynx.FilteredResponse{GroupByEnc: testAggr2, AggregatingAttributes: testAggr1}, DetTagGroupBy: libunlynx.CipherVectorToDeterministicTag(testAggr2, secKey, secKey, pubKey, true)}
-	detResponses[1] = libunlynx.FilteredResponseDet{Fr: libunlynx.FilteredResponse{GroupByEnc: testAggr1, AggregatingAttributes: testAggr1}, DetTagGroupBy: libunlynx.CipherVectorToDeterministicTag(testAggr1, secKey, secKey, pubKey, true)}
-	detResponses[2] = libunlynx.FilteredResponseDet{Fr: libunlynx.FilteredResponse{GroupByEnc: testAggr2, AggregatingAttributes: testAggr1}, DetTagGroupBy: libunlynx.CipherVectorToDeterministicTag(testAggr2, secKey, secKey, pubKey, true)}
+	detResponses[0] = libunlynx.FilteredResponseDet{Fr: libunlynx.FilteredResponse{GroupByEnc: testAggr2, AggregatingAttributes: testAggr1}, DetTagGroupBy: protocolsunlynx.CipherVectorToDeterministicTag(testAggr2, secKey, secKey, pubKey, true)}
+	detResponses[1] = libunlynx.FilteredResponseDet{Fr: libunlynx.FilteredResponse{GroupByEnc: testAggr1, AggregatingAttributes: testAggr1}, DetTagGroupBy: protocolsunlynx.CipherVectorToDeterministicTag(testAggr1, secKey, secKey, pubKey, true)}
+	detResponses[2] = libunlynx.FilteredResponseDet{Fr: libunlynx.FilteredResponse{GroupByEnc: testAggr2, AggregatingAttributes: testAggr1}, DetTagGroupBy: protocolsunlynx.CipherVectorToDeterministicTag(testAggr2, secKey, secKey, pubKey, true)}
 
 	storage.PushDeterministicFilteredResponses(detResponses, "ServerTest", true)
 
