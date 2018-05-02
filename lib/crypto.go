@@ -287,10 +287,10 @@ func discreteLog(P kyber.Point, checkNeg bool) int64 {
 	guess := currentGreatestM
 	guessInt := currentGreatestInt
 	guessNeg := SuiTe.Point().Null()
-	guessInt_minus := int64(0)
+	guessintMinus := int64(0)
 
 	start := true
-	for i := guessInt; i < MaxHomomorphicInt && !foundPos && ! foundNeg; i = i+ 1 {
+	for i := guessInt; i < MaxHomomorphicInt && !foundPos && !foundNeg; i = i + 1 {
 		// check for 0 first
 		if !start {
 			guess = SuiTe.Point().Add(guess, B)
@@ -300,15 +300,15 @@ func discreteLog(P kyber.Point, checkNeg bool) int64 {
 		guessInt = i
 		PointToInt.Put(guess.String(), guessInt)
 		if checkNeg {
-			guessInt_minus = -guessInt
-			guessNeg = SuiTe.Point().Mul(SuiTe.Scalar().SetInt64(guessInt_minus), B)
-			PointToInt.Put(guessNeg.String(), guessInt_minus)
+			guessintMinus = -guessInt
+			guessNeg = SuiTe.Point().Mul(SuiTe.Scalar().SetInt64(guessintMinus), B)
+			PointToInt.Put(guessNeg.String(), guessintMinus)
 
 			if guessNeg.Equal(P) {
 				foundNeg = true
 			}
 		}
-		if !foundNeg && guess.Equal(P){
+		if !foundNeg && guess.Equal(P) {
 			foundPos = true
 		}
 	}
@@ -319,13 +319,11 @@ func discreteLog(P kyber.Point, checkNeg bool) int64 {
 	if !foundPos && !foundNeg {
 		log.LLvl1("out of bound encryption, bound is ", MaxHomomorphicInt)
 		return 0
-	} else {
-		if foundNeg{
-			return guessInt_minus
-		} else {
-			return guessInt
-		}
 	}
+	if foundNeg {
+		return guessintMinus
+	}
+	return guessInt
 }
 
 //OLD, TODO remove when sure new one is ok
