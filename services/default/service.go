@@ -336,7 +336,6 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 			dpResponses := survey.PullDpResponses()
 			var toShuffleCV []libunlynx.CipherVector
 			toShuffleCV, survey.Lengths = protocolsunlynx.ProcessResponseToMatrixCipherText(dpResponses)
-			log.Lvl1(s.ServerIdentity(), "survey lengths created :", survey.Lengths)
 			shuffle.TargetOfShuffle = &toShuffleCV
 
 			s.Survey.Put(string(target), survey)
@@ -365,7 +364,6 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 			survey.TargetOfSwitch = shuffledClientResponses
 			s.Survey.Put(string(target), survey)
 
-			log.Lvl1(s.ServerIdentity(), len(survey.TargetOfSwitch))
 			hashCreation.TargetOfSwitch = &tmpDeterministicTOS
 		}
 
