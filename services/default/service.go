@@ -336,6 +336,7 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 			dpResponses := survey.PullDpResponses()
 			var toShuffleCV []libunlynx.CipherVector
 			toShuffleCV, survey.Lengths = protocolsunlynx.ProcessResponseToMatrixCipherText(dpResponses)
+			log.Lvl1(s.ServerIdentity(), "survey lengths created :", survey.Lengths)
 			shuffle.TargetOfShuffle = &toShuffleCV
 
 			s.Survey.Put(string(target), survey)
@@ -363,6 +364,7 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 			shuffledClientResponses = append(queryWhereToTag, shuffledClientResponses...)
 			tmpDeterministicTOS := protocolsunlynx.ProcessResponseToCipherVector(shuffledClientResponses)
 			survey.TargetOfSwitch = shuffledClientResponses
+			log.Lvl1(s.ServerIdentity(), len(survey.TargetOfSwitch))
 			hashCreation.TargetOfSwitch = &tmpDeterministicTOS
 		}
 
@@ -555,7 +557,7 @@ func (s *Service) ShufflingPhase(targetSurvey SurveyID) error {
 		return err
 	}
 	tmpShufflingResult := <-pi.(*protocolsunlynx.ShufflingProtocol).FeedbackChannel
-	shufflingResult := protocolsunlynx.MatrixCipherTextToProcessResponse(tmpShufflingResult, survey.Lengths)
+	shufflingResult := protocolsunlynx.MatrixCipherTextToProcessResponse(tmpShufflingResult, castToSurvey(s.Survey.Get((string)(targetSurvey))).Lengths)
 
 	survey.PushShuffledProcessResponses(shufflingResult)
 	s.Survey.Put(string(targetSurvey), survey)
@@ -577,6 +579,7 @@ func (s *Service) TaggingPhase(targetSurvey SurveyID) error {
 	}
 
 	tmpDeterministicTaggingResult := <-pi.(*protocolsunlynx.DeterministicTaggingProtocol).FeedbackChannel
+	log.Lvl1(s.ServerIdentity(), len(castToSurvey(s.Survey.Get((string)(targetSurvey))).TargetOfSwitch))
 	deterministicTaggingResult := protocolsunlynx.DeterCipherVectorToProcessResponseDet(tmpDeterministicTaggingResult, survey.TargetOfSwitch)
 
 	var queryWhereTag []libunlynx.WhereQueryAttributeTagged

@@ -140,9 +140,9 @@ func ProcessResponseToMatrixCipherText(pr []libunlynx.ProcessResponse) ([]libunl
 // MatrixCipherTextToProcessResponse transform the CipherVector array (with the lengths of the previous process response) back into a ProcessReponse
 func MatrixCipherTextToProcessResponse(cv []libunlynx.CipherVector, lengths [][]int) []libunlynx.ProcessResponse {
 	pr := make([]libunlynx.ProcessResponse, len(lengths))
-	for i, length := range lengths {
-		groupByEncPos := length[0]
-		whereEncPos := groupByEncPos + length[1]
+	for i, l := range lengths {
+		groupByEncPos := l[0]
+		whereEncPos := groupByEncPos + l[1]
 		pr[i].GroupByEnc = cv[i][:groupByEncPos]
 		pr[i].WhereEnc = cv[i][groupByEncPos:whereEncPos]
 		pr[i].AggregatingAttributes = cv[i][whereEncPos:]
