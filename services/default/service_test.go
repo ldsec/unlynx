@@ -187,6 +187,10 @@ func TestServiceClearAttr(t *testing.T) {
 	log.Lvl1("Service output:")
 	var tabVerify [][]int64
 	tabVerify = *grp
+
+	if len(tabVerify) == 0 {
+		t.Error("Result array should not be empty")
+	}
 	for i := range tabVerify {
 		log.Lvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
 
@@ -286,6 +290,10 @@ func TestServiceClearGrpEncWhereAttr(t *testing.T) {
 	log.Lvl1("Service output:")
 	var tabVerify [][]int64
 	tabVerify = *grp
+
+	if len(tabVerify) == 0 {
+		t.Error("Result array should not be empty")
+	}
 	for i := range tabVerify {
 		log.Lvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
 
@@ -386,6 +394,10 @@ func TestServiceEncGrpClearWhereAttr(t *testing.T) {
 	log.Lvl1("Service output:")
 	var tabVerify [][]int64
 	tabVerify = *grp
+
+	if len(tabVerify) == 0 {
+		t.Error("Result array should not be empty")
+	}
 	for i := range tabVerify {
 		log.Lvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
 
@@ -489,6 +501,10 @@ func TestServiceEncGrpAndWhereAttr(t *testing.T) {
 	log.Lvl1("Service output:")
 	var tabVerify [][]int64
 	tabVerify = *grp
+
+	if len(tabVerify) == 0 {
+		t.Error("Result array should not be empty")
+	}
 	for i := range tabVerify {
 		log.Lvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
 
@@ -588,6 +604,10 @@ func TestServiceEverything(t *testing.T) {
 	log.Lvl1("Service output:")
 	var tabVerify [][]int64
 	tabVerify = *grp
+
+	if len(tabVerify) == 0 {
+		t.Error("Result array should not be empty")
+	}
 	for i := range tabVerify {
 		log.Lvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
 
@@ -687,6 +707,10 @@ func TestServiceEncGrpAndWhereAttrWithCount(t *testing.T) {
 	log.Lvl1("Service output:")
 	var tabVerify [][]int64
 	tabVerify = *grp
+
+	if len(tabVerify) == 0 {
+		t.Error("Result array should not be empty")
+	}
 	for i := range tabVerify {
 		log.Lvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
 
@@ -793,6 +817,10 @@ func TestAllServersNoDPs(t *testing.T) {
 	log.Lvl1("Service output:")
 	var tabVerify [][]int64
 	tabVerify = *grp
+
+	if len(tabVerify) == 0 {
+		t.Error("Result array should not be empty")
+	}
 	for i := range tabVerify {
 		log.Lvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
 
@@ -902,6 +930,10 @@ func TestAllServersRandomDPs(t *testing.T) {
 	log.Lvl1("Service output:")
 	var tabVerify [][]int64
 	tabVerify = *grp
+
+	if len(tabVerify) == 0 {
+		t.Error("Result array should not be empty")
+	}
 	for i := range tabVerify {
 		log.Lvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
 
@@ -1023,6 +1055,10 @@ func TestConcurrentSurveys(t *testing.T) {
 			log.Lvl1("Service output:")
 			var tabVerify [][]int64
 			tabVerify = *grp
+
+			if len(tabVerify) == 0 {
+				t.Error("Result array should not be empty")
+			}
 			for i := range tabVerify {
 				log.Lvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
 
