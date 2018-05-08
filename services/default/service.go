@@ -292,6 +292,7 @@ func (s *Service) HandleSurveyResultsQuery(resq *SurveyResultsQuery) (network.Me
 
 		log.Lvl1(s.ServerIdentity(), " completed the query processing...")
 
+
 		survey := castToSurvey(s.Survey.Get((string)(resq.SurveyID)))
 		results := survey.PullDeliverableResults(false, libunlynx.CipherText{})
 		s.Survey.Put(string(resq.SurveyID), survey)
