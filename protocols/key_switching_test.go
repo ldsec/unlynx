@@ -40,7 +40,8 @@ func TestKeySwitching(t *testing.T) {
 	clientPublic := libunlynx.SuiTe.Point().Mul(clientPrivate, libunlynx.SuiTe.Point().Base())
 
 	//protocol
-	protocol.TargetOfSwitch = &tabi
+	cv, lengths := protocolsunlynx.FilteredResponseToCipherVector(tabi)
+	protocol.TargetOfSwitch = &cv
 	protocol.TargetPublicKey = &clientPublic
 	protocol.Proofs = true
 	feedback := protocol.FeedbackChannel
@@ -51,12 +52,13 @@ func TestKeySwitching(t *testing.T) {
 
 	select {
 	case encryptedResult := <-feedback:
-		cv1 := encryptedResult[0]
+		adaptedResult := protocolsunlynx.CipherVectorToFilteredResponse(encryptedResult, lengths)
+		cv1 := adaptedResult[0]
 		res := libunlynx.DecryptIntVector(clientPrivate, &cv1.AggregatingAttributes)
 		resGrp := libunlynx.DecryptIntVector(clientPrivate, &cv1.GroupByEnc)
 		log.Lvl1("Recieved results (attributes) ", res)
 		log.Lvl1("Recieved results (groups) ", resGrp)
-		cv2 := encryptedResult[1]
+		cv2 := adaptedResult[1]
 		res1 := libunlynx.DecryptIntVector(clientPrivate, &cv2.AggregatingAttributes)
 		resGrp1 := libunlynx.DecryptIntVector(clientPrivate, &cv2.GroupByEnc)
 		log.Lvl1("Recieved results (attributes) ", res1)

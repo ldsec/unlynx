@@ -21,16 +21,16 @@ var groupingAttrA = libunlynx.DeterministCipherVector{grpattr1, grpattr1}
 var groupingAttrB = libunlynx.DeterministCipherVector{grpattr2, grpattr2}
 var groupingAttrC = libunlynx.DeterministCipherVector{grpattr1, grpattr2}
 
-//TestCollectiveAggregation tests collective aggregation protocol
-func TestCollectiveAggregation(t *testing.T) {
+//TestCollectiveAggregationGroup tests collective aggregation protocol
+func TestCollectiveAggregationGroup(t *testing.T) {
 	local := onet.NewLocalTest(libunlynx.SuiTe)
 
 	// You must register this protocol before creating the servers
-	onet.GlobalProtocolRegister("CollectiveAggregationTest", NewCollectiveAggregationTest)
+	onet.GlobalProtocolRegister("CollectiveAggregationTestGroup", NewCollectiveAggregationTestGroups)
 	_, _, tree := local.GenTree(10, true)
 	defer local.CloseAll()
 
-	p, err := local.CreateProtocol("CollectiveAggregationTest", tree)
+	p, err := local.CreateProtocol("CollectiveAggregationTestGroup", tree)
 	if err != nil {
 		t.Fatal("Couldn't start protocol:", err)
 	}
@@ -77,7 +77,7 @@ func TestCollectiveAggregation(t *testing.T) {
 }
 
 // NewCollectiveAggregationTest is a test specific protocol instance constructor that injects test data.
-func NewCollectiveAggregationTest(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
+func NewCollectiveAggregationTestGroups(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 
 	pi, err := protocolsunlynx.NewCollectiveAggregationProtocol(tni)
 	protocol := pi.(*protocolsunlynx.CollectiveAggregationProtocol)
@@ -106,6 +106,77 @@ func NewCollectiveAggregationTest(tni *onet.TreeNodeInstance) (onet.ProtocolInst
 	default:
 	}
 	protocol.GroupedData = &testCVMap
+
+	return protocol, err
+}
+
+func TestCollectiveAggregationSimple(t *testing.T) {
+	local := onet.NewLocalTest(libunlynx.SuiTe)
+
+	// You must register this protocol before creating the servers
+	onet.GlobalProtocolRegister("CollectiveAggregationTestSimple", NewCollectiveAggregationTestSimple)
+	_, _, tree := local.GenTree(10, true)
+	defer local.CloseAll()
+
+	p, err := local.CreateProtocol("CollectiveAggregationTestSimple", tree)
+	if err != nil {
+		t.Fatal("Couldn't start protocol:", err)
+	}
+	protocol := p.(*protocolsunlynx.CollectiveAggregationProtocol)
+
+	//run protocol
+	go protocol.Start()
+	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*5*2) * time.Millisecond
+
+	feedback := protocol.FeedbackChannel
+
+	//verify results
+	expectedResults := []int64{4, 6, 8, 10, 12}
+
+	select {
+	case encryptedResult := <-feedback:
+		log.Lvl1("Received results:")
+		resultData := make([]int64, len(encryptedResult.GroupedData[protocolsunlynx.EMPTYKEY].AggregatingAttributes))
+		tmp := encryptedResult.GroupedData[protocolsunlynx.EMPTYKEY].AggregatingAttributes
+		resultData = libunlynx.DecryptIntVector(clientPrivate, &tmp)
+		log.Lvl1(resultData)
+		assert.Equal(t, expectedResults, resultData)
+	case <-time.After(timeout):
+		t.Fatal("Didn't finish in time")
+	}
+}
+
+func NewCollectiveAggregationTestSimple(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
+	pi, err := protocolsunlynx.NewCollectiveAggregationProtocol(tni)
+	protocol := pi.(*protocolsunlynx.CollectiveAggregationProtocol)
+
+	simpleSlice := make([]libunlynx.CipherText, 0)
+	switch tni.Index() {
+	case 0:
+		log.Lvl1("0")
+		toAdd := libunlynx.EncryptIntVector(clientPublic, []int64{1, 2, 3, 4, 5})
+		simpleSlice = append(simpleSlice, *toAdd...)
+	case 1:
+		log.Lvl1("1")
+		toAdd := libunlynx.EncryptIntVector(clientPublic, []int64{1, 2, 3, 4, 5})
+		simpleSlice = append(simpleSlice, *toAdd...)
+	case 2:
+		log.Lvl1("2")
+		toAdd := libunlynx.EncryptIntVector(clientPublic, []int64{1, 1, 1, 1, 1})
+		simpleSlice = append(simpleSlice, *toAdd...)
+	case 5:
+		log.Lvl1("5")
+		toAdd := libunlynx.EncryptIntVector(clientPublic, []int64{0, 1, 0, 1, 0})
+		simpleSlice = append(simpleSlice, *toAdd...)
+	case 9:
+		log.Lvl1("9")
+		toAdd := libunlynx.EncryptIntVector(clientPublic, []int64{1, 0, 1, 0, 1})
+		simpleSlice = append(simpleSlice, *toAdd...)
+	default:
+	}
+
+	protocol.SimpleData = &simpleSlice
+	protocol.GroupedData = nil
 
 	return protocol, err
 }

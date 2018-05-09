@@ -1,8 +1,10 @@
-package libunlynx_test
+package libunlynxstore_test
 
 import (
 	"github.com/dedis/kyber/util/random"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/store"
+	"github.com/lca1/unlynx/protocols"
 	"github.com/stretchr/testify/assert"
 	"strconv"
 	"testing"
@@ -55,7 +57,7 @@ func TestStoring(t *testing.T) {
 	where := []libunlynx.WhereQueryAttribute{{Name: "0", Value: libunlynx.CipherText{}}, {Name: "1", Value: libunlynx.CipherText{}}}
 
 	// Constructor Test
-	storage := libunlynx.NewStore()
+	storage := libunlynxstore.NewStore()
 
 	// (1) Test Insert and Pull DpResponses
 	storage.InsertDpResponse(libunlynx.DpResponse{GroupByEnc: testEncMap, WhereClear: testClearMap, AggregatingAttributesEnc: testAggrMap1}, true, groupBy, sum, where)
@@ -81,7 +83,7 @@ func TestStoring(t *testing.T) {
 	storage.PullLocallyAggregatedResponses()
 
 	// (4) Test Insert and Pull DpResponses but with different parameters
-	storage = libunlynx.NewStore()
+	storage = libunlynxstore.NewStore()
 
 	storage.InsertDpResponse(libunlynx.DpResponse{GroupByClear: testClearMap, GroupByEnc: testEncMap, WhereClear: testClearMap, WhereEnc: testEncMap, AggregatingAttributesEnc: testAggrMap2}, true, groupBy, sum, where)
 	storage.InsertDpResponse(libunlynx.DpResponse{GroupByEnc: testEncMap, AggregatingAttributesEnc: testAggrMap2}, false, groupBy, sum, where)
@@ -103,9 +105,9 @@ func TestStoring(t *testing.T) {
 	// (5) Test Deterministic Tagging pull and push functions
 
 	detResponses := make([]libunlynx.FilteredResponseDet, 3)
-	detResponses[0] = libunlynx.FilteredResponseDet{Fr: libunlynx.FilteredResponse{GroupByEnc: testAggr2, AggregatingAttributes: testAggr1}, DetTagGroupBy: libunlynx.CipherVectorToDeterministicTag(testAggr2, secKey, secKey, pubKey, true)}
-	detResponses[1] = libunlynx.FilteredResponseDet{Fr: libunlynx.FilteredResponse{GroupByEnc: testAggr1, AggregatingAttributes: testAggr1}, DetTagGroupBy: libunlynx.CipherVectorToDeterministicTag(testAggr1, secKey, secKey, pubKey, true)}
-	detResponses[2] = libunlynx.FilteredResponseDet{Fr: libunlynx.FilteredResponse{GroupByEnc: testAggr2, AggregatingAttributes: testAggr1}, DetTagGroupBy: libunlynx.CipherVectorToDeterministicTag(testAggr2, secKey, secKey, pubKey, true)}
+	detResponses[0] = libunlynx.FilteredResponseDet{Fr: libunlynx.FilteredResponse{GroupByEnc: testAggr2, AggregatingAttributes: testAggr1}, DetTagGroupBy: protocolsunlynx.CipherVectorToDeterministicTag(testAggr2, secKey, secKey, pubKey, true)}
+	detResponses[1] = libunlynx.FilteredResponseDet{Fr: libunlynx.FilteredResponse{GroupByEnc: testAggr1, AggregatingAttributes: testAggr1}, DetTagGroupBy: protocolsunlynx.CipherVectorToDeterministicTag(testAggr1, secKey, secKey, pubKey, true)}
+	detResponses[2] = libunlynx.FilteredResponseDet{Fr: libunlynx.FilteredResponse{GroupByEnc: testAggr2, AggregatingAttributes: testAggr1}, DetTagGroupBy: protocolsunlynx.CipherVectorToDeterministicTag(testAggr2, secKey, secKey, pubKey, true)}
 
 	storage.PushDeterministicFilteredResponses(detResponses, "ServerTest", true)
 

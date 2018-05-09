@@ -29,7 +29,7 @@ func createDataSet(numberGroups, numberAttributes, numberGroupAttr int) map[libu
 
 		cipherVect := *libunlynx.EncryptIntVector(clientPublic, tab)
 
-		testCVMap[libunlynx.CipherVectorToDeterministicTag(*libunlynx.EncryptIntVector(clientPublic, []int64{int64(i)}), clientPrivate, secContrib, clientPublic, false)] = libunlynx.FilteredResponse{GroupByEnc: dummyGroups, AggregatingAttributes: cipherVect}
+		testCVMap[protocolsunlynx.CipherVectorToDeterministicTag(*libunlynx.EncryptIntVector(clientPublic, []int64{int64(i)}), clientPrivate, secContrib, clientPublic, false)] = libunlynx.FilteredResponse{GroupByEnc: dummyGroups, AggregatingAttributes: cipherVect}
 	}
 	return testCVMap
 }

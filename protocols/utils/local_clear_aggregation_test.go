@@ -1,10 +1,11 @@
-package protocolsunlynx_test
+package protocolsunlynxutils_test
 
 import (
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/protocols"
+	"github.com/lca1/unlynx/lib/store"
+	"github.com/lca1/unlynx/protocols/utils"
 	"github.com/lca1/unlynx/services/default/data"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -21,10 +22,10 @@ func TestLocalClearAggregation(t *testing.T) {
 	if err != nil {
 		t.Fatal("Couldn't start protocol:", err)
 	}
-	protocol := rootInstance.(*protocolsunlynx.LocalClearAggregationProtocol)
+	protocol := rootInstance.(*protocolsunlynxutils.LocalClearAggregationProtocol)
 
 	testData := generateClearData()
-	aggregatedData := libunlynx.AddInClear(testData)
+	aggregatedData := libunlynxstore.AddInClear(testData)
 
 	protocol.TargetOfAggregation = testData
 	feedback := protocol.FeedbackChannel

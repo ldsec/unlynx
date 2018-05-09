@@ -7,6 +7,7 @@ import (
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/protocols"
+	"github.com/lca1/unlynx/protocols/utils"
 )
 
 func init() {
@@ -60,7 +61,7 @@ func (sim *LocalAggregationSimulation) Run(config *onet.SimulationConfig) error 
 			return err
 		}
 
-		root := rooti.(*protocolsunlynx.LocalAggregationProtocol)
+		root := rooti.(*protocolsunlynxutils.LocalAggregationProtocol)
 
 		secKey := libunlynx.SuiTe.Scalar().Pick(random.New())
 		newSecKey := libunlynx.SuiTe.Scalar().Pick(random.New())
@@ -86,7 +87,7 @@ func (sim *LocalAggregationSimulation) Run(config *onet.SimulationConfig) error 
 			groupCipherVect = *tmp
 			cr := libunlynx.FilteredResponse{GroupByEnc: testCipherVect1, AggregatingAttributes: testCipherVect1}
 			det1 := groupCipherVect
-			det1.TaggingDet(secKey, newSecKey, pubKey, sim.Proofs)
+			protocolsunlynx.TaggingDet(&det1, secKey, newSecKey, pubKey, sim.Proofs)
 
 			deterministicGroupAttributes := make(libunlynx.DeterministCipherVector, len(det1))
 			for j, c := range det1 {
@@ -102,13 +103,13 @@ func (sim *LocalAggregationSimulation) Run(config *onet.SimulationConfig) error 
 
 		log.Lvl1("starting protocol with ", len(detResponses), " responses")
 
-		root.ProtocolInstance().(*protocolsunlynx.LocalAggregationProtocol).TargetOfAggregation = detResponses
-		root.ProtocolInstance().(*protocolsunlynx.LocalAggregationProtocol).Proofs = sim.Proofs
+		root.ProtocolInstance().(*protocolsunlynxutils.LocalAggregationProtocol).TargetOfAggregation = detResponses
+		root.ProtocolInstance().(*protocolsunlynxutils.LocalAggregationProtocol).Proofs = sim.Proofs
 
 		round := libunlynx.StartTimer("_LocalAggregation(Simulation")
 
 		root.Start()
-		results := <-root.ProtocolInstance().(*protocolsunlynx.LocalAggregationProtocol).FeedbackChannel
+		results := <-root.ProtocolInstance().(*protocolsunlynxutils.LocalAggregationProtocol).FeedbackChannel
 		log.Lvl1("Number of aggregated lines: ", len(results))
 
 		libunlynx.EndTimer(round)

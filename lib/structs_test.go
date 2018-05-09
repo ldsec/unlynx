@@ -37,8 +37,7 @@ func TestCipherVectorTagging(t *testing.T) {
 	target := []int64{1, 2, 3, 4, 5}
 	cv := libunlynx.EncryptIntVector(groupKey, target)
 
-	cl := libunlynx.ProcessResponse{GroupByEnc: *cv, AggregatingAttributes: *cv}
-	es := cl.CipherVectorTag(groupKey)
+	es := cv.CipherVectorTag(groupKey)
 	_ = es
 }
 

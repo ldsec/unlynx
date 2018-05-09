@@ -9,6 +9,7 @@ import (
 	"github.com/dedis/onet/network"
 	"github.com/fanliao/go-concurrentMap"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/store"
 	"github.com/lca1/unlynx/protocols"
 	"github.com/lca1/unlynx/services/default/data"
 	"github.com/satori/go.uuid"
@@ -43,10 +44,12 @@ type SurveyCreationQuery struct {
 
 // Survey represents a survey with the corresponding params
 type Survey struct {
-	*libunlynx.Store
+	*libunlynxstore.Store
 	Query             SurveyCreationQuery
 	SurveySecretKey   kyber.Scalar
 	ShufflePrecompute []libunlynx.CipherVectorScalar
+	Lengths           [][]int
+	TargetOfSwitch    []libunlynx.ProcessResponse
 
 	// channels
 	SurveyChannel chan int // To wait for the survey to be created before loading data
@@ -205,7 +208,7 @@ func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.
 
 	// survey instantiation
 	s.Survey.Put((string)(recq.SurveyID), Survey{
-		Store:             libunlynx.NewStore(),
+		Store:             libunlynxstore.NewStore(),
 		Query:             *recq,
 		SurveySecretKey:   surveySecret,
 		ShufflePrecompute: precomputeShuffle,
@@ -331,7 +334,9 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 		shuffle.Precomputed = survey.ShufflePrecompute
 		if tn.IsRoot() {
 			dpResponses := survey.PullDpResponses()
-			shuffle.TargetOfShuffle = &dpResponses
+			var toShuffleCV []libunlynx.CipherVector
+			toShuffleCV, survey.Lengths = protocolsunlynx.ProcessResponseToMatrixCipherText(dpResponses)
+			shuffle.TargetOfShuffle = &toShuffleCV
 
 			s.Survey.Put(string(target), survey)
 		}
@@ -348,7 +353,6 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 		hashCreation.Proofs = survey.Query.Proofs
 		if tn.IsRoot() {
 			shuffledClientResponses := survey.PullShuffledProcessResponses()
-			s.Survey.Put(string(target), survey)
 
 			var queryWhereToTag []libunlynx.ProcessResponse
 			for _, v := range survey.Query.Where {
@@ -356,7 +360,11 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 				queryWhereToTag = append(queryWhereToTag, libunlynx.ProcessResponse{WhereEnc: tmp, GroupByEnc: nil, AggregatingAttributes: nil})
 			}
 			shuffledClientResponses = append(queryWhereToTag, shuffledClientResponses...)
-			hashCreation.TargetOfSwitch = &shuffledClientResponses
+			tmpDeterministicTOS := protocolsunlynx.ProcessResponseToCipherVector(shuffledClientResponses)
+			survey.TargetOfSwitch = shuffledClientResponses
+			s.Survey.Put(string(target), survey)
+
+			hashCreation.TargetOfSwitch = &tmpDeterministicTOS
 		}
 
 	case protocolsunlynx.CollectiveAggregationProtocolName:
@@ -393,7 +401,9 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 			for _, v := range noiseArray {
 				clientResponses = append(clientResponses, libunlynx.ProcessResponse{GroupByEnc: nil, AggregatingAttributes: libunlynx.IntArrayToCipherVector([]int64{int64(v)})})
 			}
-			shuffle.TargetOfShuffle = &clientResponses
+			var toShuffleCV []libunlynx.CipherVector
+			toShuffleCV, survey.Lengths = protocolsunlynx.ProcessResponseToMatrixCipherText(clientResponses)
+			shuffle.TargetOfShuffle = &toShuffleCV
 		}
 		return pi, nil
 
@@ -413,8 +423,9 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 			} else {
 				coaggr = survey.PullCothorityAggregatedFilteredResponses(false, libunlynx.CipherText{})
 			}
-
-			keySwitch.TargetOfSwitch = &coaggr
+			var tmpKeySwitchingCV libunlynx.CipherVector
+			tmpKeySwitchingCV, survey.Lengths = protocolsunlynx.FilteredResponseToCipherVector(coaggr)
+			keySwitch.TargetOfSwitch = &tmpKeySwitchingCV
 			tmp := survey.Query.ClientPubKey
 			keySwitch.TargetPublicKey = &tmp
 
@@ -544,7 +555,8 @@ func (s *Service) ShufflingPhase(targetSurvey SurveyID) error {
 	if err != nil {
 		return err
 	}
-	shufflingResult := <-pi.(*protocolsunlynx.ShufflingProtocol).FeedbackChannel
+	tmpShufflingResult := <-pi.(*protocolsunlynx.ShufflingProtocol).FeedbackChannel
+	shufflingResult := protocolsunlynx.MatrixCipherTextToProcessResponse(tmpShufflingResult, castToSurvey(s.Survey.Get((string)(targetSurvey))).Lengths)
 
 	survey.PushShuffledProcessResponses(shufflingResult)
 	s.Survey.Put(string(targetSurvey), survey)
@@ -565,7 +577,8 @@ func (s *Service) TaggingPhase(targetSurvey SurveyID) error {
 		return err
 	}
 
-	deterministicTaggingResult := <-pi.(*protocolsunlynx.DeterministicTaggingProtocol).FeedbackChannel
+	tmpDeterministicTaggingResult := <-pi.(*protocolsunlynx.DeterministicTaggingProtocol).FeedbackChannel
+	deterministicTaggingResult := protocolsunlynx.DeterCipherVectorToProcessResponseDet(tmpDeterministicTaggingResult, castToSurvey(s.Survey.Get((string)(targetSurvey))).TargetOfSwitch)
 
 	var queryWhereTag []libunlynx.WhereQueryAttributeTagged
 	for i, v := range deterministicTaggingResult[:len(survey.Query.Where)] {
@@ -607,9 +620,11 @@ func (s *Service) DROPhase(targetSurvey SurveyID) error {
 		return err
 	}
 
-	shufflingResult := <-pi.(*protocolsunlynx.ShufflingProtocol).FeedbackChannel
-
 	survey := castToSurvey(s.Survey.Get((string)(targetSurvey)))
+
+	tmpShufflingResult := <-pi.(*protocolsunlynx.ShufflingProtocol).FeedbackChannel
+	shufflingResult := protocolsunlynx.MatrixCipherTextToProcessResponse(tmpShufflingResult, survey.Lengths)
+
 	survey.Noise = shufflingResult[0].AggregatingAttributes[0]
 	s.Survey.Put(string(targetSurvey), survey)
 	return nil
@@ -621,9 +636,12 @@ func (s *Service) KeySwitchingPhase(targetSurvey SurveyID) error {
 	if err != nil {
 		return err
 	}
-	keySwitchedAggregatedResponses := <-pi.(*protocolsunlynx.KeySwitchingProtocol).FeedbackChannel
 
 	survey := castToSurvey(s.Survey.Get((string)(targetSurvey)))
+
+	tmpKeySwitchedAggregatedResponses := <-pi.(*protocolsunlynx.KeySwitchingProtocol).FeedbackChannel
+	keySwitchedAggregatedResponses := protocolsunlynx.CipherVectorToFilteredResponse(tmpKeySwitchedAggregatedResponses, survey.Lengths)
+
 	survey.PushQuerierKeyEncryptedResponses(keySwitchedAggregatedResponses)
 	s.Survey.Put(string(targetSurvey), survey)
 	return err

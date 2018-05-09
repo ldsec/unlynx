@@ -176,7 +176,7 @@ func EncryptIntVector(pubkey kyber.Point, intArray []int64) *CipherVector {
 	return &cv
 }
 
-// EncryptIntVector encrypts a []int into a CipherVector and returns a pointer to it.
+// EncryptScalarVector encrypts a []kyber.Scalar into a CipherVector and returns a pointer to it.
 func EncryptScalarVector(pubkey kyber.Point, intArray []kyber.Scalar) *CipherVector {
 	var wg sync.WaitGroup
 	cv := make(CipherVector, len(intArray))
@@ -200,7 +200,6 @@ func EncryptScalarVector(pubkey kyber.Point, intArray []kyber.Scalar) *CipherVec
 
 	return &cv
 }
-
 
 // NullCipherVector encrypts an 0-filled slice under the given public key.
 func NullCipherVector(length int, pubkey kyber.Point) *CipherVector {
@@ -247,17 +246,17 @@ func DecryptIntVectorWithNeg(prikey kyber.Scalar, cipherVector *CipherVector) []
 	return result
 }
 
-// DecryptInt decrypts an integer from an ElGamal cipher text where integer are encoded in the exponent.
+// DecryptCheckZero decrypts an ElGamal cipher text and return 0 if it's a base point
 func DecryptCheckZero(prikey kyber.Scalar, cipher CipherText) int64 {
 	M := decryptPoint(prikey, cipher)
 	result := int64(1)
-	if M.Equal(SuiTe.Point().Null()){
+	if M.Equal(SuiTe.Point().Null()) {
 		result = int64(0)
 	}
 	return result
 }
 
-// DecryptIntVectorWithNeg decrypts a cipherVector.
+// DecryptCheckZeroVector decrypts a cipherVector with 0 and 1 depending if the decode points are base points.
 func DecryptCheckZeroVector(prikey kyber.Scalar, cipherVector *CipherVector) []int64 {
 	result := make([]int64, len(*cipherVector))
 	for i, c := range *cipherVector {
@@ -265,7 +264,6 @@ func DecryptCheckZeroVector(prikey kyber.Scalar, cipherVector *CipherVector) []i
 	}
 	return result
 }
-
 
 // Brute-Forces the discrete log for integer decoding.
 func discreteLog(P kyber.Point, checkNeg bool) int64 {
@@ -289,10 +287,10 @@ func discreteLog(P kyber.Point, checkNeg bool) int64 {
 	guess := currentGreatestM
 	guessInt := currentGreatestInt
 	guessNeg := SuiTe.Point().Null()
-	guessInt_minus := int64(0)
+	guessintMinus := int64(0)
 
 	start := true
-	for i := guessInt; i < MaxHomomorphicInt && !foundPos && ! foundNeg; i = i+ 1 {
+	for i := guessInt; i < MaxHomomorphicInt && !foundPos && !foundNeg; i = i + 1 {
 		// check for 0 first
 		if !start {
 			guess = SuiTe.Point().Add(guess, B)
@@ -302,15 +300,15 @@ func discreteLog(P kyber.Point, checkNeg bool) int64 {
 		guessInt = i
 		PointToInt.Put(guess.String(), guessInt)
 		if checkNeg {
-			guessInt_minus = -guessInt
-			guessNeg = SuiTe.Point().Mul(SuiTe.Scalar().SetInt64(guessInt_minus), B)
-			PointToInt.Put(guessNeg.String(), guessInt_minus)
+			guessintMinus = -guessInt
+			guessNeg = SuiTe.Point().Mul(SuiTe.Scalar().SetInt64(guessintMinus), B)
+			PointToInt.Put(guessNeg.String(), guessintMinus)
 
 			if guessNeg.Equal(P) {
 				foundNeg = true
 			}
 		}
-		if !foundNeg && guess.Equal(P){
+		if !foundNeg && guess.Equal(P) {
 			foundPos = true
 		}
 	}
@@ -321,56 +319,12 @@ func discreteLog(P kyber.Point, checkNeg bool) int64 {
 	if !foundPos && !foundNeg {
 		log.LLvl1("out of bound encryption, bound is ", MaxHomomorphicInt)
 		return 0
-	} else {
-		if foundNeg{
-			return guessInt_minus
-		} else {
-			return guessInt
-		}
 	}
+	if foundNeg {
+		return guessintMinus
+	}
+	return guessInt
 }
-
-//OLD, TODO remove when sure new one is ok
-// Brute-Forces the discrete log for integer decoding.
-/*func discreteLog(P kyber.Point, checkNeg bool) int64 {
-	B := SuiTe.Point().Base()
-	var Bi kyber.Point
-	var m int64
-
-	object, ok := PointToInt.Get(P.String())
-	if ok == nil && object != nil {
-		return object.(int64)
-	}
-
-	mutex.Lock()
-	if currentGreatestInt == 0 {
-		currentGreatestM = SuiTe.Point().Null()
-	}
-
-	BiNeg := SuiTe.Point().Neg(B)
-	for Bi, m = currentGreatestM, currentGreatestInt; !Bi.Equal(P) && !SuiTe.Point().Neg(Bi).Equal(P) && m < MaxHomomorphicInt; Bi, m = Bi.Add(Bi, B), m+1 {
-		if checkNeg {
-			BiNeg := SuiTe.Point().Neg(Bi)
-			PointToInt.Put(BiNeg.String(), -m)
-		}
-		PointToInt.Put(Bi.String(), m)
-	}
-	currentGreatestM = Bi
-	PointToInt.Put(BiNeg.String(), -m)
-	PointToInt.Put(Bi.String(), m)
-	currentGreatestInt = m
-
-	//no negative responses
-	if m == MaxHomomorphicInt {
-		return 0
-	}
-	mutex.Unlock()
-
-	if SuiTe.Point().Neg(Bi).Equal(P){
-		return -m
-	}
-	return m
-}*/
 
 // DeterministicTagging is a distributed deterministic Tagging switching, removes server contribution and multiplies
 func (c *CipherText) DeterministicTagging(gc *CipherText, private, secretContrib kyber.Scalar) {
@@ -402,22 +356,6 @@ func (cv *CipherVector) DeterministicTagging(cipher *CipherVector, private, secr
 			(*cv)[i].DeterministicTagging(&c, private, secretContrib)
 		}
 	}
-}
-
-// TaggingDet performs one step in the distributed deterministic tagging process and creates corresponding proof
-func (cv *CipherVector) TaggingDet(privKey, secretContrib kyber.Scalar, pubKey kyber.Point, proofs bool) {
-	switchedVect := NewCipherVector(len(*cv))
-	switchedVect.DeterministicTagging(cv, privKey, secretContrib)
-
-	if proofs {
-		/*p1 := VectorDeterministicTagProofCreation(*cv, *switchedVect, secretContrib, privKey)
-		//proof publication
-		commitSecret := SuiTe.Point().Mul(secretContrib, SuiTe.Point().Base())
-		publishedProof := PublishedDeterministicTaggingProof{Dhp: p1, VectBefore: *cv, VectAfter: *switchedVect, K: pubKey, SB: commitSecret}
-		_ = publishedProof*/
-	}
-
-	*cv = *switchedVect
 }
 
 // ReplaceContribution computes the new CipherText with the old mask contribution replaced by new and save in receiver.
@@ -533,16 +471,6 @@ func (cv *CipherVector) Sub(cv1, cv2 CipherVector) {
 // Representation
 //______________________________________________________________________________________________________________________
 
-// CipherVectorToDeterministicTag creates a tag (grouping key) from a cipher vector
-func CipherVectorToDeterministicTag(cipherVect CipherVector, privKey, secContrib kyber.Scalar, pubKey kyber.Point, proofs bool) GroupingKey {
-	cipherVect.TaggingDet(privKey, secContrib, pubKey, proofs)
-	deterministicGroupAttributes := make(DeterministCipherVector, len(cipherVect))
-	for j, c := range cipherVect {
-		deterministicGroupAttributes[j] = DeterministCipherText{Point: c.C}
-	}
-	return deterministicGroupAttributes.Key()
-}
-
 // Key is used in order to get a map-friendly representation of grouping attributes to be used as keys.
 func (dcv *DeterministCipherVector) Key() GroupingKey {
 	var key []string
@@ -631,6 +559,11 @@ func RandomPermutation(k int) []int {
 // Conversion
 //______________________________________________________________________________________________________________________
 
+// CipherTextByteSize return the length of one CipherText element transform into []byte
+func CipherTextByteSize() int {
+	return 2 * SuiTe.PointLen()
+}
+
 // ToBytes converts a CipherVector to a byte array
 func (cv *CipherVector) ToBytes() ([]byte, int) {
 	b := make([]byte, 0)
@@ -645,9 +578,10 @@ func (cv *CipherVector) ToBytes() ([]byte, int) {
 // FromBytes converts a byte array to a CipherVector. Note that you need to create the (empty) object beforehand.
 func (cv *CipherVector) FromBytes(data []byte, length int) {
 	*cv = make(CipherVector, length)
-	for i, pos := 0, 0; i < length*64; i, pos = i+64, pos+1 {
+	elementSize := CipherTextByteSize()
+	for i, pos := 0, 0; i < length*elementSize; i, pos = i+elementSize, pos+1 {
 		ct := CipherText{}
-		ct.FromBytes(data[i : i+64])
+		ct.FromBytes(data[i : i+elementSize])
 		(*cv)[pos] = ct
 	}
 }
@@ -672,8 +606,8 @@ func (c *CipherText) FromBytes(data []byte) {
 	(*c).K = SuiTe.Point()
 	(*c).C = SuiTe.Point()
 
-	(*c).K.UnmarshalBinary(data[:32])
-	(*c).C.UnmarshalBinary(data[32:])
+	(*c).K.UnmarshalBinary(data[:SuiTe.PointLen()])
+	(*c).C.UnmarshalBinary(data[SuiTe.PointLen():])
 }
 
 // Serialize encodes a CipherText in a base64 string

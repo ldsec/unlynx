@@ -7,7 +7,9 @@ import (
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/proofs"
 	"github.com/lca1/unlynx/protocols"
+	"github.com/lca1/unlynx/protocols/utils"
 	"math"
 )
 
@@ -58,7 +60,7 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 			return err
 		}
 
-		root := rooti.(*protocolsunlynx.ProofsVerificationProtocol)
+		root := rooti.(*protocolsunlynxutils.ProofsVerificationProtocol)
 		secKey := libunlynx.SuiTe.Scalar().Pick(random.New())
 		pubKey := libunlynx.SuiTe.Point().Mul(secKey, libunlynx.SuiTe.Point().Base())
 		secKeyNew := libunlynx.SuiTe.Scalar().Pick(random.New())
@@ -80,9 +82,9 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 
 		switchedVect := libunlynx.NewCipherVector(len(cipherVect))
 		rs := switchedVect.KeySwitching(cipherVect, origEphemKeys, pubKeyNew, secKey)
-		cps := libunlynx.VectorSwitchKeyProofCreation(cipherVect, *switchedVect, rs, secKey, origEphemKeys, pubKeyNew)
-		pskp := libunlynx.PublishedSwitchKeyProof{Skp: cps, VectBefore: cipherVect, VectAfter: *switchedVect, K: pubKey, Q: pubKeyNew}
-		keySwitchingProofs := make([]libunlynx.PublishedSwitchKeyProof, sim.NbrGroups)
+		cps := libunlynxproofs.VectorSwitchKeyProofCreation(cipherVect, *switchedVect, rs, secKey, origEphemKeys, pubKeyNew)
+		pskp := libunlynxproofs.PublishedSwitchKeyProof{Skp: cps, VectBefore: cipherVect, VectAfter: *switchedVect, K: pubKey, Q: pubKeyNew}
+		keySwitchingProofs := make([]libunlynxproofs.PublishedSwitchKeyProof, sim.NbrGroups)
 
 		for i := range keySwitchingProofs {
 			keySwitchingProofs[i] = pskp
@@ -97,10 +99,10 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 
 		tagSwitchedVect := libunlynx.NewCipherVector(len(cipherVect))
 		tagSwitchedVect.DeterministicTagging(&cipherVect, secKey, secKeyNew)
-		cps1 := libunlynx.VectorDeterministicTagProofCreation(cipherVect, *tagSwitchedVect, secKeyNew, secKey)
+		cps1 := libunlynxproofs.VectorDeterministicTagProofCreation(cipherVect, *tagSwitchedVect, secKeyNew, secKey)
 		newContrib := libunlynx.SuiTe.Point().Mul(secKeyNew, libunlynx.SuiTe.Point().Base())
-		pdhp := libunlynx.PublishedDeterministicTaggingProof{Dhp: cps1, VectBefore: cipherVect, VectAfter: *tagSwitchedVect, K: pubKey, SB: newContrib}
-		deterministicTaggingProofs := make([]libunlynx.PublishedDeterministicTaggingProof, sim.NbrResponses*sim.NbrServers)
+		pdhp := libunlynxproofs.PublishedDeterministicTaggingProof{Dhp: cps1, VectBefore: cipherVect, VectAfter: *tagSwitchedVect, K: pubKey, SB: newContrib}
+		deterministicTaggingProofs := make([]libunlynxproofs.PublishedDeterministicTaggingProof, sim.NbrResponses*sim.NbrServers)
 
 		for i := range deterministicTaggingProofs {
 			deterministicTaggingProofs[i] = pdhp
@@ -113,12 +115,12 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 		}
 		cipherVect = *libunlynx.EncryptIntVector(pubKey, tab)
 
-		var deterministicTaggingAddProofs []libunlynx.PublishedDetTagAdditionProof
+		var deterministicTaggingAddProofs []libunlynxproofs.PublishedDetTagAdditionProof
 		toAdd := libunlynx.SuiTe.Point().Mul(secKeyNew, libunlynx.SuiTe.Point().Base())
 
 		for i := range cipherVect {
 			tmp := libunlynx.SuiTe.Point().Add(cipherVect[i].C, toAdd)
-			prf := libunlynx.DetTagAdditionProofCreation(cipherVect[i].C, secKeyNew, toAdd, tmp)
+			prf := libunlynxproofs.DetTagAdditionProofCreation(cipherVect[i].C, secKeyNew, toAdd, tmp)
 			deterministicTaggingAddProofs = append(deterministicTaggingAddProofs, prf)
 		}
 
@@ -149,7 +151,7 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 
 			cipherVectGr = *tmp
 			det1 := cipherVectGr
-			det1.TaggingDet(secKey, secKey, pubKey, false)
+			protocolsunlynx.TaggingDet(&det1, secKey, secKey, pubKey, false)
 			deterministicGroupAttributes := make(libunlynx.DeterministCipherVector, len(det1))
 
 			for j, c := range det1 {
@@ -167,8 +169,8 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 			libunlynx.AddInMap(comparisonMap, v.DetTagGroupBy, v.Fr)
 		}
 
-		PublishedAggregationProof := libunlynx.AggregationProofCreation(detResponses, comparisonMap)
-		aggregationProofs := make([]libunlynx.PublishedAggregationProof, sim.NbrServers)
+		PublishedAggregationProof := libunlynxproofs.AggregationProofCreation(detResponses, comparisonMap)
+		aggregationProofs := make([]libunlynxproofs.PublishedAggregationProof, sim.NbrServers)
 		for i := range aggregationProofs {
 			aggregationProofs[i] = PublishedAggregationProof
 		}
@@ -181,10 +183,11 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 			responsesToShuffle[i] = libunlynx.ProcessResponse{GroupByEnc: cipherVectGr, AggregatingAttributes: testCipherVect1}
 		}
 
-		clientResponsesShuffled, pi, beta := libunlynx.ShuffleSequence(responsesToShuffle, nil, root.Roster().Aggregate, nil)
+		cv, _ := protocolsunlynx.ProcessResponseToMatrixCipherText(responsesToShuffle)
+		clientResponsesShuffled, pi, beta := libunlynx.ShuffleSequence(cv, nil, root.Roster().Aggregate, nil)
 		log.Lvl1("Starting shuffling proof creation")
-		shufflingProof := libunlynx.ShufflingProofCreation(responsesToShuffle, clientResponsesShuffled, nil, root.Roster().Aggregate, beta, pi)
-		shufflingProofs := make([]libunlynx.PublishedShufflingProof, sim.NbrServers*sim.NbrServers)
+		shufflingProof := libunlynxproofs.ShufflingProofCreation(cv, clientResponsesShuffled, nil, root.Roster().Aggregate, beta, pi)
+		shufflingProofs := make([]libunlynxproofs.PublishedShufflingProof, sim.NbrServers*sim.NbrServers)
 		for i := range shufflingProofs {
 			shufflingProofs[i] = shufflingProof
 		}
@@ -201,17 +204,17 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 			libunlynx.AddInMap(c3, i, v)
 		}
 
-		collAggrProof := libunlynx.CollectiveAggregationProofCreation(c1, detResponses, c3)
-		collAggrProofs := make([]libunlynx.PublishedCollectiveAggregationProof, int(math.Log2(float64(sim.NbrServers))))
+		collAggrProof := libunlynxproofs.CollectiveAggregationProofCreation(c1, detResponses, c3)
+		collAggrProofs := make([]libunlynxproofs.PublishedCollectiveAggregationProof, int(math.Log2(float64(sim.NbrServers))))
 		for i := range collAggrProofs {
 			collAggrProofs[i] = collAggrProof
 		}
-		root.ProtocolInstance().(*protocolsunlynx.ProofsVerificationProtocol).TargetOfVerification = protocolsunlynx.ProofsToVerify{KeySwitchingProofs: keySwitchingProofs,
+		root.ProtocolInstance().(*protocolsunlynxutils.ProofsVerificationProtocol).TargetOfVerification = protocolsunlynxutils.ProofsToVerify{KeySwitchingProofs: keySwitchingProofs,
 			DeterministicTaggingProofs: deterministicTaggingProofs, DetTagAdditionProofs: deterministicTaggingAddProofs, AggregationProofs: aggregationProofs, ShufflingProofs: shufflingProofs, CollectiveAggregationProofs: collAggrProofs}
 
 		round := libunlynx.StartTimer("ProofsVerification(SIMULATION)")
 		root.Start()
-		results := <-root.ProtocolInstance().(*protocolsunlynx.ProofsVerificationProtocol).FeedbackChannel
+		results := <-root.ProtocolInstance().(*protocolsunlynxutils.ProofsVerificationProtocol).FeedbackChannel
 		log.Lvl1(len(results), " proofs verified")
 		libunlynx.EndTimer(round)
 	}

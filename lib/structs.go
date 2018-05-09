@@ -149,21 +149,19 @@ func (cv *FilteredResponse) Add(cv1, cv2 FilteredResponse) *FilteredResponse {
 }
 
 // CipherVectorTag computes all the e for a process response based on a seed h
-func (cv *ProcessResponse) CipherVectorTag(h kyber.Point) []kyber.Scalar {
-	aggrAttrLen := len((*cv).AggregatingAttributes)
-	grpAttrLen := len((*cv).GroupByEnc)
-	whereAttrLen := len((*cv).WhereEnc)
-	es := make([]kyber.Scalar, aggrAttrLen+grpAttrLen+whereAttrLen)
+func (cv *CipherVector) CipherVectorTag(h kyber.Point) []kyber.Scalar {
+	length := len(*cv)
+	es := make([]kyber.Scalar, length)
 
 	seed, _ := h.MarshalBinary()
 	var wg sync.WaitGroup
 	if PARALLELIZE {
-		for i := 0; i < aggrAttrLen+grpAttrLen+whereAttrLen; i = i + VPARALLELIZE {
+		for i := 0; i < length; i = i + VPARALLELIZE {
 			wg.Add(1)
 			go func(i int) {
 				defer wg.Done()
-				for j := 0; j < VPARALLELIZE && (j+i < aggrAttrLen+grpAttrLen+whereAttrLen); j++ {
-					es[i+j] = ComputeE(i+j, *cv, seed, aggrAttrLen, grpAttrLen)
+				for j := 0; j < VPARALLELIZE && (j+i < length); j++ {
+					es[i+j] = ComputeE(i+j, *cv, seed)
 				}
 
 			}(i)
@@ -171,9 +169,9 @@ func (cv *ProcessResponse) CipherVectorTag(h kyber.Point) []kyber.Scalar {
 		}
 		wg.Wait()
 	} else {
-		for i := 0; i < aggrAttrLen+grpAttrLen+whereAttrLen; i++ {
+		for i := 0; i < length; i++ {
 			//+detAttrLen
-			es[i] = ComputeE(i, *cv, seed, aggrAttrLen, grpAttrLen)
+			es[i] = ComputeE(i, *cv, seed)
 		}
 
 	}
@@ -181,28 +179,17 @@ func (cv *ProcessResponse) CipherVectorTag(h kyber.Point) []kyber.Scalar {
 }
 
 // ComputeE computes e used in a shuffle proof. Computation based on a public seed.
-func ComputeE(index int, cv ProcessResponse, seed []byte, aggrAttrLen, grpAttrLen int) kyber.Scalar {
+func ComputeE(index int, cv CipherVector, seed []byte) kyber.Scalar {
 	var dataC []byte
 	var dataK []byte
 
 	randomCipher := SuiTe.XOF(seed)
 
-	if index < aggrAttrLen {
-		dataC, _ = cv.AggregatingAttributes[index].C.MarshalBinary()
-		dataK, _ = cv.AggregatingAttributes[index].K.MarshalBinary()
-
-	} else if index < aggrAttrLen+grpAttrLen {
-		dataC, _ = cv.GroupByEnc[index-aggrAttrLen].C.MarshalBinary()
-		dataK, _ = cv.GroupByEnc[index-aggrAttrLen].K.MarshalBinary()
-	} else {
-		dataC, _ = cv.WhereEnc[index-aggrAttrLen-grpAttrLen].C.MarshalBinary()
-		dataK, _ = cv.WhereEnc[index-aggrAttrLen-grpAttrLen].K.MarshalBinary()
-	}
+	dataC, _ = cv[index].C.MarshalBinary()
+	dataK, _ = cv[index].K.MarshalBinary()
 
 	randomCipher.Write(dataC)
 	randomCipher.Write(dataK)
-	//randomCipher.Message(nil, nil, dataC)
-	//randomCipher.Message(nil, nil, dataK)
 
 	return SuiTe.Scalar().Pick(randomCipher)
 }

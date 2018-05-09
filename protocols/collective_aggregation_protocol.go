@@ -13,11 +13,15 @@ import (
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/proofs"
 	"sync"
 )
 
 // CollectiveAggregationProtocolName is the registered name for the collective aggregation protocol.
 const CollectiveAggregationProtocolName = "CollectiveAggregation"
+
+// EMPTYKEY Const string to use as default key when use SimpleData array
+const EMPTYKEY = ""
 
 func init() {
 	network.RegisterMessage(DataReferenceMessage{})
@@ -64,11 +68,6 @@ type dataReferenceStruct struct {
 	DataReferenceMessage
 }
 
-type childAggregatedDataStruct struct {
-	*onet.TreeNode
-	ChildAggregatedDataMessage
-}
-
 type childAggregatedDataBytesStruct struct {
 	*onet.TreeNode
 	ChildAggregatedDataBytesMessage
@@ -96,6 +95,7 @@ type CollectiveAggregationProtocol struct {
 
 	// Protocol state data
 	GroupedData *map[libunlynx.GroupingKey]libunlynx.FilteredResponse
+	SimpleData  *[]libunlynx.CipherText
 	Proofs      bool
 }
 
@@ -125,8 +125,9 @@ func NewCollectiveAggregationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolIn
 
 // Start is called at the root to begin the execution of the protocol.
 func (p *CollectiveAggregationProtocol) Start() error {
-	if p.GroupedData == nil {
-		return errors.New("no data reference provided for aggregation")
+	_, err := p.getData()
+	if err != nil {
+		return err
 	}
 	log.Lvl1(p.ServerIdentity(), " started a Colective Aggregation Protocol (", len(*p.GroupedData), "local group(s) )")
 	p.SendToChildren(&DataReferenceMessage{})
@@ -139,6 +140,7 @@ func (p *CollectiveAggregationProtocol) Dispatch() error {
 	// 1. Aggregation announcement phase
 	if !p.IsRoot() {
 		p.aggregationAnnouncementPhase()
+		p.getData()
 	}
 
 	// 2. Ascending aggregation phase
@@ -211,7 +213,7 @@ func (p *CollectiveAggregationProtocol) ascendingAggregationPhase() *map[libunly
 			libunlynx.EndTimer(roundComput)
 			roundProofs2 := libunlynx.StartTimer(p.Name() + "_CollectiveAggregation(Proof-2ndPart)")
 			if p.Proofs {
-				PublishedCollectiveAggregationProof := libunlynx.CollectiveAggregationProofCreation(c1, childrenContribution.ChildData, *p.GroupedData)
+				PublishedCollectiveAggregationProof := libunlynxproofs.CollectiveAggregationProofCreation(c1, childrenContribution.ChildData, *p.GroupedData)
 				//publication
 				_ = PublishedCollectiveAggregationProof
 			}
@@ -243,6 +245,36 @@ func (p *CollectiveAggregationProtocol) ascendingAggregationPhase() *map[libunly
 	}
 
 	return p.GroupedData
+}
+
+// Setup and return the data needed in the aggregation to a usable format
+func (p *CollectiveAggregationProtocol) getData() (*map[libunlynx.GroupingKey]libunlynx.FilteredResponse, error) {
+	if p.GroupedData == nil && p.SimpleData == nil {
+		return nil, errors.New("no data reference is provided")
+	}
+
+	// If the two
+	if p.GroupedData != nil && p.SimpleData != nil {
+		return nil, errors.New("two data references are given in the struct")
+	}
+
+	if p.GroupedData != nil {
+		return p.GroupedData, nil
+	}
+
+	result := make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse)
+	if len(*p.SimpleData) > 0 {
+		result[EMPTYKEY] = libunlynx.FilteredResponse{
+			AggregatingAttributes: make([]libunlynx.CipherText, len(*p.SimpleData)),
+		}
+		for i, v := range *p.SimpleData {
+			result[EMPTYKEY].AggregatingAttributes[i] = v
+		}
+	}
+
+	p.GroupedData = &result
+	p.SimpleData = nil
+	return p.GroupedData, nil
 }
 
 // Conversion
@@ -295,7 +327,8 @@ func (sm *ChildAggregatedDataMessage) ToBytes() ([]byte, int, int, int) {
 
 // FromBytes converts a byte array to a ChildAggregatedDataMessage. Note that you need to create the (empty) object beforehand.
 func (sm *ChildAggregatedDataMessage) FromBytes(data []byte, gacbLength, aabLength, dtbLength int) {
-	elementLength := gacbLength*64 + aabLength*64 + dtbLength //CAUTION: hardcoded 64 (size of el-gamal element C,K)
+	cipherTextSize := libunlynx.CipherTextByteSize()
+	elementLength := gacbLength*cipherTextSize + aabLength*cipherTextSize + dtbLength
 
 	if elementLength != 0 && len(data) > 0 {
 		var nbrChildData int

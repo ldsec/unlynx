@@ -112,8 +112,8 @@ func NewDeterministicTaggingSimul(tni *onet.TreeNodeInstance, sim *Deterministic
 		for i := 0; i < sim.NbrResponses; i++ {
 			processResponses[i] = processResponse
 		}
-
-		pap.TargetOfSwitch = &processResponses
+		ct := protocolsunlynx.ProcessResponseToCipherVector(processResponses)
+		pap.TargetOfSwitch = &ct
 	}
 	tempKey := libunlynx.SuiTe.Scalar().Pick(random.New())
 	pap.SurveySecretKey = &tempKey

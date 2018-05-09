@@ -1,11 +1,12 @@
-// Package protocolsunlynx contains the LocalClearAggregation Protocol and its only purpose is to simulate aggregations done locally
+// Package protocolsunlynxutils contains the LocalClearAggregation Protocol and its only purpose is to simulate aggregations done locally
 // For example, it can be used to simulate a data provider doing some pre-processing on its data
-package protocolsunlynx
+package protocolsunlynxutils
 
 import (
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/store"
 )
 
 // LocalClearAggregationProtocolName is the registered name for the local cleartext aggregation protocol.
@@ -45,7 +46,7 @@ var finalResultClearAggr = make(chan []libunlynx.DpClearResponse)
 func (p *LocalClearAggregationProtocol) Start() error {
 	log.Lvl1(p.ServerIdentity(), "started a local clear aggregation protocol")
 	roundComput := libunlynx.StartTimer(p.Name() + "_LocalClearAggregation(START)")
-	result := libunlynx.AddInClear(p.TargetOfAggregation)
+	result := libunlynxstore.AddInClear(p.TargetOfAggregation)
 	libunlynx.EndTimer(roundComput)
 	finalResultClearAggr <- result
 	return nil

@@ -76,12 +76,14 @@ func (sim *KeySwitchingSimulation) Run(config *onet.SimulationConfig) error {
 			responses[i] = libunlynx.FilteredResponse{GroupByEnc: *libunlynx.EncryptIntVector(aggregateKey, tabGrps), AggregatingAttributes: *libunlynx.EncryptIntVector(aggregateKey, tabAttrs)}
 		}
 
+		responsesct, _ := protocolsunlynx.FilteredResponseToCipherVector(responses)
+
 		clientSecret := suite.Scalar().Pick(random.New())
 		clientPublic := suite.Point().Mul(clientSecret, suite.Point().Base())
 
 		root.ProtocolInstance().(*protocolsunlynx.KeySwitchingProtocol).TargetPublicKey = &clientPublic
-		log.Lvl1("Number of respones to key switch ", len(responses))
-		root.ProtocolInstance().(*protocolsunlynx.KeySwitchingProtocol).TargetOfSwitch = &responses
+		log.Lvl1("Number of respones to key switch ", len(responsesct))
+		root.ProtocolInstance().(*protocolsunlynx.KeySwitchingProtocol).TargetOfSwitch = &responsesct
 		root.ProtocolInstance().(*protocolsunlynx.KeySwitchingProtocol).Proofs = sim.Proofs
 
 		round := libunlynx.StartTimer("_KeySwitching(SIMULATION)")

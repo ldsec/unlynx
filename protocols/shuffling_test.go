@@ -76,7 +76,8 @@ func TestShuffling(t *testing.T) {
 
 	log.Lvl1("Data before shuffling ", mapi)
 
-	protocol.TargetOfShuffle = &mapi
+	cv, lengths := protocolsunlynx.ProcessResponseToMatrixCipherText(mapi)
+	protocol.TargetOfShuffle = &cv
 	protocol.CollectiveKey = groupPub
 	protocol.Proofs = true
 
@@ -87,10 +88,10 @@ func TestShuffling(t *testing.T) {
 
 	select {
 	case encryptedResult := <-feedback:
+		formatedResult := protocolsunlynx.MatrixCipherTextToProcessResponse(encryptedResult, lengths)
 
-		for _, v := range encryptedResult {
+		for _, v := range formatedResult {
 			decryptedVAggr := libunlynx.DecryptIntVector(groupSec, &v.AggregatingAttributes)
-			log.Lvl1(decryptedVAggr)
 			decryptedVGrp := libunlynx.DecryptIntVector(groupSec, &v.GroupByEnc)
 			present := false
 			for _, w := range mapi {

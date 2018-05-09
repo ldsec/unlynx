@@ -8,6 +8,8 @@ import (
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/proofs"
+	"sync"
 )
 
 // AddRmServerProtocolName is the registered name for the local aggregation protocol.
@@ -25,10 +27,10 @@ type AddRmServerProtocol struct {
 	*onet.TreeNodeInstance
 
 	// Protocol feedback channel
-	FeedbackChannel chan []libunlynx.DpResponse
+	FeedbackChannel chan []libunlynx.CipherText
 
 	// Protocol state data
-	TargetOfTransformation []libunlynx.DpResponse
+	TargetOfTransformation []libunlynx.CipherText
 	KeyToRm                kyber.Scalar
 	Proofs                 bool
 	Add                    bool
@@ -38,55 +40,29 @@ type AddRmServerProtocol struct {
 func NewAddRmProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 	pvp := &AddRmServerProtocol{
 		TreeNodeInstance: n,
-		FeedbackChannel:  make(chan []libunlynx.DpResponse),
+		FeedbackChannel:  make(chan []libunlynx.CipherText),
 	}
 
 	return pvp, nil
 }
 
-var finalResultAddrm = make(chan []libunlynx.DpResponse)
+var finalResultAddrm = make(chan []libunlynx.CipherText)
 
 // Start is called at the root to start the execution of the Add/Rm protocol.
 func (p *AddRmServerProtocol) Start() error {
 
 	log.Lvl1(p.Name(), "starts a server adding/removing Protocol")
 	roundComput := libunlynx.StartTimer(p.Name() + "_AddRmServer(PROTOCOL)")
-
-	result := make([]libunlynx.DpResponse, len(p.TargetOfTransformation))
-
 	wg := libunlynx.StartParallelize(len(p.TargetOfTransformation))
-	for i, v := range p.TargetOfTransformation {
-		if libunlynx.PARALLELIZE {
-			go func(i int, v libunlynx.DpResponse) {
-				defer wg.Done()
-				result[i] = changeEncryption(v, p.KeyToRm, p.Add)
-			}(i, v)
-		} else {
-			result[i] = changeEncryption(v, p.KeyToRm, p.Add)
-		}
 
-	}
-
-	libunlynx.EndParallelize(wg)
+	result := make([]libunlynx.CipherText, len(p.TargetOfTransformation))
+	result = changeEncryption(p.TargetOfTransformation, p.KeyToRm, p.Add)
 	libunlynx.EndTimer(roundComput)
 
 	roundProof := libunlynx.StartTimer(p.Name() + "_AddRmServer(PROOFS)")
-	pubs := make([]libunlynx.PublishedAddRmProof, 0)
+	pubs := make([]libunlynxproofs.PublishedAddRmProof, 0)
 	if p.Proofs {
-		wg := libunlynx.StartParallelize(len(result))
-		for i, v := range result {
-			if libunlynx.PARALLELIZE {
-				go func(i int, v libunlynx.DpResponse) {
-					defer wg.Done()
-					proofsCreation(pubs, p.TargetOfTransformation[i], v, p.KeyToRm, p.Add)
-				}(i, v)
-
-			} else {
-				proofsCreation(pubs, p.TargetOfTransformation[i], v, p.KeyToRm, p.Add)
-			}
-
-		}
-		libunlynx.EndParallelize(wg)
+		proofsCreation(pubs, p.TargetOfTransformation, result, p.KeyToRm, p.Add)
 	}
 
 	libunlynx.EndTimer(roundProof)
@@ -95,12 +71,12 @@ func (p *AddRmServerProtocol) Start() error {
 	wg = libunlynx.StartParallelize(len(pubs))
 	for _, v := range pubs {
 		if libunlynx.PARALLELIZE {
-			go func(v libunlynx.PublishedAddRmProof) {
+			go func(v libunlynxproofs.PublishedAddRmProof) {
 				defer wg.Done()
-				libunlynx.PublishedAddRmCheckProof(v)
+				libunlynxproofs.PublishedAddRmCheckProof(v)
 			}(v)
 		} else {
-			libunlynx.PublishedAddRmCheckProof(v)
+			libunlynxproofs.PublishedAddRmCheckProof(v)
 		}
 
 	}
@@ -118,47 +94,46 @@ func (p *AddRmServerProtocol) Dispatch() error {
 	return nil
 }
 
-func changeEncryptionKeyMapCipherTexts(cv map[string]libunlynx.CipherText, serverAddRmKey kyber.Scalar, toAdd bool) map[string]libunlynx.CipherText {
-	result := make(map[string]libunlynx.CipherText, len(cv))
-	for j, w := range cv {
-		tmp := libunlynx.SuiTe.Point().Mul(serverAddRmKey, w.K)
-		copyAux := result[j]
-		copyAux.K = w.K
-		if toAdd {
-			copyAux.C = libunlynx.SuiTe.Point().Add(w.C, tmp)
+func changeEncryption(cipherTexts []libunlynx.CipherText, serverAddRmKey kyber.Scalar, toAdd bool) []libunlynx.CipherText {
+	result := make([]libunlynx.CipherText, len(cipherTexts))
 
-		} else {
-			copyAux.C = libunlynx.SuiTe.Point().Sub(w.C, tmp)
+	var wg sync.WaitGroup
+	if libunlynx.PARALLELIZE {
+		for i := 0; i < len(cipherTexts); i += libunlynx.VPARALLELIZE {
+			wg.Add(1)
+			go func(i int) {
+				for j := 0; j < libunlynx.VPARALLELIZE && (i+j) < len(cipherTexts); j++ {
+					result[i+j] = changeEncryptionKeyCipherTexts(cipherTexts[i+j], serverAddRmKey, toAdd)
+				}
+				defer wg.Done()
+			}(i)
 		}
-		result[j] = copyAux
+		wg.Wait()
+	} else {
+		for i, v := range cipherTexts {
+			result[i] = changeEncryptionKeyCipherTexts(v, serverAddRmKey, toAdd)
+		}
 	}
 	return result
 }
 
-func changeEncryption(response libunlynx.DpResponse, keyToRm kyber.Scalar, add bool) libunlynx.DpResponse {
-	result := libunlynx.DpResponse{}
-
-	result.GroupByClear = response.GroupByClear
-	result.GroupByEnc = changeEncryptionKeyMapCipherTexts(response.GroupByEnc, keyToRm, add)
-	result.WhereClear = response.WhereClear
-	result.WhereEnc = changeEncryptionKeyMapCipherTexts(response.WhereEnc, keyToRm, add)
-	result.AggregatingAttributesEnc = changeEncryptionKeyMapCipherTexts(response.AggregatingAttributesEnc, keyToRm, add)
-	result.AggregatingAttributesClear = response.AggregatingAttributesClear
+func changeEncryptionKeyCipherTexts(cipherText libunlynx.CipherText, serverAddRmKey kyber.Scalar, toAdd bool) libunlynx.CipherText {
+	tmp := libunlynx.SuiTe.Point().Mul(serverAddRmKey, cipherText.K)
+	result := libunlynx.CipherText{}
+	result.K = cipherText.K
+	if toAdd {
+		result.C = libunlynx.SuiTe.Point().Add(cipherText.C, tmp)
+	} else {
+		result.C = libunlynx.SuiTe.Point().Sub(cipherText.C, tmp)
+	}
 	return result
 }
 
-func proofsCreation(pubs []libunlynx.PublishedAddRmProof, target, v libunlynx.DpResponse, keyToRm kyber.Scalar, add bool) {
-	targetAggregatingAttributesEnc := target.AggregatingAttributesEnc
-	targetGroupingAttributes := target.GroupByEnc
-	targetWhereAttributes := target.WhereEnc
-
-	prfAggr := libunlynx.VectorAddRmProofCreation(targetAggregatingAttributesEnc, v.AggregatingAttributesEnc, keyToRm, add)
-	prfGrp := libunlynx.VectorAddRmProofCreation(targetGroupingAttributes, v.GroupByEnc, keyToRm, add)
-	prfWhere := libunlynx.VectorAddRmProofCreation(targetWhereAttributes, v.WhereEnc, keyToRm, add)
+func proofsCreation(pubs []libunlynxproofs.PublishedAddRmProof, target, ct []libunlynx.CipherText, keyToRm kyber.Scalar, add bool) {
 	ktopub := libunlynx.SuiTe.Point().Mul(keyToRm, libunlynx.SuiTe.Point().Base())
-	pub1 := libunlynx.PublishedAddRmProof{Arp: prfAggr, VectBefore: targetAggregatingAttributesEnc, VectAfter: v.AggregatingAttributesEnc, Krm: ktopub, ToAdd: add}
-	pub2 := libunlynx.PublishedAddRmProof{Arp: prfGrp, VectBefore: v.GroupByEnc, VectAfter: v.GroupByEnc, Krm: ktopub, ToAdd: add}
-	pub3 := libunlynx.PublishedAddRmProof{Arp: prfWhere, VectBefore: v.WhereEnc, VectAfter: v.WhereEnc, Krm: ktopub, ToAdd: add}
 
-	pubs = append(pubs, pub1, pub2, pub3)
+	prf := libunlynxproofs.VectorAddRmProofCreation(target, ct, keyToRm, add)
+	pub := libunlynxproofs.PublishedAddRmProof{Arp: prf, VectBefore: ct, VectAfter: ct, Krm: ktopub, ToAdd: add}
+
+	pubs = append(pubs, pub)
 }

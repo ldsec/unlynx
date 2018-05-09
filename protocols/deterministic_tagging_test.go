@@ -60,8 +60,8 @@ func TestDeterministicTagging(t *testing.T) {
 	mapi[3] = processResponse1
 
 	log.Lvl1("Data to be Tagged ", mapi)
-
-	protocol.TargetOfSwitch = &mapi
+	cta := protocolsunlynx.ProcessResponseToCipherVector(mapi)
+	protocol.TargetOfSwitch = &cta
 	feedback := protocol.FeedbackChannel
 	go protocol.Start()
 
@@ -69,7 +69,8 @@ func TestDeterministicTagging(t *testing.T) {
 
 	select {
 	case encryptedResult := <-feedback:
-		for _, v := range encryptedResult {
+		goodFormatResult := protocolsunlynx.DeterCipherVectorToProcessResponseDet(encryptedResult, mapi)
+		for _, v := range goodFormatResult {
 			present := false
 			for _, w := range mapi {
 				if reflect.DeepEqual(v.PR, w) {
@@ -82,19 +83,21 @@ func TestDeterministicTagging(t *testing.T) {
 		}
 		threeSame := 0
 		threeSame1 := 0
-		for i, v := range encryptedResult {
-			for j, w := range encryptedResult {
-				if reflect.DeepEqual(v.DetTagGroupBy, w.DetTagGroupBy) && j != i {
-					threeSame++
-				}
-				if reflect.DeepEqual(v.DetTagWhere, w.DetTagWhere) && j != i {
-					threeSame1++
+		for i, v := range goodFormatResult {
+			for j, w := range goodFormatResult {
+				if i != j {
+					if reflect.DeepEqual(v.DetTagGroupBy, w.DetTagGroupBy) {
+						threeSame++
+					}
+					if reflect.DeepEqual(v.DetTagWhere, w.DetTagWhere) {
+						threeSame1++
+					}
 				}
 			}
 		}
 		assert.True(t, threeSame == 6)
 		assert.True(t, threeSame1 == 6)
-		for _, v := range encryptedResult {
+		for _, v := range goodFormatResult {
 			log.Lvl1(v)
 		}
 

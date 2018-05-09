@@ -116,7 +116,8 @@ func NewShufflingSimul(tni *onet.TreeNodeInstance, sim *ShufflingSimulation) (on
 			clientResponses[i] = clientResponse
 		}
 
-		pap.TargetOfShuffle = &clientResponses
+		targetToShuffle, _ := protocolsunlynx.ProcessResponseToMatrixCipherText(clientResponses)
+		pap.TargetOfShuffle = &targetToShuffle
 	}
 
 	return pap, err

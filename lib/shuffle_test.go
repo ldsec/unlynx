@@ -5,6 +5,7 @@ import (
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/proofs"
 	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
@@ -21,25 +22,22 @@ func TestShuffleSequence(t *testing.T) {
 		collectivePrivKey = libunlynx.SuiTe.Scalar().Add(collectivePrivKey, priv[i])
 	}
 
-	inputList := make([]libunlynx.ProcessResponse, k)
+	inputList := make([]libunlynx.CipherVector, k)
 
 	for i := 0; i < k; i++ {
-		inputList[i] = libunlynx.ProcessResponse{}
+		inputList[i] = make(libunlynx.CipherVector, k)
 
-		for ii := range inputList[i].GroupByEnc {
-			inputList[i].GroupByEnc[ii] = *libunlynx.EncryptInt(collectivePubKey, int64(i+1))
-		}
-		for iii := range inputList[i].AggregatingAttributes {
-			inputList[i].AggregatingAttributes[iii] = *libunlynx.EncryptInt(collectivePubKey, int64(3*i+3))
+		for ii := range inputList[i] {
+			inputList[i][ii] = *libunlynx.EncryptInt(collectivePubKey, int64(i+1))
 		}
 
 	}
 	outputlist, pi, beta := libunlynx.ShuffleSequence(inputList, nil, collectivePubKey, nil)
 
 	//with proof
-	shuffleProof := libunlynx.ShufflingProofCreation(inputList, outputlist, nil, collectivePubKey, beta, pi)
+	shuffleProof := libunlynxproofs.ShufflingProofCreation(inputList, outputlist, nil, collectivePubKey, beta, pi)
 	//shuffleProof = lib.ShufflingProofCreation(inputList, inputList, nil, collectivePubKey, beta, pi)
-	log.Lvl1(libunlynx.ShufflingProofVerification(shuffleProof, collectivePubKey))
+	log.Lvl1(libunlynxproofs.ShufflingProofVerification(shuffleProof, collectivePubKey))
 
 	piinv := make([]int, k)
 	for i := 0; i < k; i++ {
@@ -47,13 +45,9 @@ func TestShuffleSequence(t *testing.T) {
 	}
 
 	for i := 0; i < k; i++ {
-		for iii := range inputList[0].GroupByEnc {
-			decrypted := libunlynx.DecryptInt(collectivePrivKey, outputlist[piinv[i]].GroupByEnc[iii])
+		for iii := range inputList[0] {
+			decrypted := libunlynx.DecryptInt(collectivePrivKey, outputlist[piinv[i]][iii])
 			assert.Equal(t, int64(i+1), decrypted)
-		}
-		for iiii := range inputList[0].AggregatingAttributes {
-			decrypted := libunlynx.DecryptInt(collectivePrivKey, outputlist[piinv[i]].AggregatingAttributes[iiii])
-			assert.Equal(t, int64(3*i+3), decrypted)
 		}
 	}
 
