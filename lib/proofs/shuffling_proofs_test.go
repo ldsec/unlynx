@@ -2,9 +2,9 @@ package libunlynxproofs_test
 
 import (
 	"github.com/lca1/unlynx/lib"
-	"testing"
 	"github.com/lca1/unlynx/lib/proofs"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestShufflingProof(t *testing.T) {
