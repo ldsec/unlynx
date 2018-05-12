@@ -6,7 +6,7 @@ UnLynx is developed by lca1 (Laboratory for Communications and Applications in E
 
 ## Documentation
 
-* The UnLynx library does an intensive use of [Overlay-network (ONet) library](https://github.com/dedis/onet)
+* The UnLynx library does an intensive use of [Overlay-network (ONet) library](https://github.com/dedis/onet) and of the [Advanced Crypto (kyber) library](https://github.com/dedis/kyber).
 * For more information regarding the underlying architecture please refer to the stable version of ONet `github.bom/dedis/onet`
 * To check the code organisation, have a look at [Layout](https://github.com/lca1/unlynx/wiki/Layout)
 * For more information on how to run our services, simulations and apps, go to [Running UnLynx](https://github.com/lca1/unlynx/wiki/Running-UnLynx)
