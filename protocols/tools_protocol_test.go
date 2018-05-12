@@ -30,7 +30,46 @@ func TestRetrieveSimpleDataFromMap(t *testing.T) {
 }
 
 func TestProcessResponseToCipherVector(t *testing.T) {
-	//TODO
+	_, pubKey := libunlynx.GenKey()
+
+	testCipherVect := make(libunlynx.CipherVector, 1)
+	expRes := []int64{1}
+	for i, p := range expRes {
+		testCipherVect[i] = *libunlynx.EncryptInt(pubKey, p)
+	}
+	processResponse1 := libunlynx.ProcessResponse{GroupByEnc: testCipherVect, WhereEnc: testCipherVect, AggregatingAttributes: testCipherVect}
+
+	testCipherVect1 := make(libunlynx.CipherVector, 1)
+	expRes1 := []int64{1}
+	for i, p := range expRes1 {
+		testCipherVect1[i] = *libunlynx.EncryptInt(pubKey, p)
+	}
+	processResponse2 := libunlynx.ProcessResponse{GroupByEnc: testCipherVect1, WhereEnc: testCipherVect1, AggregatingAttributes: testCipherVect1}
+
+	testCipherVect2 := make(libunlynx.CipherVector, 1)
+	expRes2 := []int64{2}
+	for i, p := range expRes2 {
+		testCipherVect2[i] = *libunlynx.EncryptInt(pubKey, p)
+	}
+	processResponse3 := libunlynx.ProcessResponse{GroupByEnc: testCipherVect2, WhereEnc: testCipherVect2, AggregatingAttributes: testCipherVect2}
+
+	mapi := make([]libunlynx.ProcessResponse, 4)
+	mapi[0] = processResponse1
+	mapi[1] = processResponse2
+	mapi[2] = processResponse3
+	mapi[3] = processResponse1
+
+	cv := protocolsunlynx.ProcessResponseToCipherVector(mapi)
+	determCv := make(libunlynx.DeterministCipherVector, 0)
+	for _, v := range cv {
+		determCv = append(determCv, libunlynx.DeterministCipherText{Point: v.C})
+	}
+
+	result := protocolsunlynx.DeterCipherVectorToProcessResponseDet(determCv, mapi)
+	for i, v := range result {
+		assert.Equal(t, mapi[i], v.PR)
+		assert.Equal(t, len(v.DetTagWhere), len(mapi[i].WhereEnc))
+	}
 }
 
 func TestProcessResponseToMatrixCipherText(t *testing.T) {
