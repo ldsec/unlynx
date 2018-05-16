@@ -11,7 +11,7 @@ import (
 	"strconv"
 )
 
-//Defines the simulation for the service-medCo to be run with cothority/simul.
+//Defines the simulation for the default service to be run with cothority/simul.
 func init() {
 	onet.SimulationRegister("ServiceUnLynxDefault", NewSimulationUnLynx)
 }
