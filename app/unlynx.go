@@ -48,7 +48,7 @@ const (
 func main() {
 	cliApp := cli.NewApp()
 	cliApp.Name = BinaryName
-	cliApp.Usage = "Query medical information securely and privately"
+	cliApp.Usage = "Query information securely and privately"
 	cliApp.Version = Version
 
 	binaryFlags := []cli.Flag{
