@@ -1,8 +1,9 @@
-// The collective aggregation protocol permits the cothority to collectively aggregate the local
-// results of all the servers.
-// It uses the tree structure of the cothority. The root sends down an aggregation trigger message. The leafs
-// respond with their local result and other nodes aggregate what they receive before forwarding the
-// aggregation result up the tree until the root can produce the final result.
+// The collective aggregation protocol collectively aggregates the local results of a query from all the servers.
+// It uses a tree structure aggregation:
+// 1. the root sends down an aggregation trigger message;
+// 2. the leafs respond with their local result;
+// 3. parent nodes aggregate the information from their children;
+// 4. these nodes forward the aggregation result up the tree.
 
 package protocolsunlynx
 

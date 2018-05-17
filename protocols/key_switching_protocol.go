@@ -1,12 +1,9 @@
-// Package protocolsunlynx contains the key switching protocol which permits to switch a ciphertext
-// encrypted under a specific key by using an El-Gamal encryption (probabilistic) to a ciphertext encrypted
-// under another key.
-// The El-Gamal ciphertext should be encrypted by the collective public key of the cothority. In that case,
-// each cothority server (node) can remove his El-Gamal secret contribution and add a new
-// secret contribution containing the new key. By doing that the ciphertext is never decrypted.
-// This is done by creating a circuit between the servers. The ciphertext is sent through this circuit and
-// each server applies its transformation on the ciphertext and forwards it to the next node in the circuit
-// until it comes back to the server who started the protocol.
+// The key switching protocol switches a ciphertext encrypted under a specific key to another ciphertext encrypted under
+// another key.
+// To do this each cothority server (node) removes its secret contribution and homomorphically adds the ciphertexts with
+// a new secret contribution containing the new key.
+// This protocol operates in a circuit between the servers: the data is sent sequentially through this circuit and
+// each server applies its transformation.
 package protocolsunlynx
 
 import (

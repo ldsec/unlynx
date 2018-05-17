@@ -1,11 +1,7 @@
-// Package protocolsunlynx contains the distributed deterministic tagging protocol which permits to add a deterministic
-// tag to a DP response.
-// The El-Gamal encrypted DP response should be encrypted by the collective public key of the cothority.
-// In that case, each cothority server (node) can remove his El-Gamal secret contribution and homomorphically
-// multiply the ciphertext to participate in the tag creation.
-// This is done by creating a circuit between the servers. The DP response is sent through this circuit and
-// each server applies its transformation on it and forwards it to the next node in the circuit
-// until it comes back to the server who started the protocol.
+// The distributed deterministic tagging protocol deterministically tags ciphertexts.
+// In other words, the probabilistic ciphertexts are converted to a deterministic tag (identifier).
+// To do this each cothority server (node) removes its secret contribution and homomorphically multiplies the ciphertexts with an ephemeral secret.
+// This protocol operates in a circuit between the servers: the data is sent sequentially through this circuit and each server applies its transformation.
 package protocolsunlynx
 
 import (

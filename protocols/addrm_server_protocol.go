@@ -1,6 +1,5 @@
-// Package protocolsunlynx contains the adding/removing protocol which permits to change the encryption of data.
-// It allows to remove/add a server contribution to the encryption of ciphertexts.
-// We assume that the server joining/leaving the cothority participates in the process.
+// The addrm_server protocol removes/adds a conode from the collective authority.
+// In other words, it removes/adds a server's contribution from the original ciphertexts.
 package protocolsunlynx
 
 import (
