@@ -1,7 +1,4 @@
-// Package protocolsunlynx contains the shuffling protocol which permits to rerandomize and shuffle a list of DP responses.
-// The El-Gamal encrypted DP response should be encrypted by the collective public key of the cothority.
-// In that case, each cothority server (node) can  homomorphically rerandomize and shuffle the DP responses.
-// The shuffling protocol rerandomizes and shuffles a list of ciphertexts.
+// Package protocolsunlynx implement the shuffling protocol. It rerandomizes and shuffles a list of ciphertexts.
 // This operates in a circuit between the servers: the data is sent sequentially through this circuit and each
 // server applies its transformation.
 package protocolsunlynx

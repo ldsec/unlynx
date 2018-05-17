@@ -1,5 +1,5 @@
-// The key switching protocol switches a ciphertext encrypted under a specific key to another ciphertext encrypted under
-// another key.
+// Package protocolsunlynx implements the key switching protocol.
+// It permits to switch a ciphertext encrypted under a specific key to another ciphertext encrypted under another key.
 // To do this each cothority server (node) removes its secret contribution and homomorphically adds the ciphertexts with
 // a new secret contribution containing the new key.
 // This protocol operates in a circuit between the servers: the data is sent sequentially through this circuit and

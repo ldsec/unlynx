@@ -1,5 +1,6 @@
-// The addrm_server protocol removes/adds a conode from the collective authority.
-// In other words, it removes/adds a server's contribution from the original ciphertexts.
+// Package protocolsunlynx implement the addrm_server protocol.
+// It permits to removes/adds a conode from the collective authority or, in other words,
+// it removes/adds a server's contribution from the original ciphertexts.
 package protocolsunlynx
 
 import (

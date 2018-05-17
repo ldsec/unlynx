@@ -1,7 +1,9 @@
-// The distributed deterministic tagging protocol deterministically tags ciphertexts.
+// Package protocolsunlynx implement the distributed deterministic tagging protocol, that deterministically tags ciphertexts.
 // In other words, the probabilistic ciphertexts are converted to a deterministic tag (identifier).
-// To do this each cothority server (node) removes its secret contribution and homomorphically multiplies the ciphertexts with an ephemeral secret.
-// This protocol operates in a circuit between the servers: the data is sent sequentially through this circuit and each server applies its transformation.
+// To do this each cothority server (node) removes its secret contribution and homomorphically multiplies
+// the ciphertexts with an ephemeral secret.
+// This protocol operates in a circuit between the servers: the data is sent sequentially through this circuit and each
+// server applies its transformation.
 package protocolsunlynx
 
 import (
