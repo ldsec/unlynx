@@ -5,6 +5,7 @@ import (
 	"github.com/dedis/kyber/util/random"
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
+	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
 )
@@ -54,4 +55,23 @@ func TestReadFromGobFile(t *testing.T) {
 
 	fmt.Println(dataCipher)
 	os.Remove("pre_compute_multiplications.gob")
+}
+
+func TestAddInMap(t *testing.T) {
+	_, pubKey := libunlynx.GenKey()
+	k := 5
+	key := libunlynx.GroupingKey("test")
+
+	cv := make(libunlynx.CipherVector, k)
+	for i := 0; i < k; i++ {
+		cv[i] = *libunlynx.EncryptInt(pubKey, int64(i))
+	}
+	added := libunlynx.FilteredResponse{GroupByEnc: cv, AggregatingAttributes: cv}
+
+	mapToTest := make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse)
+	_, ok := mapToTest[key]
+	assert.False(t, ok)
+	libunlynx.AddInMap(mapToTest, key, added)
+	_, ok = mapToTest[key]
+	assert.True(t, ok)
 }
