@@ -99,7 +99,7 @@ func TestConvertDataToMap(t *testing.T) {
 	first := "test"
 	start := 1
 	mapRes := libunlynx.ConvertDataToMap(toTest, first, start)
-	arrayRes :=  libunlynx.ConvertMapToData(mapRes, first, start)
+	arrayRes := libunlynx.ConvertMapToData(mapRes, first, start)
 
 	assert.Equal(t, toTest, arrayRes)
 }
