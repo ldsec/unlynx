@@ -120,3 +120,26 @@ func TestClientResponseDetConverter(t *testing.T) {
 	assert.Equal(t, aggregating, libunlynx.DecryptIntVector(secKey, &newCrd.Fr.AggregatingAttributes))
 	assert.Equal(t, grouping, libunlynx.DecryptIntVector(secKey, &newCrd.Fr.GroupByEnc))
 }
+
+func TestProcessResponseToFromBytes(t *testing.T) {
+	k := 5
+	secKey, pubKey := libunlynx.GenKey()
+	cv1 := make(libunlynx.CipherVector, k)
+	for i := 0; i < k; i++ {
+		cv1[i] = *libunlynx.EncryptInt(pubKey, int64(i))
+	}
+
+	pr1 := libunlynx.ProcessResponse{WhereEnc: cv1, GroupByEnc: cv1, AggregatingAttributes: cv1}
+
+	data, gacbLength, aabLength, pgaebLength := pr1.ToBytes()
+	res := libunlynx.ProcessResponse{}
+	res.FromBytes(data, gacbLength, aabLength, pgaebLength)
+	for i := 0; i < k; i++ {
+		intTest := int(libunlynx.DecryptInt(secKey, res.GroupByEnc[i]))
+		assert.Equal(t, intTest, i)
+		intTest = int(libunlynx.DecryptInt(secKey, res.WhereEnc[i]))
+		assert.Equal(t, intTest, i)
+		intTest = int(libunlynx.DecryptInt(secKey, res.AggregatingAttributes[i]))
+		assert.Equal(t, intTest, i)
+	}
+}

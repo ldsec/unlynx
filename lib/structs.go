@@ -352,9 +352,10 @@ func (cv *ProcessResponse) FromBytes(data []byte, gacbLength, aabLength, pgaebLe
 	(*cv).WhereEnc = make(CipherVector, pgaebLength)
 	(*cv).GroupByEnc = make(CipherVector, gacbLength)
 
-	gacbByteLength := gacbLength * 64
-	aabByteLength := aabLength * 64 //CAREFUL: hardcoded 64 (size of el-gamal element C,K)
-	pgaebByteLength := pgaebLength * 64
+	cipherTextByteSize := CipherTextByteSize()
+	gacbByteLength := gacbLength * cipherTextByteSize
+	aabByteLength := aabLength * cipherTextByteSize
+	pgaebByteLength := pgaebLength * cipherTextByteSize
 
 	gacb := data[:gacbByteLength]
 	aab := data[gacbByteLength : gacbByteLength+aabByteLength]
