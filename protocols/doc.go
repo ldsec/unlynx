@@ -5,7 +5,7 @@
 // under the collective public key of the cothority (constructed with the secret of each node in order to have
 // strongest-link security),
 // the nodes can:
-//	- a server leaving or joining the cothority can change data encryption to adapt to new collective key
+//	- a server leaving or joining the cothority can change data encryption to adapt to a new collective key
 //	  (addrm_server_protocol)
 //	- collectively aggregate their local results (collective_aggregate_protocol)
 //	- participates in the deterministic distributed tag creation (deterministic_tagging_protocol)
