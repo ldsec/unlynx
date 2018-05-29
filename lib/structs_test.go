@@ -121,25 +121,60 @@ func TestClientResponseDetConverter(t *testing.T) {
 	assert.Equal(t, grouping, libunlynx.DecryptIntVector(secKey, &newCrd.Fr.GroupByEnc))
 }
 
-func TestProcessResponseToFromBytes(t *testing.T) {
-	k := 5
+// TestProcessResponseConverter tests the ProcessResponse converter (to bytes).
+func TestProcessResponseConverter(t *testing.T) {
+	whereEnc := []int64{1, 5, 6}
+	grouping := []int64{1}
+	aggregating := []int64{0, 1, 3, 103, 103}
+
 	secKey, pubKey := libunlynx.GenKey()
-	cv1 := make(libunlynx.CipherVector, k)
-	for i := 0; i < k; i++ {
-		cv1[i] = *libunlynx.EncryptInt(pubKey, int64(i))
+
+	pr := libunlynx.ProcessResponse{
+		WhereEnc:              *libunlynx.EncryptIntVector(pubKey, whereEnc),
+		GroupByEnc:            *libunlynx.EncryptIntVector(pubKey, grouping),
+		AggregatingAttributes: *libunlynx.EncryptIntVector(pubKey, aggregating),
 	}
 
-	pr1 := libunlynx.ProcessResponse{WhereEnc: cv1, GroupByEnc: cv1, AggregatingAttributes: cv1}
+	b, gacbLength, aabLength, pgaebLength := pr.ToBytes()
+	newPr := libunlynx.ProcessResponse{}
+	newPr.FromBytes(b, gacbLength, aabLength, pgaebLength)
 
-	data, gacbLength, aabLength, pgaebLength := pr1.ToBytes()
-	res := libunlynx.ProcessResponse{}
-	res.FromBytes(data, gacbLength, aabLength, pgaebLength)
-	for i := 0; i < k; i++ {
-		intTest := int(libunlynx.DecryptInt(secKey, res.GroupByEnc[i]))
-		assert.Equal(t, intTest, i)
-		intTest = int(libunlynx.DecryptInt(secKey, res.WhereEnc[i]))
-		assert.Equal(t, intTest, i)
-		intTest = int(libunlynx.DecryptInt(secKey, res.AggregatingAttributes[i]))
-		assert.Equal(t, intTest, i)
+	assert.Equal(t, whereEnc, libunlynx.DecryptIntVector(secKey, &newPr.WhereEnc))
+	assert.Equal(t, grouping, libunlynx.DecryptIntVector(secKey, &newPr.GroupByEnc))
+	assert.Equal(t, aggregating, libunlynx.DecryptIntVector(secKey, &newPr.AggregatingAttributes))
+}
+
+func TestProcessResponseDetConverter(t *testing.T) {
+	whereEnc := []int64{1, 5, 6}
+	grouping := []int64{1}
+	aggregating := []int64{0, 1, 3, 103, 103}
+
+	_, pubKey := libunlynx.GenKey()
+
+	pr := libunlynx.ProcessResponse{
+		WhereEnc:              *libunlynx.EncryptIntVector(pubKey, whereEnc),
+		GroupByEnc:            *libunlynx.EncryptIntVector(pubKey, grouping),
+		AggregatingAttributes: *libunlynx.EncryptIntVector(pubKey, aggregating),
 	}
+
+	detTagWhere := make([]libunlynx.GroupingKey, 2)
+	detTagWhere[0] = libunlynx.GroupingKey("test1")
+	detTagWhere[1] = libunlynx.GroupingKey("test2")
+	prDet := libunlynx.ProcessResponseDet{
+		PR:            pr,
+		DetTagGroupBy: "",
+		DetTagWhere:   detTagWhere,
+	}
+
+	b, gacbLength, aabLength, pgaebLength, dtbgbLength, dtbwLength := prDet.ToBytes()
+	newPrDet := libunlynx.ProcessResponseDet{
+		PR:            libunlynx.ProcessResponse{},
+		DetTagGroupBy: "",
+		DetTagWhere:   nil,
+	}
+	newPrDet.FromBytes(b, gacbLength, aabLength, pgaebLength, dtbgbLength, dtbwLength)
+
+	assert.Equal(t, prDet.DetTagGroupBy, newPrDet.DetTagGroupBy)
+	assert.Equal(t, prDet.DetTagWhere, newPrDet.DetTagWhere)
+	// We already tested the ProcessResponseConverter, no need to redo it
 }
