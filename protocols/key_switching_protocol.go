@@ -24,7 +24,7 @@ const KeySwitchingProtocolName = "KeySwitching"
 func init() {
 	network.RegisterMessage(KeySwitchedCipherMessage{})
 	network.RegisterMessage(KeySwitchedCipherBytesMessage{})
-	network.RegisterMessage(KSCBLengthMessage{})
+	//network.RegisterMessage(KSCBLengthMessage{})
 	onet.GlobalProtocolRegister(KeySwitchingProtocolName, NewKeySwitchingProtocol)
 }
 
@@ -52,13 +52,14 @@ type KeySwitchedCipherMessage struct {
 
 // KeySwitchedCipherBytesMessage is the KeySwitchedCipherMessage in bytes.
 type KeySwitchedCipherBytesMessage struct {
+	LenB int
 	Data []byte
 }
 
 // KSCBLengthMessage represents a message containing the lengths needed to read the KeySwitchedCipherBytesMessage
-type KSCBLengthMessage struct {
-	LenB int
-}
+//type KSCBLengthMessage struct {
+//	LenB int
+//}
 
 // Structs
 //______________________________________________________________________________________________________________________
@@ -70,10 +71,10 @@ type keySwitchedCipherBytesStruct struct {
 }
 
 // kscbLengthStruct is the structure containing a lengths message
-type kscbLengthStruct struct {
-	*onet.TreeNode
-	KSCBLengthMessage
-}
+//type kscbLengthStruct struct {
+//	*onet.TreeNode
+//	KSCBLengthMessage
+//}
 
 // Protocol
 //______________________________________________________________________________________________________________________
@@ -87,7 +88,7 @@ type KeySwitchingProtocol struct {
 
 	// Protocol communication channels
 	PreviousNodeInPathChannel chan keySwitchedCipherBytesStruct
-	LengthNodeChannel         chan kscbLengthStruct
+//	LengthNodeChannel         chan kscbLengthStruct
 
 	ExecTime time.Duration
 
@@ -109,9 +110,9 @@ func NewKeySwitchingProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, e
 		return nil, errors.New("couldn't register data reference channel: " + err.Error())
 	}
 
-	if err := ksp.RegisterChannel(&ksp.LengthNodeChannel); err != nil {
+	/*if err := ksp.RegisterChannel(&ksp.LengthNodeChannel); err != nil {
 		return nil, errors.New("couldn't register data reference channel: " + err.Error())
-	}
+	}*/
 
 	var i int
 	var node *onet.TreeNode
@@ -182,10 +183,10 @@ func getAttributesAndEphemKeys(ct libunlynx.CipherText) (libunlynx.CipherText, k
 
 // Dispatch is called on each node. It waits for incoming messages and handles them.
 func (p *KeySwitchingProtocol) Dispatch() error {
-	length := <-p.LengthNodeChannel
-	keySwitchingTargetBytes := (<-p.PreviousNodeInPathChannel).KeySwitchedCipherBytesMessage.Data
+	message := <-p.PreviousNodeInPathChannel
+	keySwitchingTargetBytes := message.KeySwitchedCipherBytesMessage.Data
 	keySwitchingTarget := &KeySwitchedCipherMessage{}
-	(*keySwitchingTarget).FromBytes(keySwitchingTargetBytes, length.LenB)
+	(*keySwitchingTarget).FromBytes(keySwitchingTargetBytes, message.LenB)
 	round := libunlynx.StartTimer(p.Name() + "_KeySwitching(DISPATCH)")
 	startT := time.Now()
 
@@ -222,13 +223,12 @@ func (p *KeySwitchingProtocol) sendToNext(msg interface{}) {
 // sending sends KeySwitchedCipherBytes messages
 func sending(p *KeySwitchingProtocol, kscm *KeySwitchedCipherMessage) {
 	data, lenB := kscm.ToBytes()
-	p.sendToNext(&KSCBLengthMessage{LenB: lenB})
-	p.sendToNext(&KeySwitchedCipherBytesMessage{data})
+	//p.sendToNext(&KSCBLengthMessage{LenB: lenB})
+	p.sendToNext(&KeySwitchedCipherBytesMessage{LenB: lenB, Data: data})
 }
 
 //FilteredResponseKeySwitching applies key switching on a ciphervector
 func FilteredResponseKeySwitching(keySwitchingTarget *KeySwitchedCipherMessage, secretContrib kyber.Scalar, proofsB bool) {
-
 	length := len(keySwitchingTarget.DataKey)
 	r := make([]kyber.Scalar, length)
 	originalEphemeralKeys := make([]kyber.Point, length)
