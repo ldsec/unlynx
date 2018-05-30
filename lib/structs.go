@@ -12,6 +12,9 @@ import (
 // Objects
 //______________________________________________________________________________________________________________________
 
+// SEPARATOR is a string used in the transformation of some struct in []byte
+const SEPARATOR = "/-/"
+
 // GroupingKey is an ID corresponding to grouping attributes.
 type GroupingKey string
 
@@ -352,9 +355,10 @@ func (cv *ProcessResponse) FromBytes(data []byte, gacbLength, aabLength, pgaebLe
 	(*cv).WhereEnc = make(CipherVector, pgaebLength)
 	(*cv).GroupByEnc = make(CipherVector, gacbLength)
 
-	gacbByteLength := gacbLength * 64
-	aabByteLength := aabLength * 64 //CAREFUL: hardcoded 64 (size of el-gamal element C,K)
-	pgaebByteLength := pgaebLength * 64
+	cipherTextByteSize := CipherTextByteSize()
+	gacbByteLength := gacbLength * cipherTextByteSize
+	aabByteLength := aabLength * cipherTextByteSize
+	pgaebByteLength := pgaebLength * cipherTextByteSize
 
 	gacb := data[:gacbByteLength]
 	aab := data[gacbByteLength : gacbByteLength+aabByteLength]
@@ -371,7 +375,11 @@ func (crd *ProcessResponseDet) ToBytes() ([]byte, int, int, int, int, int) {
 
 	dtbgb := []byte((*crd).DetTagGroupBy)
 	dtbgbLength := len(dtbgb)
-	dtbw := []byte((*crd).DetTagGroupBy)
+	strs := make([]string, len((*crd).DetTagWhere))
+	for i, v := range (*crd).DetTagWhere {
+		strs[i] = string(v)
+	}
+	dtbw := []byte(strings.Join(strs, SEPARATOR))
 	dtbwLength := len(dtbw)
 
 	b = append(b, dtbgb...)
@@ -385,9 +393,10 @@ func (crd *ProcessResponseDet) FromBytes(data []byte, gacbLength, aabLength, pga
 	(*crd).PR.WhereEnc = make(CipherVector, pgaebLength)
 	(*crd).PR.GroupByEnc = make(CipherVector, gacbLength)
 
-	aabByteLength := aabLength * 64 //CAREFUL: hardcoded 64 (size of el-gamal element C,K)
-	pgaebByteLength := pgaebLength * 64
-	gacbByteLength := gacbLength * 64
+	cipherTextByteSize := CipherTextByteSize()
+	aabByteLength := aabLength * cipherTextByteSize
+	pgaebByteLength := pgaebLength * cipherTextByteSize
+	gacbByteLength := gacbLength * cipherTextByteSize
 
 	gacb := data[:gacbByteLength]
 	aab := data[gacbByteLength : gacbByteLength+aabByteLength]
@@ -396,7 +405,10 @@ func (crd *ProcessResponseDet) FromBytes(data []byte, gacbLength, aabLength, pga
 	dtbw := data[gacbByteLength+aabByteLength+pgaebByteLength+dtbgbLength : gacbByteLength+aabByteLength+pgaebByteLength+dtbgbLength+dtbgbLength+dtbwLength]
 
 	(*crd).DetTagGroupBy = GroupingKey(string(dtbgb))
-	(*crd).DetTagGroupBy = GroupingKey(string(dtbw))
+	(*crd).DetTagWhere = make([]GroupingKey, 0)
+	for _, key := range strings.Split(string(dtbw), SEPARATOR) {
+		(*crd).DetTagWhere = append((*crd).DetTagWhere, GroupingKey(key))
+	}
 	(*crd).PR.AggregatingAttributes.FromBytes(aab, aabLength)
 	(*crd).PR.WhereEnc.FromBytes(pgaeb, pgaebLength)
 	(*crd).PR.GroupByEnc.FromBytes(gacb, gacbLength)
