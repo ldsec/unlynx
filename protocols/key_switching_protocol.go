@@ -88,7 +88,7 @@ type KeySwitchingProtocol struct {
 
 	// Protocol communication channels
 	PreviousNodeInPathChannel chan keySwitchedCipherBytesStruct
-//	LengthNodeChannel         chan kscbLengthStruct
+	//	LengthNodeChannel         chan kscbLengthStruct
 
 	ExecTime time.Duration
 

@@ -267,3 +267,17 @@ func TestFromDpClearResponseToProcess(t *testing.T) {
 		assert.Equal(t, libunlynx.DecryptInt(secKey, pr.AggregatingAttributes[pos]), v)
 	}
 }
+
+func TestMapBytesToMapCipherText(t *testing.T) {
+	k := 5
+	secKey, pubKey := libunlynx.GenKey()
+
+	bMap := make(map[string][]byte)
+	for i := 0; i < k; i++ {
+		bMap[strconv.Itoa(i)] = libunlynx.EncryptInt(pubKey, int64(i)).ToBytes()
+	}
+	ctMap := libunlynx.MapBytesToMapCipherText(bMap)
+	for i := 0; i < k; i++ {
+		assert.Equal(t, libunlynx.DecryptInt(secKey, ctMap[strconv.Itoa(i)]), int64(i))
+	}
+}
