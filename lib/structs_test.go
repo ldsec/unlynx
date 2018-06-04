@@ -4,6 +4,7 @@ import (
 	"github.com/dedis/kyber"
 	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
+	"strconv"
 	"testing"
 )
 
@@ -191,12 +192,12 @@ func TestDPResponseConverter(t *testing.T) {
 		AggregatingAttributesEnc:   make(map[string][]byte),
 	}
 	for i := 0; i < k; i++ {
-		dpResponseToSend.GroupByClear[string(k)] = int64(k)
-		dpResponseToSend.WhereClear[string(k)] = int64(k)
-		dpResponseToSend.AggregatingAttributesClear[string(k)] = int64(k)
-		dpResponseToSend.GroupByEnc[string(k)] = libunlynx.EncryptInt(pubKey, int64(k)).ToBytes()
-		dpResponseToSend.WhereEnc[string(k)] = libunlynx.EncryptInt(pubKey, int64(k)).ToBytes()
-		dpResponseToSend.AggregatingAttributesEnc[string(k)] = libunlynx.EncryptInt(pubKey, int64(k)).ToBytes()
+		dpResponseToSend.GroupByClear[strconv.Itoa(i)] = int64(i)
+		dpResponseToSend.WhereClear[strconv.Itoa(i)] = int64(i)
+		dpResponseToSend.AggregatingAttributesClear[strconv.Itoa(i)] = int64(i)
+		dpResponseToSend.GroupByEnc[strconv.Itoa(i)] = libunlynx.EncryptInt(pubKey, int64(i)).ToBytes()
+		dpResponseToSend.WhereEnc[strconv.Itoa(i)] = libunlynx.EncryptInt(pubKey, int64(i)).ToBytes()
+		dpResponseToSend.AggregatingAttributesEnc[strconv.Itoa(i)] = libunlynx.EncryptInt(pubKey, int64(i)).ToBytes()
 	}
 
 	dpResponse := libunlynx.DpResponse{
@@ -211,11 +212,58 @@ func TestDPResponseConverter(t *testing.T) {
 	dpResponse.FromDpResponseToSend(dpResponseToSend)
 
 	for i := 0; i < k; i++ {
-		assert.Equal(t, libunlynx.DecryptInt(secKey, dpResponse.GroupByEnc[string(k)]), int64(k))
-		assert.Equal(t, libunlynx.DecryptInt(secKey, dpResponse.WhereEnc[string(k)]), int64(k))
-		assert.Equal(t, libunlynx.DecryptInt(secKey, dpResponse.AggregatingAttributesEnc[string(k)]), int64(k))
-		assert.Equal(t, dpResponse.GroupByClear[string(k)], int64(k))
-		assert.Equal(t, dpResponse.WhereClear[string(k)], int64(k))
-		assert.Equal(t, dpResponse.AggregatingAttributesClear[string(k)], int64(k))
+		assert.Equal(t, libunlynx.DecryptInt(secKey, dpResponse.GroupByEnc[strconv.Itoa(i)]), int64(i))
+		assert.Equal(t, libunlynx.DecryptInt(secKey, dpResponse.WhereEnc[strconv.Itoa(i)]), int64(i))
+		assert.Equal(t, libunlynx.DecryptInt(secKey, dpResponse.AggregatingAttributesEnc[strconv.Itoa(i)]), int64(i))
+		assert.Equal(t, dpResponse.GroupByClear[strconv.Itoa(i)], int64(i))
+		assert.Equal(t, dpResponse.WhereClear[strconv.Itoa(i)], int64(i))
+		assert.Equal(t, dpResponse.AggregatingAttributesClear[strconv.Itoa(i)], int64(i))
+	}
+}
+
+func TestFromDpClearResponseToProcess(t *testing.T) {
+	k := 5
+	secKey, pubKey := libunlynx.GenKey()
+	dpClearResponse := libunlynx.DpClearResponse{
+		WhereClear:                 make(map[string]int64),
+		WhereEnc:                   make(map[string]int64),
+		GroupByClear:               make(map[string]int64),
+		GroupByEnc:                 make(map[string]int64),
+		AggregatingAttributesClear: make(map[string]int64),
+		AggregatingAttributesEnc:   make(map[string]int64),
+	}
+
+	for i := 0; i < k; i++ {
+		dpClearResponse.GroupByClear["g"+strconv.Itoa(i)] = int64(i)
+		dpClearResponse.GroupByEnc["g"+strconv.Itoa(i+k)] = int64(i)
+		dpClearResponse.WhereClear["w"+strconv.Itoa(i)] = int64(i)
+		dpClearResponse.WhereEnc["w"+strconv.Itoa(i+k)] = int64(i)
+		dpClearResponse.AggregatingAttributesClear["s"+strconv.Itoa(i)] = int64(i)
+		dpClearResponse.AggregatingAttributesEnc["s"+strconv.Itoa(i+k)] = int64(i)
+	}
+
+	pr := dpClearResponse.FromDpClearResponseToProcess(pubKey)
+
+	for i := 0; i < k; i++ {
+		pos := i
+		v := dpClearResponse.GroupByClear["g"+strconv.Itoa(i)]
+		assert.Equal(t, libunlynx.DecryptInt(secKey, pr.GroupByEnc[pos]), v)
+		pos += len(dpClearResponse.GroupByClear)
+		v = dpClearResponse.GroupByEnc["g"+strconv.Itoa(i+k)]
+		assert.Equal(t, libunlynx.DecryptInt(secKey, pr.GroupByEnc[pos]), v)
+
+		pos = i
+		v = dpClearResponse.WhereClear["w"+strconv.Itoa(i)]
+		assert.Equal(t, libunlynx.DecryptInt(secKey, pr.WhereEnc[pos]), v)
+		pos += len(dpClearResponse.WhereClear)
+		v = dpClearResponse.WhereEnc["w"+strconv.Itoa(i+k)]
+		assert.Equal(t, libunlynx.DecryptInt(secKey, pr.WhereEnc[pos]), v)
+
+		pos = i
+		v = dpClearResponse.AggregatingAttributesClear["s"+strconv.Itoa(i)]
+		assert.Equal(t, libunlynx.DecryptInt(secKey, pr.AggregatingAttributes[pos]), v)
+		pos += len(dpClearResponse.AggregatingAttributesClear)
+		v = dpClearResponse.AggregatingAttributesEnc["s"+strconv.Itoa(i+k)]
+		assert.Equal(t, libunlynx.DecryptInt(secKey, pr.AggregatingAttributes[pos]), v)
 	}
 }
