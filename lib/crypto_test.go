@@ -330,3 +330,12 @@ func TestDecryptIntVectorWithNeg(t *testing.T) {
 		assert.Equal(t, target[i], v)
 	}
 }
+
+func TestDecryptCheckZero(t *testing.T) {
+	secKey, pubKey := libunlynx.GenKey()
+	ctZero := *libunlynx.EncryptInt(pubKey, int64(0))
+	assert.Equal(t, libunlynx.DecryptCheckZero(secKey, ctZero), int64(0))
+
+	ctNotZero := *libunlynx.EncryptInt(pubKey, int64(5))
+	assert.Equal(t, libunlynx.DecryptCheckZero(secKey, ctNotZero), int64(1))
+}
