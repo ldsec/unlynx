@@ -303,3 +303,19 @@ func TestEncryptScalar(t *testing.T) {
 	ct := *libunlynx.EncryptScalar(pubKey, scal)
 	assert.Equal(t, libunlynx.DecryptInt(secKey, ct), target)
 }
+
+func TestEncryptScalarVector(t *testing.T) {
+	secKey, pubKey := libunlynx.GenKey()
+	target := []int64{0, 1, 3, 103, 103}
+
+	targetScal := make([]kyber.Scalar, len(target))
+	for i, v := range target {
+		targetScal[i] = libunlynx.SuiTe.Scalar().SetInt64(v)
+	}
+
+	cv := *libunlynx.EncryptScalarVector(pubKey, targetScal)
+
+	for i, v := range cv {
+		assert.Equal(t, libunlynx.DecryptInt(secKey, v), target[i])
+	}
+}
