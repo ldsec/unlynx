@@ -178,3 +178,44 @@ func TestProcessResponseDetConverter(t *testing.T) {
 	assert.Equal(t, prDet.DetTagWhere, newPrDet.DetTagWhere)
 	// We already tested the ProcessResponseConverter, no need to redo it
 }
+
+func TestDPResponseConverter(t *testing.T) {
+	k := 5
+	secKey, pubKey := libunlynx.GenKey()
+	dpResponseToSend := libunlynx.DpResponseToSend{
+		WhereClear:                 make(map[string]int64),
+		WhereEnc:                   make(map[string][]byte),
+		GroupByClear:               make(map[string]int64),
+		GroupByEnc:                 make(map[string][]byte),
+		AggregatingAttributesClear: make(map[string]int64),
+		AggregatingAttributesEnc:   make(map[string][]byte),
+	}
+	for i := 0; i < k; i++ {
+		dpResponseToSend.GroupByClear[string(k)] = int64(k)
+		dpResponseToSend.WhereClear[string(k)] = int64(k)
+		dpResponseToSend.AggregatingAttributesClear[string(k)] = int64(k)
+		dpResponseToSend.GroupByEnc[string(k)] = libunlynx.EncryptInt(pubKey, int64(k)).ToBytes()
+		dpResponseToSend.WhereEnc[string(k)] = libunlynx.EncryptInt(pubKey, int64(k)).ToBytes()
+		dpResponseToSend.AggregatingAttributesEnc[string(k)] = libunlynx.EncryptInt(pubKey, int64(k)).ToBytes()
+	}
+
+	dpResponse := libunlynx.DpResponse{
+		WhereClear:                 nil,
+		WhereEnc:                   nil,
+		GroupByClear:               nil,
+		GroupByEnc:                 nil,
+		AggregatingAttributesClear: nil,
+		AggregatingAttributesEnc:   nil,
+	}
+
+	dpResponse.FromDpResponseToSend(dpResponseToSend)
+
+	for i := 0; i < k; i++ {
+		assert.Equal(t, libunlynx.DecryptInt(secKey, dpResponse.GroupByEnc[string(k)]), int64(k))
+		assert.Equal(t, libunlynx.DecryptInt(secKey, dpResponse.WhereEnc[string(k)]), int64(k))
+		assert.Equal(t, libunlynx.DecryptInt(secKey, dpResponse.AggregatingAttributesEnc[string(k)]), int64(k))
+		assert.Equal(t, dpResponse.GroupByClear[string(k)], int64(k))
+		assert.Equal(t, dpResponse.WhereClear[string(k)], int64(k))
+		assert.Equal(t, dpResponse.AggregatingAttributesClear[string(k)], int64(k))
+	}
+}
