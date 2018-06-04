@@ -294,3 +294,12 @@ func TestB64Serialization(t *testing.T) {
 		assert.Equal(t, decVal, decValBis)
 	}
 }
+
+func TestEncryptScalar(t *testing.T) {
+	target := int64(5)
+	secKey, pubKey := libunlynx.GenKey()
+	scal := libunlynx.SuiTe.Scalar().SetInt64(target)
+
+	ct := *libunlynx.EncryptScalar(pubKey, scal)
+	assert.Equal(t, libunlynx.DecryptInt(secKey, ct), target)
+}
