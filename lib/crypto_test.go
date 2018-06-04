@@ -339,3 +339,18 @@ func TestDecryptCheckZero(t *testing.T) {
 	ctNotZero := *libunlynx.EncryptInt(pubKey, int64(5))
 	assert.Equal(t, libunlynx.DecryptCheckZero(secKey, ctNotZero), int64(1))
 }
+
+func TestDecryptCheckZeroVector(t *testing.T) {
+	secKey, pubKey := libunlynx.GenKey()
+	target := []int64{0, 1, 5, 0, 3}
+
+	cv := libunlynx.EncryptIntVector(pubKey, target)
+	for i, v := range libunlynx.DecryptCheckZeroVector(secKey, cv) {
+		if i == 0 || i == 3 {
+			assert.Equal(t, v, int64(0))
+		} else {
+			assert.Equal(t, v, int64(1))
+		}
+	}
+
+}
