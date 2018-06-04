@@ -319,3 +319,14 @@ func TestEncryptScalarVector(t *testing.T) {
 		assert.Equal(t, libunlynx.DecryptInt(secKey, v), target[i])
 	}
 }
+
+func TestDecryptIntVectorWithNeg(t *testing.T) {
+	secKey, pubKey := libunlynx.GenKey()
+	target := []int64{0, -1, -3, -103, -103}
+	cv := libunlynx.EncryptIntVector(pubKey, target)
+
+	results := libunlynx.DecryptIntVectorWithNeg(secKey, cv)
+	for i, v := range results {
+		assert.Equal(t, target[i], v)
+	}
+}
