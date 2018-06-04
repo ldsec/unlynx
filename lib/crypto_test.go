@@ -6,6 +6,7 @@ import (
 	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -352,5 +353,18 @@ func TestDecryptCheckZeroVector(t *testing.T) {
 			assert.Equal(t, v, int64(1))
 		}
 	}
+}
 
+func TestDeterministicCipherTextKey(t *testing.T) {
+	_, pubKey := libunlynx.GenKey()
+	k := 5
+	target := []int64{0, 1, 3, 103, 103}
+	dcv := make(libunlynx.DeterministCipherVector, k)
+	str := make([]string, k)
+	for i := range dcv {
+		dcv[i] = libunlynx.DeterministCipherText{Point: (*libunlynx.EncryptInt(pubKey, target[i])).C}
+		str[i] = dcv[i].Point.String()
+	}
+
+	assert.Equal(t, libunlynx.GroupingKey(strings.Join(str, "")), dcv.Key())
 }
