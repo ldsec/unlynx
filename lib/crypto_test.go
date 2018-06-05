@@ -368,3 +368,38 @@ func TestDeterministicCipherTextKey(t *testing.T) {
 
 	assert.Equal(t, libunlynx.GroupingKey(strings.Join(str, "")), dcv.Key())
 }
+
+func TestSerializePoint(t *testing.T) {
+	secKey, pubKey := libunlynx.GenKey()
+	target := int64(1)
+	ct := *libunlynx.EncryptInt(pubKey, target)
+	strC, errC1 := libunlynx.SerializePoint(ct.C)
+	strK, errK1 := libunlynx.SerializePoint(ct.K)
+	if errC1 != nil || errK1 != nil {
+		t.Fatal("Error in the serialization")
+	}
+
+	pointC, errC2 := libunlynx.DeserializePoint(strC)
+	pointK, errK2 := libunlynx.DeserializePoint(strK)
+	if errC2 != nil || errK2 != nil {
+		t.Fatal("Error in the serialization")
+	}
+
+	ct.C = pointC
+	ct.K = pointK
+
+	assert.Equal(t, target, libunlynx.DecryptInt(secKey, ct))
+}
+
+func TestSerializeScalar(t *testing.T) {
+	target := int64(5)
+	sclr := libunlynx.SuiTe.Scalar().SetInt64(target)
+	str, err1 := libunlynx.SerializeScalar(sclr)
+	sclrTest, err2 := libunlynx.DeserializeScalar(str)
+
+	if err1 != nil || err2 != nil {
+		t.Fatal("Error in the serialization")
+	}
+
+	assert.Equal(t, sclr, sclrTest)
+}
