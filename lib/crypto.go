@@ -626,8 +626,8 @@ func (c *CipherText) Deserialize(b64Encoded string) error {
 	return nil
 }
 
-// SerializeElement serializes a BinaryMarshaller-compatible element using base64 encoding (e.g. kyber.Point or kyber.Scalar)
-func SerializeElement(el encoding.BinaryMarshaler) (string, error) {
+// serializeElement serializes a BinaryMarshaller-compatible element using base64 encoding (e.g. kyber.Point or kyber.Scalar)
+func serializeElement(el encoding.BinaryMarshaler) (string, error) {
 	bytes, err := el.MarshalBinary()
 	if err != nil {
 		log.Error("Error marshalling element.", err)
@@ -638,12 +638,12 @@ func SerializeElement(el encoding.BinaryMarshaler) (string, error) {
 
 // SerializePoint serializes a point
 func SerializePoint(point kyber.Point) (string, error) {
-	return SerializeElement(point)
+	return serializeElement(point)
 }
 
 // SerializeScalar serializes a scalar
 func SerializeScalar(scalar encoding.BinaryMarshaler) (string, error) {
-	return SerializeElement(scalar)
+	return serializeElement(scalar)
 }
 
 // DeserializePoint deserializes a point using base64 encoding
