@@ -355,6 +355,38 @@ func TestDecryptCheckZeroVector(t *testing.T) {
 	}
 }
 
+func TestNewDeterministicCipherText(t *testing.T) {
+	secKey, _ := libunlynx.GenKey()
+	dt1 := libunlynx.NewDeterministicCipherText()
+	dt2 := libunlynx.NewDeterministicCipherText()
+	ctTest := libunlynx.CipherText{
+		K: dt1.Point,
+		C: dt2.Point,
+	}
+
+	assert.Equal(t, libunlynx.DecryptInt(secKey, ctTest), int64(0))
+}
+
+func TestNewDeterministicCipherVector(t *testing.T) {
+	secKey, _ := libunlynx.GenKey()
+	k := 5
+	dtv1 := *libunlynx.NewDeterministicCipherVector(k)
+	dtv2 := *libunlynx.NewDeterministicCipherVector(k)
+	cv := make(libunlynx.CipherVector, k)
+
+	for i := range cv {
+		cv[i] = libunlynx.CipherText{
+			K: dtv1[i].Point,
+			C: dtv2[i].Point,
+		}
+	}
+
+	test := libunlynx.DecryptIntVector(secKey, &cv)
+	for _, v := range test {
+		assert.Equal(t, v, int64(0))
+	}
+}
+
 func TestDeterministicCipherTextKey(t *testing.T) {
 	_, pubKey := libunlynx.GenKey()
 	k := 5
