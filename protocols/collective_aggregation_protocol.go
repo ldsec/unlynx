@@ -10,12 +10,13 @@ package protocolsunlynx
 import (
 	"errors"
 
+	"sync"
+
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/proofs"
-	"sync"
 )
 
 // CollectiveAggregationProtocolName is the registered name for the collective aggregation protocol.
@@ -137,6 +138,7 @@ func (p *CollectiveAggregationProtocol) Start() error {
 
 // Dispatch is called at each node and handle incoming messages.
 func (p *CollectiveAggregationProtocol) Dispatch() error {
+	defer p.Done()
 
 	// 1. Aggregation announcement phase
 	if !p.IsRoot() {

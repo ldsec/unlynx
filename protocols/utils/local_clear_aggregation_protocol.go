@@ -54,6 +54,8 @@ func (p *LocalClearAggregationProtocol) Start() error {
 
 // Dispatch is called on each node. It waits for incoming messages and handle them.
 func (p *LocalClearAggregationProtocol) Dispatch() error {
+	defer p.Done()
+
 	aux := <-finalResultClearAggr
 	p.FeedbackChannel <- aux
 	return nil

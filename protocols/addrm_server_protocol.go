@@ -4,12 +4,13 @@
 package protocolsunlynx
 
 import (
+	"sync"
+
 	"github.com/dedis/kyber"
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/proofs"
-	"sync"
 )
 
 // AddRmServerProtocolName is the registered name for the local aggregation protocol.
@@ -89,6 +90,8 @@ func (p *AddRmServerProtocol) Start() error {
 
 // Dispatch is called on each node. It waits for incoming messages and handle them.
 func (p *AddRmServerProtocol) Dispatch() error {
+	defer p.Done()
+
 	aux := <-finalResultAddrm
 	p.FeedbackChannel <- aux
 	return nil

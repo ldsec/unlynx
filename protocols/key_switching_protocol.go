@@ -8,14 +8,15 @@ package protocolsunlynx
 
 import (
 	"errors"
+	"sync"
+	"time"
+
 	"github.com/dedis/kyber"
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/proofs"
-	"sync"
-	"time"
 )
 
 // KeySwitchingProtocolName is the registered name for the key switching protocol.
@@ -183,6 +184,8 @@ func getAttributesAndEphemKeys(ct libunlynx.CipherText) (libunlynx.CipherText, k
 
 // Dispatch is called on each node. It waits for incoming messages and handles them.
 func (p *KeySwitchingProtocol) Dispatch() error {
+	defer p.Done()
+
 	message := <-p.PreviousNodeInPathChannel
 	keySwitchingTargetBytes := message.KeySwitchedCipherBytesMessage.Data
 	keySwitchingTarget := &KeySwitchedCipherMessage{}

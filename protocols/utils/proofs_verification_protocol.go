@@ -179,6 +179,8 @@ func (p *ProofsVerificationProtocol) Start() error {
 
 // Dispatch is called on each node. It waits for incoming messages and handle them.
 func (p *ProofsVerificationProtocol) Dispatch() error {
+	defer p.Done()
+
 	aux := <-finalResult
 	p.FeedbackChannel <- aux
 	return nil

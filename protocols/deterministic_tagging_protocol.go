@@ -8,14 +8,15 @@ package protocolsunlynx
 
 import (
 	"errors"
+	"sync"
+	"time"
+
 	"github.com/dedis/kyber"
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/proofs"
-	"sync"
-	"time"
 )
 
 // DeterministicTaggingProtocolName is the registered name for the deterministic tagging protocol.
@@ -148,6 +149,8 @@ func (p *DeterministicTaggingProtocol) Start() error {
 
 // Dispatch is called on each tree node. It waits for incoming messages and handles them.
 func (p *DeterministicTaggingProtocol) Dispatch() error {
+	defer p.Done()
+
 	//************ ----- first round, add value derivated from ephemeral secret to message ---- ********************
 	deterministicTaggingTargetBytesBef := <-p.PreviousNodeInPathChannel
 	deterministicTaggingTargetBef := DeterministicTaggingMessage{Data: make([]libunlynx.CipherText, 0)}

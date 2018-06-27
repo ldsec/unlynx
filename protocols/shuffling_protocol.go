@@ -6,14 +6,15 @@ package protocolsunlynx
 import (
 	"errors"
 
+	"sync"
+	"time"
+
 	"github.com/dedis/kyber"
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/proofs"
-	"sync"
-	"time"
 )
 
 // ShufflingProtocolName is the registered name for the neff shuffle protocol.
@@ -183,6 +184,7 @@ func (p *ShufflingProtocol) Start() error {
 
 // Dispatch is called on each tree node. It waits for incoming messages and handles them.
 func (p *ShufflingProtocol) Dispatch() error {
+	defer p.Done()
 
 	shufflingLength := <-p.LengthNodeChannel
 
