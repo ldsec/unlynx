@@ -1,6 +1,10 @@
 package protocolsunlynx_test
 
 import (
+	"reflect"
+	"testing"
+	"time"
+
 	"github.com/dedis/kyber/util/random"
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
@@ -8,9 +12,6 @@ import (
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/protocols"
 	"github.com/stretchr/testify/assert"
-	"reflect"
-	"testing"
-	"time"
 )
 
 var clientPrivate = libunlynx.SuiTe.Scalar().Pick(random.New())
@@ -86,21 +87,16 @@ func NewCollectiveAggregationTestGroups(tni *onet.TreeNodeInstance) (onet.Protoc
 
 	switch tni.Index() {
 	case 0:
-		log.Lvl1("0")
 		testCVMap[groupingAttrA.Key()] = libunlynx.FilteredResponse{GroupByEnc: *libunlynx.EncryptIntVector(clientPublic, []int64{1, 1}), AggregatingAttributes: *libunlynx.EncryptIntVector(clientPublic, []int64{1, 2, 3, 4, 5})}
 		testCVMap[groupingAttrB.Key()] = libunlynx.FilteredResponse{GroupByEnc: *libunlynx.EncryptIntVector(clientPublic, []int64{1, 2}), AggregatingAttributes: *libunlynx.EncryptIntVector(clientPublic, []int64{0, 0, 0, 0, 0})}
 	case 1:
-		log.Lvl1("1")
 		testCVMap[groupingAttrB.Key()] = libunlynx.FilteredResponse{GroupByEnc: *libunlynx.EncryptIntVector(clientPublic, []int64{1, 2}), AggregatingAttributes: *libunlynx.EncryptIntVector(clientPublic, []int64{1, 2, 3, 4, 5})}
 	case 2:
-		log.Lvl1("2")
 		testCVMap[groupingAttrA.Key()] = libunlynx.FilteredResponse{GroupByEnc: *libunlynx.EncryptIntVector(clientPublic, []int64{1, 1}), AggregatingAttributes: *libunlynx.EncryptIntVector(clientPublic, []int64{1, 1, 1, 1, 1})}
 	case 9:
-		log.Lvl1("9")
 		testCVMap[groupingAttrC.Key()] = libunlynx.FilteredResponse{GroupByEnc: *libunlynx.EncryptIntVector(clientPublic, []int64{3, 3}), AggregatingAttributes: *libunlynx.EncryptIntVector(clientPublic, []int64{1, 0, 1, 0, 1})}
 		testCVMap[groupingAttrA.Key()] = libunlynx.FilteredResponse{GroupByEnc: *libunlynx.EncryptIntVector(clientPublic, []int64{1, 1}), AggregatingAttributes: *libunlynx.EncryptIntVector(clientPublic, []int64{1, 2, 3, 4, 5})}
 	case 5:
-		log.Lvl1("5")
 		testCVMap[groupingAttrC.Key()] = libunlynx.FilteredResponse{GroupByEnc: *libunlynx.EncryptIntVector(clientPublic, []int64{3, 3}), AggregatingAttributes: *libunlynx.EncryptIntVector(clientPublic, []int64{0, 1, 0, 1, 0})}
 
 	default:
@@ -153,23 +149,18 @@ func NewCollectiveAggregationTestSimple(tni *onet.TreeNodeInstance) (onet.Protoc
 	simpleSlice := make([]libunlynx.CipherText, 0)
 	switch tni.Index() {
 	case 0:
-		log.Lvl1("0")
 		toAdd := libunlynx.EncryptIntVector(clientPublic, []int64{1, 2, 3, 4, 5})
 		simpleSlice = append(simpleSlice, *toAdd...)
 	case 1:
-		log.Lvl1("1")
 		toAdd := libunlynx.EncryptIntVector(clientPublic, []int64{1, 2, 3, 4, 5})
 		simpleSlice = append(simpleSlice, *toAdd...)
 	case 2:
-		log.Lvl1("2")
 		toAdd := libunlynx.EncryptIntVector(clientPublic, []int64{1, 1, 1, 1, 1})
 		simpleSlice = append(simpleSlice, *toAdd...)
 	case 5:
-		log.Lvl1("5")
 		toAdd := libunlynx.EncryptIntVector(clientPublic, []int64{0, 1, 0, 1, 0})
 		simpleSlice = append(simpleSlice, *toAdd...)
 	case 9:
-		log.Lvl1("9")
 		toAdd := libunlynx.EncryptIntVector(clientPublic, []int64{1, 0, 1, 0, 1})
 		simpleSlice = append(simpleSlice, *toAdd...)
 	default:

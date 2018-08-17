@@ -127,11 +127,7 @@ func NewCollectiveAggregationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolIn
 
 // Start is called at the root to begin the execution of the protocol.
 func (p *CollectiveAggregationProtocol) Start() error {
-	_, err := p.getData()
-	if err != nil {
-		return err
-	}
-	log.Lvl1(p.ServerIdentity(), " started a Colective Aggregation Protocol (", len(*p.GroupedData), "local group(s) )")
+	log.Lvl1(p.ServerIdentity(), " started a Colective Aggregation Protocol")
 	p.SendToChildren(&DataReferenceMessage{})
 	return nil
 }
@@ -139,11 +135,11 @@ func (p *CollectiveAggregationProtocol) Start() error {
 // Dispatch is called at each node and handle incoming messages.
 func (p *CollectiveAggregationProtocol) Dispatch() error {
 	defer p.Done()
+	p.checkData()
 
 	// 1. Aggregation announcement phase
 	if !p.IsRoot() {
 		p.aggregationAnnouncementPhase()
-		p.getData()
 	}
 
 	// 2. Ascending aggregation phase
@@ -167,12 +163,6 @@ func (p *CollectiveAggregationProtocol) aggregationAnnouncementPhase() {
 
 // Results pushing up the tree containing aggregation results.
 func (p *CollectiveAggregationProtocol) ascendingAggregationPhase() *map[libunlynx.GroupingKey]libunlynx.FilteredResponse {
-
-	if p.GroupedData == nil {
-		emptyMap := make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse, 0)
-		p.GroupedData = &emptyMap
-	}
-
 	roundTotComput := libunlynx.StartTimer(p.Name() + "_CollectiveAggregation(ascendingAggregation)")
 
 	if !p.IsLeaf() {
@@ -251,33 +241,30 @@ func (p *CollectiveAggregationProtocol) ascendingAggregationPhase() *map[libunly
 }
 
 // Setup and return the data needed in the aggregation to a usable format
-func (p *CollectiveAggregationProtocol) getData() (*map[libunlynx.GroupingKey]libunlynx.FilteredResponse, error) {
+func (p *CollectiveAggregationProtocol) checkData() {
+	// If no data is passed to the collection protocol
 	if p.GroupedData == nil && p.SimpleData == nil {
-		return nil, errors.New("no data reference is provided")
-	}
-
-	// If the two
-	if p.GroupedData != nil && p.SimpleData != nil {
-		return nil, errors.New("two data references are given in the struct")
-	}
-
-	if p.GroupedData != nil {
-		return p.GroupedData, nil
-	}
-
-	result := make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse)
-	if len(*p.SimpleData) > 0 {
-		result[EMPTYKEY] = libunlynx.FilteredResponse{
-			AggregatingAttributes: make([]libunlynx.CipherText, len(*p.SimpleData)),
+		log.Fatal("no data reference is provided")
+		// If both data entry points are used
+	} else if p.GroupedData != nil && p.SimpleData != nil {
+		log.Fatal("two data references are given in the struct")
+		// If we are using the GroupedData keep everything as is
+	} else if p.GroupedData != nil {
+		return
+		// If we are using the SimpleData struct we must convert it to a GroupedData struct
+	} else {
+		result := make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse)
+		if len(*p.SimpleData) > 0 {
+			result[EMPTYKEY] = libunlynx.FilteredResponse{
+				AggregatingAttributes: make([]libunlynx.CipherText, len(*p.SimpleData)),
+			}
+			for i, v := range *p.SimpleData {
+				result[EMPTYKEY].AggregatingAttributes[i] = v
+			}
 		}
-		for i, v := range *p.SimpleData {
-			result[EMPTYKEY].AggregatingAttributes[i] = v
-		}
+		p.GroupedData = &result
+		p.SimpleData = nil
 	}
-
-	p.GroupedData = &result
-	p.SimpleData = nil
-	return p.GroupedData, nil
 }
 
 // Conversion
