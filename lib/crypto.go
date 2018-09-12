@@ -4,13 +4,14 @@ import (
 	"encoding"
 	"encoding/base64"
 	"fmt"
+	"math/big"
+	"strings"
+	"sync"
+
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/util/random"
 	"github.com/dedis/onet/log"
 	"github.com/fanliao/go-concurrentMap"
-	"math/big"
-	"strings"
-	"sync"
 )
 
 // MaxHomomorphicInt is upper bound for integers used in messages, a failed decryption will return this value.
@@ -104,14 +105,14 @@ func GenKeys(n int) (kyber.Point, []kyber.Scalar, []kyber.Point) {
 //______________________________________________________________________________________________________________________
 
 // encryptPoint creates an elliptic curve point from a non-encrypted point and encrypt it using ElGamal encryption.
-func encryptPoint(pubkey kyber.Point, M kyber.Point) *CipherText {
+func encryptPoint(pubkey kyber.Point, M kyber.Point) (*CipherText, kyber.Scalar) {
 	B := SuiTe.Point().Base()
-	k := SuiTe.Scalar().Pick(random.New()) // ephemeral private key
+	r := SuiTe.Scalar().Pick(random.New()) // ephemeral private key
 	// ElGamal-encrypt the point to produce ciphertext (K,C).
-	K := SuiTe.Point().Mul(k, B)      // ephemeral DH public key
-	S := SuiTe.Point().Mul(k, pubkey) // ephemeral DH shared secret
-	C := S.Add(S, M)                  // message blinded with secret
-	return &CipherText{K, C}
+	K := SuiTe.Point().Mul(r, B)      // ephemeral DH public key
+	S := SuiTe.Point().Mul(r, pubkey) // ephemeral DH shared secret
+	C := SuiTe.Point().Add(S, M)      // message blinded with secret
+	return &CipherText{K, C}, r
 }
 
 // IntToPoint maps an integer to a point in the elliptic curve
@@ -143,12 +144,20 @@ func IntArrayToCipherVector(integers []int64) CipherVector {
 
 // EncryptInt encodes i as iB, encrypt it into a CipherText and returns a pointer to it.
 func EncryptInt(pubkey kyber.Point, integer int64) *CipherText {
-	return encryptPoint(pubkey, IntToPoint(integer))
+	encryption, _ := encryptPoint(pubkey, IntToPoint(integer))
+	return encryption
+}
+
+// EncryptInt encodes i as iB, encrypt it into a CipherText and returns a pointer to it.
+func EncryptIntGetR(pubkey kyber.Point, integer int64) (*CipherText, kyber.Scalar) {
+	encryption, r := encryptPoint(pubkey, IntToPoint(integer))
+	return encryption, r
 }
 
 // EncryptScalar encodes i as iB, encrypt it into a CipherText and returns a pointer to it.
 func EncryptScalar(pubkey kyber.Point, scalar kyber.Scalar) *CipherText {
-	return encryptPoint(pubkey, SuiTe.Point().Mul(scalar, SuiTe.Point().Base()))
+	encryption, _ := encryptPoint(pubkey, SuiTe.Point().Mul(scalar, SuiTe.Point().Base()))
+	return encryption
 }
 
 // EncryptIntVector encrypts a []int into a CipherVector and returns a pointer to it.
@@ -176,7 +185,37 @@ func EncryptIntVector(pubkey kyber.Point, intArray []int64) *CipherVector {
 	return &cv
 }
 
-// EncryptScalarVector encrypts a []kyber.Scalar into a CipherVector and returns a pointer to it.
+// EncryptIntVector encrypts a []int into a CipherVector and returns a pointer to it.
+func EncryptIntVectorGetRs(pubkey kyber.Point, intArray []int64) (*CipherVector, []kyber.Scalar) {
+	var wg sync.WaitGroup
+	cv := make(CipherVector, len(intArray))
+	rs := make([]kyber.Scalar, len(intArray))
+	if PARALLELIZE {
+		for i := 0; i < len(intArray); i = i + VPARALLELIZE {
+			wg.Add(1)
+			go func(i int) {
+				for j := 0; j < VPARALLELIZE && (j+i < len(intArray)); j++ {
+					tmpCv, tmpR := EncryptIntGetR(pubkey, intArray[j+i])
+					cv[j+i] = *tmpCv
+					rs[j+i] = tmpR
+				}
+				defer wg.Done()
+			}(i)
+
+		}
+		wg.Wait()
+	} else {
+		for i, n := range intArray {
+			tmpCv, tmpR := EncryptIntGetR(pubkey, n)
+			cv[i] = *tmpCv
+			rs[i] = tmpR
+		}
+	}
+
+	return &cv, rs
+}
+
+// EncryptIntVector encrypts a []int into a CipherVector and returns a pointer to it.
 func EncryptScalarVector(pubkey kyber.Point, intArray []kyber.Scalar) *CipherVector {
 	var wg sync.WaitGroup
 	cv := make(CipherVector, len(intArray))
@@ -246,7 +285,7 @@ func DecryptIntVectorWithNeg(prikey kyber.Scalar, cipherVector *CipherVector) []
 	return result
 }
 
-// DecryptCheckZero decrypts an ElGamal cipher text and return 0 if it's a base point
+// DecryptInt decrypts an integer from an ElGamal cipher text where integer are encoded in the exponent.
 func DecryptCheckZero(prikey kyber.Scalar, cipher CipherText) int64 {
 	M := decryptPoint(prikey, cipher)
 	result := int64(1)
@@ -256,7 +295,7 @@ func DecryptCheckZero(prikey kyber.Scalar, cipher CipherText) int64 {
 	return result
 }
 
-// DecryptCheckZeroVector decrypts a cipherVector with 0 and 1 depending if the decode points are base points.
+// DecryptIntVectorWithNeg decrypts a cipherVector.
 func DecryptCheckZeroVector(prikey kyber.Scalar, cipherVector *CipherVector) []int64 {
 	result := make([]int64, len(*cipherVector))
 	for i, c := range *cipherVector {
@@ -287,7 +326,7 @@ func discreteLog(P kyber.Point, checkNeg bool) int64 {
 	guess := currentGreatestM
 	guessInt := currentGreatestInt
 	guessNeg := SuiTe.Point().Null()
-	guessintMinus := int64(0)
+	guessInt_minus := int64(0)
 
 	start := true
 	for i := guessInt; i < MaxHomomorphicInt && !foundPos && !foundNeg; i = i + 1 {
@@ -300,9 +339,9 @@ func discreteLog(P kyber.Point, checkNeg bool) int64 {
 		guessInt = i
 		PointToInt.Put(guess.String(), guessInt)
 		if checkNeg {
-			guessintMinus = -guessInt
-			guessNeg = SuiTe.Point().Mul(SuiTe.Scalar().SetInt64(guessintMinus), B)
-			PointToInt.Put(guessNeg.String(), guessintMinus)
+			guessInt_minus = -guessInt
+			guessNeg = SuiTe.Point().Mul(SuiTe.Scalar().SetInt64(guessInt_minus), B)
+			PointToInt.Put(guessNeg.String(), guessInt_minus)
 
 			if guessNeg.Equal(P) {
 				foundNeg = true
@@ -319,12 +358,53 @@ func discreteLog(P kyber.Point, checkNeg bool) int64 {
 	if !foundPos && !foundNeg {
 		log.LLvl1("out of bound encryption, bound is ", MaxHomomorphicInt)
 		return 0
+	} else {
+		if foundNeg {
+			return guessInt_minus
+		} else {
+			return guessInt
+		}
 	}
-	if foundNeg {
-		return guessintMinus
-	}
-	return guessInt
 }
+
+// OLD, TODO: remove when sure the other one works
+// Brute-Forces the discrete log for integer decoding.
+/*func discreteLog(P kyber.Point, checkNeg bool) int64 {
+	B := SuiTe.Point().Base()
+	var Bi kyber.Point
+	var m int64
+	object, ok := PointToInt.Get(P.String())
+	if ok == nil && object != nil {
+		return object.(int64)
+	}
+	mutex.Lock()
+	if currentGreatestInt == 0 {
+		currentGreatestM = SuiTe.Point().Null()
+	}
+	BiNeg := SuiTe.Point().Neg(B)
+	for Bi, m = currentGreatestM, currentGreatestInt; !Bi.Equal(P) && !SuiTe.Point().Neg(Bi).Equal(P) && m < MaxHomomorphicInt; Bi, m = SuiTe.Point().Add(Bi, B), m+1 {
+		if checkNeg {
+			BiNeg := SuiTe.Point().Neg(Bi)
+			PointToInt.Put(BiNeg.String(), -m)
+		}
+		PointToInt.Put(Bi.String(), m)
+	}
+	currentGreatestM = Bi
+	PointToInt.Put(BiNeg.String(), -m)
+	PointToInt.Put(Bi.String(), m)
+	currentGreatestInt = m
+	//no negative responses
+	if m == MaxHomomorphicInt {
+		log.LLvl1("No decryption")
+		mutex.Unlock()
+		return 0
+	}
+	mutex.Unlock()
+	if SuiTe.Point().Neg(Bi).Equal(P){
+		return -m
+	}
+	return m
+}*/
 
 // DeterministicTagging is a distributed deterministic Tagging switching, removes server contribution and multiplies
 func (c *CipherText) DeterministicTagging(gc *CipherText, private, secretContrib kyber.Scalar) {
@@ -358,10 +438,26 @@ func (cv *CipherVector) DeterministicTagging(cipher *CipherVector, private, secr
 	}
 }
 
+// TaggingDet performs one step in the distributed deterministic tagging process and creates corresponding proof
+func (cv *CipherVector) TaggingDet(privKey, secretContrib kyber.Scalar, pubKey kyber.Point, proofs bool) {
+	switchedVect := NewCipherVector(len(*cv))
+	switchedVect.DeterministicTagging(cv, privKey, secretContrib)
+
+	if proofs {
+		/*p1 := VectorDeterministicTagProofCreation(*cv, *switchedVect, secretContrib, privKey)
+		//proof publication
+		commitSecret := SuiTe.Point().Mul(secretContrib, SuiTe.Point().Base())
+		publishedProof := PublishedDeterministicTaggingProof{Dhp: p1, VectBefore: *cv, VectAfter: *switchedVect, K: pubKey, SB: commitSecret}
+		_ = publishedProof*/
+	}
+
+	*cv = *switchedVect
+}
+
 // ReplaceContribution computes the new CipherText with the old mask contribution replaced by new and save in receiver.
 func (c *CipherText) ReplaceContribution(cipher CipherText, old, new kyber.Point) {
-	c.C.Sub(cipher.C, old)
-	c.C.Add(c.C, new)
+	c.C = SuiTe.Point().Sub(cipher.C, old)
+	c.C = SuiTe.Point().Add(c.C, new)
 }
 
 // KeySwitching performs one step in the Key switching process and stores result in receiver.
@@ -371,7 +467,7 @@ func (c *CipherText) KeySwitching(cipher CipherText, originalEphemeralKey, newKe
 	newContrib := SuiTe.Point().Mul(r, newKey)
 	ephemContrib := SuiTe.Point().Mul(r, SuiTe.Point().Base())
 	c.ReplaceContribution(cipher, oldContrib, newContrib)
-	c.K.Add(cipher.K, ephemContrib)
+	c.K = SuiTe.Point().Add(cipher.K, ephemContrib)
 	return r
 }
 
@@ -399,13 +495,42 @@ func (cv *CipherVector) KeySwitching(cipher CipherVector, originalEphemeralKeys 
 	return r
 }
 
+func (cv *CipherVector) NewKeySwitching(targetPubKey kyber.Point, rbs []kyber.Point, secretKey kyber.Scalar) ([]kyber.Point, []kyber.Point, []kyber.Scalar) {
+	length := len(rbs)
+
+	ks2s := make([]kyber.Point, length)
+	rBNegs := make([]kyber.Point, length)
+	vis := make([]kyber.Scalar, length)
+
+	wg := StartParallelize(length)
+	for i, v := range rbs {
+		go func(i int, v kyber.Point) {
+			defer wg.Done()
+			vi := SuiTe.Scalar().Pick(random.New())
+			(*cv)[i].K = SuiTe.Point().Mul(vi, SuiTe.Point().Base())
+			rbNeg := SuiTe.Point().Neg(rbs[i])
+			rbkNeg := SuiTe.Point().Mul(secretKey, rbNeg)
+			viNewK := SuiTe.Point().Mul(vi, targetPubKey)
+			(*cv)[i].C = SuiTe.Point().Add(rbkNeg, viNewK)
+
+			//proof
+			ks2s[i] = (*cv)[i].C
+			rBNegs[i] = rbNeg
+			vis[i] = vi
+		}(i, v)
+	}
+	EndParallelize(wg)
+
+	return ks2s, rBNegs, vis
+}
+
 // Homomorphic operations
 //______________________________________________________________________________________________________________________
 
 // Add two ciphertexts and stores result in receiver.
 func (c *CipherText) Add(c1, c2 CipherText) {
-	c.C.Add(c1.C, c2.C)
-	c.K.Add(c1.K, c2.K)
+	c.C = SuiTe.Point().Add(c1.C, c2.C)
+	c.K = SuiTe.Point().Add(c1.K, c2.K)
 }
 
 // MulCipherTextbyScalar multiplies two components of a ciphertext by a scalar
@@ -442,6 +567,7 @@ func (cv *CipherVector) Add(cv1, cv2 CipherVector) {
 // Rerandomize rerandomizes an element in a ciphervector at position j, following the Neff SHuffling algorithm
 func (cv *CipherVector) Rerandomize(cv1 CipherVector, a, b kyber.Scalar, ciphert CipherText, g, h kyber.Point, j int) {
 	var tmp1, tmp2 kyber.Point
+
 	if ciphert.C == nil {
 		//no precomputed value
 		tmp1 = SuiTe.Point().Mul(a, g)
@@ -451,14 +577,15 @@ func (cv *CipherVector) Rerandomize(cv1 CipherVector, a, b kyber.Scalar, ciphert
 		tmp2 = ciphert.C
 	}
 
-	(*cv)[j].K.Add(cv1[j].K, tmp1)
-	(*cv)[j].C.Add(cv1[j].C, tmp2)
+	(*cv)[j].K = SuiTe.Point().Add(cv1[j].K, tmp1)
+	(*cv)[j].C = SuiTe.Point().Add(cv1[j].C, tmp2)
+
 }
 
 // Sub two ciphertexts and stores result in receiver.
 func (c *CipherText) Sub(c1, c2 CipherText) {
-	c.C.Sub(c1.C, c2.C)
-	c.K.Sub(c1.K, c2.K)
+	c.C = SuiTe.Point().Sub(c1.C, c2.C)
+	c.K = SuiTe.Point().Sub(c1.K, c2.K)
 }
 
 // Sub two cipherVectors and stores result in receiver.
@@ -468,8 +595,41 @@ func (cv *CipherVector) Sub(cv1, cv2 CipherVector) {
 	}
 }
 
+// Equal checks equality between ciphervector.
+func (cv *CipherVector) Equal(cv2 *CipherVector) bool {
+	if cv == nil || cv2 == nil {
+		return cv == cv2
+	}
+
+	if len(*cv) != len(*cv2) {
+		return false
+	}
+
+	for i := range *cv2 {
+		if !(*cv)[i].Equal(&(*cv2)[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+// Equal checks equality between ciphertexts.
+func (c *CipherText) Equal(c2 *CipherText) bool {
+	return c2.K.Equal(c.K) && c2.C.Equal(c.C)
+}
+
 // Representation
 //______________________________________________________________________________________________________________________
+
+// CipherVectorToDeterministicTag creates a tag (grouping key) from a cipher vector
+func CipherVectorToDeterministicTag(cipherVect CipherVector, privKey, secContrib kyber.Scalar, pubKey kyber.Point, proofs bool) GroupingKey {
+	cipherVect.TaggingDet(privKey, secContrib, pubKey, proofs)
+	deterministicGroupAttributes := make(DeterministCipherVector, len(cipherVect))
+	for j, c := range cipherVect {
+		deterministicGroupAttributes[j] = DeterministCipherText{Point: c.C}
+	}
+	return deterministicGroupAttributes.Key()
+}
 
 // Key is used in order to get a map-friendly representation of grouping attributes to be used as keys.
 func (dcv *DeterministCipherVector) Key() GroupingKey {
@@ -485,6 +645,11 @@ func (dcv *DeterministCipherVector) Equal(dcv2 *DeterministCipherVector) bool {
 	if dcv == nil || dcv2 == nil {
 		return dcv == dcv2
 	}
+
+	if len(*dcv) != len(*dcv2) {
+		return false
+	}
+
 	for i := range *dcv2 {
 		if !(*dcv)[i].Equal(&(*dcv2)[i]) {
 			return false
@@ -559,11 +724,6 @@ func RandomPermutation(k int) []int {
 // Conversion
 //______________________________________________________________________________________________________________________
 
-// CipherTextByteSize return the length of one CipherText element transform into []byte
-func CipherTextByteSize() int {
-	return 2 * SuiTe.PointLen()
-}
-
 // ToBytes converts a CipherVector to a byte array
 func (cv *CipherVector) ToBytes() ([]byte, int) {
 	b := make([]byte, 0)
@@ -578,10 +738,10 @@ func (cv *CipherVector) ToBytes() ([]byte, int) {
 // FromBytes converts a byte array to a CipherVector. Note that you need to create the (empty) object beforehand.
 func (cv *CipherVector) FromBytes(data []byte, length int) {
 	*cv = make(CipherVector, length)
-	elementSize := CipherTextByteSize()
-	for i, pos := 0, 0; i < length*elementSize; i, pos = i+elementSize, pos+1 {
+	cipherLength := 2 * SuiTe.PointLen()
+	for i, pos := 0, 0; i < length*cipherLength; i, pos = i+cipherLength, pos+1 {
 		ct := CipherText{}
-		ct.FromBytes(data[i : i+elementSize])
+		ct.FromBytes(data[i : i+cipherLength])
 		(*cv)[pos] = ct
 	}
 }
@@ -605,9 +765,9 @@ func (c *CipherText) ToBytes() []byte {
 func (c *CipherText) FromBytes(data []byte) {
 	(*c).K = SuiTe.Point()
 	(*c).C = SuiTe.Point()
-
-	(*c).K.UnmarshalBinary(data[:SuiTe.PointLen()])
-	(*c).C.UnmarshalBinary(data[SuiTe.PointLen():])
+	pointLength := SuiTe.PointLen()
+	(*c).K.UnmarshalBinary(data[:pointLength])
+	(*c).C.UnmarshalBinary(data[pointLength:])
 }
 
 // Serialize encodes a CipherText in a base64 string
@@ -626,8 +786,8 @@ func (c *CipherText) Deserialize(b64Encoded string) error {
 	return nil
 }
 
-// serializeElement serializes a BinaryMarshaller-compatible element using base64 encoding (e.g. kyber.Point or kyber.Scalar)
-func serializeElement(el encoding.BinaryMarshaler) (string, error) {
+// SerializeElement serializes a BinaryMarshaller-compatible element using base64 encoding (e.g. kyber.Point or kyber.Scalar)
+func SerializeElement(el encoding.BinaryMarshaler) (string, error) {
 	bytes, err := el.MarshalBinary()
 	if err != nil {
 		log.Error("Error marshalling element.", err)
@@ -638,12 +798,12 @@ func serializeElement(el encoding.BinaryMarshaler) (string, error) {
 
 // SerializePoint serializes a point
 func SerializePoint(point kyber.Point) (string, error) {
-	return serializeElement(point)
+	return SerializeElement(point)
 }
 
 // SerializeScalar serializes a scalar
 func SerializeScalar(scalar encoding.BinaryMarshaler) (string, error) {
-	return serializeElement(scalar)
+	return SerializeElement(scalar)
 }
 
 // DeserializePoint deserializes a point using base64 encoding
@@ -703,14 +863,19 @@ func AbstractPointsToBytes(aps []kyber.Point) []byte {
 func BytesToAbstractPoints(target []byte) []kyber.Point {
 	var err error
 	aps := make([]kyber.Point, 0)
-
-	for i := 0; i < len(target); i += 32 {
+	pointLength := SuiTe.PointLen()
+	for i := 0; i < len(target); i += pointLength {
 		ap := SuiTe.Point()
-		if err = ap.UnmarshalBinary(target[i : i+32]); err != nil {
+		if err = ap.UnmarshalBinary(target[i : i+pointLength]); err != nil {
 			log.Fatal(err)
 		}
 
 		aps = append(aps, ap)
 	}
 	return aps
+}
+
+// CipherTextByteSize return the length of one CipherText element transform into []byte
+func CipherTextByteSize() int {
+	return 2 * SuiTe.PointLen()
 }
