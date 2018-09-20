@@ -148,7 +148,7 @@ func EncryptInt(pubkey kyber.Point, integer int64) *CipherText {
 	return encryption
 }
 
-// EncryptInt encodes i as iB, encrypt it into a CipherText and returns a pointer to it.
+// EncryptIntGetR encodes i as iB, encrypt it into a CipherText and returns a pointer to it. It also returns the randomness used in the encryption
 func EncryptIntGetR(pubkey kyber.Point, integer int64) (*CipherText, kyber.Scalar) {
 	encryption, r := encryptPoint(pubkey, IntToPoint(integer))
 	return encryption, r
@@ -185,7 +185,7 @@ func EncryptIntVector(pubkey kyber.Point, intArray []int64) *CipherVector {
 	return &cv
 }
 
-// EncryptIntVector encrypts a []int into a CipherVector and returns a pointer to it.
+// EncryptIntVectorGetRs encrypts a []int into a CipherVector and returns a pointer to it. It also returns the randomness used in the encryption
 func EncryptIntVectorGetRs(pubkey kyber.Point, intArray []int64) (*CipherVector, []kyber.Scalar) {
 	var wg sync.WaitGroup
 	cv := make(CipherVector, len(intArray))
@@ -215,7 +215,7 @@ func EncryptIntVectorGetRs(pubkey kyber.Point, intArray []int64) (*CipherVector,
 	return &cv, rs
 }
 
-// EncryptIntVector encrypts a []int into a CipherVector and returns a pointer to it.
+// EncryptScalarVector encrypts a []scalar into a CipherVector and returns a pointer to it.
 func EncryptScalarVector(pubkey kyber.Point, intArray []kyber.Scalar) *CipherVector {
 	var wg sync.WaitGroup
 	cv := make(CipherVector, len(intArray))
@@ -285,7 +285,7 @@ func DecryptIntVectorWithNeg(prikey kyber.Scalar, cipherVector *CipherVector) []
 	return result
 }
 
-// DecryptInt decrypts an integer from an ElGamal cipher text where integer are encoded in the exponent.
+// DecryptCheckZero check if the encrypted value is a 0. Does not do the complete decryption
 func DecryptCheckZero(prikey kyber.Scalar, cipher CipherText) int64 {
 	M := decryptPoint(prikey, cipher)
 	result := int64(1)
@@ -295,7 +295,7 @@ func DecryptCheckZero(prikey kyber.Scalar, cipher CipherText) int64 {
 	return result
 }
 
-// DecryptIntVectorWithNeg decrypts a cipherVector.
+// DecryptCheckZeroVector checks if encrypted values are 0 or not without doing the complete decryption.
 func DecryptCheckZeroVector(prikey kyber.Scalar, cipherVector *CipherVector) []int64 {
 	result := make([]int64, len(*cipherVector))
 	for i, c := range *cipherVector {
@@ -326,7 +326,7 @@ func discreteLog(P kyber.Point, checkNeg bool) int64 {
 	guess := currentGreatestM
 	guessInt := currentGreatestInt
 	guessNeg := SuiTe.Point().Null()
-	guessInt_minus := int64(0)
+	guessIntMinus := int64(0)
 
 	start := true
 	for i := guessInt; i < MaxHomomorphicInt && !foundPos && !foundNeg; i = i + 1 {
@@ -339,9 +339,9 @@ func discreteLog(P kyber.Point, checkNeg bool) int64 {
 		guessInt = i
 		PointToInt.Put(guess.String(), guessInt)
 		if checkNeg {
-			guessInt_minus = -guessInt
-			guessNeg = SuiTe.Point().Mul(SuiTe.Scalar().SetInt64(guessInt_minus), B)
-			PointToInt.Put(guessNeg.String(), guessInt_minus)
+			guessIntMinus = -guessInt
+			guessNeg = SuiTe.Point().Mul(SuiTe.Scalar().SetInt64(guessIntMinus), B)
+			PointToInt.Put(guessNeg.String(), guessIntMinus)
 
 			if guessNeg.Equal(P) {
 				foundNeg = true
@@ -358,13 +358,13 @@ func discreteLog(P kyber.Point, checkNeg bool) int64 {
 	if !foundPos && !foundNeg {
 		log.LLvl1("out of bound encryption, bound is ", MaxHomomorphicInt)
 		return 0
-	} else {
-		if foundNeg {
-			return guessInt_minus
-		} else {
-			return guessInt
-		}
 	}
+
+	if foundNeg {
+		return guessIntMinus
+	}
+	return guessInt
+
 }
 
 // OLD, TODO: remove when sure the other one works
@@ -495,6 +495,7 @@ func (cv *CipherVector) KeySwitching(cipher CipherVector, originalEphemeralKeys 
 	return r
 }
 
+// NewKeySwitching implements the key switching operation as presented in Drynx (improved from UnLynx)
 func (cv *CipherVector) NewKeySwitching(targetPubKey kyber.Point, rbs []kyber.Point, secretKey kyber.Scalar) ([]kyber.Point, []kyber.Point, []kyber.Scalar) {
 	length := len(rbs)
 
