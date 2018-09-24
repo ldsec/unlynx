@@ -181,7 +181,6 @@ func EncryptIntVector(pubkey kyber.Point, intArray []int64) *CipherVector {
 			cv[i] = *EncryptInt(pubkey, n)
 		}
 	}
-
 	return &cv
 }
 
@@ -367,45 +366,6 @@ func discreteLog(P kyber.Point, checkNeg bool) int64 {
 
 }
 
-// OLD, TODO: remove when sure the other one works
-// Brute-Forces the discrete log for integer decoding.
-/*func discreteLog(P kyber.Point, checkNeg bool) int64 {
-	B := SuiTe.Point().Base()
-	var Bi kyber.Point
-	var m int64
-	object, ok := PointToInt.Get(P.String())
-	if ok == nil && object != nil {
-		return object.(int64)
-	}
-	mutex.Lock()
-	if currentGreatestInt == 0 {
-		currentGreatestM = SuiTe.Point().Null()
-	}
-	BiNeg := SuiTe.Point().Neg(B)
-	for Bi, m = currentGreatestM, currentGreatestInt; !Bi.Equal(P) && !SuiTe.Point().Neg(Bi).Equal(P) && m < MaxHomomorphicInt; Bi, m = SuiTe.Point().Add(Bi, B), m+1 {
-		if checkNeg {
-			BiNeg := SuiTe.Point().Neg(Bi)
-			PointToInt.Put(BiNeg.String(), -m)
-		}
-		PointToInt.Put(Bi.String(), m)
-	}
-	currentGreatestM = Bi
-	PointToInt.Put(BiNeg.String(), -m)
-	PointToInt.Put(Bi.String(), m)
-	currentGreatestInt = m
-	//no negative responses
-	if m == MaxHomomorphicInt {
-		log.LLvl1("No decryption")
-		mutex.Unlock()
-		return 0
-	}
-	mutex.Unlock()
-	if SuiTe.Point().Neg(Bi).Equal(P){
-		return -m
-	}
-	return m
-}*/
-
 // DeterministicTagging is a distributed deterministic Tagging switching, removes server contribution and multiplies
 func (c *CipherText) DeterministicTagging(gc *CipherText, private, secretContrib kyber.Scalar) {
 	c.K = SuiTe.Point().Mul(secretContrib, gc.K)
@@ -493,36 +453,6 @@ func (cv *CipherVector) KeySwitching(cipher CipherVector, originalEphemeralKeys 
 		}
 	}
 	return r
-}
-
-// NewKeySwitching implements the key switching operation as presented in Drynx (improved from UnLynx)
-func (cv *CipherVector) NewKeySwitching(targetPubKey kyber.Point, rbs []kyber.Point, secretKey kyber.Scalar) ([]kyber.Point, []kyber.Point, []kyber.Scalar) {
-	length := len(rbs)
-
-	ks2s := make([]kyber.Point, length)
-	rBNegs := make([]kyber.Point, length)
-	vis := make([]kyber.Scalar, length)
-
-	wg := StartParallelize(length)
-	for i, v := range rbs {
-		go func(i int, v kyber.Point) {
-			defer wg.Done()
-			vi := SuiTe.Scalar().Pick(random.New())
-			(*cv)[i].K = SuiTe.Point().Mul(vi, SuiTe.Point().Base())
-			rbNeg := SuiTe.Point().Neg(rbs[i])
-			rbkNeg := SuiTe.Point().Mul(secretKey, rbNeg)
-			viNewK := SuiTe.Point().Mul(vi, targetPubKey)
-			(*cv)[i].C = SuiTe.Point().Add(rbkNeg, viNewK)
-
-			//proof
-			ks2s[i] = (*cv)[i].C
-			rBNegs[i] = rbNeg
-			vis[i] = vi
-		}(i, v)
-	}
-	EndParallelize(wg)
-
-	return ks2s, rBNegs, vis
 }
 
 // Homomorphic operations
