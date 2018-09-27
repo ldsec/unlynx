@@ -291,8 +291,9 @@ func (cv *FilteredResponse) FromBytes(data []byte, aabLength, pgaebLength int) {
 	(*cv).AggregatingAttributes = make(CipherVector, aabLength)
 	(*cv).GroupByEnc = make(CipherVector, pgaebLength)
 
-	aabByteLength := aabLength * 64 //CAREFUL: hardcoded 64 (size of el-gamal element C,K)
-	pgaebByteLength := pgaebLength * 64
+	lengthCipher := 2 * SuiTe.PointLen()
+	aabByteLength := aabLength * lengthCipher
+	pgaebByteLength := pgaebLength * lengthCipher
 
 	aab := data[:aabByteLength]
 	pgaeb := data[aabByteLength : aabByteLength+pgaebByteLength]
@@ -318,8 +319,9 @@ func (crd *FilteredResponseDet) FromBytes(data []byte, gacbLength, aabLength, dt
 	(*crd).Fr.AggregatingAttributes = make(CipherVector, aabLength)
 	(*crd).Fr.GroupByEnc = make(CipherVector, gacbLength)
 
-	aabByteLength := aabLength * 64 //CAREFUL: hardcoded 64 (size of el-gamal element C,K)
-	gacbByteLength := gacbLength * 64
+	lengthCipher := 2 * SuiTe.PointLen()
+	aabByteLength := aabLength * lengthCipher //CAREFUL: hardcoded 64 (size of el-gamal element C,K)
+	gacbByteLength := gacbLength * lengthCipher
 
 	aab := data[:aabByteLength]
 	gacb := data[aabByteLength : gacbByteLength+aabByteLength]
