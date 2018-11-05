@@ -703,12 +703,12 @@ func (c *CipherText) FromBytes(data []byte) {
 
 // Serialize encodes a CipherText in a base64 string
 func (c *CipherText) Serialize() string {
-	return base64.StdEncoding.EncodeToString((*c).ToBytes())
+	return base64.URLEncoding.EncodeToString((*c).ToBytes())
 }
 
 // Deserialize decodes a CipherText from a base64 string
 func (c *CipherText) Deserialize(b64Encoded string) error {
-	decoded, err := base64.StdEncoding.DecodeString(b64Encoded)
+	decoded, err := base64.URLEncoding.DecodeString(b64Encoded)
 	if err != nil {
 		log.Error("Invalid CipherText (decoding failed).", err)
 		return err
@@ -724,7 +724,7 @@ func SerializeElement(el encoding.BinaryMarshaler) (string, error) {
 		log.Error("Error marshalling element.", err)
 		return "", err
 	}
-	return base64.StdEncoding.EncodeToString(bytes), nil
+	return base64.URLEncoding.EncodeToString(bytes), nil
 }
 
 // SerializePoint serializes a point
@@ -739,7 +739,7 @@ func SerializeScalar(scalar encoding.BinaryMarshaler) (string, error) {
 
 // DeserializePoint deserializes a point using base64 encoding
 func DeserializePoint(encodedPoint string) (kyber.Point, error) {
-	decoded, errD := base64.StdEncoding.DecodeString(encodedPoint)
+	decoded, errD := base64.URLEncoding.DecodeString(encodedPoint)
 	if errD != nil {
 		log.Error("Error decoding point.", errD)
 		return nil, errD
@@ -757,7 +757,7 @@ func DeserializePoint(encodedPoint string) (kyber.Point, error) {
 
 // DeserializeScalar deserializes a scalar using base64 encoding
 func DeserializeScalar(encodedScalar string) (kyber.Scalar, error) {
-	decoded, errD := base64.StdEncoding.DecodeString(encodedScalar)
+	decoded, errD := base64.URLEncoding.DecodeString(encodedScalar)
 	if errD != nil {
 		log.Error("Error decoding scalar.", errD)
 		return nil, errD
