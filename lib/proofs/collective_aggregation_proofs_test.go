@@ -3,6 +3,7 @@ package libunlynxproofs_test
 import (
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/proofs"
+	"github.com/lca1/unlynx/lib/tools"
 	"github.com/lca1/unlynx/protocols"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -48,13 +49,13 @@ func TestCollectiveAggregationProof(t *testing.T) {
 
 	comparisonMap := make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse)
 	for _, v := range detResponses {
-		libunlynx.AddInMap(comparisonMap, v.DetTagGroupBy, v.Fr)
+		libunlynxtools.AddInMap(comparisonMap, v.DetTagGroupBy, v.Fr)
 	}
 
 	resultingMap := make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse)
 	for i, v := range comparisonMap {
-		libunlynx.AddInMap(resultingMap, i, v)
-		libunlynx.AddInMap(resultingMap, i, v)
+		libunlynxtools.AddInMap(resultingMap, i, v)
+		libunlynxtools.AddInMap(resultingMap, i, v)
 	}
 
 	PublishedCollectiveAggregationProof := libunlynxproofs.CollectiveAggregationProofCreation(comparisonMap, detResponses, resultingMap)

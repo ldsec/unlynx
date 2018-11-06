@@ -1,11 +1,13 @@
-package libunlynx
+package libunlynxtools
 
 import (
 	"encoding/gob"
 	"fmt"
 	"github.com/btcsuite/goleveldb/leveldb/errors"
+	"github.com/dedis/kyber"
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
+	. "github.com/lca1/unlynx/lib"
 	"os"
 	"strconv"
 	"strings"
@@ -196,4 +198,32 @@ func DecodeCipherVectorScalar(eCV []CipherVectorScalarBytes) ([]CipherVectorScal
 	}
 
 	return slice, nil
+}
+
+// joinAttributes joins clear and encrypted attributes into one encrypted container (CipherVector)
+func JoinAttributes(clear, enc map[string]int64, identifier string, encryptionKey kyber.Point) CipherVector {
+	clearContainer := ConvertMapToData(clear, identifier, 0)
+	encContainer := ConvertMapToData(enc, identifier, len(clear))
+
+	result := make(CipherVector, 0)
+
+	for i := 0; i < len(clearContainer); i++ {
+		result = append(result, *EncryptInt(encryptionKey, int64(clearContainer[i])))
+	}
+	for i := 0; i < len(encContainer); i++ {
+		result = append(result, *EncryptInt(encryptionKey, int64(encContainer[i])))
+	}
+
+	return result
+}
+
+// FromDpClearResponseToProcess converts a DpClearResponse struct to a ProcessResponse struct
+func FromDpClearResponseToProcess(dcr *DpClearResponse, encryptionKey kyber.Point) ProcessResponse {
+	result := ProcessResponse{}
+
+	result.AggregatingAttributes = JoinAttributes(dcr.AggregatingAttributesClear, dcr.AggregatingAttributesEnc, "s", encryptionKey)
+	result.WhereEnc = JoinAttributes(dcr.WhereClear, dcr.WhereEnc, "w", encryptionKey)
+	result.GroupByEnc = JoinAttributes(dcr.GroupByClear, dcr.GroupByEnc, "g", encryptionKey)
+
+	return result
 }

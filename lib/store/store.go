@@ -4,6 +4,7 @@ import (
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/proofs"
+	"github.com/lca1/unlynx/lib/tools"
 	"sync"
 )
 
@@ -136,7 +137,7 @@ func (s *Store) PushDeterministicFilteredResponses(detFilteredResponses []libunl
 
 	for _, v := range detFilteredResponses {
 		s.Mutex.Lock()
-		libunlynx.AddInMap(s.LocAggregatedProcessResponse, v.DetTagGroupBy, v.Fr)
+		libunlynxtools.AddInMap(s.LocAggregatedProcessResponse, v.DetTagGroupBy, v.Fr)
 		s.Mutex.Unlock()
 	}
 	if proofsB {
@@ -172,10 +173,10 @@ func AddInClear(s []libunlynx.DpClearResponse) []libunlynx.DpClearResponse {
 
 	wg := libunlynx.StartParallelize(0)
 	for _, elem := range s {
-		groupByClear := libunlynx.Int64ArrayToString(libunlynx.ConvertMapToData(elem.GroupByClear, "g", 0))
-		groupByEnc := libunlynx.Int64ArrayToString(libunlynx.ConvertMapToData(elem.GroupByEnc, "g", len(elem.GroupByClear)))
-		whereClear := libunlynx.Int64ArrayToString(libunlynx.ConvertMapToData(elem.WhereClear, "w", 0))
-		whereEnc := libunlynx.Int64ArrayToString(libunlynx.ConvertMapToData(elem.WhereEnc, "w", len(elem.WhereClear)))
+		groupByClear := libunlynxtools.Int64ArrayToString(libunlynxtools.ConvertMapToData(elem.GroupByClear, "g", 0))
+		groupByEnc := libunlynxtools.Int64ArrayToString(libunlynxtools.ConvertMapToData(elem.GroupByEnc, "g", len(elem.GroupByClear)))
+		whereClear := libunlynxtools.Int64ArrayToString(libunlynxtools.ConvertMapToData(elem.WhereClear, "w", 0))
+		whereEnc := libunlynxtools.Int64ArrayToString(libunlynxtools.ConvertMapToData(elem.WhereEnc, "w", len(elem.WhereClear)))
 
 		//generate a unique tag and use it to aggregate the data
 		key := groupByClear + groupByEnc + whereClear + whereEnc
@@ -190,8 +191,8 @@ func AddInClear(s []libunlynx.DpClearResponse) []libunlynx.DpClearResponse {
 		}
 
 		cpy := make([]int64, 0)
-		cpy = append(cpy, libunlynx.ConvertMapToData(elem.AggregatingAttributesClear, "s", 0)...)
-		cpy = append(cpy, libunlynx.ConvertMapToData(elem.AggregatingAttributesEnc, "s", len(elem.AggregatingAttributesClear))...)
+		cpy = append(cpy, libunlynxtools.ConvertMapToData(elem.AggregatingAttributesClear, "s", 0)...)
+		cpy = append(cpy, libunlynxtools.ConvertMapToData(elem.AggregatingAttributesEnc, "s", len(elem.AggregatingAttributesClear))...)
 
 		if _, ok := dataMap[key]; ok == false {
 			dataMap[key] = cpy
@@ -230,14 +231,14 @@ func AddInClear(s []libunlynx.DpClearResponse) []libunlynx.DpClearResponse {
 	//it is a pain but we have to convert everything back to a set of maps
 	i := 0
 	for k, v := range dataMap {
-		aux := libunlynx.StringToInt64Array(k)
+		aux := libunlynxtools.StringToInt64Array(k)
 		result[i] = libunlynx.DpClearResponse{
-			GroupByClear:               libunlynx.ConvertDataToMap(aux[:numGroupsClear], "g", 0),
-			GroupByEnc:                 libunlynx.ConvertDataToMap(aux[numGroupsClear:numGroupsClear+numGroupsEnc], "g", numGroupsClear),
-			WhereClear:                 libunlynx.ConvertDataToMap(aux[numGroupsClear+numGroupsEnc:numGroupsClear+numGroupsEnc+numWhereClear], "w", 0),
-			WhereEnc:                   libunlynx.ConvertDataToMap(aux[numGroupsClear+numGroupsEnc+numWhereClear:numGroupsClear+numGroupsEnc+numWhereClear+numWhereEnc], "w", numWhereClear),
-			AggregatingAttributesClear: libunlynx.ConvertDataToMap(v[:numAggrClear], "s", 0),
-			AggregatingAttributesEnc:   libunlynx.ConvertDataToMap(v[numAggrClear:], "s", numAggrClear),
+			GroupByClear:               libunlynxtools.ConvertDataToMap(aux[:numGroupsClear], "g", 0),
+			GroupByEnc:                 libunlynxtools.ConvertDataToMap(aux[numGroupsClear:numGroupsClear+numGroupsEnc], "g", numGroupsClear),
+			WhereClear:                 libunlynxtools.ConvertDataToMap(aux[numGroupsClear+numGroupsEnc:numGroupsClear+numGroupsEnc+numWhereClear], "w", 0),
+			WhereEnc:                   libunlynxtools.ConvertDataToMap(aux[numGroupsClear+numGroupsEnc+numWhereClear:numGroupsClear+numGroupsEnc+numWhereClear+numWhereEnc], "w", numWhereClear),
+			AggregatingAttributesClear: libunlynxtools.ConvertDataToMap(v[:numAggrClear], "s", 0),
+			AggregatingAttributesEnc:   libunlynxtools.ConvertDataToMap(v[numAggrClear:], "s", numAggrClear),
 		}
 		i++
 	}
@@ -249,7 +250,7 @@ func AddInClear(s []libunlynx.DpClearResponse) []libunlynx.DpClearResponse {
 func (s *Store) PushCothorityAggregatedFilteredResponses(sNew map[libunlynx.GroupingKey]libunlynx.FilteredResponse) {
 	for key, value := range sNew {
 		s.Mutex.Lock()
-		libunlynx.AddInMap(s.GroupedDeterministicFilteredResponses, key, value)
+		libunlynxtools.AddInMap(s.GroupedDeterministicFilteredResponses, key, value)
 		s.Mutex.Unlock()
 	}
 }

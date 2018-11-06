@@ -1,4 +1,4 @@
-package libunlynx_test
+package libunlynxshuffle_test
 
 import (
 	"github.com/dedis/kyber/util/random"
@@ -6,6 +6,7 @@ import (
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/proofs"
+	. "github.com/lca1/unlynx/lib/shuffle"
 	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
@@ -32,7 +33,7 @@ func TestShuffleSequence(t *testing.T) {
 		}
 
 	}
-	outputlist, pi, beta := libunlynx.ShuffleSequence(inputList, nil, collectivePubKey, nil)
+	outputlist, pi, beta := ShuffleSequence(inputList, nil, collectivePubKey, nil)
 
 	//with proof
 	shuffleProof := libunlynxproofs.ShufflingProofCreation(inputList, outputlist, nil, collectivePubKey, beta, pi)
@@ -62,15 +63,15 @@ func TestPrecomputationWritingForShuffling(t *testing.T) {
 	lineSize := 10
 	secret := libunlynx.SuiTe.Scalar().Pick(random.New())
 
-	precompute := libunlynx.PrecomputationWritingForShuffling(false, "pre_compute_multiplications.gob", "test_server", secret, el.Aggregate, lineSize)
+	precompute := PrecomputationWritingForShuffling(false, "pre_compute_multiplications.gob", "test_server", secret, el.Aggregate, lineSize)
 	assert.Equal(t, len(precompute), lineSize)
 
 	// writes precomputation file
-	precompute = libunlynx.PrecomputationWritingForShuffling(true, "pre_compute_multiplications.gob", "test_server", secret, el.Aggregate, lineSize)
+	precompute = PrecomputationWritingForShuffling(true, "pre_compute_multiplications.gob", "test_server", secret, el.Aggregate, lineSize)
 	assert.Equal(t, len(precompute), lineSize)
 
 	// reads precomputation file
-	precompute = libunlynx.ReadPrecomputedFile("pre_compute_multiplications.gob")
+	precompute = ReadPrecomputedFile("pre_compute_multiplications.gob")
 	assert.Equal(t, len(precompute), lineSize)
 
 }

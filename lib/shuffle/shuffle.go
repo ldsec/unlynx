@@ -1,9 +1,11 @@
-package libunlynx
+package libunlynxshuffle
 
 import (
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/util/random"
 	"github.com/dedis/onet/log"
+	. "github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/tools"
 	"math/big"
 	"os"
 )
@@ -169,12 +171,12 @@ func PrecomputeForShuffling(serverName, gobFile string, surveySecret kyber.Scala
 	scalarBytes, _ := surveySecret.MarshalBinary()
 	precomputeShuffle := CreatePrecomputedRandomize(SuiTe.Point().Base(), collectiveKey, SuiTe.XOF(scalarBytes), lineSize*2, 10)
 
-	encoded, err := EncodeCipherVectorScalar(precomputeShuffle)
+	encoded, err := libunlynxtools.EncodeCipherVectorScalar(precomputeShuffle)
 
 	if err != nil {
 		log.Error("Error during marshaling")
 	}
-	WriteToGobFile(gobFile, encoded)
+	libunlynxtools.WriteToGobFile(gobFile, encoded)
 
 	return precomputeShuffle
 }
@@ -188,9 +190,9 @@ func PrecomputationWritingForShuffling(appFlag bool, gobFile, serverName string,
 			precomputeShuffle = PrecomputeForShuffling(serverName, gobFile, surveySecret, collectiveKey, lineSize)
 		} else {
 			var encoded []CipherVectorScalarBytes
-			ReadFromGobFile(gobFile, &encoded)
+			libunlynxtools.ReadFromGobFile(gobFile, &encoded)
 
-			precomputeShuffle, err = DecodeCipherVectorScalar(encoded)
+			precomputeShuffle, err = libunlynxtools.DecodeCipherVectorScalar(encoded)
 
 			if len(precomputeShuffle[0].CipherV) < lineSize {
 
@@ -211,9 +213,9 @@ func ReadPrecomputedFile(fileName string) []CipherVectorScalar {
 	var precomputeShuffle []CipherVectorScalar
 	if _, err := os.Stat(fileName); !os.IsNotExist(err) {
 		var encoded []CipherVectorScalarBytes
-		ReadFromGobFile(fileName, &encoded)
+		libunlynxtools.ReadFromGobFile(fileName, &encoded)
 
-		precomputeShuffle, _ = DecodeCipherVectorScalar(encoded)
+		precomputeShuffle, _ = libunlynxtools.DecodeCipherVectorScalar(encoded)
 	} else {
 		precomputeShuffle = nil
 	}

@@ -9,7 +9,10 @@ import (
 	"github.com/dedis/onet/network"
 	"github.com/fanliao/go-concurrentMap"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/diffprivacy"
+	"github.com/lca1/unlynx/lib/shuffle"
 	"github.com/lca1/unlynx/lib/store"
+	"github.com/lca1/unlynx/lib/tools"
 	"github.com/lca1/unlynx/protocols"
 	"github.com/lca1/unlynx/services/default/data"
 	"github.com/satori/go.uuid"
@@ -191,7 +194,7 @@ func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.
 		log.Lvl1(s.ServerIdentity().String(), " handles this new survey ", recq.SurveyID)
 
 		// broadcasts the query
-		err := libunlynx.SendISMOthers(s.ServiceProcessor, &recq.Roster, recq)
+		err := libunlynxtools.SendISMOthers(s.ServiceProcessor, &recq.Roster, recq)
 		if err != nil {
 			log.Error("broadcasting error ", err)
 		}
@@ -204,7 +207,7 @@ func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.
 
 	// prepares the precomputation for shuffling
 	lineSize := int(len(recq.Sum)) + int(len(recq.Where)) + int(len(recq.GroupBy)) + 1 // + 1 is for the possible count attribute
-	precomputeShuffle := libunlynx.PrecomputationWritingForShuffling(recq.AppFlag, gobFile, s.ServerIdentity().String(), surveySecret, recq.Roster.Aggregate, lineSize)
+	precomputeShuffle := libunlynxshuffle.PrecomputationWritingForShuffling(recq.AppFlag, gobFile, s.ServerIdentity().String(), surveySecret, recq.Roster.Aggregate, lineSize)
 
 	// survey instantiation
 	s.Survey.Put((string)(recq.SurveyID), Survey{
@@ -284,7 +287,7 @@ func (s *Service) HandleSurveyResultsQuery(resq *SurveyResultsQuery) (network.Me
 	if resq.IntraMessage == false {
 		resq.IntraMessage = true
 
-		err := libunlynx.SendISMOthers(s.ServiceProcessor, &survey.Query.Roster, resq)
+		err := libunlynxtools.SendISMOthers(s.ServiceProcessor, &survey.Query.Roster, resq)
 		if err != nil {
 			log.Error("broadcasting error ", err)
 		}
@@ -397,7 +400,7 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 
 		if tn.IsRoot() {
 			clientResponses := make([]libunlynx.ProcessResponse, 0)
-			noiseArray := libunlynx.GenerateNoiseValues(1000, 0, 1, 0.1)
+			noiseArray := libunlynxdiffprivacy.GenerateNoiseValues(1000, 0, 1, 0.1)
 			for _, v := range noiseArray {
 				clientResponses = append(clientResponses, libunlynx.ProcessResponse{GroupByEnc: nil, AggregatingAttributes: libunlynx.IntArrayToCipherVector([]int64{int64(v)})})
 			}
@@ -502,7 +505,7 @@ func (s *Service) StartService(targetSurvey SurveyID, root bool) error {
 
 	// broadcasts the query to unlock waiting channel
 	aux := target.Query.Roster
-	err = libunlynx.SendISMOthers(s.ServiceProcessor, &aux, &DDTfinished{SurveyID: targetSurvey})
+	err = libunlynxtools.SendISMOthers(s.ServiceProcessor, &aux, &DDTfinished{SurveyID: targetSurvey})
 	if err != nil {
 		log.Error("broadcasting error ", err)
 	}

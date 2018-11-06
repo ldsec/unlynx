@@ -1,6 +1,8 @@
 package protocolsunlynxutils_test
 
 import (
+	"github.com/lca1/unlynx/lib/shuffle"
+	"github.com/lca1/unlynx/lib/tools"
 	"testing"
 	"time"
 
@@ -100,12 +102,12 @@ func TestProofsVerification(t *testing.T) {
 
 	comparisonMap := make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse)
 	for _, v := range detResponses {
-		libunlynx.AddInMap(comparisonMap, v.DetTagGroupBy, v.Fr)
+		libunlynxtools.AddInMap(comparisonMap, v.DetTagGroupBy, v.Fr)
 	}
 
 	comparisonMap2 := make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse)
 	for i := 0; i < len(detResponses)-2; i++ {
-		libunlynx.AddInMap(comparisonMap2, detResponses[i].DetTagGroupBy, detResponses[i].Fr)
+		libunlynxtools.AddInMap(comparisonMap2, detResponses[i].DetTagGroupBy, detResponses[i].Fr)
 	}
 
 	PublishedAggregationProof1 := libunlynxproofs.AggregationProofCreation(detResponses, comparisonMap)
@@ -119,7 +121,7 @@ func TestProofsVerification(t *testing.T) {
 	cipherVectorToShuffle[0] = append(append(cipherVect2, cipherVect2...), cipherVect2...)
 	cipherVectorToShuffle[1] = append(append(cipherVect1, cipherVect1...), cipherVect1...)
 	cipherVectorToShuffle[2] = append(append(cipherVect2, cipherVect2...), cipherVect1...)
-	detResponsesCreationShuffled, pi, beta := libunlynx.ShuffleSequence(cipherVectorToShuffle, nil, protocol.Roster().Aggregate, nil)
+	detResponsesCreationShuffled, pi, beta := libunlynxshuffle.ShuffleSequence(cipherVectorToShuffle, nil, protocol.Roster().Aggregate, nil)
 
 	PublishedShufflingProof1 := libunlynxproofs.ShufflingProofCreation(cipherVectorToShuffle, detResponsesCreationShuffled, nil, protocol.Roster().Aggregate, beta, pi)
 
@@ -130,13 +132,13 @@ func TestProofsVerification(t *testing.T) {
 	// collective aggregation **************************************************************************************
 	c1 := make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse)
 	for _, v := range detResponses {
-		libunlynx.AddInMap(c1, v.DetTagGroupBy, v.Fr)
+		libunlynxtools.AddInMap(c1, v.DetTagGroupBy, v.Fr)
 	}
 
 	c3 := make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse)
 	for i, v := range c1 {
-		libunlynx.AddInMap(c3, i, v)
-		libunlynx.AddInMap(c3, i, v)
+		libunlynxtools.AddInMap(c3, i, v)
+		libunlynxtools.AddInMap(c3, i, v)
 	}
 
 	collectiveAggregationProof1 := libunlynxproofs.PublishedCollectiveAggregationProof{Aggregation1: c1, Aggregation2: detResponses, AggregationResults: c3}
