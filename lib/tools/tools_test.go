@@ -106,7 +106,6 @@ func TestConvertDataToMap(t *testing.T) {
 	assert.Equal(t, toTest, arrayRes)
 }
 
-
 func TestFromDpClearResponseToProcess(t *testing.T) {
 	k := 5
 	secKey, pubKey := libunlynx.GenKey()
