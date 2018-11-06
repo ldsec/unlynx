@@ -2,6 +2,7 @@ package libunlynxproofs
 
 import (
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/tools"
 	"reflect"
 )
 
@@ -20,7 +21,7 @@ func AggregationProofCreation(responses []libunlynx.FilteredResponseDet, aggrega
 func AggregationProofVerification(pap PublishedAggregationProof) bool {
 	comparisonMap := make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse)
 	for _, v := range pap.FilteredResponses {
-		libunlynx.AddInMap(comparisonMap, v.DetTagGroupBy, v.Fr)
+		libunlynxtools.AddInMap(comparisonMap, v.DetTagGroupBy, v.Fr)
 	}
 	return reflect.DeepEqual(comparisonMap, pap.AggregationResults)
 }

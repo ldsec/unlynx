@@ -3,6 +3,7 @@ package libunlynxproofs_test
 import (
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/proofs"
+	"github.com/lca1/unlynx/lib/shuffle"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -19,7 +20,7 @@ func TestShufflingProof(t *testing.T) {
 	responses[1] = append(testCipherVect1, testCipherVect1...)
 	responses[2] = append(testCipherVect2, testCipherVect1...)
 
-	responsesShuffled, pi, beta := libunlynx.ShuffleSequence(responses, nil, pubKey, nil)
+	responsesShuffled, pi, beta := libunlynxshuffle.ShuffleSequence(responses, nil, pubKey, nil)
 	PublishedShufflingProof := libunlynxproofs.ShufflingProofCreation(responses, responsesShuffled, nil, pubKey, beta, pi)
 	assert.True(t, libunlynxproofs.ShufflingProofVerification(PublishedShufflingProof, pubKey))
 

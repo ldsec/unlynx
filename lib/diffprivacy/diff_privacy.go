@@ -1,4 +1,4 @@
-package libunlynx
+package libunlynxdiffprivacy
 
 import (
 	"github.com/r0fls/gostats"

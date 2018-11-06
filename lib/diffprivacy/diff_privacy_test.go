@@ -1,17 +1,17 @@
-package libunlynx_test
+package libunlynxdiffprivacy_test
 
 import (
-	"github.com/lca1/unlynx/lib"
+	. "github.com/lca1/unlynx/lib/diffprivacy"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 // TestAddRmProof tests the generation of the noise values for the differential privacy
 func TestGenerateNoiseValues(t *testing.T) {
-	aux := libunlynx.GenerateNoiseValues(0, 0, 1, 0.005)
+	aux := GenerateNoiseValues(0, 0, 1, 0.005)
 	assert.Empty(t, aux)
 
-	aux = libunlynx.GenerateNoiseValues(500, 0, 1, 0.005)
+	aux = GenerateNoiseValues(500, 0, 1, 0.005)
 
 	assert.Equal(t, len(aux), 500)
 

@@ -1,11 +1,13 @@
-package libunlynx
+package libunlynxtools
 
 import (
 	"encoding/gob"
 	"fmt"
 	"github.com/btcsuite/goleveldb/leveldb/errors"
+	"github.com/dedis/kyber"
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
+	"github.com/lca1/unlynx/lib"
 	"os"
 	"strconv"
 	"strings"
@@ -31,11 +33,11 @@ func SendISMOthers(s *onet.ServiceProcessor, el *onet.Roster, msg interface{}) e
 }
 
 // AddInMap permits to add a filtered response with its deterministic tag in a map
-func AddInMap(s map[GroupingKey]FilteredResponse, key GroupingKey, added FilteredResponse) {
+func AddInMap(s map[libunlynx.GroupingKey]libunlynx.FilteredResponse, key libunlynx.GroupingKey, added libunlynx.FilteredResponse) {
 	if localResult, ok := s[key]; !ok {
 		s[key] = added
 	} else {
-		tmp := NewFilteredResponse(len(added.GroupByEnc), len(added.AggregatingAttributes))
+		tmp := libunlynx.NewFilteredResponse(len(added.GroupByEnc), len(added.AggregatingAttributes))
 		s[key] = *tmp.Add(localResult, added)
 	}
 }
@@ -118,11 +120,11 @@ func ReadFromGobFile(path string, object interface{}) {
 }
 
 // EncodeCipherVectorScalar converts the data inside lib.CipherVectorScalar to bytes and stores it in a new object to be saved in the gob file
-func EncodeCipherVectorScalar(cV []CipherVectorScalar) ([]CipherVectorScalarBytes, error) {
-	slice := make([]CipherVectorScalarBytes, 0)
+func EncodeCipherVectorScalar(cV []libunlynx.CipherVectorScalar) ([]libunlynx.CipherVectorScalarBytes, error) {
+	slice := make([]libunlynx.CipherVectorScalarBytes, 0)
 
 	for _, v := range cV {
-		eCV := CipherVectorScalarBytes{}
+		eCV := libunlynx.CipherVectorScalarBytes{}
 
 		for _, el := range v.S {
 			scalar, err := el.MarshalBinary()
@@ -161,14 +163,14 @@ func EncodeCipherVectorScalar(cV []CipherVectorScalar) ([]CipherVectorScalarByte
 }
 
 // DecodeCipherVectorScalar converts the byte data stored in the lib.Enc_CipherVectorScalar (which is read from the gob file) to a new lib.CipherVectorScalar
-func DecodeCipherVectorScalar(eCV []CipherVectorScalarBytes) ([]CipherVectorScalar, error) {
-	slice := make([]CipherVectorScalar, 0)
+func DecodeCipherVectorScalar(eCV []libunlynx.CipherVectorScalarBytes) ([]libunlynx.CipherVectorScalar, error) {
+	slice := make([]libunlynx.CipherVectorScalar, 0)
 
 	for _, v := range eCV {
-		cV := CipherVectorScalar{}
+		cV := libunlynx.CipherVectorScalar{}
 
 		for _, el := range v.S {
-			s := SuiTe.Scalar()
+			s := libunlynx.SuiTe.Scalar()
 			if err := s.UnmarshalBinary(el); err != nil {
 				return slice, err
 			}
@@ -177,17 +179,17 @@ func DecodeCipherVectorScalar(eCV []CipherVectorScalarBytes) ([]CipherVectorScal
 		}
 
 		for _, el := range v.CipherV {
-			k := SuiTe.Point()
+			k := libunlynx.SuiTe.Point()
 			if err := k.UnmarshalBinary(el[0]); err != nil {
 				return slice, err
 			}
 
-			c := SuiTe.Point()
+			c := libunlynx.SuiTe.Point()
 			if err := c.UnmarshalBinary(el[1]); err != nil {
 				return slice, err
 			}
 
-			cipher := CipherText{K: k, C: c}
+			cipher := libunlynx.CipherText{K: k, C: c}
 			cV.CipherV = append(cV.CipherV, cipher)
 
 		}
@@ -196,4 +198,32 @@ func DecodeCipherVectorScalar(eCV []CipherVectorScalarBytes) ([]CipherVectorScal
 	}
 
 	return slice, nil
+}
+
+// JoinAttributes joins clear and encrypted attributes into one encrypted container (CipherVector)
+func JoinAttributes(clear, enc map[string]int64, identifier string, encryptionKey kyber.Point) libunlynx.CipherVector {
+	clearContainer := ConvertMapToData(clear, identifier, 0)
+	encContainer := ConvertMapToData(enc, identifier, len(clear))
+
+	result := make(libunlynx.CipherVector, 0)
+
+	for i := 0; i < len(clearContainer); i++ {
+		result = append(result, *libunlynx.EncryptInt(encryptionKey, int64(clearContainer[i])))
+	}
+	for i := 0; i < len(encContainer); i++ {
+		result = append(result, *libunlynx.EncryptInt(encryptionKey, int64(encContainer[i])))
+	}
+
+	return result
+}
+
+// FromDpClearResponseToProcess converts a DpClearResponse struct to a ProcessResponse struct
+func FromDpClearResponseToProcess(dcr *libunlynx.DpClearResponse, encryptionKey kyber.Point) libunlynx.ProcessResponse {
+	result := libunlynx.ProcessResponse{}
+
+	result.AggregatingAttributes = JoinAttributes(dcr.AggregatingAttributesClear, dcr.AggregatingAttributesEnc, "s", encryptionKey)
+	result.WhereEnc = JoinAttributes(dcr.WhereClear, dcr.WhereEnc, "w", encryptionKey)
+	result.GroupByEnc = JoinAttributes(dcr.GroupByClear, dcr.GroupByEnc, "g", encryptionKey)
+
+	return result
 }
