@@ -6,6 +6,7 @@ import (
 	"github.com/dedis/kyber/shuffle"
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/shuffle"
 )
 
 // PublishedShufflingProof contains all infos about proofs for shuffling of a ciphervector
@@ -33,15 +34,15 @@ func shuffleProofCreation(inputList, outputList []libunlynx.CipherVector, beta [
 		if libunlynx.PARALLELIZE {
 			go func(inputList, outputList []libunlynx.CipherVector, i int) {
 				defer (*wg1).Done()
-				libunlynx.CompressProcessResponseMultiple(inputList, outputList, i, e, Xhat, XhatBar, Yhat, YhatBar)
+				libunlynxshuffle.CompressProcessResponseMultiple(inputList, outputList, i, e, Xhat, XhatBar, Yhat, YhatBar)
 			}(inputList, outputList, i)
 		} else {
-			libunlynx.CompressProcessResponseMultiple(inputList, outputList, i, e, Xhat, XhatBar, Yhat, YhatBar)
+			libunlynxshuffle.CompressProcessResponseMultiple(inputList, outputList, i, e, Xhat, XhatBar, Yhat, YhatBar)
 		}
 	}
 	libunlynx.EndParallelize(wg1)
 
-	betaCompressed := libunlynx.CompressBeta(beta, e)
+	betaCompressed := libunlynxshuffle.CompressBeta(beta, e)
 
 	rand := libunlynx.SuiTe.RandomStream()
 
@@ -90,18 +91,18 @@ func ShufflingProofVerification(psp PublishedShufflingProof, seed kyber.Point) b
 	if libunlynx.PARALLELIZE {
 		wg := libunlynx.StartParallelize(2)
 		go func() {
-			x, y = libunlynx.CompressListProcessResponse(psp.OriginalList, e)
+			x, y = libunlynxshuffle.CompressListProcessResponse(psp.OriginalList, e)
 			defer (*wg).Done()
 		}()
 		go func() {
-			xbar, ybar = libunlynx.CompressListProcessResponse(psp.ShuffledList, e)
+			xbar, ybar = libunlynxshuffle.CompressListProcessResponse(psp.ShuffledList, e)
 			defer (*wg).Done()
 		}()
 
 		libunlynx.EndParallelize(wg)
 	} else {
-		x, y = libunlynx.CompressListProcessResponse(psp.OriginalList, e)
-		xbar, ybar = libunlynx.CompressListProcessResponse(psp.ShuffledList, e)
+		x, y = libunlynxshuffle.CompressListProcessResponse(psp.OriginalList, e)
+		xbar, ybar = libunlynxshuffle.CompressListProcessResponse(psp.ShuffledList, e)
 	}
 
 	return checkShuffleProof(psp.G, psp.H, x, y, xbar, ybar, psp.HashProof)

@@ -5,6 +5,7 @@ package protocolsunlynx
 
 import (
 	"errors"
+	"github.com/lca1/unlynx/lib/shuffle"
 
 	"sync"
 	"time"
@@ -149,7 +150,7 @@ func (p *ShufflingProtocol) Start() error {
 		log.Lvl1(p.Name(), " uses pre-computation in shuffling")
 	}
 
-	shuffledData, pi, beta := libunlynx.ShuffleSequence(shuffleTarget, nil, collectiveKey, p.Precomputed)
+	shuffledData, pi, beta := libunlynxshuffle.ShuffleSequence(shuffleTarget, nil, collectiveKey, p.Precomputed)
 	_ = pi
 	_ = beta
 
@@ -220,7 +221,7 @@ func (p *ShufflingProtocol) Dispatch() error {
 	if !p.IsRoot() {
 		roundShuffle := libunlynx.StartTimer(p.Name() + "_Shuffling(DISPATCH-noProof)")
 
-		shuffledData, pi, beta = libunlynx.ShuffleSequence(shufflingTarget, nil, collectiveKey, p.Precomputed)
+		shuffledData, pi, beta = libunlynxshuffle.ShuffleSequence(shufflingTarget, nil, collectiveKey, p.Precomputed)
 		_ = pi
 		_ = beta
 

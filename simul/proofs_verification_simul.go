@@ -8,6 +8,8 @@ import (
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/proofs"
+	"github.com/lca1/unlynx/lib/shuffle"
+	"github.com/lca1/unlynx/lib/tools"
 	"github.com/lca1/unlynx/protocols"
 	"github.com/lca1/unlynx/protocols/utils"
 	"math"
@@ -166,7 +168,7 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 
 		comparisonMap := make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse)
 		for _, v := range detResponses {
-			libunlynx.AddInMap(comparisonMap, v.DetTagGroupBy, v.Fr)
+			libunlynxtools.AddInMap(comparisonMap, v.DetTagGroupBy, v.Fr)
 		}
 
 		PublishedAggregationProof := libunlynxproofs.AggregationProofCreation(detResponses, comparisonMap)
@@ -184,7 +186,7 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 		}
 
 		cv, _ := protocolsunlynx.ProcessResponseToMatrixCipherText(responsesToShuffle)
-		clientResponsesShuffled, pi, beta := libunlynx.ShuffleSequence(cv, nil, root.Roster().Aggregate, nil)
+		clientResponsesShuffled, pi, beta := libunlynxshuffle.ShuffleSequence(cv, nil, root.Roster().Aggregate, nil)
 		log.Lvl1("Starting shuffling proof creation")
 		shufflingProof := libunlynxproofs.ShufflingProofCreation(cv, clientResponsesShuffled, nil, root.Roster().Aggregate, beta, pi)
 		shufflingProofs := make([]libunlynxproofs.PublishedShufflingProof, sim.NbrServers*sim.NbrServers)
@@ -195,13 +197,13 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 		//collective aggregation ***********************************************************************
 		c1 := make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse)
 		for _, v := range detResponses {
-			libunlynx.AddInMap(c1, v.DetTagGroupBy, v.Fr)
+			libunlynxtools.AddInMap(c1, v.DetTagGroupBy, v.Fr)
 		}
 
 		c3 := make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse)
 		for i, v := range c1 {
-			libunlynx.AddInMap(c3, i, v)
-			libunlynx.AddInMap(c3, i, v)
+			libunlynxtools.AddInMap(c3, i, v)
+			libunlynxtools.AddInMap(c3, i, v)
 		}
 
 		collAggrProof := libunlynxproofs.CollectiveAggregationProofCreation(c1, detResponses, c3)

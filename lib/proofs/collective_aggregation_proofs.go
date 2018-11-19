@@ -2,6 +2,7 @@ package libunlynxproofs
 
 import (
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/tools"
 )
 
 // PublishedCollectiveAggregationProof contains all infos about proofs for coll aggregation of filtered responses
@@ -20,10 +21,10 @@ func CollectiveAggregationProofCreation(aggregated1 map[libunlynx.GroupingKey]li
 func CollectiveAggregationProofVerification(pcap PublishedCollectiveAggregationProof) bool {
 	c1 := make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse)
 	for i, v := range pcap.Aggregation1 {
-		libunlynx.AddInMap(c1, i, v)
+		libunlynxtools.AddInMap(c1, i, v)
 	}
 	for _, v := range pcap.Aggregation2 {
-		libunlynx.AddInMap(c1, v.DetTagGroupBy, v.Fr)
+		libunlynxtools.AddInMap(c1, v.DetTagGroupBy, v.Fr)
 	}
 
 	//compare maps

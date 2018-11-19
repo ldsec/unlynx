@@ -6,6 +6,7 @@ import (
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/simul/monitor"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/tools"
 	"github.com/lca1/unlynx/services/default"
 	"github.com/lca1/unlynx/services/default/data"
 	"strconv"
@@ -186,7 +187,7 @@ func (sim *SimulationUnLynx) Run(config *onet.SimulationConfig) error {
 		log.Lvl1("Service output:")
 		for i := range *grp {
 			log.Lvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
-			allData = append(allData, libunlynx.DpClearResponse{GroupByClear: libunlynx.ConvertDataToMap((*grp)[i], "g", 0), AggregatingAttributesClear: libunlynx.ConvertDataToMap((*aggr)[i], "s", 0)})
+			allData = append(allData, libunlynx.DpClearResponse{GroupByClear: libunlynxtools.ConvertDataToMap((*grp)[i], "g", 0), AggregatingAttributesClear: libunlynxtools.ConvertDataToMap((*aggr)[i], "s", 0)})
 		}
 
 		// Test Service Simulation
