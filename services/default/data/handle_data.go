@@ -3,16 +3,17 @@ package dataunlynx
 import (
 	"bufio"
 	"fmt"
-	"github.com/dedis/onet/log"
-	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/lib/store"
-	"github.com/lca1/unlynx/lib/tools"
 	"math"
 	"math/rand"
 	"os"
 	"reflect"
 	"strings"
 	"time"
+
+	"github.com/dedis/onet/log"
+	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/store"
+	"github.com/lca1/unlynx/lib/tools"
 )
 
 // Groups identifies all different groups to be added to the test data file
@@ -36,6 +37,15 @@ func randomFillInt64Slice(s []int64, max int64) {
 	for i := 0; i < len(s); i++ {
 		s[i] = int64(random(0, int(max)))
 	}
+}
+
+// CreateInt64Slice creates a slice of int64 between min and max
+func CreateInt64Slice(size int64, min int64, max int64) []int64 {
+	slice := make([]int64, size)
+	for i := 0; i < int(size); i++ {
+		slice[i] = int64(random(int(min), int(max)))
+	}
+	return slice
 }
 
 // AllPossibleGroups generates all possible groups given the different groups for the grouping attributes
