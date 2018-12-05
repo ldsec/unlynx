@@ -3,4 +3,7 @@
 /--------------------------------------------------------------------------------/
 
 - Execute inside simul/ :
+    Important!
+    If you are using bn256 curve please add TAGS = “vartime” in your .toml file
+
     ./simul -platform localhost [-debug 1] runfiles/unlynx.toml

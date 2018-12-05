@@ -1,13 +1,14 @@
 package libunlynx_test
 
 import (
+	"reflect"
+	"strings"
+	"testing"
+
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/util/random"
 	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
-	"reflect"
-	"strings"
-	"testing"
 )
 
 // TestNullCipherText verifies encryption, decryption and behavior of null ciphertexts.
@@ -214,7 +215,7 @@ func TestAbstractPointsConverter(t *testing.T) {
 	}
 
 	apsBytes := libunlynx.AbstractPointsToBytes(aps)
-	newAps := libunlynx.BytesToAbstractPoints(apsBytes)
+	newAps := libunlynx.FromBytesToAbstractPoints(apsBytes)
 
 	for i, el := range aps {
 		if !reflect.DeepEqual(el.String(), newAps[i].String()) {

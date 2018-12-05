@@ -1,15 +1,16 @@
 package protocolsunlynx_test
 
 import (
+	"reflect"
+	"testing"
+	"time"
+
 	"github.com/dedis/kyber/util/random"
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/protocols"
-	"reflect"
-	"testing"
-	"time"
 )
 
 func TestKeySwitching(t *testing.T) {
@@ -56,13 +57,13 @@ func TestKeySwitching(t *testing.T) {
 		cv1 := adaptedResult[0]
 		res := libunlynx.DecryptIntVector(clientPrivate, &cv1.AggregatingAttributes)
 		resGrp := libunlynx.DecryptIntVector(clientPrivate, &cv1.GroupByEnc)
-		log.Lvl1("Recieved results (attributes) ", res)
-		log.Lvl1("Recieved results (groups) ", resGrp)
+		log.Lvl1("Received results (attributes) ", res)
+		log.Lvl1("Received results (groups) ", resGrp)
 		cv2 := adaptedResult[1]
 		res1 := libunlynx.DecryptIntVector(clientPrivate, &cv2.AggregatingAttributes)
 		resGrp1 := libunlynx.DecryptIntVector(clientPrivate, &cv2.GroupByEnc)
-		log.Lvl1("Recieved results (attributes) ", res1)
-		log.Lvl1("Recieved results (groups) ", resGrp1)
+		log.Lvl1("Received results (attributes) ", res1)
+		log.Lvl1("Received results (groups) ", resGrp1)
 
 		if !reflect.DeepEqual(res, expRes) {
 			t.Fatal("Wrong results, expected", expRes, "but got", res)

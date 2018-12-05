@@ -5,6 +5,7 @@ import (
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/proofs"
 	"github.com/lca1/unlynx/protocols"
 )
 
@@ -86,6 +87,8 @@ func NewShufflingSimul(tni *onet.TreeNodeInstance, sim *ShufflingSimulation) (on
 	protocol, err := protocolsunlynx.NewShufflingProtocol(tni)
 	pap := protocol.(*protocolsunlynx.ShufflingProtocol)
 	pap.Proofs = sim.Proofs
+	pap.ProofFunc = func(proof libunlynxproofs.PublishedShufflingProof) {}
+
 	if sim.PreCompute {
 		b, err := tni.Private().MarshalBinary()
 		if err != nil {
@@ -117,7 +120,7 @@ func NewShufflingSimul(tni *onet.TreeNodeInstance, sim *ShufflingSimulation) (on
 		}
 
 		targetToShuffle, _ := protocolsunlynx.ProcessResponseToMatrixCipherText(clientResponses)
-		pap.TargetOfShuffle = &targetToShuffle
+		pap.ShuffleTarget = &targetToShuffle
 	}
 
 	return pap, err

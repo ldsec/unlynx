@@ -1,10 +1,11 @@
 package protocolsunlynxutils_test
 
 import (
-	"github.com/lca1/unlynx/lib/shuffle"
-	"github.com/lca1/unlynx/lib/tools"
 	"testing"
 	"time"
+
+	"github.com/lca1/unlynx/lib/shuffle"
+	"github.com/lca1/unlynx/lib/tools"
 
 	"github.com/dedis/kyber"
 	"github.com/dedis/onet"
@@ -121,11 +122,11 @@ func TestProofsVerification(t *testing.T) {
 	cipherVectorToShuffle[0] = append(append(cipherVect2, cipherVect2...), cipherVect2...)
 	cipherVectorToShuffle[1] = append(append(cipherVect1, cipherVect1...), cipherVect1...)
 	cipherVectorToShuffle[2] = append(append(cipherVect2, cipherVect2...), cipherVect1...)
-	detResponsesCreationShuffled, pi, beta := libunlynxshuffle.ShuffleSequence(cipherVectorToShuffle, nil, protocol.Roster().Aggregate, nil)
+	detResponsesCreationShuffled, pi, beta := libunlynxshuffle.ShuffleSequence(cipherVectorToShuffle, libunlynx.SuiTe.Point().Base(), protocol.Roster().Aggregate, nil)
 
-	PublishedShufflingProof1 := libunlynxproofs.ShufflingProofCreation(cipherVectorToShuffle, detResponsesCreationShuffled, nil, protocol.Roster().Aggregate, beta, pi)
+	PublishedShufflingProof1 := libunlynxproofs.ShufflingProofCreation(cipherVectorToShuffle, detResponsesCreationShuffled, libunlynx.SuiTe.Point().Base(), protocol.Roster().Aggregate, beta, pi)
 
-	PublishedShufflingProof2 := libunlynxproofs.ShufflingProofCreation(cipherVectorToShuffle, cipherVectorToShuffle, nil, pubKey, beta, pi)
+	PublishedShufflingProof2 := libunlynxproofs.ShufflingProofCreation(cipherVectorToShuffle, cipherVectorToShuffle, libunlynx.SuiTe.Point().Base(), pubKey, beta, pi)
 
 	shufflingProofs := []libunlynxproofs.PublishedShufflingProof{PublishedShufflingProof1, PublishedShufflingProof2}
 

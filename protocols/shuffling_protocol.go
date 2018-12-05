@@ -5,9 +5,9 @@ package protocolsunlynx
 
 import (
 	"errors"
+
 	"github.com/lca1/unlynx/lib/shuffle"
 
-	"sync"
 	"time"
 
 	"github.com/dedis/kyber"
@@ -24,7 +24,7 @@ const ShufflingProtocolName = "Shuffling"
 func init() {
 	network.RegisterMessage(ShufflingMessage{})
 	network.RegisterMessage(ShufflingBytesMessage{})
-	network.RegisterMessage(SBLengthMessage{})
+	network.RegisterMessage(ShufflingBytesMessageLength{})
 	onet.GlobalProtocolRegister(ShufflingProtocolName, NewShufflingProtocol)
 }
 
@@ -41,31 +41,28 @@ type ShufflingBytesMessage struct {
 	Data []byte
 }
 
-// SBLengthMessage is a message containing the lengths to read a shuffling message in bytes
-type SBLengthMessage struct {
+// ShufflingBytesMessageLength is a message containing the lengths to read a shuffling message in bytes
+type ShufflingBytesMessageLength struct {
 	CVLengths []byte
 }
 
 // Structs
 //______________________________________________________________________________________________________________________
 
-// ShufflingStruct contains a shuffling message
-type shufflingStruct struct {
-	*onet.TreeNode
-	ShufflingMessage
-}
-
-// ShufflingBytesStruct contains a shuffling message in bytes
+// shufflingBytesStruct contains a shuffling message in bytes
 type shufflingBytesStruct struct {
 	*onet.TreeNode
 	ShufflingBytesMessage
 }
 
-// SbLengthStruct contains a length message
-type sbLengthStruct struct {
+// shufflingBytesLengthStruct contains a length message
+type shufflingBytesLengthStruct struct {
 	*onet.TreeNode
-	SBLengthMessage
+	ShufflingBytesMessageLength
 }
+
+// convert types take an int and return a string value.
+type proofFunction func(proof libunlynxproofs.PublishedShufflingProof)
 
 // Protocol
 //______________________________________________________________________________________________________________________
@@ -78,19 +75,23 @@ type ShufflingProtocol struct {
 	FeedbackChannel chan []libunlynx.CipherVector
 
 	// Protocol communication channels
-	LengthNodeChannel         chan sbLengthStruct
+	LengthNodeChannel         chan shufflingBytesLengthStruct
 	PreviousNodeInPathChannel chan shufflingBytesStruct
 
+	// Protocol state data
+	ShuffleTarget     *[]libunlynx.CipherVector
+	Precomputed       []libunlynx.CipherVectorScalar
+	nextNodeInCircuit *onet.TreeNode
+
+	// Proofs
+	Proofs    bool
+	ProofFunc proofFunction                    // proof function for when we want to do something different with the proofs (e.g. insert in the blockchain)
+	MapPIs    map[string]onet.ProtocolInstance // protocol instances to be able to call protocols inside protocols (e.g. proof_collection_protocol)
+
+	// Test (only use in order to test the protocol)
+	CollectiveKey kyber.Point
 	ExecTimeStart time.Duration
 	ExecTime      time.Duration
-
-	// Protocol state data
-	nextNodeInCircuit *onet.TreeNode
-	TargetOfShuffle   *[]libunlynx.CipherVector
-
-	CollectiveKey kyber.Point //only use in order to test the protocol
-	Proofs        bool
-	Precomputed   []libunlynx.CipherVectorScalar
 }
 
 // NewShufflingProtocol constructs neff shuffle protocol instances.
@@ -108,10 +109,9 @@ func NewShufflingProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, erro
 		return nil, errors.New("couldn't register data reference channel: " + err.Error())
 	}
 
-	var i int
-	var node *onet.TreeNode
-	var nodeList = n.Tree().List()
-	for i, node = range nodeList {
+	// choose next node in circuit
+	nodeList := n.Tree().List()
+	for i, node := range nodeList {
 		if n.TreeNode().Equal(node) {
 			dsp.nextNodeInCircuit = nodeList[(i+1)%len(nodeList)]
 			break
@@ -123,62 +123,56 @@ func NewShufflingProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, erro
 // Start is called at the root node and starts the execution of the protocol.
 func (p *ShufflingProtocol) Start() error {
 
-	roundTotalStart := libunlynx.StartTimer(p.Name() + "_Shuffling(START)")
+	shufflingStart := libunlynx.StartTimer(p.Name() + "_Shuffling(START)")
 
-	if p.TargetOfShuffle == nil {
-		return errors.New("No map given as shuffling target")
+	if p.ShuffleTarget == nil {
+		return errors.New("no map given as shuffling target")
 	}
 
 	p.ExecTimeStart = 0
 	p.ExecTime = 0
-	startT := time.Now()
+	timer := time.Now()
 
-	nbrProcessResponses := len(*p.TargetOfShuffle)
+	nbrProcessResponses := len(*p.ShuffleTarget)
 	log.Lvl1("["+p.Name()+"]", " started a Shuffling Protocol (", nbrProcessResponses, " responses)")
 
-	shuffleTarget := *p.TargetOfShuffle
+	shuffleTarget := *p.ShuffleTarget
 
 	collectiveKey := p.Roster().Aggregate
+	// when testing protocol
 	if p.CollectiveKey != nil {
-		//test
 		collectiveKey = p.CollectiveKey
-		log.Lvl1("Key used is ", collectiveKey)
+		log.Lvl1("Key used for testing is", collectiveKey)
 	}
-	roundShufflingStart := libunlynx.StartTimer(p.Name() + "_Shuffling(START-noProof)")
+
+	shufflingStartNoProof := libunlynx.StartTimer(p.Name() + "_Shuffling(START-noProof)")
 
 	if p.Precomputed != nil {
 		log.Lvl1(p.Name(), " uses pre-computation in shuffling")
 	}
 
-	shuffledData, pi, beta := libunlynxshuffle.ShuffleSequence(shuffleTarget, nil, collectiveKey, p.Precomputed)
-	_ = pi
-	_ = beta
+	shuffledData, pi, beta := libunlynxshuffle.ShuffleSequence(shuffleTarget, libunlynx.SuiTe.Point().Base(), collectiveKey, p.Precomputed)
 
-	libunlynx.EndTimer(roundShufflingStart)
-	roundShufflingStartProof := libunlynx.StartTimer(p.Name() + "_Shuffling(START-Proof)")
+	libunlynx.EndTimer(shufflingStartNoProof)
+
+	shufflingStartProof := libunlynx.StartTimer(p.Name() + "_Shuffling(START-Proof)")
 
 	if p.Proofs {
-		proof := libunlynxproofs.ShufflingProofCreation(shuffleTarget, shuffledData, nil, collectiveKey, beta, pi)
-		//dummy publication
-		_ = proof
+		proof := libunlynxproofs.ShufflingProofCreation(shuffleTarget, shuffledData, libunlynx.SuiTe.Point().Base(), collectiveKey, beta, pi)
+		p.ProofFunc(proof)
 	}
 
-	libunlynx.EndTimer(roundShufflingStartProof)
-	libunlynx.EndTimer(roundTotalStart)
+	libunlynx.EndTimer(shufflingStartProof)
+	libunlynx.EndTimer(shufflingStart)
 
-	p.ExecTimeStart += time.Since(startT)
-	//sendingStart := lib.StartTimer(p.Name() + "_Sending")
+	p.ExecTimeStart += time.Since(timer)
 
 	message := ShufflingBytesMessage{}
 	var cvLengthsByte []byte
 	message.Data, cvLengthsByte = (&ShufflingMessage{shuffledData}).ToBytes()
 
-	sendingStart := libunlynx.StartTimer(p.Name() + "_Sending")
-
-	p.sendToNext(&SBLengthMessage{CVLengths: cvLengthsByte})
+	p.sendToNext(&ShufflingBytesMessageLength{CVLengths: cvLengthsByte})
 	p.sendToNext(&message)
-
-	libunlynx.EndTimer(sendingStart)
 
 	return nil
 }
@@ -187,161 +181,92 @@ func (p *ShufflingProtocol) Start() error {
 func (p *ShufflingProtocol) Dispatch() error {
 	defer p.Done()
 
-	shufflingLength := <-p.LengthNodeChannel
+	shufflingBytesMessageLength := <-p.LengthNodeChannel
 
-	receiving := libunlynx.StartTimer(p.Name() + "_Receiving")
 	tmp := <-p.PreviousNodeInPathChannel
-
-	libunlynx.EndTimer(receiving)
-
 	sm := ShufflingMessage{}
-	sm.FromBytes(tmp.Data, shufflingLength.CVLengths)
-	shufflingTarget := sm.Data
+	sm.FromBytes(tmp.Data, shufflingBytesMessageLength.CVLengths)
+	shuffleTarget := sm.Data
 
-	startT := time.Now()
-	roundTotalComputation := libunlynx.StartTimer(p.Name() + "_Shuffling(DISPATCH)")
+	timer := time.Now()
+	shufflingDispatch := libunlynx.StartTimer(p.Name() + "_Shuffling(DISPATCH)")
 
-	collectiveKey := p.Roster().Aggregate //shuffling is by default done with collective authority key
-
+	collectiveKey := p.Roster().Aggregate
+	// when testing protocol
 	if p.CollectiveKey != nil {
-		//test
 		collectiveKey = p.CollectiveKey
-		log.Lvl1("Key used: ", collectiveKey)
 	}
 
 	if p.Precomputed != nil {
 		log.Lvl1(p.Name(), " uses pre-computation in shuffling")
 	}
 
-	shuffledData := shufflingTarget
-
+	shuffledData := shuffleTarget
 	var pi []int
 	var beta [][]kyber.Scalar
 
 	if !p.IsRoot() {
-		roundShuffle := libunlynx.StartTimer(p.Name() + "_Shuffling(DISPATCH-noProof)")
+		shufflingDispatchNoProof := libunlynx.StartTimer(p.Name() + "_Shuffling(DISPATCH-noProof)")
 
-		shuffledData, pi, beta = libunlynxshuffle.ShuffleSequence(shufflingTarget, nil, collectiveKey, p.Precomputed)
-		_ = pi
-		_ = beta
+		shuffledData, pi, beta = libunlynxshuffle.ShuffleSequence(shuffleTarget, libunlynx.SuiTe.Point().Base(), collectiveKey, p.Precomputed)
 
-		libunlynx.EndTimer(roundShuffle)
-		roundShuffleProof := libunlynx.StartTimer("_Shuffling(DISPATCH-Proof)")
+		libunlynx.EndTimer(shufflingDispatchNoProof)
+
+		shufflingDispatchProof := libunlynx.StartTimer("_Shuffling(DISPATCH-Proof)")
 
 		if p.Proofs {
-			proof := libunlynxproofs.ShufflingProofCreation(shufflingTarget, shuffledData, nil, collectiveKey, beta, pi)
-			//dummy publication
-			_ = proof
+			proof := libunlynxproofs.ShufflingProofCreation(shuffleTarget, shuffledData, libunlynx.SuiTe.Point().Base(), collectiveKey, beta, pi)
+			p.ProofFunc(proof)
 		}
-		libunlynx.EndTimer(roundShuffleProof)
+
+		libunlynx.EndTimer(shufflingDispatchProof)
 
 	}
-	shufflingTarget = shuffledData
+
+	shuffleTarget = shuffledData
 
 	if p.IsRoot() {
-		log.Lvl1(p.ServerIdentity(), " completed shuffling (", len(shufflingTarget), " responses)")
+		log.Lvl1(p.ServerIdentity(), " completed shuffling (", len(shuffleTarget), " responses)")
 	} else {
 		log.Lvl1(p.ServerIdentity(), " carried on shuffling.")
 	}
 
-	libunlynx.EndTimer(roundTotalComputation)
+	libunlynx.EndTimer(shufflingDispatch)
 
 	// If this tree node is the root, then protocol reached the end.
 	if p.IsRoot() {
-		p.ExecTime += time.Since(startT)
-		p.FeedbackChannel <- shufflingTarget
+		p.ExecTime += time.Since(timer)
+		p.FeedbackChannel <- shuffleTarget
 	} else {
 		// Forward switched message.
-		//sending := lib.StartTimer(p.Name() + "_Sending")
-
 		message := ShufflingBytesMessage{}
 		var cvBytesLengths []byte
 		message.Data, cvBytesLengths = (&ShufflingMessage{shuffledData}).ToBytes()
 
-		sending := libunlynx.StartTimer(p.Name() + "_Sending")
-
-		p.sendToNext(&SBLengthMessage{cvBytesLengths})
+		p.sendToNext(&ShufflingBytesMessageLength{cvBytesLengths})
 		p.sendToNext(&message)
-
-		libunlynx.EndTimer(sending)
 	}
 
 	return nil
 }
 
-// Sends the message msg to the next node in the circuit based on the next TreeNode in Tree.List() If not visited yet.
-// If the message already visited the next node, doesn't send and returns false. Otherwise, return true.
+// Sends the message msg to the next node in the circuit based on the next TreeNode in Tree.List().
 func (p *ShufflingProtocol) sendToNext(msg interface{}) {
 	err := p.SendTo(p.nextNodeInCircuit, msg)
 	if err != nil {
-		log.Lvl1("Had an error sending a message: ", err)
+		log.Fatal("Had an error sending a message: ", err)
 	}
 }
 
-// Conversion
+// Marshal
 //______________________________________________________________________________________________________________________
 
 // ToBytes converts a ShufflingMessage to a byte array
 func (sm *ShufflingMessage) ToBytes() ([]byte, []byte) {
-	length := len((*sm).Data)
-
-	b := make([]byte, 0)
-	bb := make([][]byte, length)
-	cvLengths := make([]int, length)
-
-	wg := libunlynx.StartParallelize(length)
-	var mutexD sync.Mutex
-	for i := range (*sm).Data {
-		if libunlynx.PARALLELIZE {
-			go func(i int) {
-				defer wg.Done()
-
-				mutexD.Lock()
-				data := (*sm).Data[i]
-				mutexD.Unlock()
-				bb[i], cvLengths[i] = data.ToBytes()
-			}(i)
-		} else {
-			bb[i], cvLengths[i] = (*sm).Data[i].ToBytes()
-		}
-
-	}
-	libunlynx.EndParallelize(wg)
-	for _, v := range bb {
-		b = append(b, v...)
-	}
-	return b, UnsafeCastIntsToBytes(cvLengths)
+	return libunlynx.ArrayCipherVectorToBytes(sm.Data)
 }
 
 // FromBytes converts a byte array to a ShufflingMessage. Note that you need to create the (empty) object beforehand.
 func (sm *ShufflingMessage) FromBytes(data []byte, cvLengthsByte []byte) {
-	cvLengths := UnsafeCastBytesToInts(cvLengthsByte)
-	(*sm).Data = make([]libunlynx.CipherVector, len(cvLengths))
-	elementSize := libunlynx.CipherTextByteSize()
-
-	wg := libunlynx.StartParallelize(len(cvLengths))
-
-	// iter over each value in the flatten data byte array
-	bytePos := 0
-	for i := 0; i < len(cvLengths); i++ {
-		nextBytePos := bytePos + cvLengths[i]*elementSize
-
-		cv := make(libunlynx.CipherVector, cvLengths[i])
-		v := data[bytePos:nextBytePos]
-
-		if libunlynx.PARALLELIZE {
-			go func(v []byte, i int) {
-				defer wg.Done()
-				cv.FromBytes(v, cvLengths[i])
-				(*sm).Data[i] = cv
-			}(v, i)
-		} else {
-			cv.FromBytes(v, cvLengths[i])
-			(*sm).Data[i] = cv
-		}
-
-		// advance pointer
-		bytePos = nextBytePos
-	}
-	libunlynx.EndParallelize(wg)
+	(*sm).Data = libunlynx.FromBytesToArrayCipherVector(data, cvLengthsByte)
 }

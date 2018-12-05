@@ -5,6 +5,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lca1/unlynx/lib/proofs"
+
+	"github.com/stretchr/testify/assert"
+
 	"github.com/dedis/kyber"
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
@@ -23,8 +27,8 @@ var precomputes = make([][]libunlynx.CipherVectorScalar, nbrNodes)
 
 func TestShuffling(t *testing.T) {
 	defer log.AfterTest(t)
+
 	local := onet.NewLocalTest(libunlynx.SuiTe)
-	log.TestOutput(testing.Verbose(), 1)
 
 	for i := 0; i < nbrNodes; i++ {
 		priv[i] = libunlynx.SuiTe.Scalar().Pick(libunlynx.SuiTe.RandomStream())
@@ -52,34 +56,36 @@ func TestShuffling(t *testing.T) {
 	for i, p := range expRes {
 		testCipherVect[i] = *libunlynx.EncryptInt(aggregateKey, p)
 	}
-	processResponse1 := libunlynx.ProcessResponse{GroupByEnc: testCipherVect, WhereEnc: testCipherVect, AggregatingAttributes: testCipherVect}
+	processResponse := libunlynx.ProcessResponse{GroupByEnc: testCipherVect, WhereEnc: testCipherVect, AggregatingAttributes: testCipherVect}
 
 	testCipherVect1 := make(libunlynx.CipherVector, 1)
 	expRes1 := []int64{1}
 	for i, p := range expRes1 {
 		testCipherVect1[i] = *libunlynx.EncryptInt(aggregateKey, p)
 	}
-	processResponse2 := libunlynx.ProcessResponse{GroupByEnc: testCipherVect1, WhereEnc: testCipherVect1, AggregatingAttributes: testCipherVect1}
+	processResponse1 := libunlynx.ProcessResponse{GroupByEnc: testCipherVect1, WhereEnc: testCipherVect1, AggregatingAttributes: testCipherVect1}
 
 	testCipherVect2 := make(libunlynx.CipherVector, 1)
 	expRes2 := []int64{2}
 	for i, p := range expRes2 {
 		testCipherVect2[i] = *libunlynx.EncryptInt(aggregateKey, p)
 	}
-	processResponse3 := libunlynx.ProcessResponse{GroupByEnc: testCipherVect2, WhereEnc: testCipherVect2, AggregatingAttributes: testCipherVect2}
+	processResponse2 := libunlynx.ProcessResponse{GroupByEnc: testCipherVect2, WhereEnc: testCipherVect2, AggregatingAttributes: testCipherVect2}
 
 	mapi := make([]libunlynx.ProcessResponse, 4)
-	mapi[0] = processResponse1
-	mapi[1] = processResponse2
-	mapi[2] = processResponse3
-	mapi[3] = processResponse1
+	mapi[0] = processResponse
+	mapi[1] = processResponse1
+	mapi[2] = processResponse2
+	mapi[3] = processResponse
 
 	log.Lvl1("Data before shuffling ", mapi)
 
 	cv, lengths := protocolsunlynx.ProcessResponseToMatrixCipherText(mapi)
-	protocol.TargetOfShuffle = &cv
+	protocol.ShuffleTarget = &cv
 	protocol.CollectiveKey = groupPub
 	protocol.Proofs = true
+
+	protocol.ProofFunc = func(proof libunlynxproofs.PublishedShufflingProof) {}
 
 	feedback := protocol.FeedbackChannel
 	go protocol.Start()
@@ -101,9 +107,7 @@ func TestShuffling(t *testing.T) {
 					present = true
 				}
 			}
-			if !present {
-				t.Error("ERROR")
-			}
+			assert.True(t, present, "Error during shuffling")
 			log.Lvl1(v)
 		}
 
@@ -117,9 +121,11 @@ func TestShuffling(t *testing.T) {
 func NewShufflingTest(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 	pi, err := protocolsunlynx.NewShufflingProtocol(tni)
 	protocol := pi.(*protocolsunlynx.ShufflingProtocol)
+
 	protocol.CollectiveKey = groupPub
 	protocol.Precomputed = precomputes[tni.Index()]
-	protocol.Proofs = true
 
+	protocol.Proofs = true
+	protocol.ProofFunc = func(proof libunlynxproofs.PublishedShufflingProof) {}
 	return protocol, err
 }

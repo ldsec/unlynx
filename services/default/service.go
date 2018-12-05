@@ -1,6 +1,11 @@
 package servicesunlynxdefault
 
 import (
+	"strconv"
+	"time"
+
+	"github.com/lca1/unlynx/lib/proofs"
+
 	"github.com/Knetic/govaluate"
 	"github.com/btcsuite/goleveldb/leveldb/errors"
 	"github.com/dedis/kyber"
@@ -16,8 +21,6 @@ import (
 	"github.com/lca1/unlynx/protocols"
 	"github.com/lca1/unlynx/services/default/data"
 	"github.com/satori/go.uuid"
-	"strconv"
-	"time"
 )
 
 // ServiceName is the registered name for the unlynx service.
@@ -334,12 +337,13 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 		shuffle := pi.(*protocolsunlynx.ShufflingProtocol)
 
 		shuffle.Proofs = survey.Query.Proofs
+		shuffle.ProofFunc = func(proof libunlynxproofs.PublishedShufflingProof) {}
 		shuffle.Precomputed = survey.ShufflePrecompute
 		if tn.IsRoot() {
 			dpResponses := survey.PullDpResponses()
 			var toShuffleCV []libunlynx.CipherVector
 			toShuffleCV, survey.Lengths = protocolsunlynx.ProcessResponseToMatrixCipherText(dpResponses)
-			shuffle.TargetOfShuffle = &toShuffleCV
+			shuffle.ShuffleTarget = &toShuffleCV
 
 			s.Survey.Put(string(target), survey)
 		}
@@ -395,7 +399,8 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 		}
 
 		shuffle := pi.(*protocolsunlynx.ShufflingProtocol)
-		shuffle.Proofs = true
+		shuffle.Proofs = survey.Query.Proofs
+		shuffle.ProofFunc = func(proof libunlynxproofs.PublishedShufflingProof) {}
 		shuffle.Precomputed = nil
 
 		if tn.IsRoot() {
@@ -406,7 +411,7 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 			}
 			var toShuffleCV []libunlynx.CipherVector
 			toShuffleCV, survey.Lengths = protocolsunlynx.ProcessResponseToMatrixCipherText(clientResponses)
-			shuffle.TargetOfShuffle = &toShuffleCV
+			shuffle.ShuffleTarget = &toShuffleCV
 		}
 		return pi, nil
 
