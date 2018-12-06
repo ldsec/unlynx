@@ -321,7 +321,7 @@ func (kscm *KeySwitchedCipherMessage) FromBytes(data []byte, lenb int) {
 	cipherTextSize := libunlynx.CipherTextByteSize()
 	elementSize := cipherTextSize + (cipherTextSize / 2)
 	nkb := data[lenb:]
-	(*kscm).NewKey = libunlynx.BytesToAbstractPoints(nkb)[0]
+	(*kscm).NewKey = libunlynx.FromBytesToAbstractPoints(nkb)[0]
 	(*kscm).DataKey = make([]DataAndOriginalEphemeralKeys, lenb/elementSize)
 
 	if libunlynx.PARALLELIZE {

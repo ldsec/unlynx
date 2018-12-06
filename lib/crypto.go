@@ -652,7 +652,7 @@ func RandomPermutation(k int) []int {
 	return pi
 }
 
-// Conversion
+// Marshal
 //______________________________________________________________________________________________________________________
 
 // ToBytes converts a CipherVector to a byte array
@@ -790,8 +790,8 @@ func AbstractPointsToBytes(aps []kyber.Point) []byte {
 	return response
 }
 
-// BytesToAbstractPoints converts a byte array to an array of kyber.Point
-func BytesToAbstractPoints(target []byte) []kyber.Point {
+// FromBytesToAbstractPoints converts a byte array to an array of kyber.Point
+func FromBytesToAbstractPoints(target []byte) []kyber.Point {
 	var err error
 	aps := make([]kyber.Point, 0)
 	pointLength := SuiTe.PointLen()
@@ -804,6 +804,73 @@ func BytesToAbstractPoints(target []byte) []kyber.Point {
 		aps = append(aps, ap)
 	}
 	return aps
+}
+
+// ArrayCipherVectorToBytes converts an array of CipherVector to an array of bytes (plus an array of byte lengths)
+func ArrayCipherVectorToBytes(data []CipherVector) ([]byte, []byte) {
+	length := len(data)
+
+	b := make([]byte, 0)
+	bb := make([][]byte, length)
+	cvLengths := make([]int, length)
+
+	wg := StartParallelize(length)
+	var mutex sync.Mutex
+	for i := range data {
+		if PARALLELIZE {
+			go func(i int) {
+				defer wg.Done()
+
+				mutex.Lock()
+				data := data[i]
+				mutex.Unlock()
+				bb[i], cvLengths[i] = data.ToBytes()
+			}(i)
+		} else {
+			bb[i], cvLengths[i] = data[i].ToBytes()
+		}
+
+	}
+	EndParallelize(wg)
+	for _, v := range bb {
+		b = append(b, v...)
+	}
+	return b, UnsafeCastIntsToBytes(cvLengths)
+}
+
+// FromBytesToArrayCipherVector converts bytes to an array of CipherVector
+func FromBytesToArrayCipherVector(data []byte, cvLengthsByte []byte) []CipherVector {
+	cvLengths := UnsafeCastBytesToInts(cvLengthsByte)
+	dataConverted := make([]CipherVector, len(cvLengths))
+	elementSize := CipherTextByteSize()
+
+	wg := StartParallelize(len(cvLengths))
+
+	// iter over each value in the flatten data byte array
+	bytePos := 0
+	for i := 0; i < len(cvLengths); i++ {
+		nextBytePos := bytePos + cvLengths[i]*elementSize
+
+		cv := make(CipherVector, cvLengths[i])
+		v := data[bytePos:nextBytePos]
+
+		if PARALLELIZE {
+			go func(v []byte, i int) {
+				defer wg.Done()
+				cv.FromBytes(v, cvLengths[i])
+				dataConverted[i] = cv
+			}(v, i)
+		} else {
+			cv.FromBytes(v, cvLengths[i])
+			dataConverted[i] = cv
+		}
+
+		// advance pointer
+		bytePos = nextBytePos
+	}
+	EndParallelize(wg)
+
+	return dataConverted
 }
 
 // CipherTextByteSize return the length of one CipherText element transform into []byte

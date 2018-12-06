@@ -1,6 +1,8 @@
 package main
 
 import (
+	"math"
+
 	"github.com/BurntSushi/toml"
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/util/random"
@@ -12,7 +14,6 @@ import (
 	"github.com/lca1/unlynx/lib/tools"
 	"github.com/lca1/unlynx/protocols"
 	"github.com/lca1/unlynx/protocols/utils"
-	"math"
 )
 
 func init() {
@@ -186,9 +187,9 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 		}
 
 		cv, _ := protocolsunlynx.ProcessResponseToMatrixCipherText(responsesToShuffle)
-		clientResponsesShuffled, pi, beta := libunlynxshuffle.ShuffleSequence(cv, nil, root.Roster().Aggregate, nil)
+		clientResponsesShuffled, pi, beta := libunlynxshuffle.ShuffleSequence(cv, libunlynx.SuiTe.Point().Base(), root.Roster().Aggregate, nil)
 		log.Lvl1("Starting shuffling proof creation")
-		shufflingProof := libunlynxproofs.ShufflingProofCreation(cv, clientResponsesShuffled, nil, root.Roster().Aggregate, beta, pi)
+		shufflingProof := libunlynxproofs.ShufflingProofCreation(cv, clientResponsesShuffled, libunlynx.SuiTe.Point().Base(), root.Roster().Aggregate, beta, pi)
 		shufflingProofs := make([]libunlynxproofs.PublishedShufflingProof, sim.NbrServers*sim.NbrServers)
 		for i := range shufflingProofs {
 			shufflingProofs[i] = shufflingProof

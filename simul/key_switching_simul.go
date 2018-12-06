@@ -82,7 +82,7 @@ func (sim *KeySwitchingSimulation) Run(config *onet.SimulationConfig) error {
 		clientPublic := suite.Point().Mul(clientSecret, suite.Point().Base())
 
 		root.ProtocolInstance().(*protocolsunlynx.KeySwitchingProtocol).TargetPublicKey = &clientPublic
-		log.Lvl1("Number of respones to key switch ", len(responsesct))
+		log.Lvl1("Number of responses to key switch ", len(responsesct))
 		root.ProtocolInstance().(*protocolsunlynx.KeySwitchingProtocol).TargetOfSwitch = &responsesct
 		root.ProtocolInstance().(*protocolsunlynx.KeySwitchingProtocol).Proofs = sim.Proofs
 

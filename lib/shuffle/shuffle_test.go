@@ -1,6 +1,9 @@
 package libunlynxshuffle_test
 
 import (
+	"os"
+	"testing"
+
 	"github.com/dedis/kyber/util/random"
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
@@ -8,8 +11,6 @@ import (
 	"github.com/lca1/unlynx/lib/proofs"
 	. "github.com/lca1/unlynx/lib/shuffle"
 	"github.com/stretchr/testify/assert"
-	"os"
-	"testing"
 )
 
 func TestShuffleSequence(t *testing.T) {
@@ -33,11 +34,10 @@ func TestShuffleSequence(t *testing.T) {
 		}
 
 	}
-	outputlist, pi, beta := ShuffleSequence(inputList, nil, collectivePubKey, nil)
+	outputlist, pi, beta := ShuffleSequence(inputList, libunlynx.SuiTe.Point().Base(), collectivePubKey, nil)
 
 	//with proof
-	shuffleProof := libunlynxproofs.ShufflingProofCreation(inputList, outputlist, nil, collectivePubKey, beta, pi)
-	//shuffleProof = lib.ShufflingProofCreation(inputList, inputList, nil, collectivePubKey, beta, pi)
+	shuffleProof := libunlynxproofs.ShufflingProofCreation(inputList, outputlist, libunlynx.SuiTe.Point().Base(), collectivePubKey, beta, pi)
 	log.Lvl1(libunlynxproofs.ShufflingProofVerification(shuffleProof, collectivePubKey))
 
 	piinv := make([]int, k)
