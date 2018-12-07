@@ -4,6 +4,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/lca1/unlynx/lib/key_switch"
+
 	"github.com/lca1/unlynx/lib/proofs"
 
 	"github.com/Knetic/govaluate"
@@ -337,7 +339,10 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 		shuffle := pi.(*protocolsunlynx.ShufflingProtocol)
 
 		shuffle.Proofs = survey.Query.Proofs
-		shuffle.ProofFunc = func(proof libunlynxproofs.PublishedShufflingProof) {}
+		shuffle.ProofFunc = func(shuffleTarget, shuffledData []libunlynx.CipherVector, collectiveKey kyber.Point, beta [][]kyber.Scalar, pi []int) *libunlynxproofs.PublishedShufflingProof {
+			proof := libunlynxproofs.ShufflingProofCreation(shuffleTarget, shuffledData, libunlynx.SuiTe.Point().Base(), collectiveKey, beta, pi)
+			return &proof
+		}
 		shuffle.Precomputed = survey.ShufflePrecompute
 		if tn.IsRoot() {
 			dpResponses := survey.PullDpResponses()
@@ -400,7 +405,10 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 
 		shuffle := pi.(*protocolsunlynx.ShufflingProtocol)
 		shuffle.Proofs = survey.Query.Proofs
-		shuffle.ProofFunc = func(proof libunlynxproofs.PublishedShufflingProof) {}
+		shuffle.ProofFunc = func(shuffleTarget, shuffledData []libunlynx.CipherVector, collectiveKey kyber.Point, beta [][]kyber.Scalar, pi []int) *libunlynxproofs.PublishedShufflingProof {
+			proof := libunlynxproofs.ShufflingProofCreation(shuffleTarget, shuffledData, libunlynx.SuiTe.Point().Base(), collectiveKey, beta, pi)
+			return &proof
+		}
 		shuffle.Precomputed = nil
 
 		if tn.IsRoot() {
@@ -423,6 +431,10 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 
 		keySwitch := pi.(*protocolsunlynx.KeySwitchingProtocol)
 		keySwitch.Proofs = survey.Query.Proofs
+		keySwitch.ProofFunc = func(pubKey, targetPubKey kyber.Point, secretKey kyber.Scalar, ks2s, rBNegs []kyber.Point, vis []kyber.Scalar) libunlynxkeyswitch.PublishedKSListProof {
+			return libunlynxkeyswitch.KeySwitchListProofCreation(pubKey, targetPubKey, secretKey, ks2s, rBNegs, vis)
+		}
+
 		if tn.IsRoot() {
 			var coaggr []libunlynx.FilteredResponse
 

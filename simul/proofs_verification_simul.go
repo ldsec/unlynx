@@ -3,6 +3,8 @@ package main
 import (
 	"math"
 
+	"github.com/lca1/unlynx/lib/key_switch"
+
 	"github.com/BurntSushi/toml"
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/util/random"
@@ -83,15 +85,8 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 			origCipherVector[i].C = v.C
 		}
 
-		switchedVect := libunlynx.NewCipherVector(len(cipherVect))
-		rs := switchedVect.KeySwitching(cipherVect, origEphemKeys, pubKeyNew, secKey)
-		cps := libunlynxproofs.VectorSwitchKeyProofCreation(cipherVect, *switchedVect, rs, secKey, origEphemKeys, pubKeyNew)
-		pskp := libunlynxproofs.PublishedSwitchKeyProof{Skp: cps, VectBefore: cipherVect, VectAfter: *switchedVect, K: pubKey, Q: pubKeyNew}
-		keySwitchingProofs := make([]libunlynxproofs.PublishedSwitchKeyProof, sim.NbrGroups)
-
-		for i := range keySwitchingProofs {
-			keySwitchingProofs[i] = pskp
-		}
+		_, ks2s, rBNegs, vis := libunlynxkeyswitch.KeySwitchSequence(pubKeyNew, origEphemKeys, secKey)
+		keySwitchingProofs := libunlynxkeyswitch.KeySwitchListProofCreation(pubKey, pubKeyNew, secKey, ks2s, rBNegs, vis)
 
 		// deterministic tagging ************************************************************
 		tab = make([]int64, sim.NbrGroupAttributes)
@@ -186,10 +181,10 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 			responsesToShuffle[i] = libunlynx.ProcessResponse{GroupByEnc: cipherVectGr, AggregatingAttributes: testCipherVect1}
 		}
 
-		cv, _ := protocolsunlynx.ProcessResponseToMatrixCipherText(responsesToShuffle)
-		clientResponsesShuffled, pi, beta := libunlynxshuffle.ShuffleSequence(cv, libunlynx.SuiTe.Point().Base(), root.Roster().Aggregate, nil)
+		listCV, _ := protocolsunlynx.ProcessResponseToMatrixCipherText(responsesToShuffle)
+		clientResponsesShuffled, pi, beta := libunlynxshuffle.ShuffleSequence(listCV, libunlynx.SuiTe.Point().Base(), root.Roster().Aggregate, nil)
 		log.Lvl1("Starting shuffling proof creation")
-		shufflingProof := libunlynxproofs.ShufflingProofCreation(cv, clientResponsesShuffled, libunlynx.SuiTe.Point().Base(), root.Roster().Aggregate, beta, pi)
+		shufflingProof := libunlynxproofs.ShufflingProofCreation(listCV, clientResponsesShuffled, libunlynx.SuiTe.Point().Base(), root.Roster().Aggregate, beta, pi)
 		shufflingProofs := make([]libunlynxproofs.PublishedShufflingProof, sim.NbrServers*sim.NbrServers)
 		for i := range shufflingProofs {
 			shufflingProofs[i] = shufflingProof

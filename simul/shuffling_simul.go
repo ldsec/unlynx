@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/BurntSushi/toml"
+	"github.com/dedis/kyber"
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
@@ -87,7 +88,10 @@ func NewShufflingSimul(tni *onet.TreeNodeInstance, sim *ShufflingSimulation) (on
 	protocol, err := protocolsunlynx.NewShufflingProtocol(tni)
 	pap := protocol.(*protocolsunlynx.ShufflingProtocol)
 	pap.Proofs = sim.Proofs
-	pap.ProofFunc = func(proof libunlynxproofs.PublishedShufflingProof) {}
+	pap.ProofFunc = func(shuffleTarget, shuffledData []libunlynx.CipherVector, collectiveKey kyber.Point, beta [][]kyber.Scalar, pi []int) *libunlynxproofs.PublishedShufflingProof {
+		proof := libunlynxproofs.ShufflingProofCreation(shuffleTarget, shuffledData, libunlynx.SuiTe.Point().Base(), collectiveKey, beta, pi)
+		return &proof
+	}
 
 	if sim.PreCompute {
 		b, err := tni.Private().MarshalBinary()

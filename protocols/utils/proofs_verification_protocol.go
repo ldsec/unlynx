@@ -7,6 +7,7 @@ package protocolsunlynxutils
 import (
 	"github.com/dedis/onet"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/key_switch"
 	"github.com/lca1/unlynx/lib/proofs"
 )
 
@@ -22,7 +23,7 @@ func init() {
 
 // ProofsToVerify contains all proofs which have to be checked
 type ProofsToVerify struct {
-	KeySwitchingProofs          []libunlynxproofs.PublishedSwitchKeyProof
+	KeySwitchingProofs          libunlynxkeyswitch.PublishedKSListProof
 	DeterministicTaggingProofs  []libunlynxproofs.PublishedDeterministicTaggingProof
 	DetTagAdditionProofs        []libunlynxproofs.PublishedDetTagAdditionProof
 	AggregationProofs           []libunlynxproofs.PublishedAggregationProof
@@ -56,7 +57,7 @@ var finalResult = make(chan []bool)
 // Start is called at the root to start the execution of the key switching.
 func (p *ProofsVerificationProtocol) Start() error {
 
-	nbrKsProofs := len(p.TargetOfVerification.KeySwitchingProofs)
+	nbrKsProofs := 1
 	nbrDtProofs := len(p.TargetOfVerification.DeterministicTaggingProofs)
 	nbrDetTagAddProofs := len(p.TargetOfVerification.DetTagAdditionProofs)
 	nbrAggrProofs := len(p.TargetOfVerification.AggregationProofs)
@@ -69,24 +70,12 @@ func (p *ProofsVerificationProtocol) Start() error {
 	result := make([]bool, resultSize)
 
 	// key switching ***********************************************************************************
-	wg := libunlynx.StartParallelize(nbrKsProofs)
 	keySwitchTime := libunlynx.StartTimer(p.Name() + "_KeySwitchingVerif")
-	for i, v := range p.TargetOfVerification.KeySwitchingProofs {
-		if libunlynx.PARALLELIZE {
-			go func(i int, v libunlynxproofs.PublishedSwitchKeyProof) {
-				result[i] = libunlynxproofs.PublishedSwitchKeyCheckProof(v)
-				defer wg.Done()
-			}(i, v)
-		} else {
-			result[i] = libunlynxproofs.PublishedSwitchKeyCheckProof(v)
-		}
-
-	}
-	libunlynx.EndParallelize(wg)
+	result[0] = libunlynxkeyswitch.KeySwitchListProofVerification(p.TargetOfVerification.KeySwitchingProofs, 1.0)
 	libunlynx.EndTimer(keySwitchTime)
 
 	// deterministic tagging ***********************************************************************************
-	wg = libunlynx.StartParallelize(nbrDtProofs)
+	wg := libunlynx.StartParallelize(nbrDtProofs)
 	detTagTime := libunlynx.StartTimer(p.Name() + "_DetTagVerif")
 	for i, v := range p.TargetOfVerification.DeterministicTaggingProofs {
 		if libunlynx.PARALLELIZE {

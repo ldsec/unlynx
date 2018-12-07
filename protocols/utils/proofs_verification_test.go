@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lca1/unlynx/lib/key_switch"
+
 	"github.com/lca1/unlynx/lib/shuffle"
 	"github.com/lca1/unlynx/lib/tools"
 
@@ -42,19 +44,15 @@ func TestProofsVerification(t *testing.T) {
 	// key switching ***********************************************************************************************
 	origEphemKeys := []kyber.Point{cipherOne.K, cipherOne.K}
 	switchedVect := libunlynx.NewCipherVector(2)
-	rs := switchedVect.KeySwitching(cipherVect, origEphemKeys, pubKeyNew, secKey)
-	cps := libunlynxproofs.VectorSwitchKeyProofCreation(cipherVect, *switchedVect, rs, secKey, origEphemKeys, pubKeyNew)
-	pskp1 := libunlynxproofs.PublishedSwitchKeyProof{Skp: cps, VectBefore: cipherVect, VectAfter: *switchedVect, K: pubKey, Q: pubKeyNew}
 
-	cps = libunlynxproofs.VectorSwitchKeyProofCreation(cipherVect, *switchedVect, rs, secKey, []kyber.Point{cipherOne.K, cipherOne.K}, pubKey)
-	pskp2 := libunlynxproofs.PublishedSwitchKeyProof{Skp: cps, VectBefore: cipherVect, VectAfter: *switchedVect, K: pubKeyNew, Q: pubKeyNew}
+	_, ks2s, rBNegs, vis := libunlynxkeyswitch.KeySwitchSequence(pubKeyNew, origEphemKeys, secKey)
+	pskp1 := libunlynxkeyswitch.KeySwitchListProofCreation(pubKey, pubKeyNew, secKey, ks2s, rBNegs, vis)
+	keySwitchingProofs := pskp1
 
-	keySwitchingProofs := []libunlynxproofs.PublishedSwitchKeyProof{pskp1, pskp2}
-
+	// deterministic tagging ***************************************************************************************
 	cipherOne1 := *libunlynx.EncryptInt(pubKey, 10)
 	cipherVect1 := libunlynx.CipherVector{cipherOne1, cipherOne1}
 
-	// deterministic tagging ***************************************************************************************
 	tagSwitchedVect := libunlynx.NewCipherVector(2)
 	tagSwitchedVect.DeterministicTagging(&cipherVect1, secKey, secKeyNew)
 

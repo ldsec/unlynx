@@ -154,32 +154,6 @@ func TestCryptoTagging(t *testing.T) {
 	assert.False(t, cv[0].C.Equal(cv[3].C))
 }
 
-// TestCryptoKeySwitching tests key switching.
-func TestCryptoKeySwitching(t *testing.T) {
-	const N = 5
-	groupKey, privates, _ := libunlynx.GenKeys(N)
-	newPrivate, newPublic := libunlynx.GenKey()
-
-	target := []int64{1, 2, 3, 4, 5}
-	cv := libunlynx.EncryptIntVector(groupKey, target)
-
-	origEphem := make([]kyber.Point, len(*cv))
-	kscv := make(libunlynx.CipherVector, len(*cv))
-	for i, c := range *cv {
-		origEphem[i] = c.K
-		kscv[i].K = libunlynx.SuiTe.Point().Null()
-		kscv[i].C = c.C
-	}
-
-	for n := 0; n < N; n++ {
-		kscv.KeySwitching(kscv, origEphem, newPublic, privates[n])
-	}
-
-	res := libunlynx.DecryptIntVector(newPrivate, &kscv)
-	assert.True(t, reflect.DeepEqual(res, target))
-
-}
-
 // TestEqualDeterministCipherText tests equality between deterministic ciphertexts.
 func TestEqualDeterministCipherText(t *testing.T) {
 	dcv1 := libunlynx.DeterministCipherVector{libunlynx.DeterministCipherText{Point: libunlynx.SuiTe.Point().Base()}, libunlynx.DeterministCipherText{Point: libunlynx.SuiTe.Point().Null()}}

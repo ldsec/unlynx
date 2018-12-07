@@ -1,13 +1,14 @@
 package libunlynxshuffle
 
 import (
+	"math/big"
+	"os"
+
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/util/random"
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/tools"
-	"math/big"
-	"os"
 )
 
 // compressCipherVector (slice of ciphertexts) into one ciphertext
@@ -157,12 +158,20 @@ func processResponseShuffling(pi []int, i int, inputList, outputList []libunlynx
 
 // CompressProcessResponseMultiple applies shuffling compression to 2 list of process responses corresponding to input and output of shuffling
 func CompressProcessResponseMultiple(inputList, outputList []libunlynx.CipherVector, i int, e []kyber.Scalar, Xhat, XhatBar, Yhat, YhatBar []kyber.Point) {
-	tmp := compressCipherVector(inputList[i], e)
-	Xhat[i] = tmp.K
-	Yhat[i] = tmp.C
-	tmpBar := compressCipherVector(outputList[i], e)
-	XhatBar[i] = tmpBar.K
-	YhatBar[i] = tmpBar.C
+	wg := libunlynx.StartParallelize(2)
+	go func() {
+		defer wg.Done()
+		tmp := compressCipherVector(inputList[i], e)
+		Xhat[i] = tmp.K
+		Yhat[i] = tmp.C
+	}()
+	go func() {
+		defer wg.Done()
+		tmpBar := compressCipherVector(outputList[i], e)
+		XhatBar[i] = tmpBar.K
+		YhatBar[i] = tmpBar.C
+	}()
+	libunlynx.EndParallelize(wg)
 }
 
 // PrecomputeForShuffling precomputes data to be used in the shuffling protocol (to make it faster) and saves it in a .gob file

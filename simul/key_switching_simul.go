@@ -2,10 +2,12 @@ package main
 
 import (
 	"github.com/BurntSushi/toml"
+	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/util/random"
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/key_switch"
 	"github.com/lca1/unlynx/protocols"
 )
 
@@ -85,6 +87,9 @@ func (sim *KeySwitchingSimulation) Run(config *onet.SimulationConfig) error {
 		log.Lvl1("Number of responses to key switch ", len(responsesct))
 		root.ProtocolInstance().(*protocolsunlynx.KeySwitchingProtocol).TargetOfSwitch = &responsesct
 		root.ProtocolInstance().(*protocolsunlynx.KeySwitchingProtocol).Proofs = sim.Proofs
+		root.ProtocolInstance().(*protocolsunlynx.KeySwitchingProtocol).ProofFunc = func(pubKey, targetPubKey kyber.Point, secretKey kyber.Scalar, ks2s, rBNegs []kyber.Point, vis []kyber.Scalar) libunlynxkeyswitch.PublishedKSListProof {
+			return libunlynxkeyswitch.KeySwitchListProofCreation(pubKey, targetPubKey, secretKey, ks2s, rBNegs, vis)
+		}
 
 		round := libunlynx.StartTimer("_KeySwitching(SIMULATION)")
 

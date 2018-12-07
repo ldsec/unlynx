@@ -1,16 +1,17 @@
 package servicesunlynxdefault_test
 
 import (
-	"github.com/dedis/onet"
-	"github.com/dedis/onet/log"
-	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/services/default"
-	"github.com/stretchr/testify/assert"
 	"os"
 	"reflect"
 	"strconv"
 	"sync"
 	"testing"
+
+	"github.com/dedis/onet"
+	"github.com/dedis/onet/log"
+	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/services/default"
+	"github.com/stretchr/testify/assert"
 )
 
 // numberGrpAttr is the number of group attributes.
@@ -956,7 +957,6 @@ func TestAllServersRandomDPs(t *testing.T) {
 //______________________________________________________________________________________________________________________
 // Test multiple requests at the same time
 func TestConcurrentSurveys(t *testing.T) {
-	t.Skip()
 	log.Lvl1("***************************************************************************************************")
 	os.Remove("pre_compute_multiplications.gob")
 	log.SetDebugVisible(2)
