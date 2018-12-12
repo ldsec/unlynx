@@ -308,14 +308,14 @@ func discreteLog(P kyber.Point, checkNeg bool) int64 {
 	B := SuiTe.Point().Base()
 
 	//check if the point is already in the table
+	mutex.Lock()
 	decrypted, ok := PointToInt.Get(P.String())
 	if ok == nil && decrypted != nil {
+		mutex.Unlock()
 		return decrypted.(int64)
 	}
 
 	//otherwise, we complete/create the table while decrypting
-	mutex.Lock()
-
 	//initialise
 	if currentGreatestInt == 0 {
 		currentGreatestM = SuiTe.Point().Null()
