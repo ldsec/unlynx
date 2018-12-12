@@ -87,8 +87,9 @@ func (sim *KeySwitchingSimulation) Run(config *onet.SimulationConfig) error {
 		log.Lvl1("Number of responses to key switch ", len(responsesct))
 		root.ProtocolInstance().(*protocolsunlynx.KeySwitchingProtocol).TargetOfSwitch = &responsesct
 		root.ProtocolInstance().(*protocolsunlynx.KeySwitchingProtocol).Proofs = sim.Proofs
-		root.ProtocolInstance().(*protocolsunlynx.KeySwitchingProtocol).ProofFunc = func(pubKey, targetPubKey kyber.Point, secretKey kyber.Scalar, ks2s, rBNegs []kyber.Point, vis []kyber.Scalar) libunlynxkeyswitch.PublishedKSListProof {
-			return libunlynxkeyswitch.KeySwitchListProofCreation(pubKey, targetPubKey, secretKey, ks2s, rBNegs, vis)
+		root.ProtocolInstance().(*protocolsunlynx.KeySwitchingProtocol).ProofFunc = func(pubKey, targetPubKey kyber.Point, secretKey kyber.Scalar, ks2s, rBNegs []kyber.Point, vis []kyber.Scalar) *libunlynxkeyswitch.PublishedKSListProof {
+			proof := libunlynxkeyswitch.KeySwitchListProofCreation(pubKey, targetPubKey, secretKey, ks2s, rBNegs, vis)
+			return &proof
 		}
 
 		round := libunlynx.StartTimer("_KeySwitching(SIMULATION)")

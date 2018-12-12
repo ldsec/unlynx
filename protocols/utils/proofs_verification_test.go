@@ -148,8 +148,8 @@ func TestProofsVerification(t *testing.T) {
 
 	feedback := protocol.FeedbackChannel
 
-	// keySwitchingProofs -> 2, deterministicTaggingProofs -> 3,deterministicTaggingAddProofs -> 4, aggregationProofs -> 2, shufflingProofs -> 2, collectiveAggregationProofs -> 2
-	expRes := []bool{true, false, true, true, false, true, true, false, false, true, false, true, false, true, false}
+	// keySwitchingProofs -> 1, deterministicTaggingProofs -> 3,deterministicTaggingAddProofs -> 4, aggregationProofs -> 2, shufflingProofs -> 2, collectiveAggregationProofs -> 2
+	expRes := []bool{true, true, true, false, true, true, false, false, true, false, true, false, true, false}
 	go protocol.Start()
 
 	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*5*2) * time.Millisecond
