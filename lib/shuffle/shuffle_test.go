@@ -8,8 +8,7 @@ import (
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/lib/proofs"
-	. "github.com/lca1/unlynx/lib/shuffle"
+	"github.com/lca1/unlynx/lib/shuffle"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -34,11 +33,11 @@ func TestShuffleSequence(t *testing.T) {
 		}
 
 	}
-	outputlist, pi, beta := ShuffleSequence(inputList, libunlynx.SuiTe.Point().Base(), collectivePubKey, nil)
+	outputlist, pi, beta := libunlynxshuffle.ShuffleSequence(inputList, libunlynx.SuiTe.Point().Base(), collectivePubKey, nil)
 
 	//with proof
-	shuffleProof := libunlynxproofs.ShufflingProofCreation(inputList, outputlist, libunlynx.SuiTe.Point().Base(), collectivePubKey, beta, pi)
-	log.Lvl1(libunlynxproofs.ShufflingProofVerification(shuffleProof, collectivePubKey))
+	shuffleProof := libunlynxshuffle.ShufflingProofCreation(inputList, outputlist, libunlynx.SuiTe.Point().Base(), collectivePubKey, beta, pi)
+	log.Lvl1(libunlynxshuffle.ShufflingProofVerification(shuffleProof, collectivePubKey))
 
 	piinv := make([]int, k)
 	for i := 0; i < k; i++ {
@@ -63,15 +62,15 @@ func TestPrecomputationWritingForShuffling(t *testing.T) {
 	lineSize := 10
 	secret := libunlynx.SuiTe.Scalar().Pick(random.New())
 
-	precompute := PrecomputationWritingForShuffling(false, "pre_compute_multiplications.gob", "test_server", secret, el.Aggregate, lineSize)
+	precompute := libunlynxshuffle.PrecomputationWritingForShuffling(false, "pre_compute_multiplications.gob", "test_server", secret, el.Aggregate, lineSize)
 	assert.Equal(t, len(precompute), lineSize)
 
 	// writes precomputation file
-	precompute = PrecomputationWritingForShuffling(true, "pre_compute_multiplications.gob", "test_server", secret, el.Aggregate, lineSize)
+	precompute = libunlynxshuffle.PrecomputationWritingForShuffling(true, "pre_compute_multiplications.gob", "test_server", secret, el.Aggregate, lineSize)
 	assert.Equal(t, len(precompute), lineSize)
 
 	// reads precomputation file
-	precompute = ReadPrecomputedFile("pre_compute_multiplications.gob")
+	precompute = libunlynxshuffle.ReadPrecomputedFile("pre_compute_multiplications.gob")
 	assert.Equal(t, len(precompute), lineSize)
 
 }

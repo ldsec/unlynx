@@ -122,11 +122,11 @@ func TestProofsVerification(t *testing.T) {
 	cipherVectorToShuffle[2] = append(append(cipherVect2, cipherVect2...), cipherVect1...)
 	detResponsesCreationShuffled, pi, beta := libunlynxshuffle.ShuffleSequence(cipherVectorToShuffle, libunlynx.SuiTe.Point().Base(), protocol.Roster().Aggregate, nil)
 
-	PublishedShufflingProof1 := libunlynxproofs.ShufflingProofCreation(cipherVectorToShuffle, detResponsesCreationShuffled, libunlynx.SuiTe.Point().Base(), protocol.Roster().Aggregate, beta, pi)
+	PublishedShufflingProof1 := libunlynxshuffle.ShufflingProofCreation(cipherVectorToShuffle, detResponsesCreationShuffled, libunlynx.SuiTe.Point().Base(), protocol.Roster().Aggregate, beta, pi)
 
-	PublishedShufflingProof2 := libunlynxproofs.ShufflingProofCreation(cipherVectorToShuffle, cipherVectorToShuffle, libunlynx.SuiTe.Point().Base(), pubKey, beta, pi)
+	PublishedShufflingProof2 := libunlynxshuffle.ShufflingProofCreation(cipherVectorToShuffle, cipherVectorToShuffle, libunlynx.SuiTe.Point().Base(), pubKey, beta, pi)
 
-	shufflingProofs := []libunlynxproofs.PublishedShufflingProof{PublishedShufflingProof1, PublishedShufflingProof2}
+	shufflingProofs := []libunlynxshuffle.PublishedShufflingProof{PublishedShufflingProof1, PublishedShufflingProof2}
 
 	// collective aggregation **************************************************************************************
 	c1 := make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse)

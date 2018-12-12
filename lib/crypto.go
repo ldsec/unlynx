@@ -8,6 +8,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/dedis/kyber/util/key"
+
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/util/random"
 	"github.com/dedis/onet/log"
@@ -82,20 +84,16 @@ func NewDeterministicCipherVector(length int) *DeterministCipherVector {
 // Key Pairs (mostly used in tests)
 //----------------------------------------------------------------------------------------------------------------------
 
-// GenKey permits to generate a public/private key pairs.
-func GenKey() (secKey kyber.Scalar, pubKey kyber.Point) {
-	secKey = SuiTe.Scalar().Pick(random.New())
-	pubKey = SuiTe.Point().Mul(secKey, SuiTe.Point().Base())
-	return
-}
-
 // GenKeys permits to generate ElGamal public/private key pairs.
 func GenKeys(n int) (kyber.Point, []kyber.Scalar, []kyber.Point) {
 	priv := make([]kyber.Scalar, n)
 	pub := make([]kyber.Point, n)
+
 	group := SuiTe.Point().Null()
 	for i := 0; i < n; i++ {
-		priv[i], pub[i] = GenKey()
+		keys := key.NewKeyPair(SuiTe)
+		pub[i] = keys.Public
+		priv[i] = keys.Private
 		group.Add(group, pub[i])
 	}
 	return group, priv, pub

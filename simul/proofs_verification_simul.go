@@ -184,8 +184,8 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 		listCV, _ := protocolsunlynx.ProcessResponseToMatrixCipherText(responsesToShuffle)
 		clientResponsesShuffled, pi, beta := libunlynxshuffle.ShuffleSequence(listCV, libunlynx.SuiTe.Point().Base(), root.Roster().Aggregate, nil)
 		log.Lvl1("Starting shuffling proof creation")
-		shufflingProof := libunlynxproofs.ShufflingProofCreation(listCV, clientResponsesShuffled, libunlynx.SuiTe.Point().Base(), root.Roster().Aggregate, beta, pi)
-		shufflingProofs := make([]libunlynxproofs.PublishedShufflingProof, sim.NbrServers*sim.NbrServers)
+		shufflingProof := libunlynxshuffle.ShufflingProofCreation(listCV, clientResponsesShuffled, libunlynx.SuiTe.Point().Base(), root.Roster().Aggregate, beta, pi)
+		shufflingProofs := make([]libunlynxshuffle.PublishedShufflingProof, sim.NbrServers*sim.NbrServers)
 		for i := range shufflingProofs {
 			shufflingProofs[i] = shufflingProof
 		}

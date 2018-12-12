@@ -2,14 +2,16 @@ package libunlynxtools_test
 
 import (
 	"fmt"
+	"os"
+	"strconv"
+	"testing"
+
+	"github.com/dedis/kyber/util/key"
 	"github.com/dedis/kyber/util/random"
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
 	. "github.com/lca1/unlynx/lib/tools"
 	"github.com/stretchr/testify/assert"
-	"os"
-	"strconv"
-	"testing"
 )
 
 const file = "pre_compute_multiplications.gob"
@@ -61,7 +63,8 @@ func TestReadFromGobFile(t *testing.T) {
 }
 
 func TestAddInMap(t *testing.T) {
-	_, pubKey := libunlynx.GenKey()
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	_, pubKey := keys.Private, keys.Public
 	key := libunlynx.GroupingKey("test")
 
 	cv := make(libunlynx.CipherVector, k)
@@ -107,8 +110,10 @@ func TestConvertDataToMap(t *testing.T) {
 }
 
 func TestFromDpClearResponseToProcess(t *testing.T) {
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	secKey, pubKey := keys.Private, keys.Public
+
 	k := 5
-	secKey, pubKey := libunlynx.GenKey()
 	dpClearResponse := libunlynx.DpClearResponse{
 		WhereClear:                 make(map[string]int64),
 		WhereEnc:                   make(map[string]int64),

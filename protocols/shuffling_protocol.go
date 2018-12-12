@@ -15,7 +15,6 @@ import (
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/lib/proofs"
 )
 
 // ShufflingProtocolName is the registered name for the neff shuffle protocol.
@@ -62,7 +61,7 @@ type shufflingBytesLengthStruct struct {
 }
 
 // proofShuffleFunction defines a function that does 'stuff' with the shuffle proofs
-type proofShuffleFunction func([]libunlynx.CipherVector, []libunlynx.CipherVector, kyber.Point, [][]kyber.Scalar, []int) *libunlynxproofs.PublishedShufflingProof
+type proofShuffleFunction func([]libunlynx.CipherVector, []libunlynx.CipherVector, kyber.Point, [][]kyber.Scalar, []int) *libunlynxshuffle.PublishedShufflingProof
 
 // Protocol
 //______________________________________________________________________________________________________________________

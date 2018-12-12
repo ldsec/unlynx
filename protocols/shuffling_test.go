@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lca1/unlynx/lib/proofs"
+	"github.com/lca1/unlynx/lib/shuffle"
 
 	"github.com/stretchr/testify/assert"
 
@@ -85,8 +85,8 @@ func TestShuffling(t *testing.T) {
 	protocol.CollectiveKey = groupPub
 
 	protocol.Proofs = true
-	protocol.ProofFunc = func(shuffleTarget, shuffledData []libunlynx.CipherVector, collectiveKey kyber.Point, beta [][]kyber.Scalar, pi []int) *libunlynxproofs.PublishedShufflingProof {
-		proof := libunlynxproofs.ShufflingProofCreation(shuffleTarget, shuffledData, libunlynx.SuiTe.Point().Base(), collectiveKey, beta, pi)
+	protocol.ProofFunc = func(shuffleTarget, shuffledData []libunlynx.CipherVector, collectiveKey kyber.Point, beta [][]kyber.Scalar, pi []int) *libunlynxshuffle.PublishedShufflingProof {
+		proof := libunlynxshuffle.ShufflingProofCreation(shuffleTarget, shuffledData, libunlynx.SuiTe.Point().Base(), collectiveKey, beta, pi)
 		return &proof
 	}
 
@@ -129,8 +129,8 @@ func NewShufflingTest(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error)
 	protocol.Precomputed = precomputes[tni.Index()]
 
 	protocol.Proofs = true
-	protocol.ProofFunc = func(shuffleTarget, shuffledData []libunlynx.CipherVector, collectiveKey kyber.Point, beta [][]kyber.Scalar, pi []int) *libunlynxproofs.PublishedShufflingProof {
-		proof := libunlynxproofs.ShufflingProofCreation(shuffleTarget, shuffledData, libunlynx.SuiTe.Point().Base(), collectiveKey, beta, pi)
+	protocol.ProofFunc = func(shuffleTarget, shuffledData []libunlynx.CipherVector, collectiveKey kyber.Point, beta [][]kyber.Scalar, pi []int) *libunlynxshuffle.PublishedShufflingProof {
+		proof := libunlynxshuffle.ShufflingProofCreation(shuffleTarget, shuffledData, libunlynx.SuiTe.Point().Base(), collectiveKey, beta, pi)
 		return &proof
 	}
 	return protocol, err

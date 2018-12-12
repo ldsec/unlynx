@@ -9,6 +9,7 @@ import (
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/key_switch"
 	"github.com/lca1/unlynx/lib/proofs"
+	"github.com/lca1/unlynx/lib/shuffle"
 )
 
 // ProofsVerificationProtocolName is the registered name for the proof verification protocol.
@@ -27,7 +28,7 @@ type ProofsToVerify struct {
 	DeterministicTaggingProofs  []libunlynxproofs.PublishedDeterministicTaggingProof
 	DetTagAdditionProofs        []libunlynxproofs.PublishedDetTagAdditionProof
 	AggregationProofs           []libunlynxproofs.PublishedAggregationProof
-	ShufflingProofs             []libunlynxproofs.PublishedShufflingProof
+	ShufflingProofs             []libunlynxshuffle.PublishedShufflingProof
 	CollectiveAggregationProofs []libunlynxproofs.PublishedCollectiveAggregationProof
 }
 
@@ -131,12 +132,12 @@ func (p *ProofsVerificationProtocol) Start() error {
 	shufflingTime := libunlynx.StartTimer(p.Name() + "_ShufflingVerif")
 	for i, v := range p.TargetOfVerification.ShufflingProofs {
 		if libunlynx.PARALLELIZE {
-			go func(i int, v libunlynxproofs.PublishedShufflingProof) {
-				result[nbrKsProofs+nbrDtProofs+nbrDetTagAddProofs+nbrAggrProofs+i] = libunlynxproofs.ShufflingProofVerification(v, p.Roster().Aggregate)
+			go func(i int, v libunlynxshuffle.PublishedShufflingProof) {
+				result[nbrKsProofs+nbrDtProofs+nbrDetTagAddProofs+nbrAggrProofs+i] = libunlynxshuffle.ShufflingProofVerification(v, p.Roster().Aggregate)
 				defer wg.Done()
 			}(i, v)
 		} else {
-			result[nbrKsProofs+nbrDtProofs+nbrDetTagAddProofs+nbrAggrProofs+i] = libunlynxproofs.ShufflingProofVerification(v, p.Roster().Aggregate)
+			result[nbrKsProofs+nbrDtProofs+nbrDetTagAddProofs+nbrAggrProofs+i] = libunlynxshuffle.ShufflingProofVerification(v, p.Roster().Aggregate)
 
 		}
 	}
