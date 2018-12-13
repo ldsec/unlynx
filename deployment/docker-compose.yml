@@ -1,6 +1,6 @@
 version: '3.5'
 services:
-  medco-unlynx-build:
+  unlynx-build:
     image: medco/unlynx:v1.2-alpha-build
     build:
       context: ../
@@ -10,7 +10,7 @@ services:
     - "2000"
     - "2001"
 
-  medco-unlynx-release:
+  unlynx-release:
     image: medco/unlynx:v1.2-alpha
     build:
       context: ../
