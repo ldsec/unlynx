@@ -1,4 +1,4 @@
-version: '3.5'
+version: '3'
 services:
   unlynx-build:
     image: medco/unlynx:v1.2-alpha-build
