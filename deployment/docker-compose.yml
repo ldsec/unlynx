@@ -1,6 +1,16 @@
 version: '3.5'
 services:
-  medco-unlynx:
+  medco-unlynx-build:
+    image: medco/unlynx:v1.2-alpha-build
+    build:
+      context: ../
+      dockerfile: deployment/Dockerfile
+      target: build
+    ports:
+    - "2000"
+    - "2001"
+
+  medco-unlynx-release:
     image: medco/unlynx:v1.2-alpha
     build:
       context: ../
