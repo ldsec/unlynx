@@ -21,10 +21,5 @@ RUN go get -v -d ./... && \
     CGO_ENABLED=0 go build -v ./... && \
     CGO_ENABLED=0 go install -v ./...
 
-# -------------------------------------------
-FROM golang:1.11-alpine as release
-
-COPY --from=build /go/bin /go/bin
-
 EXPOSE 2000 2001
 ENTRYPOINT ["simul"]
