@@ -14,7 +14,7 @@ import (
 	"github.com/dedis/onet/network"
 	"github.com/fanliao/go-concurrentMap"
 	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/lib/diffprivacy"
+	"github.com/lca1/unlynx/lib/differential_privacy"
 	"github.com/lca1/unlynx/lib/shuffle"
 	"github.com/lca1/unlynx/lib/store"
 	"github.com/lca1/unlynx/lib/tools"

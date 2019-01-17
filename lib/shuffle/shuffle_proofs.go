@@ -54,15 +54,15 @@ func shuffleProofCreation(inputList, outputList []libunlynx.CipherVector, beta [
 		if libunlynx.PARALLELIZE {
 			go func(inputList, outputList []libunlynx.CipherVector, i int) {
 				defer (*wg1).Done()
-				CompressProcessResponseMultiple(inputList, outputList, i, e, Xhat, XhatBar, Yhat, YhatBar)
+				compressProcessResponseMultiple(inputList, outputList, i, e, Xhat, XhatBar, Yhat, YhatBar)
 			}(inputList, outputList, i)
 		} else {
-			CompressProcessResponseMultiple(inputList, outputList, i, e, Xhat, XhatBar, Yhat, YhatBar)
+			compressProcessResponseMultiple(inputList, outputList, i, e, Xhat, XhatBar, Yhat, YhatBar)
 		}
 	}
 	libunlynx.EndParallelize(wg1)
 
-	betaCompressed := CompressBeta(beta, e)
+	betaCompressed := compressBeta(beta, e)
 
 	rand := libunlynx.SuiTe.RandomStream()
 
@@ -92,18 +92,18 @@ func ShufflingProofVerification(psp PublishedShufflingProof, seed kyber.Point) b
 	if libunlynx.PARALLELIZE {
 		wg := libunlynx.StartParallelize(2)
 		go func() {
-			x, y = CompressListProcessResponse(psp.OriginalList, e)
+			x, y = compressListProcessResponse(psp.OriginalList, e)
 			defer (*wg).Done()
 		}()
 		go func() {
-			xbar, ybar = CompressListProcessResponse(psp.ShuffledList, e)
+			xbar, ybar = compressListProcessResponse(psp.ShuffledList, e)
 			defer (*wg).Done()
 		}()
 
 		libunlynx.EndParallelize(wg)
 	} else {
-		x, y = CompressListProcessResponse(psp.OriginalList, e)
-		xbar, ybar = CompressListProcessResponse(psp.ShuffledList, e)
+		x, y = compressListProcessResponse(psp.OriginalList, e)
+		xbar, ybar = compressListProcessResponse(psp.ShuffledList, e)
 	}
 
 	return checkShuffleProof(psp.G, psp.H, x, y, xbar, ybar, psp.HashProof)

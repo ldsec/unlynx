@@ -4,84 +4,13 @@ import (
 	"math/big"
 	"os"
 
-	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/util/random"
+
+	"github.com/dedis/kyber"
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/tools"
 )
-
-// compressCipherVector (slice of ciphertexts) into one ciphertext
-func compressCipherVector(ciphervector libunlynx.CipherVector, e []kyber.Scalar) libunlynx.CipherText {
-	k := len(ciphervector)
-
-	// check that e and cipher vectors have the same size
-	if len(e) != k {
-		panic("e is not the right size!")
-	}
-
-	ciphertext := *libunlynx.NewCipherText()
-	for i := 0; i < k; i++ {
-		aux := libunlynx.NewCipherText()
-		aux.MulCipherTextbyScalar(ciphervector[i], e[i])
-		ciphertext.Add(ciphertext, *aux)
-	}
-	return ciphertext
-}
-
-// CompressListProcessResponse applies shuffling compression to a list of process responses
-func CompressListProcessResponse(processResponses []libunlynx.CipherVector, e []kyber.Scalar) ([]kyber.Point, []kyber.Point) {
-	xC := make([]kyber.Point, len(processResponses))
-	xK := make([]kyber.Point, len(processResponses))
-
-	wg := libunlynx.StartParallelize(len(processResponses))
-	for i, v := range processResponses {
-		if libunlynx.PARALLELIZE {
-			go func(i int, v libunlynx.CipherVector) {
-				tmp := compressCipherVector(v, e)
-				xK[i] = tmp.K
-				xC[i] = tmp.C
-				defer wg.Done()
-			}(i, v)
-		} else {
-			tmp := compressCipherVector(v, e)
-			xK[i] = tmp.K
-			xC[i] = tmp.C
-		}
-	}
-
-	libunlynx.EndParallelize(wg)
-	return xK, xC
-}
-
-// CompressBeta applies shuffling compression to a list of list of scalars (beta)
-func CompressBeta(beta [][]kyber.Scalar, e []kyber.Scalar) []kyber.Scalar {
-	k := len(beta)
-	NQ := len(beta[0])
-	betaCompressed := make([]kyber.Scalar, k)
-	wg := libunlynx.StartParallelize(k)
-	for i := 0; i < k; i++ {
-		betaCompressed[i] = libunlynx.SuiTe.Scalar().Zero()
-		if libunlynx.PARALLELIZE {
-			go func(i int) {
-				defer wg.Done()
-				for j := 0; j < NQ; j++ {
-					tmp := libunlynx.SuiTe.Scalar().Mul(beta[i][j], e[j])
-					betaCompressed[i] = libunlynx.SuiTe.Scalar().Add(betaCompressed[i], tmp)
-				}
-			}(i)
-		} else {
-			for j := 0; j < NQ; j++ {
-				tmp := libunlynx.SuiTe.Scalar().Mul(beta[i][j], e[j])
-				betaCompressed[i] = libunlynx.SuiTe.Scalar().Add(betaCompressed[i], tmp)
-			}
-		}
-
-	}
-	libunlynx.EndParallelize(wg)
-
-	return betaCompressed
-}
 
 // ShuffleSequence applies shuffling to a list of process responses
 func ShuffleSequence(inputList []libunlynx.CipherVector, g, h kyber.Point, precomputed []libunlynx.CipherVectorScalar) ([]libunlynx.CipherVector, []int, [][]kyber.Scalar) {
@@ -130,6 +59,78 @@ func ShuffleSequence(inputList []libunlynx.CipherVector, g, h kyber.Point, preco
 	return outputList, pi, beta
 }
 
+// compressCipherVector (slice of ciphertexts) into one ciphertext
+func compressCipherVector(ciphervector libunlynx.CipherVector, e []kyber.Scalar) libunlynx.CipherText {
+	k := len(ciphervector)
+
+	// check that e and cipher vectors have the same size
+	if len(e) != k {
+		panic("e is not the right size!")
+	}
+
+	ciphertext := *libunlynx.NewCipherText()
+	for i := 0; i < k; i++ {
+		aux := libunlynx.NewCipherText()
+		aux.MulCipherTextbyScalar(ciphervector[i], e[i])
+		ciphertext.Add(ciphertext, *aux)
+	}
+	return ciphertext
+}
+
+// compressListProcessResponse applies shuffling compression to a list of process responses
+func compressListProcessResponse(processResponses []libunlynx.CipherVector, e []kyber.Scalar) ([]kyber.Point, []kyber.Point) {
+	xC := make([]kyber.Point, len(processResponses))
+	xK := make([]kyber.Point, len(processResponses))
+
+	wg := libunlynx.StartParallelize(len(processResponses))
+	for i, v := range processResponses {
+		if libunlynx.PARALLELIZE {
+			go func(i int, v libunlynx.CipherVector) {
+				tmp := compressCipherVector(v, e)
+				xK[i] = tmp.K
+				xC[i] = tmp.C
+				defer wg.Done()
+			}(i, v)
+		} else {
+			tmp := compressCipherVector(v, e)
+			xK[i] = tmp.K
+			xC[i] = tmp.C
+		}
+	}
+
+	libunlynx.EndParallelize(wg)
+	return xK, xC
+}
+
+// compressBeta applies shuffling compression to a list of list of scalars (beta)
+func compressBeta(beta [][]kyber.Scalar, e []kyber.Scalar) []kyber.Scalar {
+	k := len(beta)
+	NQ := len(beta[0])
+	betaCompressed := make([]kyber.Scalar, k)
+	wg := libunlynx.StartParallelize(k)
+	for i := 0; i < k; i++ {
+		betaCompressed[i] = libunlynx.SuiTe.Scalar().Zero()
+		if libunlynx.PARALLELIZE {
+			go func(i int) {
+				defer wg.Done()
+				for j := 0; j < NQ; j++ {
+					tmp := libunlynx.SuiTe.Scalar().Mul(beta[i][j], e[j])
+					betaCompressed[i] = libunlynx.SuiTe.Scalar().Add(betaCompressed[i], tmp)
+				}
+			}(i)
+		} else {
+			for j := 0; j < NQ; j++ {
+				tmp := libunlynx.SuiTe.Scalar().Mul(beta[i][j], e[j])
+				betaCompressed[i] = libunlynx.SuiTe.Scalar().Add(betaCompressed[i], tmp)
+			}
+		}
+
+	}
+	libunlynx.EndParallelize(wg)
+
+	return betaCompressed
+}
+
 // ProcessResponseShuffling applies shuffling and rerandomization to a list of process responses
 func processResponseShuffling(pi []int, i int, inputList, outputList []libunlynx.CipherVector, NQ int, beta [][]kyber.Scalar, precomputedPoints []libunlynx.CipherVector, g, h kyber.Point) {
 	index := pi[i]
@@ -156,8 +157,8 @@ func processResponseShuffling(pi []int, i int, inputList, outputList []libunlynx
 	libunlynx.EndParallelize(wg)
 }
 
-// CompressProcessResponseMultiple applies shuffling compression to 2 list of process responses corresponding to input and output of shuffling
-func CompressProcessResponseMultiple(inputList, outputList []libunlynx.CipherVector, i int, e []kyber.Scalar, Xhat, XhatBar, Yhat, YhatBar []kyber.Point) {
+// compressProcessResponseMultiple applies shuffling compression to 2 list of process responses corresponding to input and output of shuffling
+func compressProcessResponseMultiple(inputList, outputList []libunlynx.CipherVector, i int, e []kyber.Scalar, Xhat, XhatBar, Yhat, YhatBar []kyber.Point) {
 	wg := libunlynx.StartParallelize(2)
 	go func() {
 		defer wg.Done()

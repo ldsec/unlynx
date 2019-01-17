@@ -38,6 +38,9 @@ type PublishedKSListProofBytes struct {
 	PrsB []PublishedKSProofBytes
 }
 
+// KEY SWITCH proofs
+//______________________________________________________________________________________________________________________
+
 func createPredicateKeySwitch() (predicate proof.Predicate) {
 	// For ZKP
 	log1 := proof.Rep("viB", "vi", "B")

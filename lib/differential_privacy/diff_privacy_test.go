@@ -1,9 +1,10 @@
 package libunlynxdiffprivacy_test
 
 import (
-	. "github.com/lca1/unlynx/lib/diffprivacy"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	. "github.com/lca1/unlynx/lib/differential_privacy"
+	"github.com/stretchr/testify/assert"
 )
 
 // TestAddRmProof tests the generation of the noise values for the differential privacy

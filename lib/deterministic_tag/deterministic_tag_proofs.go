@@ -1,12 +1,13 @@
-package libunlynxproofs
+package libunlynxdetertag
 
 import (
+	"reflect"
+	"sync"
+
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/proof"
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
-	"reflect"
-	"sync"
 )
 
 // DeterministicTaggingProof proof for tag creation operation
