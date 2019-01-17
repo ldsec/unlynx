@@ -1,0 +1,10 @@
+version: '3.5'
+services:
+  unlynx-build:
+    image: medco/unlynx:build
+    build:
+      context: ../
+      dockerfile: deployment/Dockerfile
+    ports:
+    - "2000"
+    - "2001"
