@@ -28,7 +28,7 @@ We have a development and a stable version. The `master`-branch in `github.com/l
 
 Use one of the latest tags `v1.2b-alpha` that are stable and have no incompatible changes.
 
-**Very Important** 
+**Very Important!!** 
 
 Due to the current changes being made to [onet](https://github.com/dedis/onet) and [kyber](https://github.com/dedis/kyber) (release of v3) you must revert back to previous commits for these two libraries if you want UnLynx to work. This will change in the near future. 
 
