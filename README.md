@@ -24,7 +24,7 @@ To use the code of this repository you need to:
 
 ## Version
 
-We have a development and a stable version. The master-branch in [github.com/lca1/unlynx](https://github.com/lca1/unlynx.git)  is the development version that works but can have incompatible changes.
+We have a development and a stable version. The `master`-branch in `github.com/lca1/unlynx` is the development version that works but can have incompatible changes.
 
 Use one of the latest tags `v1.2b-alpha` that are stable and have no incompatible changes.
 
