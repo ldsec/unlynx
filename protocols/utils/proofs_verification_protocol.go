@@ -133,11 +133,11 @@ func (p *ProofsVerificationProtocol) Start() error {
 	for i, v := range p.TargetOfVerification.ShufflingProofs {
 		if libunlynx.PARALLELIZE {
 			go func(i int, v libunlynxshuffle.PublishedShufflingProof) {
-				result[nbrKsProofs+nbrDtProofs+nbrDetTagAddProofs+nbrAggrProofs+i] = libunlynxshuffle.ShufflingProofVerification(v, p.Roster().Aggregate)
+				result[nbrKsProofs+nbrDtProofs+nbrDetTagAddProofs+nbrAggrProofs+i] = libunlynxshuffle.ShuffleProofVerification(v, p.Roster().Aggregate)
 				defer wg.Done()
 			}(i, v)
 		} else {
-			result[nbrKsProofs+nbrDtProofs+nbrDetTagAddProofs+nbrAggrProofs+i] = libunlynxshuffle.ShufflingProofVerification(v, p.Roster().Aggregate)
+			result[nbrKsProofs+nbrDtProofs+nbrDetTagAddProofs+nbrAggrProofs+i] = libunlynxshuffle.ShuffleProofVerification(v, p.Roster().Aggregate)
 
 		}
 	}

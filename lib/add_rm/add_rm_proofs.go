@@ -1,27 +1,31 @@
-package libunlynxproofs
+package libunlynxaddrm
 
 import (
+	"sync"
+
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/proof"
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
-	"sync"
 )
 
-// AddRmProof proof for adding/removing a server operations
-type AddRmProof struct {
+// AddRmProof PublishedAddRmProof for adding/removing a server operations
+type PublishedAddRmProof struct {
 	Proof []byte
 	RB    kyber.Point
 }
 
-// PublishedAddRmProof contains all infos about proofs for adding/removing operations on a ciphervector
-type PublishedAddRmProof struct {
-	Arp        []AddRmProof
+// PublishedAddRmListProof contains all infos about proofs for adding/removing operations on a ciphervector
+type PublishedAddRmListProof struct {
+	Arp        []PublishedAddRmProof
 	VectBefore []libunlynx.CipherText
 	VectAfter  []libunlynx.CipherText
 	Krm        kyber.Point
 	ToAdd      bool
 }
+
+// Add/Remove protocol proofs
+//______________________________________________________________________________________________________________________
 
 // createPredicateAddRm creates predicate for add/rm server protocol
 func createPredicateAddRm() (predicate proof.Predicate) {

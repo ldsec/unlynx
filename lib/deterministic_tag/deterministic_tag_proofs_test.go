@@ -9,62 +9,63 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestDeterministicTaggingProof(t *testing.T) {
+func TestDeterministicTagProofCreation(t *testing.T) {
 	keys := key.NewKeyPair(libunlynx.SuiTe)
 	pubKey, secKey := keys.Public, keys.Private
+	pubKeyNew := key.NewKeyPair(libunlynx.SuiTe).Public
 
 	secretContrib := key.NewKeyPair(libunlynx.SuiTe).Private
-	pubKeyNew := key.NewKeyPair(libunlynx.SuiTe).Public
 
 	cipherOne := *libunlynx.EncryptInt(pubKey, 10)
 
 	// test tagging at ciphertext level
-	cipherOneDetTagged := libunlynxdetertag.DeterministicTagElement(cipherOne, secKey, secretContrib)
-	dtp := libunlynxdetertag.DeterministicTagProofCreation(cipherOne, *cipherOneDetTagged, secKey, secretContrib)
-	assert.True(t, libunlynxdetertag.DeterministicTagCheckProof(dtp, pubKey, cipherOne, *cipherOneDetTagged))
+	cipherOneDetTagged := libunlynxdetertag.DeterministicTag(cipherOne, secKey, secretContrib)
+	dtp := libunlynxdetertag.DeterministicTagProofCreation(cipherOne, cipherOneDetTagged, pubKey, secKey, secretContrib, false)
+	sb := libunlynx.SuiTe.Point().Mul(secretContrib, libunlynx.SuiTe.Point().Base())
+	assert.True(t, libunlynxdetertag.DeterministicTagProofVerification(dtp, pubKey, sb))
 
-	aux := libunlynx.NewCipherText()
-	aux.Add(cipherOne, cipherOne)
-	assert.False(t, libunlynxdetertag.DeterministicTagCheckProof(dtp, pubKey, *aux, *cipherOneDetTagged))
+	assert.False(t, libunlynxdetertag.DeterministicTagProofVerification(dtp, pubKey, pubKey))
+	assert.False(t, libunlynxdetertag.DeterministicTagProofVerification(dtp, pubKeyNew, sb))
 
-	aux = libunlynx.NewCipherText()
-	aux.Add(cipherOne, cipherOne)
-	assert.False(t, libunlynxdetertag.DeterministicTagCheckProof(dtp, pubKey, cipherOne, *aux))
-	assert.False(t, libunlynxdetertag.DeterministicTagCheckProof(dtp, pubKeyNew, cipherOne, *cipherOneDetTagged))
+	auxC := dtp.Ciminus11Si
+	dtp.Ciminus11Si = pubKey
+	assert.False(t, libunlynxdetertag.DeterministicTagProofVerification(dtp, pubKey, sb))
+	dtp.Ciminus11Si = auxC
 
-	dtp = libunlynxdetertag.DeterministicTagProofCreation(cipherOne, *cipherOneDetTagged, secretContrib, secretContrib)
-	assert.False(t, libunlynxdetertag.DeterministicTagCheckProof(dtp, pubKey, cipherOne, *cipherOneDetTagged))
+	auxAft := dtp.CTaft
+	dtp.CTaft = dtp.CTbef
+	assert.False(t, libunlynxdetertag.DeterministicTagProofVerification(dtp, pubKeyNew, sb))
+	dtp.CTaft = auxAft
 
-	dtp = libunlynxdetertag.DeterministicTagProofCreation(cipherOne, *cipherOneDetTagged, secKey, secKey)
-	assert.False(t, libunlynxdetertag.DeterministicTagCheckProof(dtp, pubKey, cipherOne, *cipherOneDetTagged))
+	auxBef := dtp.CTbef
+	dtp.CTbef = dtp.CTaft
+	assert.False(t, libunlynxdetertag.DeterministicTagProofVerification(dtp, pubKeyNew, sb))
+	dtp.CTbef = auxBef
+
+	assert.True(t, libunlynxdetertag.DeterministicTagProofVerification(dtp, pubKey, sb))
 
 	// test tag at ciphervector level
 	cv := libunlynx.NewCipherVector(2)
 	cvDetTagged := libunlynxdetertag.DeterministicTagSequence(*cv, secKey, secretContrib)
 
-	dtpList := libunlynxdetertag.VectorDeterministicTagProofCreation(*cv, *cvDetTagged, secretContrib, secKey)
-	result, _ := libunlynxdetertag.PublishedDeterministicTaggingCheckProof(libunlynxdetertag.PublishedDeterministicTaggingProof{Dhp: dtpList, VectBefore: *cv, VectAfter: *cvDetTagged, K: pubKey, SB: nil})
-	assert.True(t, result)
+	dtpList := libunlynxdetertag.DeterministicTagListProofCreation(*cv, cvDetTagged, pubKey, secKey, secretContrib)
+	assert.True(t, libunlynxdetertag.DeterministicTagListProofVerification(dtpList, 1.0))
 
-	dtpList = libunlynxdetertag.VectorDeterministicTagProofCreation(*cv, *cvDetTagged, secretContrib, secKey)
-	result, _ = libunlynxdetertag.PublishedDeterministicTaggingCheckProof(libunlynxdetertag.PublishedDeterministicTaggingProof{Dhp: dtpList, VectBefore: *cv, VectAfter: *cvDetTagged, K: pubKey, SB: libunlynx.SuiTe.Point().Mul(secretContrib, libunlynx.SuiTe.Point().Base())})
-	assert.True(t, result)
+	dtpList.K = pubKeyNew
+	assert.False(t, libunlynxdetertag.DeterministicTagListProofVerification(dtpList, 1.0))
+	dtpList.K = pubKey
 
-	dtpList = libunlynxdetertag.VectorDeterministicTagProofCreation(*cv, *cvDetTagged, secKey, secKey)
-	result, _ = libunlynxdetertag.PublishedDeterministicTaggingCheckProof(libunlynxdetertag.PublishedDeterministicTaggingProof{Dhp: dtpList, VectBefore: *cv, VectAfter: *cvDetTagged, K: pubKey, SB: libunlynx.SuiTe.Point().Mul(secretContrib, libunlynx.SuiTe.Point().Base())})
-	assert.False(t, result)
+	auxSB := dtpList.SB
+	dtpList.SB = pubKeyNew
+	assert.False(t, libunlynxdetertag.DeterministicTagListProofVerification(dtpList, 1.0))
+	dtpList.SB = auxSB
 
-	dtpList = libunlynxdetertag.VectorDeterministicTagProofCreation(*cv, *cvDetTagged, secretContrib, secretContrib)
-	result, _ = libunlynxdetertag.PublishedDeterministicTaggingCheckProof(libunlynxdetertag.PublishedDeterministicTaggingProof{Dhp: dtpList, VectBefore: *cv, VectAfter: *cvDetTagged, K: pubKey, SB: libunlynx.SuiTe.Point().Mul(secretContrib, libunlynx.SuiTe.Point().Base())})
-	assert.False(t, result)
+	auxEl := dtpList.Dcp[0]
+	dtpList.Dcp[0].CTbef = cipherOne
+	assert.False(t, libunlynxdetertag.DeterministicTagListProofVerification(dtpList, 1.0))
+	dtpList.Dcp[0] = auxEl
 
-	dtpList = libunlynxdetertag.VectorDeterministicTagProofCreation(*cv, *cvDetTagged, secretContrib, secKey)
-	result, _ = libunlynxdetertag.PublishedDeterministicTaggingCheckProof(libunlynxdetertag.PublishedDeterministicTaggingProof{Dhp: dtpList, VectBefore: *cv, VectAfter: *cvDetTagged, K: pubKeyNew, SB: libunlynx.SuiTe.Point().Mul(secretContrib, libunlynx.SuiTe.Point().Base())})
-	assert.False(t, result)
-
-	dtpList = libunlynxdetertag.VectorDeterministicTagProofCreation(*cv, *cvDetTagged, secretContrib, secKey)
-	result, _ = libunlynxdetertag.PublishedDeterministicTaggingCheckProof(libunlynxdetertag.PublishedDeterministicTaggingProof{Dhp: dtpList, VectBefore: *cv, VectAfter: *cvDetTagged, K: pubKey, SB: libunlynx.SuiTe.Point().Mul(secKey, libunlynx.SuiTe.Point().Base())})
-	assert.False(t, result)
+	assert.True(t, libunlynxdetertag.DeterministicTagListProofVerification(dtpList, 1.0))
 }
 
 func TestDeterministicTaggingAdditionProof(t *testing.T) {
@@ -77,18 +78,18 @@ func TestDeterministicTaggingAdditionProof(t *testing.T) {
 	toAdd := libunlynx.SuiTe.Point().Mul(secKey, libunlynx.SuiTe.Point().Base())
 	tmp := libunlynx.SuiTe.Point().Add(cipherOne.C, toAdd)
 
-	prf := libunlynxdetertag.DetTagAdditionProofCreation(cipherOne.C, secKey, toAdd, tmp)
-	assert.True(t, libunlynxdetertag.DetTagAdditionProofVerification(prf))
+	prf := libunlynxdetertag.DeterministicTagAdditionProofCreation(cipherOne.C, secKey, toAdd, tmp)
+	assert.True(t, libunlynxdetertag.DeterministicTagAdditionProofVerification(prf))
 
-	prf = libunlynxdetertag.DetTagAdditionProofCreation(toAdd, secKey, toAdd, tmp)
-	assert.False(t, libunlynxdetertag.DetTagAdditionProofVerification(prf))
+	prf = libunlynxdetertag.DeterministicTagAdditionProofCreation(toAdd, secKey, toAdd, tmp)
+	assert.False(t, libunlynxdetertag.DeterministicTagAdditionProofVerification(prf))
 
-	prf = libunlynxdetertag.DetTagAdditionProofCreation(cipherOne.C, secretContrib, toAdd, tmp)
-	assert.False(t, libunlynxdetertag.DetTagAdditionProofVerification(prf))
+	prf = libunlynxdetertag.DeterministicTagAdditionProofCreation(cipherOne.C, secretContrib, toAdd, tmp)
+	assert.False(t, libunlynxdetertag.DeterministicTagAdditionProofVerification(prf))
 
-	prf = libunlynxdetertag.DetTagAdditionProofCreation(cipherOne.C, secKey, cipherOne.C, tmp)
-	assert.False(t, libunlynxdetertag.DetTagAdditionProofVerification(prf))
+	prf = libunlynxdetertag.DeterministicTagAdditionProofCreation(cipherOne.C, secKey, cipherOne.C, tmp)
+	assert.False(t, libunlynxdetertag.DeterministicTagAdditionProofVerification(prf))
 
-	prf = libunlynxdetertag.DetTagAdditionProofCreation(cipherOne.C, secKey, toAdd, toAdd)
-	assert.False(t, libunlynxdetertag.DetTagAdditionProofVerification(prf))
+	prf = libunlynxdetertag.DeterministicTagAdditionProofCreation(cipherOne.C, secKey, toAdd, toAdd)
+	assert.False(t, libunlynxdetertag.DeterministicTagAdditionProofVerification(prf))
 }

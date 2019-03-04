@@ -1,15 +1,15 @@
-package libunlynxproofs_test
+package libunlynxcollectaggr_test
 
 import (
+	"testing"
+
 	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/lib/proofs"
 	"github.com/lca1/unlynx/lib/tools"
 	"github.com/lca1/unlynx/protocols"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
-func TestAggregationProof(t *testing.T) {
+func TestCollectiveAggregationProof(t *testing.T) {
 	tab1 := []int64{1, 2, 3, 6}
 	testCipherVect1 := *libunlynx.EncryptIntVector(pubKey, tab1)
 
@@ -52,10 +52,15 @@ func TestAggregationProof(t *testing.T) {
 		libunlynxtools.AddInMap(comparisonMap, v.DetTagGroupBy, v.Fr)
 	}
 
-	PublishedAggregationProof := libunlynxproofs.AggregationProofCreation(detResponses, comparisonMap)
-	assert.True(t, libunlynxproofs.AggregationProofVerification(PublishedAggregationProof))
+	resultingMap := make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse)
+	for i, v := range comparisonMap {
+		libunlynxtools.AddInMap(resultingMap, i, v)
+		libunlynxtools.AddInMap(resultingMap, i, v)
+	}
 
-	detResponses[0] = detResponses[1]
-	PublishedAggregationProof = libunlynxproofs.AggregationProofCreation(detResponses, comparisonMap)
-	assert.False(t, libunlynxproofs.AggregationProofVerification(PublishedAggregationProof))
+	PublishedCollectiveAggregationProof := libunlynxproofs.CollectiveAggregationProofCreation(comparisonMap, detResponses, resultingMap)
+	assert.True(t, libunlynxproofs.CollectiveAggregationProofVerification(PublishedCollectiveAggregationProof))
+
+	PublishedCollectiveAggregationProof = libunlynxproofs.CollectiveAggregationProofCreation(resultingMap, detResponses, comparisonMap)
+	assert.False(t, libunlynxproofs.CollectiveAggregationProofVerification(PublishedCollectiveAggregationProof))
 }

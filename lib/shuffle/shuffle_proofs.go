@@ -5,7 +5,7 @@ import (
 
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/proof"
-	"github.com/dedis/kyber/shuffle"
+	shuffleKyber "github.com/dedis/kyber/shuffle"
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
 )
@@ -33,16 +33,13 @@ type PublishedShufflingProofBytes struct {
 	HashProof          []byte
 }
 
-// ShufflingProofCreation creates a shuffle proof in its publishable version
-func ShufflingProofCreation(originalList, shuffledList []libunlynx.CipherVector, g, h kyber.Point, beta [][]kyber.Scalar, pi []int) PublishedShufflingProof {
-	prf := shuffleProofCreation(originalList, shuffledList, beta, pi, h)
-	return PublishedShufflingProof{originalList, shuffledList, g, h, prf}
-}
+// SHUFFLE proofs
+//______________________________________________________________________________________________________________________
 
-// shuffleProofCreation creates a proof for one shuffle on a list of CipherVector
-func shuffleProofCreation(inputList, outputList []libunlynx.CipherVector, beta [][]kyber.Scalar, pi []int, h kyber.Point) []byte {
-	e := inputList[0].CipherVectorTag(h)
-	k := len(inputList)
+// ShuffleProofCreation creates a shuffle proof
+func ShuffleProofCreation(originalList, shuffledList []libunlynx.CipherVector, g, h kyber.Point, beta [][]kyber.Scalar, pi []int) PublishedShufflingProof {
+	e := originalList[0].CipherVectorTag(h)
+	k := len(originalList)
 	// compress data for each line (each list) into one element
 	Xhat := make([]kyber.Point, k)
 	Yhat := make([]kyber.Point, k)
@@ -54,10 +51,10 @@ func shuffleProofCreation(inputList, outputList []libunlynx.CipherVector, beta [
 		if libunlynx.PARALLELIZE {
 			go func(inputList, outputList []libunlynx.CipherVector, i int) {
 				defer (*wg1).Done()
-				compressProcessResponseMultiple(inputList, outputList, i, e, Xhat, XhatBar, Yhat, YhatBar)
-			}(inputList, outputList, i)
+				compressCipherVectorMultiple(inputList, outputList, i, e, Xhat, XhatBar, Yhat, YhatBar)
+			}(originalList, shuffledList, i)
 		} else {
-			compressProcessResponseMultiple(inputList, outputList, i, e, Xhat, XhatBar, Yhat, YhatBar)
+			compressCipherVectorMultiple(originalList, shuffledList, i, e, Xhat, XhatBar, Yhat, YhatBar)
 		}
 	}
 	libunlynx.EndParallelize(wg1)
@@ -71,7 +68,7 @@ func shuffleProofCreation(inputList, outputList []libunlynx.CipherVector, beta [
 	if k != len(Yhat) {
 		panic("X,Y vectors have inconsistent lengths")
 	}
-	ps := shuffle.PairShuffle{}
+	ps := shuffleKyber.PairShuffle{}
 	ps.Init(libunlynx.SuiTe, k)
 
 	prover := func(ctx proof.ProverContext) error {
@@ -82,37 +79,32 @@ func shuffleProofCreation(inputList, outputList []libunlynx.CipherVector, beta [
 	if err != nil {
 		panic("Shuffle proof failed: " + err.Error())
 	}
-	return prf
+	return PublishedShufflingProof{originalList, shuffledList, g, h, prf}
 }
 
-// ShufflingProofVerification allows to check a shuffling proof
-func ShufflingProofVerification(psp PublishedShufflingProof, seed kyber.Point) bool {
+// ShuffleProofVerification allows to check a shuffling proof
+func ShuffleProofVerification(psp PublishedShufflingProof, seed kyber.Point) bool {
 	e := psp.OriginalList[0].CipherVectorTag(seed)
 	var x, y, xbar, ybar []kyber.Point
 	if libunlynx.PARALLELIZE {
 		wg := libunlynx.StartParallelize(2)
 		go func() {
-			x, y = compressListProcessResponse(psp.OriginalList, e)
+			x, y = compressListCipherVector(psp.OriginalList, e)
 			defer (*wg).Done()
 		}()
 		go func() {
-			xbar, ybar = compressListProcessResponse(psp.ShuffledList, e)
+			xbar, ybar = compressListCipherVector(psp.ShuffledList, e)
 			defer (*wg).Done()
 		}()
 
 		libunlynx.EndParallelize(wg)
 	} else {
-		x, y = compressListProcessResponse(psp.OriginalList, e)
-		xbar, ybar = compressListProcessResponse(psp.ShuffledList, e)
+		x, y = compressListCipherVector(psp.OriginalList, e)
+		xbar, ybar = compressListCipherVector(psp.ShuffledList, e)
 	}
 
-	return checkShuffleProof(psp.G, psp.H, x, y, xbar, ybar, psp.HashProof)
-}
-
-// checkShuffleProof verifies a shuffling proof
-func checkShuffleProof(g, h kyber.Point, Xhat, Yhat, XhatBar, YhatBar []kyber.Point, prf []byte) bool {
-	verifier := shuffle.Verifier(libunlynx.SuiTe, g, h, Xhat, Yhat, XhatBar, YhatBar)
-	err := proof.HashVerify(libunlynx.SuiTe, "PairShuffle", verifier, prf)
+	verifier := shuffleKyber.Verifier(libunlynx.SuiTe, psp.G, psp.H, x, y, xbar, ybar)
+	err := proof.HashVerify(libunlynx.SuiTe, "PairShuffle", verifier, psp.HashProof)
 	if err != nil {
 		log.LLvl1(err)
 		log.LLvl1("-----------verify failed (with XharBar)")
@@ -120,6 +112,99 @@ func checkShuffleProof(g, h kyber.Point, Xhat, Yhat, XhatBar, YhatBar []kyber.Po
 	}
 
 	return true
+}
+
+// Compress
+//______________________________________________________________________________________________________________________
+
+// compressCipherVector (slice of ciphertexts) into one ciphertext
+func compressCipherVector(ciphervector libunlynx.CipherVector, e []kyber.Scalar) libunlynx.CipherText {
+	k := len(ciphervector)
+
+	// check that e and cipher vectors have the same size
+	if len(e) != k {
+		panic("e is not the right size!")
+	}
+
+	ciphertext := *libunlynx.NewCipherText()
+	for i := 0; i < k; i++ {
+		aux := libunlynx.NewCipherText()
+		aux.MulCipherTextbyScalar(ciphervector[i], e[i])
+		ciphertext.Add(ciphertext, *aux)
+	}
+	return ciphertext
+}
+
+// compressListCipherVector applies shuffling compression to a list of ciphervectors
+func compressListCipherVector(processResponses []libunlynx.CipherVector, e []kyber.Scalar) ([]kyber.Point, []kyber.Point) {
+	xC := make([]kyber.Point, len(processResponses))
+	xK := make([]kyber.Point, len(processResponses))
+
+	wg := libunlynx.StartParallelize(len(processResponses))
+	for i, v := range processResponses {
+		if libunlynx.PARALLELIZE {
+			go func(i int, v libunlynx.CipherVector) {
+				tmp := compressCipherVector(v, e)
+				xK[i] = tmp.K
+				xC[i] = tmp.C
+				defer wg.Done()
+			}(i, v)
+		} else {
+			tmp := compressCipherVector(v, e)
+			xK[i] = tmp.K
+			xC[i] = tmp.C
+		}
+	}
+
+	libunlynx.EndParallelize(wg)
+	return xK, xC
+}
+
+// compressCipherVectorMultiple applies shuffling compression to 2 ciphervectors corresponding to the input and the output of shuffling
+func compressCipherVectorMultiple(inputList, outputList []libunlynx.CipherVector, i int, e []kyber.Scalar, Xhat, XhatBar, Yhat, YhatBar []kyber.Point) {
+	wg := libunlynx.StartParallelize(2)
+	go func() {
+		defer wg.Done()
+		tmp := compressCipherVector(inputList[i], e)
+		Xhat[i] = tmp.K
+		Yhat[i] = tmp.C
+	}()
+	go func() {
+		defer wg.Done()
+		tmpBar := compressCipherVector(outputList[i], e)
+		XhatBar[i] = tmpBar.K
+		YhatBar[i] = tmpBar.C
+	}()
+	libunlynx.EndParallelize(wg)
+}
+
+// compressBeta applies shuffling compression to a matrix of scalars
+func compressBeta(beta [][]kyber.Scalar, e []kyber.Scalar) []kyber.Scalar {
+	k := len(beta)
+	NQ := len(beta[0])
+	betaCompressed := make([]kyber.Scalar, k)
+	wg := libunlynx.StartParallelize(k)
+	for i := 0; i < k; i++ {
+		betaCompressed[i] = libunlynx.SuiTe.Scalar().Zero()
+		if libunlynx.PARALLELIZE {
+			go func(i int) {
+				defer wg.Done()
+				for j := 0; j < NQ; j++ {
+					tmp := libunlynx.SuiTe.Scalar().Mul(beta[i][j], e[j])
+					betaCompressed[i] = libunlynx.SuiTe.Scalar().Add(betaCompressed[i], tmp)
+				}
+			}(i)
+		} else {
+			for j := 0; j < NQ; j++ {
+				tmp := libunlynx.SuiTe.Scalar().Mul(beta[i][j], e[j])
+				betaCompressed[i] = libunlynx.SuiTe.Scalar().Add(betaCompressed[i], tmp)
+			}
+		}
+
+	}
+	libunlynx.EndParallelize(wg)
+
+	return betaCompressed
 }
 
 // Marshal

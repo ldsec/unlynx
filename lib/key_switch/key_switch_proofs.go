@@ -40,7 +40,6 @@ type PublishedKSListProofBytes struct {
 
 // KEY SWITCH proofs
 //______________________________________________________________________________________________________________________
-
 func createPredicateKeySwitch() (predicate proof.Predicate) {
 	// For ZKP
 	log1 := proof.Rep("viB", "vi", "B")
@@ -114,7 +113,7 @@ func KeySwitchProofVerification(pop PublishedKSProof) bool {
 	return true
 }
 
-// KeySwitchListProofVerification verifies a list of key switch proof, if one is worng, returns false
+// KeySwitchListProofVerification verifies a list of key switch proofs, if one is wrong, returns false
 func KeySwitchListProofVerification(pkslp PublishedKSListProof, percent float64) bool {
 	nbrProofsToVerify := int(math.Ceil(percent * float64(len(pkslp.Prs))))
 	wg := libunlynx.StartParallelize(nbrProofsToVerify)

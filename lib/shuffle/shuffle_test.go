@@ -6,7 +6,6 @@ import (
 
 	"github.com/dedis/kyber/util/random"
 	"github.com/dedis/onet"
-	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/shuffle"
 	"github.com/stretchr/testify/assert"
@@ -33,11 +32,7 @@ func TestShuffleSequence(t *testing.T) {
 		}
 
 	}
-	outputlist, pi, beta := libunlynxshuffle.ShuffleSequence(inputList, libunlynx.SuiTe.Point().Base(), collectivePubKey, nil)
-
-	//with proof
-	shuffleProof := libunlynxshuffle.ShufflingProofCreation(inputList, outputlist, libunlynx.SuiTe.Point().Base(), collectivePubKey, beta, pi)
-	log.Lvl1(libunlynxshuffle.ShufflingProofVerification(shuffleProof, collectivePubKey))
+	outputlist, pi, _ := libunlynxshuffle.ShuffleSequence(inputList, libunlynx.SuiTe.Point().Base(), collectivePubKey, nil)
 
 	piinv := make([]int, k)
 	for i := 0; i < k; i++ {

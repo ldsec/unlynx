@@ -26,6 +26,13 @@ var currentGreatestM kyber.Point
 var currentGreatestInt int64
 var mutex = sync.Mutex{}
 
+// PublishedSimpleAdditionProof contains the two added ciphervectors and the resulting ciphervector
+type PublishedSimpleAdditionProof struct {
+	C1       CipherVector
+	C2       CipherVector
+	C1PlusC2 CipherVector
+}
+
 // CipherText is an ElGamal encrypted point.
 type CipherText struct {
 	K, C kyber.Point
@@ -81,10 +88,10 @@ func NewDeterministicCipherVector(length int) *DeterministCipherVector {
 	return &dcv
 }
 
-// Key Pairs (mostly used in tests)
+// Key Pairs
 //----------------------------------------------------------------------------------------------------------------------
 
-// GenKeys permits to generate ElGamal public/private key pairs.
+// GenKeys generates ElGamal public/private key pairs.
 func GenKeys(n int) (kyber.Point, []kyber.Scalar, []kyber.Point) {
 	priv := make([]kyber.Scalar, n)
 	pub := make([]kyber.Point, n)
@@ -364,55 +371,7 @@ func discreteLog(P kyber.Point, checkNeg bool) int64 {
 
 }
 
-// DeterministicTagging is a distributed deterministic Tagging switching, removes server contribution and multiplies
-func (c *CipherText) DeterministicTagging(gc *CipherText, private, secretContrib kyber.Scalar) {
-	c.K = SuiTe.Point().Mul(secretContrib, gc.K)
-
-	contrib := SuiTe.Point().Mul(private, gc.K)
-	c.C = SuiTe.Point().Sub(gc.C, contrib)
-	c.C = SuiTe.Point().Mul(secretContrib, c.C)
-}
-
-// DeterministicTagging performs one step in the distributed deterministic Tagging process on a vector
-// and stores the result in receiver.
-func (cv *CipherVector) DeterministicTagging(cipher *CipherVector, private, secretContrib kyber.Scalar) {
-	var wg sync.WaitGroup
-	if PARALLELIZE {
-		for i := 0; i < len(*cipher); i = i + VPARALLELIZE {
-			wg.Add(1)
-			go func(i int) {
-				for j := 0; j < VPARALLELIZE && (j+i < len(*cipher)); j++ {
-					(*cv)[i+j].DeterministicTagging(&(*cipher)[i+j], private, secretContrib)
-				}
-				defer wg.Done()
-			}(i)
-
-		}
-		wg.Wait()
-	} else {
-		for i, c := range *cipher {
-			(*cv)[i].DeterministicTagging(&c, private, secretContrib)
-		}
-	}
-}
-
-// TaggingDet performs one step in the distributed deterministic tagging process and creates corresponding proof
-func (cv *CipherVector) TaggingDet(privKey, secretContrib kyber.Scalar, pubKey kyber.Point, proofs bool) {
-	switchedVect := NewCipherVector(len(*cv))
-	switchedVect.DeterministicTagging(cv, privKey, secretContrib)
-
-	if proofs {
-		/*p1 := VectorDeterministicTagProofCreation(*cv, *switchedVect, secretContrib, privKey)
-		//proof publication
-		commitSecret := SuiTe.Point().Mul(secretContrib, SuiTe.Point().Base())
-		publishedProof := PublishedDeterministicTaggingProof{Dhp: p1, VectBefore: *cv, VectAfter: *switchedVect, K: pubKey, SB: commitSecret}
-		_ = publishedProof*/
-	}
-
-	*cv = *switchedVect
-}
-
-// Homomorphic operations
+// Homomorphic Operations
 //______________________________________________________________________________________________________________________
 
 // Add two ciphertexts and stores result in receiver.
@@ -450,24 +409,6 @@ func (cv *CipherVector) Add(cv1, cv2 CipherVector) {
 	if PARALLELIZE {
 		wg.Wait()
 	}
-}
-
-// Rerandomize rerandomizes an element in a ciphervector at position j, following the Neff SHuffling algorithm
-func (cv *CipherVector) Rerandomize(cv1 CipherVector, a, b kyber.Scalar, ciphert CipherText, g, h kyber.Point, j int) {
-	var tmp1, tmp2 kyber.Point
-
-	if ciphert.C == nil {
-		//no precomputed value
-		tmp1 = SuiTe.Point().Mul(a, g)
-		tmp2 = SuiTe.Point().Mul(b, h)
-	} else {
-		tmp1 = ciphert.K
-		tmp2 = ciphert.C
-	}
-
-	(*cv)[j].K = SuiTe.Point().Add(cv1[j].K, tmp1)
-	(*cv)[j].C = SuiTe.Point().Add(cv1[j].C, tmp2)
-
 }
 
 // Sub two ciphertexts and stores result in receiver.
@@ -508,16 +449,6 @@ func (c *CipherText) Equal(c2 *CipherText) bool {
 
 // Representation
 //______________________________________________________________________________________________________________________
-
-// CipherVectorToDeterministicTag creates a tag (grouping key) from a cipher vector
-func CipherVectorToDeterministicTag(cipherVect CipherVector, privKey, secContrib kyber.Scalar, pubKey kyber.Point, proofs bool) GroupingKey {
-	cipherVect.TaggingDet(privKey, secContrib, pubKey, proofs)
-	deterministicGroupAttributes := make(DeterministCipherVector, len(cipherVect))
-	for j, c := range cipherVect {
-		deterministicGroupAttributes[j] = DeterministCipherText{Point: c.C}
-	}
-	return deterministicGroupAttributes.Key()
-}
 
 // Key is used in order to get a map-friendly representation of grouping attributes to be used as keys.
 func (dcv *DeterministCipherVector) Key() GroupingKey {

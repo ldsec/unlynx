@@ -1,9 +1,10 @@
-package libunlynxproofs
+package libunlynxaggr
 
 import (
+	"reflect"
+
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/tools"
-	"reflect"
 )
 
 // PublishedAggregationProof contains all infos about proofs for aggregation of two filtered responses

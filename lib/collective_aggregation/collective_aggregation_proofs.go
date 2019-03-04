@@ -1,4 +1,4 @@
-package libunlynxproofs
+package libunlynxcollectaggr
 
 import (
 	"github.com/lca1/unlynx/lib"

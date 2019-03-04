@@ -1,11 +1,11 @@
-package libunlynxproofs_test
+package libunlynxaddrm_test
 
 import (
+	"testing"
+
 	"github.com/dedis/kyber/util/random"
 	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/lib/proofs"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 //create variables

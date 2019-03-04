@@ -1,13 +1,15 @@
 package libunlynxkeyswitch
 
 import (
+	"sync"
+
 	"github.com/lca1/unlynx/lib"
 
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/util/random"
 )
 
-// KeySwitchSequence implements the key switching operation on a ciphertext.
+// KeySwitchSequence implements the key switching operation on a ciphervector.
 func KeySwitchSequence(targetPubKey kyber.Point, rBs []kyber.Point, secretKey kyber.Scalar) (libunlynx.CipherVector, []kyber.Point, []kyber.Point, []kyber.Scalar) {
 	// rBs is the left part of the CipherTexts to be keyswitched
 	length := len(rBs)
@@ -15,27 +17,42 @@ func KeySwitchSequence(targetPubKey kyber.Point, rBs []kyber.Point, secretKey ky
 	ks2s := make([]kyber.Point, length)
 	rBNegs := make([]kyber.Point, length)
 	vis := make([]kyber.Scalar, length)
-
-	wg := libunlynx.StartParallelize(length)
 	cv := libunlynx.NewCipherVector(len(rBs))
-	for i, v := range rBs {
-		go func(i int, v kyber.Point) {
-			defer wg.Done()
 
-			vi := libunlynx.SuiTe.Scalar().Pick(random.New())
-			(*cv)[i].K = libunlynx.SuiTe.Point().Mul(vi, libunlynx.SuiTe.Point().Base())
-			rbNeg := libunlynx.SuiTe.Point().Neg(rBs[i])
-			rbkNeg := libunlynx.SuiTe.Point().Mul(secretKey, rbNeg)
-			viNewK := libunlynx.SuiTe.Point().Mul(vi, targetPubKey)
-			(*cv)[i].C = libunlynx.SuiTe.Point().Add(rbkNeg, viNewK)
-
-			//for the proof
+	var wg sync.WaitGroup
+	if libunlynx.PARALLELIZE {
+		for i := 0; i < len(rBs); i = i + libunlynx.VPARALLELIZE {
+			wg.Add(1)
+			go func(i int) {
+				for j := 0; j < libunlynx.VPARALLELIZE && (j+i < len(rBs)); j++ {
+					var ct libunlynx.CipherText
+					ct, rBNegs[i+j], vis[i+j] = KeySwitch(targetPubKey, rBs[i+j], secretKey)
+					ks2s[i+j] = ct.C
+					(*cv)[i+j] = ct
+				}
+				defer wg.Done()
+			}(i)
+		}
+		wg.Wait()
+	} else {
+		for i := range rBs {
+			(*cv)[i], rBNegs[i], vis[i] = KeySwitch(targetPubKey, rBs[i], secretKey)
 			ks2s[i] = (*cv)[i].C
-			rBNegs[i] = rbNeg
-			vis[i] = vi
-		}(i, v)
+		}
 	}
-	libunlynx.EndParallelize(wg)
-
 	return *cv, ks2s, rBNegs, vis
+}
+
+// KeySwitch the second step in the distributed deterministic tagging process (the cycle round) on a ciphertext.
+func KeySwitch(targetPubKey kyber.Point, rB kyber.Point, secretKey kyber.Scalar) (libunlynx.CipherText, kyber.Point, kyber.Scalar) {
+	ct := libunlynx.NewCipherText()
+
+	vi := libunlynx.SuiTe.Scalar().Pick(random.New())
+	ct.K = libunlynx.SuiTe.Point().Mul(vi, libunlynx.SuiTe.Point().Base())
+	rbNeg := libunlynx.SuiTe.Point().Neg(rB)
+	rbkNeg := libunlynx.SuiTe.Point().Mul(secretKey, rbNeg)
+	viNewK := libunlynx.SuiTe.Point().Mul(vi, targetPubKey)
+	ct.C = libunlynx.SuiTe.Point().Add(rbkNeg, viNewK)
+
+	return *ct, rbNeg, vi
 }
