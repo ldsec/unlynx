@@ -1,7 +1,7 @@
 package libunlynx
 
 import (
-	"github.com/dedis/kyber/suites"
+	"go.dedis.ch/kyber/v3/suites"
 )
 
 // SuiTe is the instantiation of the suite

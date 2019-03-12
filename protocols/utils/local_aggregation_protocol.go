@@ -3,11 +3,11 @@
 package protocolsunlynxutils
 
 import (
-	"github.com/dedis/onet"
-	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/proofs"
 	"github.com/lca1/unlynx/lib/tools"
+	"go.dedis.ch/onet/v3"
+	"go.dedis.ch/onet/v3/log"
 )
 
 // LocalAggregationProtocolName is the registered name for the local aggregation protocol.

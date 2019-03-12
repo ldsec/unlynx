@@ -1,12 +1,12 @@
 package libunlynxproofs
 
 import (
-	"github.com/dedis/kyber"
-	"github.com/dedis/kyber/proof"
-	"github.com/dedis/kyber/shuffle"
-	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/shuffle"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/proof"
+	"go.dedis.ch/kyber/v3/shuffle"
+	"go.dedis.ch/onet/v3/log"
 )
 
 // PublishedShufflingProof contains all infos about proofs for shuffling of a ciphervector

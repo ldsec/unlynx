@@ -1,8 +1,8 @@
 package main_test
 
 import (
-	"github.com/dedis/onet/log"
-	"github.com/dedis/onet/simul"
+	"go.dedis.ch/onet/v3/log"
+	"go.dedis.ch/onet/v3/simul"
 	"testing"
 )
 

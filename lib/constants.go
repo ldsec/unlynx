@@ -1,7 +1,7 @@
 package libunlynx
 
 import (
-	"github.com/dedis/onet/simul/monitor"
+	"go.dedis.ch/onet/v3/simul/monitor"
 	"sync"
 )
 

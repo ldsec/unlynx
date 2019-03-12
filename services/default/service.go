@@ -3,10 +3,6 @@ package servicesunlynxdefault
 import (
 	"github.com/Knetic/govaluate"
 	"github.com/btcsuite/goleveldb/leveldb/errors"
-	"github.com/dedis/kyber"
-	"github.com/dedis/onet"
-	"github.com/dedis/onet/log"
-	"github.com/dedis/onet/network"
 	"github.com/fanliao/go-concurrentMap"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/diffprivacy"
@@ -16,6 +12,10 @@ import (
 	"github.com/lca1/unlynx/protocols"
 	"github.com/lca1/unlynx/services/default/data"
 	"github.com/satori/go.uuid"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/onet/v3"
+	"go.dedis.ch/onet/v3/log"
+	"go.dedis.ch/onet/v3/network"
 	"strconv"
 	"time"
 )
@@ -187,7 +187,7 @@ func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.
 
 	// if this server is the one receiving the query from the client
 	if recq.SurveyID == "" {
-		id, _ := uuid.NewV4()
+		id := uuid.NewV4()
 		newID := SurveyID(id.String())
 		recq.SurveyID = newID
 

@@ -2,11 +2,11 @@ package libunlynxtools_test
 
 import (
 	"fmt"
-	"github.com/dedis/kyber/util/random"
-	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
 	. "github.com/lca1/unlynx/lib/tools"
 	"github.com/stretchr/testify/assert"
+	"go.dedis.ch/kyber/v3/util/random"
+	"go.dedis.ch/onet/v3/log"
 	"os"
 	"strconv"
 	"testing"

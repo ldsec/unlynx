@@ -1,11 +1,11 @@
 package servicesunlynxdefault_test
 
 import (
-	"github.com/dedis/onet"
-	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/services/default"
 	"github.com/stretchr/testify/assert"
+	"go.dedis.ch/onet/v3"
+	"go.dedis.ch/onet/v3/log"
 	"os"
 	"reflect"
 	"strconv"

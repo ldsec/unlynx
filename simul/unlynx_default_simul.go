@@ -2,13 +2,13 @@ package main
 
 import (
 	"github.com/BurntSushi/toml"
-	"github.com/dedis/onet"
-	"github.com/dedis/onet/log"
-	"github.com/dedis/onet/simul/monitor"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/tools"
 	"github.com/lca1/unlynx/services/default"
 	"github.com/lca1/unlynx/services/default/data"
+	"go.dedis.ch/onet/v3"
+	"go.dedis.ch/onet/v3/log"
+	"go.dedis.ch/onet/v3/simul/monitor"
 	"strconv"
 )
 

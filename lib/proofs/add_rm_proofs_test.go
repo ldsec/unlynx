@@ -1,10 +1,10 @@
 package libunlynxproofs_test
 
 import (
-	"github.com/dedis/kyber/util/random"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/proofs"
 	"github.com/stretchr/testify/assert"
+	"go.dedis.ch/kyber/v3/util/random"
 	"testing"
 )
 

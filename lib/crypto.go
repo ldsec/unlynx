@@ -8,10 +8,10 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/dedis/kyber"
-	"github.com/dedis/kyber/util/random"
-	"github.com/dedis/onet/log"
 	"github.com/fanliao/go-concurrentMap"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/util/random"
+	"go.dedis.ch/onet/v3/log"
 )
 
 // MaxHomomorphicInt is upper bound for integers used in messages, a failed decryption will return this value.
