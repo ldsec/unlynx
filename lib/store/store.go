@@ -1,10 +1,10 @@
 package libunlynxstore
 
 import (
-	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/proofs"
 	"github.com/lca1/unlynx/lib/tools"
+	"go.dedis.ch/onet/v3/log"
 	"sync"
 )
 

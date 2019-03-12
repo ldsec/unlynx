@@ -1,9 +1,9 @@
 package appunlynx
 
 import (
-	"github.com/dedis/onet/app"
-	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
+	"go.dedis.ch/onet/v3/app"
+	"go.dedis.ch/onet/v3/log"
 	"gopkg.in/urfave/cli.v1"
 	"os"
 )

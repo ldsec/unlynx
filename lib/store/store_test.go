@@ -1,12 +1,12 @@
 package libunlynxstore_test
 
 import (
-	"github.com/dedis/kyber/util/random"
 	"github.com/lca1/unlynx/lib"
 	. "github.com/lca1/unlynx/lib/store"
 	"github.com/lca1/unlynx/lib/tools"
 	"github.com/lca1/unlynx/protocols"
 	"github.com/stretchr/testify/assert"
+	"go.dedis.ch/kyber/v3/util/random"
 	"strconv"
 	"testing"
 )

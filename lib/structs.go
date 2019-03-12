@@ -3,7 +3,7 @@ package libunlynx
 
 import (
 	"crypto/cipher"
-	"github.com/dedis/kyber"
+	"go.dedis.ch/kyber/v3"
 	"strconv"
 	"strings"
 	"sync"
