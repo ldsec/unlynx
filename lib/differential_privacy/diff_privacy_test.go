@@ -7,13 +7,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TestAddRmProof tests the generation of the noise values for the differential privacy
 func TestGenerateNoiseValues(t *testing.T) {
-	aux := GenerateNoiseValues(0, 0, 1, 0.005)
+	aux := GenerateNoiseValues(0, 0, 1, 0.005, 0)
 	assert.Empty(t, aux)
 
-	aux = GenerateNoiseValues(500, 0, 1, 0.005)
-
+	aux = GenerateNoiseValues(500, 0, 1, 0.005, 0)
 	assert.Equal(t, len(aux), 500)
 
 	temp := make([]float64, 0)
@@ -30,4 +28,6 @@ func TestGenerateNoiseValues(t *testing.T) {
 	}
 
 	assert.Equal(t, temp, aux[100:138])
+
+	aux = GenerateNoiseValuesScale(500, 0, 1, 0.005, 100, 60)
 }

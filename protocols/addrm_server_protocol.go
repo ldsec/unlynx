@@ -6,18 +6,21 @@ package protocolsunlynx
 import (
 	"sync"
 
+	"github.com/lca1/unlynx/lib/add_rm"
+
 	"github.com/dedis/kyber"
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/lib/proofs"
 )
 
 // AddRmServerProtocolName is the registered name for the local aggregation protocol.
 const AddRmServerProtocolName = "AddRmServer"
 
 func init() {
-	onet.GlobalProtocolRegister(AddRmServerProtocolName, NewAddRmProtocol)
+	if _, err := onet.GlobalProtocolRegister(AddRmServerProtocolName, NewAddRmProtocol); err != nil {
+		log.Fatal("Error registering <AddRmServerProtocol>")
+	}
 }
 
 // Protocol
@@ -54,34 +57,27 @@ func (p *AddRmServerProtocol) Start() error {
 
 	log.Lvl1(p.Name(), "starts a server adding/removing Protocol")
 	roundComput := libunlynx.StartTimer(p.Name() + "_AddRmServer(PROTOCOL)")
-	wg := libunlynx.StartParallelize(len(p.TargetOfTransformation))
 
 	result := make([]libunlynx.CipherText, len(p.TargetOfTransformation))
 	result = changeEncryption(p.TargetOfTransformation, p.KeyToRm, p.Add)
 	libunlynx.EndTimer(roundComput)
 
 	roundProof := libunlynx.StartTimer(p.Name() + "_AddRmServer(PROOFS)")
-	pubs := make([]libunlynxproofs.PublishedAddRmProof, 0)
+	proofs := libunlynxaddrm.PublishedAddRmListProof{}
 	if p.Proofs {
-		proofsCreation(pubs, p.TargetOfTransformation, result, p.KeyToRm, p.Add)
+		ktopub := libunlynx.SuiTe.Point().Mul(p.KeyToRm, libunlynx.SuiTe.Point().Base())
+		proofs = libunlynxaddrm.AddRmListProofCreation(p.TargetOfTransformation, result, ktopub, p.KeyToRm, p.Add)
 	}
 
 	libunlynx.EndTimer(roundProof)
 
 	roundProof = libunlynx.StartTimer(p.Name() + "_AddRmServer(PROOFSVerif)")
-	wg = libunlynx.StartParallelize(len(pubs))
-	for _, v := range pubs {
-		if libunlynx.PARALLELIZE {
-			go func(v libunlynxproofs.PublishedAddRmProof) {
-				defer wg.Done()
-				libunlynxproofs.PublishedAddRmCheckProof(v)
-			}(v)
-		} else {
-			libunlynxproofs.PublishedAddRmCheckProof(v)
-		}
 
+	if p.Proofs && len(proofs.Arp) == 0 {
+		log.Fatal("Something went wrong during the creation of the add/rm proofs")
 	}
-	libunlynx.EndParallelize(wg)
+	libunlynxaddrm.AddRmListProofVerification(proofs, 1.0)
+
 	libunlynx.EndTimer(roundProof)
 
 	finalResultAddrm <- result
@@ -101,22 +97,17 @@ func changeEncryption(cipherTexts []libunlynx.CipherText, serverAddRmKey kyber.S
 	result := make([]libunlynx.CipherText, len(cipherTexts))
 
 	var wg sync.WaitGroup
-	if libunlynx.PARALLELIZE {
-		for i := 0; i < len(cipherTexts); i += libunlynx.VPARALLELIZE {
-			wg.Add(1)
-			go func(i int) {
-				for j := 0; j < libunlynx.VPARALLELIZE && (i+j) < len(cipherTexts); j++ {
-					result[i+j] = changeEncryptionKeyCipherTexts(cipherTexts[i+j], serverAddRmKey, toAdd)
-				}
-				defer wg.Done()
-			}(i)
-		}
-		wg.Wait()
-	} else {
-		for i, v := range cipherTexts {
-			result[i] = changeEncryptionKeyCipherTexts(v, serverAddRmKey, toAdd)
-		}
+	for i := 0; i < len(cipherTexts); i += libunlynx.VPARALLELIZE {
+		wg.Add(1)
+		go func(i int) {
+			for j := 0; j < libunlynx.VPARALLELIZE && (i+j) < len(cipherTexts); j++ {
+				result[i+j] = changeEncryptionKeyCipherTexts(cipherTexts[i+j], serverAddRmKey, toAdd)
+			}
+			defer wg.Done()
+		}(i)
 	}
+	wg.Wait()
+
 	return result
 }
 
@@ -130,13 +121,4 @@ func changeEncryptionKeyCipherTexts(cipherText libunlynx.CipherText, serverAddRm
 		result.C = libunlynx.SuiTe.Point().Sub(cipherText.C, tmp)
 	}
 	return result
-}
-
-func proofsCreation(pubs []libunlynxproofs.PublishedAddRmProof, target, ct []libunlynx.CipherText, keyToRm kyber.Scalar, add bool) {
-	ktopub := libunlynx.SuiTe.Point().Mul(keyToRm, libunlynx.SuiTe.Point().Base())
-
-	prf := libunlynxproofs.VectorAddRmProofCreation(target, ct, keyToRm, add)
-	pub := libunlynxproofs.PublishedAddRmProof{Arp: prf, VectBefore: ct, VectAfter: ct, Krm: ktopub, ToAdd: add}
-
-	pubs = append(pubs, pub)
 }

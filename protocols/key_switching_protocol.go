@@ -26,9 +26,8 @@ func init() {
 	network.RegisterMessage(UpMessage{})
 	network.RegisterMessage(UpBytesMessage{})
 	network.RegisterMessage(LengthMessage{})
-	pID, err := onet.GlobalProtocolRegister(KeySwitchingProtocolName, NewKeySwitchingProtocol)
-	if err != nil {
-		log.Fatal("Failed to register the KeySwitching protocol:", pID)
+	if _, err := onet.GlobalProtocolRegister(KeySwitchingProtocolName, NewKeySwitchingProtocol); err != nil {
+		log.Fatal("Failed to register the <KeySwitching> protocol:", err)
 	}
 }
 

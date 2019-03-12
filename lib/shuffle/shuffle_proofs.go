@@ -1,6 +1,7 @@
 package libunlynxshuffle
 
 import (
+	"math"
 	"sync"
 
 	"github.com/dedis/kyber"
@@ -33,6 +34,11 @@ type PublishedShufflingProofBytes struct {
 	HashProof          []byte
 }
 
+// PublishedShufflingListProof contains a list of shuffling proofs
+type PublishedShufflingListProof struct {
+	Pslp []PublishedShufflingProof
+}
+
 // SHUFFLE proofs
 //______________________________________________________________________________________________________________________
 
@@ -48,14 +54,10 @@ func ShuffleProofCreation(originalList, shuffledList []libunlynx.CipherVector, g
 
 	wg1 := libunlynx.StartParallelize(k)
 	for i := 0; i < k; i++ {
-		if libunlynx.PARALLELIZE {
-			go func(inputList, outputList []libunlynx.CipherVector, i int) {
-				defer (*wg1).Done()
-				compressCipherVectorMultiple(inputList, outputList, i, e, Xhat, XhatBar, Yhat, YhatBar)
-			}(originalList, shuffledList, i)
-		} else {
-			compressCipherVectorMultiple(originalList, shuffledList, i, e, Xhat, XhatBar, Yhat, YhatBar)
-		}
+		go func(inputList, outputList []libunlynx.CipherVector, i int) {
+			defer (*wg1).Done()
+			compressCipherVectorMultiple(inputList, outputList, i, e, Xhat, XhatBar, Yhat, YhatBar)
+		}(originalList, shuffledList, i)
 	}
 	libunlynx.EndParallelize(wg1)
 
@@ -82,26 +84,44 @@ func ShuffleProofCreation(originalList, shuffledList []libunlynx.CipherVector, g
 	return PublishedShufflingProof{originalList, shuffledList, g, h, prf}
 }
 
-// ShuffleProofVerification allows to check a shuffling proof
+// ShuffleListProofCreation generates a list of shuffle proofs
+func ShuffleListProofCreation(originalList, shuffledList [][]libunlynx.CipherVector, gList, hList []kyber.Point, betaList [][][]kyber.Scalar, piList [][]int) PublishedShufflingListProof {
+	nbrProofsToCreate := len(originalList)
+
+	listProofs := PublishedShufflingListProof{}
+	listProofs.Pslp = make([]PublishedShufflingProof, nbrProofsToCreate)
+
+	var wg sync.WaitGroup
+	for i := 0; i < nbrProofsToCreate; i += libunlynx.VPARALLELIZE {
+		wg.Add(1)
+		go func(i int, originalList, shuffledList [][]libunlynx.CipherVector, g, h []kyber.Point, beta [][][]kyber.Scalar, pi [][]int) {
+			for j := 0; j < libunlynx.VPARALLELIZE && (j+i < nbrProofsToCreate); j++ {
+				listProofs.Pslp[i+j] = ShuffleProofCreation(originalList[i+j], shuffledList[i+j], g[i+j], h[i+j], beta[i+j], pi[i+j])
+			}
+			defer wg.Done()
+		}(i, originalList, shuffledList, gList, hList, betaList, piList)
+	}
+	wg.Wait()
+
+	return listProofs
+}
+
+// ShuffleProofVerification verifies a shuffle proof
 func ShuffleProofVerification(psp PublishedShufflingProof, seed kyber.Point) bool {
 	e := psp.OriginalList[0].CipherVectorTag(seed)
 	var x, y, xbar, ybar []kyber.Point
-	if libunlynx.PARALLELIZE {
-		wg := libunlynx.StartParallelize(2)
-		go func() {
-			x, y = compressListCipherVector(psp.OriginalList, e)
-			defer (*wg).Done()
-		}()
-		go func() {
-			xbar, ybar = compressListCipherVector(psp.ShuffledList, e)
-			defer (*wg).Done()
-		}()
 
-		libunlynx.EndParallelize(wg)
-	} else {
+	wg := libunlynx.StartParallelize(2)
+	go func() {
 		x, y = compressListCipherVector(psp.OriginalList, e)
+		defer (*wg).Done()
+	}()
+	go func() {
 		xbar, ybar = compressListCipherVector(psp.ShuffledList, e)
-	}
+		defer (*wg).Done()
+	}()
+
+	libunlynx.EndParallelize(wg)
 
 	verifier := shuffleKyber.Verifier(libunlynx.SuiTe, psp.G, psp.H, x, y, xbar, ybar)
 	err := proof.HashVerify(libunlynx.SuiTe, "PairShuffle", verifier, psp.HashProof)
@@ -112,6 +132,27 @@ func ShuffleProofVerification(psp PublishedShufflingProof, seed kyber.Point) boo
 	}
 
 	return true
+}
+
+// ShuffleListProofVerification verifies a list of shuffle proofs
+func ShuffleListProofVerification(listProofs PublishedShufflingListProof, seed kyber.Point, percent float64) bool {
+	nbrProofsToVerify := int(math.Ceil(percent * float64(len(listProofs.Pslp))))
+
+	wg := libunlynx.StartParallelize(nbrProofsToVerify)
+	results := make([]bool, nbrProofsToVerify)
+	for i := 0; i < nbrProofsToVerify; i++ {
+		go func(i int, v PublishedShufflingProof) {
+			defer wg.Done()
+			results[i] = ShuffleProofVerification(v, seed)
+		}(i, listProofs.Pslp[i])
+
+	}
+	libunlynx.EndParallelize(wg)
+	finalResult := true
+	for _, v := range results {
+		finalResult = finalResult && v
+	}
+	return finalResult
 }
 
 // Compress
@@ -142,18 +183,12 @@ func compressListCipherVector(processResponses []libunlynx.CipherVector, e []kyb
 
 	wg := libunlynx.StartParallelize(len(processResponses))
 	for i, v := range processResponses {
-		if libunlynx.PARALLELIZE {
-			go func(i int, v libunlynx.CipherVector) {
-				tmp := compressCipherVector(v, e)
-				xK[i] = tmp.K
-				xC[i] = tmp.C
-				defer wg.Done()
-			}(i, v)
-		} else {
+		go func(i int, v libunlynx.CipherVector) {
 			tmp := compressCipherVector(v, e)
 			xK[i] = tmp.K
 			xC[i] = tmp.C
-		}
+			defer wg.Done()
+		}(i, v)
 	}
 
 	libunlynx.EndParallelize(wg)
@@ -186,21 +221,14 @@ func compressBeta(beta [][]kyber.Scalar, e []kyber.Scalar) []kyber.Scalar {
 	wg := libunlynx.StartParallelize(k)
 	for i := 0; i < k; i++ {
 		betaCompressed[i] = libunlynx.SuiTe.Scalar().Zero()
-		if libunlynx.PARALLELIZE {
-			go func(i int) {
-				defer wg.Done()
-				for j := 0; j < NQ; j++ {
-					tmp := libunlynx.SuiTe.Scalar().Mul(beta[i][j], e[j])
-					betaCompressed[i] = libunlynx.SuiTe.Scalar().Add(betaCompressed[i], tmp)
-				}
-			}(i)
-		} else {
+
+		go func(i int) {
+			defer wg.Done()
 			for j := 0; j < NQ; j++ {
 				tmp := libunlynx.SuiTe.Scalar().Mul(beta[i][j], e[j])
 				betaCompressed[i] = libunlynx.SuiTe.Scalar().Add(betaCompressed[i], tmp)
 			}
-		}
-
+		}(i)
 	}
 	libunlynx.EndParallelize(wg)
 

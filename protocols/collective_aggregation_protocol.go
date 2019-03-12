@@ -10,13 +10,15 @@ package protocolsunlynx
 import (
 	"errors"
 
+	"github.com/lca1/unlynx/lib/aggregation"
+	"github.com/lca1/unlynx/lib/store"
+
 	"sync"
 
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/lib/proofs"
 )
 
 // CollectiveAggregationProtocolName is the registered name for the collective aggregation protocol.
@@ -30,7 +32,9 @@ func init() {
 	network.RegisterMessage(ChildAggregatedDataMessage{})
 	network.RegisterMessage(ChildAggregatedDataBytesMessage{})
 	network.RegisterMessage(CADBLengthMessage{})
-	onet.GlobalProtocolRegister(CollectiveAggregationProtocolName, NewCollectiveAggregationProtocol)
+	if _, err := onet.GlobalProtocolRegister(CollectiveAggregationProtocolName, NewCollectiveAggregationProtocol); err != nil {
+		log.Fatal("Error registering <CollectiveAggregationProtocol>:", err)
+	}
 }
 
 // Messages
@@ -128,7 +132,9 @@ func NewCollectiveAggregationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolIn
 // Start is called at the root to begin the execution of the protocol.
 func (p *CollectiveAggregationProtocol) Start() error {
 	log.Lvl1(p.ServerIdentity(), " started a Colective Aggregation Protocol")
-	p.SendToChildren(&DataReferenceMessage{})
+	if err := p.SendToChildren(&DataReferenceMessage{}); err != nil {
+		log.Fatal("Error sending <DataReferenceMessage>:", err)
+	}
 	return nil
 }
 
@@ -157,7 +163,9 @@ func (p *CollectiveAggregationProtocol) Dispatch() error {
 func (p *CollectiveAggregationProtocol) aggregationAnnouncementPhase() {
 	dataReferenceMessage := <-p.DataReferenceChannel
 	if !p.IsLeaf() {
-		p.SendToChildren(&dataReferenceMessage.DataReferenceMessage)
+		if err := p.SendToChildren(&dataReferenceMessage.DataReferenceMessage); err != nil {
+			log.Fatal("Error sending <DataReferenceMessage>:", err)
+		}
 	}
 }
 
@@ -179,7 +187,6 @@ func (p *CollectiveAggregationProtocol) ascendingAggregationPhase() *map[libunly
 			childrenContribution := ChildAggregatedDataMessage{}
 			childrenContribution.FromBytes(datas[i].Data, v.GacbLength, v.AabLength, v.DtbLength)
 			c1 := make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse)
-			roundProofs := libunlynx.StartTimer(p.Name() + "_CollectiveAggregation(Proof-1stPart)")
 
 			if p.Proofs {
 				//need to save previous state
@@ -187,10 +194,14 @@ func (p *CollectiveAggregationProtocol) ascendingAggregationPhase() *map[libunly
 					c1[i] = v
 				}
 			}
-			libunlynx.EndTimer(roundProofs)
 			roundComput := libunlynx.StartTimer(p.Name() + "_CollectiveAggregation(Aggregation)")
 
+			cvMap := make(map[libunlynx.GroupingKey][]libunlynx.CipherVector)
 			for _, aggr := range childrenContribution.ChildData {
+				if p.Proofs {
+					libunlynxstore.FormatAggregationProofs(aggr, cvMap)
+				}
+
 				localAggr, ok := (*p.GroupedData)[aggr.DetTagGroupBy]
 				if ok {
 					tmp := libunlynx.NewCipherVector(len(localAggr.AggregatingAttributes))
@@ -204,13 +215,17 @@ func (p *CollectiveAggregationProtocol) ascendingAggregationPhase() *map[libunly
 			}
 
 			libunlynx.EndTimer(roundComput)
-			roundProofs2 := libunlynx.StartTimer(p.Name() + "_CollectiveAggregation(Proof-2ndPart)")
+			roundProofs := libunlynx.StartTimer(p.Name() + "_CollectiveAggregation(Proof-2ndPart)")
 			if p.Proofs {
-				PublishedCollectiveAggregationProof := libunlynxproofs.CollectiveAggregationProofCreation(c1, childrenContribution.ChildData, *p.GroupedData)
-				//publication
-				_ = PublishedCollectiveAggregationProof
+				for k, v := range cvMap {
+					palp := libunlynxaggr.AggregationListProofCreation(v, (*p.GroupedData)[k].AggregatingAttributes)
+					/* TODO: delete this*/
+					if libunlynxaggr.AggregationListProofVerification(palp, 1.0) == false {
+						log.Fatal("nooo")
+					}
+				}
 			}
-			libunlynx.EndTimer(roundProofs2)
+			libunlynx.EndTimer(roundProofs)
 		}
 	}
 
@@ -233,8 +248,12 @@ func (p *CollectiveAggregationProtocol) ascendingAggregationPhase() *map[libunly
 		childrenContribution := ChildAggregatedDataMessage{}
 		childrenContribution.FromBytes(message.Data, gacbLength, aabLength, dtbLength)
 
-		p.SendToParent(&CADBLengthMessage{gacbLength, aabLength, dtbLength})
-		p.SendToParent(&message)
+		if err := p.SendToParent(&CADBLengthMessage{gacbLength, aabLength, dtbLength}); err != nil {
+			log.Fatal("Error sending <CADBLengthMessage>:", err)
+		}
+		if err := p.SendToParent(&message); err != nil {
+			log.Fatal("Error sending <ChildAggregatedDataMessage>:", err)
+		}
 	}
 
 	return p.GroupedData
@@ -284,28 +303,23 @@ func (sm *ChildAggregatedDataMessage) ToBytes() ([]byte, int, int, int) {
 	wg := libunlynx.StartParallelize(len((*sm).ChildData))
 	var mutexCD sync.Mutex
 	for i := range (*sm).ChildData {
-		if libunlynx.PARALLELIZE {
-			go func(i int) {
-				defer wg.Done()
+		go func(i int) {
+			defer wg.Done()
 
-				mutexCD.Lock()
-				data := (*sm).ChildData[i]
-				mutexCD.Unlock()
+			mutexCD.Lock()
+			data := (*sm).ChildData[i]
+			mutexCD.Unlock()
 
-				aux, gacbAux, aabAux, dtbAux := data.ToBytes()
+			aux, gacbAux, aabAux, dtbAux := data.ToBytes()
 
-				mutexCD.Lock()
-				bb[i] = aux
-				gacbLength = gacbAux
-				aabLength = aabAux
-				dtbLength = dtbAux
-				mutexCD.Unlock()
+			mutexCD.Lock()
+			bb[i] = aux
+			gacbLength = gacbAux
+			aabLength = aabAux
+			dtbLength = dtbAux
+			mutexCD.Unlock()
 
-			}(i)
-		} else {
-			bb[i], gacbLength, aabLength, dtbLength = (*sm).ChildData[i].ToBytes()
-		}
-
+		}(i)
 	}
 	libunlynx.EndParallelize(wg)
 
@@ -328,15 +342,10 @@ func (sm *ChildAggregatedDataMessage) FromBytes(data []byte, gacbLength, aabLeng
 		wg := libunlynx.StartParallelize(nbrChildData)
 		for i := 0; i < nbrChildData; i++ {
 			v := data[i*elementLength : i*elementLength+elementLength]
-			if libunlynx.PARALLELIZE {
-				go func(v []byte, i int) {
-					defer wg.Done()
-					(*sm).ChildData[i].FromBytes(v, gacbLength, aabLength, dtbLength)
-				}(v, i)
-			} else {
+			go func(v []byte, i int) {
+				defer wg.Done()
 				(*sm).ChildData[i].FromBytes(v, gacbLength, aabLength, dtbLength)
-			}
-
+			}(v, i)
 		}
 		libunlynx.EndParallelize(wg)
 	}

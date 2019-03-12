@@ -20,26 +20,21 @@ func KeySwitchSequence(targetPubKey kyber.Point, rBs []kyber.Point, secretKey ky
 	cv := libunlynx.NewCipherVector(len(rBs))
 
 	var wg sync.WaitGroup
-	if libunlynx.PARALLELIZE {
-		for i := 0; i < len(rBs); i = i + libunlynx.VPARALLELIZE {
-			wg.Add(1)
-			go func(i int) {
-				for j := 0; j < libunlynx.VPARALLELIZE && (j+i < len(rBs)); j++ {
-					var ct libunlynx.CipherText
-					ct, rBNegs[i+j], vis[i+j] = KeySwitch(targetPubKey, rBs[i+j], secretKey)
-					ks2s[i+j] = ct.C
-					(*cv)[i+j] = ct
-				}
-				defer wg.Done()
-			}(i)
-		}
-		wg.Wait()
-	} else {
-		for i := range rBs {
-			(*cv)[i], rBNegs[i], vis[i] = KeySwitch(targetPubKey, rBs[i], secretKey)
-			ks2s[i] = (*cv)[i].C
-		}
+
+	for i := 0; i < len(rBs); i = i + libunlynx.VPARALLELIZE {
+		wg.Add(1)
+		go func(i int) {
+			for j := 0; j < libunlynx.VPARALLELIZE && (j+i < len(rBs)); j++ {
+				var ct libunlynx.CipherText
+				ct, rBNegs[i+j], vis[i+j] = KeySwitch(targetPubKey, rBs[i+j], secretKey)
+				ks2s[i+j] = ct.C
+				(*cv)[i+j] = ct
+			}
+			defer wg.Done()
+		}(i)
 	}
+	wg.Wait()
+
 	return *cv, ks2s, rBNegs, vis
 }
 

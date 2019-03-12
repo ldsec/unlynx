@@ -11,11 +11,11 @@ import (
 func TestDeterministicTagSequence(t *testing.T) {
 	const N = 5
 
-	groupKey, private, _ := libunlynx.GenKeys(N)
+	K, private, _ := libunlynx.GenKeys(N)
 	_, secretPrivate, _ := libunlynx.GenKeys(N)
 
 	target := []int64{-8358645081376817152, -8358645081376817152, 2, 3, 2, 5}
-	cv := *libunlynx.EncryptIntVector(groupKey, target)
+	cv := *libunlynx.EncryptIntVector(K, target)
 	for n := 0; n < N; n++ {
 		tmp := DeterministicTagSequence(cv, private[n], secretPrivate[n])
 		cv = tmp
@@ -24,4 +24,18 @@ func TestDeterministicTagSequence(t *testing.T) {
 	assert.True(t, cv[0].C.Equal(cv[1].C))
 	assert.True(t, cv[2].C.Equal(cv[4].C))
 	assert.False(t, cv[0].C.Equal(cv[3].C))
+}
+
+func TestCipherVectorToDeterministicTag(t *testing.T) {
+	K, private, _ := libunlynx.GenKeys(1)
+	_, secretPrivate, _ := libunlynx.GenKeys(1)
+
+	target := []int64{-8358645081376817152, -8358645081376817152, 2, 3, 2, 5}
+	cv1 := *libunlynx.EncryptIntVector(K, target)
+	cv2 := *libunlynx.EncryptIntVector(K, target)
+
+	gk1, _ := CipherVectorToDeterministicTag(cv1, private[0], secretPrivate[0], K, false)
+	gk2, _ := CipherVectorToDeterministicTag(cv2, private[0], secretPrivate[0], K, false)
+
+	assert.Equal(t, gk1, gk2)
 }

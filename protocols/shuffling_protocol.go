@@ -24,7 +24,9 @@ func init() {
 	network.RegisterMessage(ShufflingMessage{})
 	network.RegisterMessage(ShufflingBytesMessage{})
 	network.RegisterMessage(ShufflingBytesMessageLength{})
-	onet.GlobalProtocolRegister(ShufflingProtocolName, NewShufflingProtocol)
+	if _, err := onet.GlobalProtocolRegister(ShufflingProtocolName, NewShufflingProtocol); err != nil {
+		log.Fatal("Failed to register the <ShufflingProtocol> protocol:", err)
+	}
 }
 
 // Messages
@@ -141,7 +143,6 @@ func (p *ShufflingProtocol) Start() error {
 	// when testing protocol
 	if p.CollectiveKey != nil {
 		collectiveKey = p.CollectiveKey
-		log.Lvl1("Key used for testing is", collectiveKey)
 	}
 
 	shufflingStartNoProof := libunlynx.StartTimer(p.Name() + "_Shuffling(START-noProof)")

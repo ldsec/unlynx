@@ -1,6 +1,10 @@
 package protocolsunlynx_test
 
 import (
+	"reflect"
+	"testing"
+	"time"
+
 	"github.com/dedis/kyber/util/random"
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
@@ -8,16 +12,15 @@ import (
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/protocols"
 	"github.com/stretchr/testify/assert"
-	"reflect"
-	"testing"
-	"time"
 )
 
 func TestDeterministicTagging(t *testing.T) {
 	local := onet.NewLocalTest(libunlynx.SuiTe)
 
 	// You must register this protocol before creating the servers
-	onet.GlobalProtocolRegister("DeterministicTaggingTest", NewDeterministicTaggingTest)
+	if _, err := onet.GlobalProtocolRegister("DeterministicTaggingTest", NewDeterministicTaggingTest); err != nil {
+		log.Fatal("Error registering <DeterministicTaggingTest>:", err)
+	}
 	_, entityList, tree := local.GenTree(5, true)
 
 	defer local.CloseAll()
@@ -63,7 +66,11 @@ func TestDeterministicTagging(t *testing.T) {
 	cta := protocolsunlynx.ProcessResponseToCipherVector(mapi)
 	protocol.TargetOfSwitch = &cta
 	feedback := protocol.FeedbackChannel
-	go protocol.Start()
+	go func() {
+		if err := protocol.Start(); err != nil {
+			log.Fatal("Error to start <DeterministicTagging> protocol")
+		}
+	}()
 
 	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*5*2) * time.Millisecond
 

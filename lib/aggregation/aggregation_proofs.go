@@ -1,28 +1,65 @@
 package libunlynxaggr
 
 import (
+	"math"
 	"reflect"
 
 	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/lib/tools"
 )
 
-// PublishedAggregationProof contains all infos about proofs for aggregation of two filtered responses
+// PublishedAggregationProof contains all the information for one aggregation proof
 type PublishedAggregationProof struct {
-	FilteredResponses  []libunlynx.FilteredResponseDet
-	AggregationResults map[libunlynx.GroupingKey]libunlynx.FilteredResponse
+	Data              libunlynx.CipherVector
+	AggregationResult libunlynx.CipherText
 }
 
-// AggregationProofCreation creates a proof for responses aggregation and grouping
-func AggregationProofCreation(responses []libunlynx.FilteredResponseDet, aggregatedResults map[libunlynx.GroupingKey]libunlynx.FilteredResponse) PublishedAggregationProof {
-	return PublishedAggregationProof{FilteredResponses: responses, AggregationResults: aggregatedResults}
+// PublishedAggregationListProof contains a list of aggregation proofs
+type PublishedAggregationListProof struct {
+	PapList []PublishedAggregationProof
 }
 
-// AggregationProofVerification checks a proof for responses aggregation and grouping
-func AggregationProofVerification(pap PublishedAggregationProof) bool {
-	comparisonMap := make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse)
-	for _, v := range pap.FilteredResponses {
-		libunlynxtools.AddInMap(comparisonMap, v.DetTagGroupBy, v.Fr)
+// AggregationProofCreation creates a proof for aggregation
+func AggregationProofCreation(data libunlynx.CipherVector, aggregationResult libunlynx.CipherText) PublishedAggregationProof {
+	return PublishedAggregationProof{Data: data, AggregationResult: aggregationResult}
+}
+
+// AggregationListProofCreation creates multiple proofs for aggregation
+func AggregationListProofCreation(data []libunlynx.CipherVector, aggregationResults []libunlynx.CipherText) PublishedAggregationListProof {
+	papList := PublishedAggregationListProof{}
+	papList.PapList = make([]PublishedAggregationProof, 0)
+	for i, v := range data {
+		pap := AggregationProofCreation(v, aggregationResults[i])
+		papList.PapList = append(papList.PapList, pap)
 	}
-	return reflect.DeepEqual(comparisonMap, pap.AggregationResults)
+	return papList
+}
+
+// AggregationProofVerification verifies an aggregation proof
+func AggregationProofVerification(pap PublishedAggregationProof) bool {
+	expected := pap.Data[0]
+	for i := 1; i < len(pap.Data); i++ {
+		expected.Add(expected, pap.Data[i])
+	}
+	return reflect.DeepEqual(expected, pap.AggregationResult)
+}
+
+// AggregationListProofVerification verifies multiple aggregation proofs
+func AggregationListProofVerification(palp PublishedAggregationListProof, percent float64) bool {
+	nbrProofsToVerify := int(math.Ceil(percent * float64(len(palp.PapList))))
+
+	wg := libunlynx.StartParallelize(nbrProofsToVerify)
+	results := make([]bool, nbrProofsToVerify)
+	for i := 0; i < nbrProofsToVerify; i++ {
+		go func(i int, v PublishedAggregationProof) {
+			defer wg.Done()
+			results[i] = AggregationProofVerification(v)
+		}(i, palp.PapList[i])
+
+	}
+	libunlynx.EndParallelize(wg)
+	finalResult := true
+	for _, v := range results {
+		finalResult = finalResult && v
+	}
+	return finalResult
 }

@@ -161,26 +161,20 @@ func (cv *CipherVector) CipherVectorTag(h kyber.Point) []kyber.Scalar {
 
 	seed, _ := h.MarshalBinary()
 	var wg sync.WaitGroup
-	if PARALLELIZE {
-		for i := 0; i < length; i = i + VPARALLELIZE {
-			wg.Add(1)
-			go func(i int) {
-				defer wg.Done()
-				for j := 0; j < VPARALLELIZE && (j+i < length); j++ {
-					es[i+j] = ComputeE(i+j, *cv, seed)
-				}
 
-			}(i)
+	for i := 0; i < length; i = i + VPARALLELIZE {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			for j := 0; j < VPARALLELIZE && (j+i < length); j++ {
+				es[i+j] = ComputeE(i+j, *cv, seed)
+			}
 
-		}
-		wg.Wait()
-	} else {
-		for i := 0; i < length; i++ {
-			//+detAttrLen
-			es[i] = ComputeE(i, *cv, seed)
-		}
+		}(i)
 
 	}
+	wg.Wait()
+
 	return es
 }
 
@@ -241,29 +235,21 @@ func CreatePrecomputedRandomize(g, h kyber.Point, rand cipher.Stream, lineSize, 
 	for i := range result {
 		result[i].CipherV = make(CipherVector, lineSize)
 		result[i].S = make([]kyber.Scalar, lineSize)
-		if PARALLELIZE {
-			go func(i int) {
-				defer (*wg).Done()
 
-				for w := range result[i].CipherV {
-					mutex.Lock()
-					tmp := SuiTe.Scalar().Pick(rand)
-					mutex.Unlock()
+		go func(i int) {
+			defer (*wg).Done()
 
-					result[i].S[w] = tmp
-					result[i].CipherV[w].K = SuiTe.Point().Mul(tmp, g)
-					result[i].CipherV[w].C = SuiTe.Point().Mul(tmp, h)
-				}
-
-			}(i)
-		} else {
 			for w := range result[i].CipherV {
+				mutex.Lock()
 				tmp := SuiTe.Scalar().Pick(rand)
+				mutex.Unlock()
+
 				result[i].S[w] = tmp
 				result[i].CipherV[w].K = SuiTe.Point().Mul(tmp, g)
 				result[i].CipherV[w].C = SuiTe.Point().Mul(tmp, h)
 			}
-		}
+
+		}(i)
 	}
 	EndParallelize(wg)
 	return result

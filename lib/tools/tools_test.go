@@ -43,8 +43,6 @@ func TestWriteToGobFile(t *testing.T) {
 	}
 
 	WriteToGobFile(file, encoded)
-
-	fmt.Println(dataCipher)
 }
 
 func TestReadFromGobFile(t *testing.T) {
@@ -59,13 +57,15 @@ func TestReadFromGobFile(t *testing.T) {
 	}
 
 	fmt.Println(dataCipher)
-	os.Remove("pre_compute_multiplications.gob")
+	if err := os.Remove("pre_compute_multiplications.gob"); err != nil {
+		log.Fatal("Error removing pre_compute_multiplications.gob file")
+	}
 }
 
 func TestAddInMap(t *testing.T) {
 	keys := key.NewKeyPair(libunlynx.SuiTe)
 	_, pubKey := keys.Private, keys.Public
-	key := libunlynx.GroupingKey("test")
+	gkey := libunlynx.GroupingKey("test")
 
 	cv := make(libunlynx.CipherVector, k)
 	for i := 0; i < k; i++ {
@@ -74,11 +74,11 @@ func TestAddInMap(t *testing.T) {
 	fr := libunlynx.FilteredResponse{GroupByEnc: cv, AggregatingAttributes: cv}
 
 	mapToTest := make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse)
-	_, ok := mapToTest[key]
+	_, ok := mapToTest[gkey]
 	assert.False(t, ok)
 
-	AddInMap(mapToTest, key, fr)
-	v, ok2 := mapToTest[key]
+	AddInMap(mapToTest, gkey, fr)
+	v, ok2 := mapToTest[gkey]
 	assert.True(t, ok2)
 	assert.Equal(t, v, fr)
 }

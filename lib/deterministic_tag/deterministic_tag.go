@@ -12,23 +12,18 @@ func DeterministicTagSequence(cv libunlynx.CipherVector, private, secretContrib 
 	cvNew := libunlynx.NewCipherVector(len(cv))
 
 	var wg sync.WaitGroup
-	if libunlynx.PARALLELIZE {
-		for i := 0; i < len(cv); i = i + libunlynx.VPARALLELIZE {
-			wg.Add(1)
-			go func(i int) {
-				for j := 0; j < libunlynx.VPARALLELIZE && (j+i < len(cv)); j++ {
-					(*cvNew)[i+j] = DeterministicTag(cv[i+j], private, secretContrib)
-				}
-				defer wg.Done()
-			}(i)
 
-		}
-		wg.Wait()
-	} else {
-		for i, ct := range cv {
-			(*cvNew)[i] = DeterministicTag(ct, private, secretContrib)
-		}
+	for i := 0; i < len(cv); i = i + libunlynx.VPARALLELIZE {
+		wg.Add(1)
+		go func(i int) {
+			for j := 0; j < libunlynx.VPARALLELIZE && (j+i < len(cv)); j++ {
+				(*cvNew)[i+j] = DeterministicTag(cv[i+j], private, secretContrib)
+			}
+			defer wg.Done()
+		}(i)
+
 	}
+	wg.Wait()
 
 	return *cvNew
 }
@@ -58,13 +53,13 @@ func DeterministicTag(ct libunlynx.CipherText, private, secretContrib kyber.Scal
 // Representation
 //______________________________________________________________________________________________________________________
 
-// CipherVectorToDeterministicTag creates a tag (grouping key) from a cipher vector
+// CipherVectorToDeterministicTag creates a tag (grouping key) from a cipher vector (aggregation of *.C string representation of all the ciphertexts that are in the ciphervector)
 func CipherVectorToDeterministicTag(vBef libunlynx.CipherVector, privKey, secContrib kyber.Scalar, K kyber.Point, proofs bool) (libunlynx.GroupingKey, *PublishedDDTCreationListProof) {
 	vAft := DeterministicTagSequence(vBef, privKey, secContrib)
 
 	var pdclp PublishedDDTCreationListProof
 	if proofs {
-		pdclp = DeterministicTagListProofCreation(vBef, vAft, K, privKey, secContrib)
+		pdclp = DeterministicTagCrListProofCreation(vBef, vAft, K, privKey, secContrib)
 	}
 
 	deterministicGroupAttributes := make(libunlynx.DeterministCipherVector, len(vAft))

@@ -1,6 +1,9 @@
 package protocolsunlynx_test
 
 import (
+	"testing"
+	"time"
+
 	"github.com/dedis/kyber/util/random"
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
@@ -8,8 +11,6 @@ import (
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/protocols"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 )
 
 func TestAddRmServer(t *testing.T) {
@@ -48,7 +49,11 @@ func TestAddRmServer(t *testing.T) {
 	protocol.Add = false
 	protocol.KeyToRm = secKeyAddRm
 
-	go protocol.Start()
+	go func() {
+		if err := protocol.Start(); err != nil {
+			log.Fatal("Error to Start <AddRmServer> protocol")
+		}
+	}()
 
 	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*5*2) * time.Millisecond
 

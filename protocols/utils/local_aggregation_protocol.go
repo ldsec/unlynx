@@ -6,7 +6,8 @@ import (
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/lib/proofs"
+	"github.com/lca1/unlynx/lib/aggregation"
+	"github.com/lca1/unlynx/lib/store"
 	"github.com/lca1/unlynx/lib/tools"
 )
 
@@ -14,7 +15,9 @@ import (
 const LocalAggregationProtocolName = "LocalAggregation"
 
 func init() {
-	onet.GlobalProtocolRegister(LocalAggregationProtocolName, NewLocalAggregationProtocol)
+	if _, err := onet.GlobalProtocolRegister(LocalAggregationProtocolName, NewLocalAggregationProtocol); err != nil {
+		log.Fatal("Error registering <LocalAggregationProtocol>")
+	}
 }
 
 // Protocol
@@ -52,17 +55,27 @@ func (p *LocalAggregationProtocol) Start() error {
 
 	resultingMap := make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse)
 
+	cvMap := make(map[libunlynx.GroupingKey][]libunlynx.CipherVector)
 	for _, v := range p.TargetOfAggregation {
 		libunlynxtools.AddInMap(resultingMap, v.DetTagGroupBy, v.Fr)
+
+		if p.Proofs {
+			libunlynxstore.FormatAggregationProofs(v, cvMap)
+		}
+
 	}
 
 	libunlynx.EndTimer(roundComput)
 	roundProof := libunlynx.StartTimer(p.Name() + "_LocalAggregation(PROOFS)")
 
 	if p.Proofs {
-		PublishedAggregationProof := libunlynxproofs.AggregationProofCreation(p.TargetOfAggregation, resultingMap)
-		//publication
-		_ = PublishedAggregationProof
+		for k, v := range cvMap {
+			palp := libunlynxaggr.AggregationListProofCreation(v, resultingMap[k].AggregatingAttributes)
+			/* TODO: delete this*/
+			if libunlynxaggr.AggregationListProofVerification(palp, 1.0) == false {
+				log.Fatal("nooo")
+			}
+		}
 	}
 
 	libunlynx.EndTimer(roundProof)

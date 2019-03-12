@@ -43,7 +43,9 @@ func TestShuffling(t *testing.T) {
 	aggregateKey := groupPub
 
 	// You must register this protocol before creating the servers
-	onet.GlobalProtocolRegister("ShufflingTest", NewShufflingTest)
+	if _, err := onet.GlobalProtocolRegister("ShufflingTest", NewShufflingTest); err != nil {
+		log.Fatal("Failed to register the <ShufflingTest> protocol:", err)
+	}
 	_, _, tree := local.GenTree(nbrNodes, true)
 	defer local.CloseAll()
 
@@ -78,8 +80,6 @@ func TestShuffling(t *testing.T) {
 	mapi[2] = processResponse2
 	mapi[3] = processResponse
 
-	log.Lvl1("Data before shuffling ", mapi)
-
 	cv, lengths := protocolsunlynx.ProcessResponseToMatrixCipherText(mapi)
 	protocol.ShuffleTarget = &cv
 	protocol.CollectiveKey = groupPub
@@ -91,9 +91,13 @@ func TestShuffling(t *testing.T) {
 	}
 
 	feedback := protocol.FeedbackChannel
-	go protocol.Start()
+	go func() {
+		if err := protocol.Start(); err != nil {
+			log.Fatal("Error to start <Shuffling> protocol")
+		}
+	}()
 
-	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*5*2) * time.Millisecond
+	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*10) * time.Millisecond
 
 	select {
 	case encryptedResult := <-feedback:
@@ -111,7 +115,6 @@ func TestShuffling(t *testing.T) {
 				}
 			}
 			assert.True(t, present, "Error during shuffling")
-			log.Lvl1(v)
 		}
 
 	case <-time.After(timeout):

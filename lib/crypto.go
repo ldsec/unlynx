@@ -169,23 +169,19 @@ func EncryptScalar(pubkey kyber.Point, scalar kyber.Scalar) *CipherText {
 func EncryptIntVector(pubkey kyber.Point, intArray []int64) *CipherVector {
 	var wg sync.WaitGroup
 	cv := make(CipherVector, len(intArray))
-	if PARALLELIZE {
-		for i := 0; i < len(intArray); i = i + VPARALLELIZE {
-			wg.Add(1)
-			go func(i int) {
-				for j := 0; j < VPARALLELIZE && (j+i < len(intArray)); j++ {
-					cv[j+i] = *EncryptInt(pubkey, intArray[j+i])
-				}
-				defer wg.Done()
-			}(i)
 
-		}
-		wg.Wait()
-	} else {
-		for i, n := range intArray {
-			cv[i] = *EncryptInt(pubkey, n)
-		}
+	for i := 0; i < len(intArray); i = i + VPARALLELIZE {
+		wg.Add(1)
+		go func(i int) {
+			for j := 0; j < VPARALLELIZE && (j+i < len(intArray)); j++ {
+				cv[j+i] = *EncryptInt(pubkey, intArray[j+i])
+			}
+			defer wg.Done()
+		}(i)
+
 	}
+	wg.Wait()
+
 	return &cv
 }
 
@@ -194,27 +190,20 @@ func EncryptIntVectorGetRs(pubkey kyber.Point, intArray []int64) (*CipherVector,
 	var wg sync.WaitGroup
 	cv := make(CipherVector, len(intArray))
 	rs := make([]kyber.Scalar, len(intArray))
-	if PARALLELIZE {
-		for i := 0; i < len(intArray); i = i + VPARALLELIZE {
-			wg.Add(1)
-			go func(i int) {
-				for j := 0; j < VPARALLELIZE && (j+i < len(intArray)); j++ {
-					tmpCv, tmpR := EncryptIntGetR(pubkey, intArray[j+i])
-					cv[j+i] = *tmpCv
-					rs[j+i] = tmpR
-				}
-				defer wg.Done()
-			}(i)
 
-		}
-		wg.Wait()
-	} else {
-		for i, n := range intArray {
-			tmpCv, tmpR := EncryptIntGetR(pubkey, n)
-			cv[i] = *tmpCv
-			rs[i] = tmpR
-		}
+	for i := 0; i < len(intArray); i = i + VPARALLELIZE {
+		wg.Add(1)
+		go func(i int) {
+			for j := 0; j < VPARALLELIZE && (j+i < len(intArray)); j++ {
+				tmpCv, tmpR := EncryptIntGetR(pubkey, intArray[j+i])
+				cv[j+i] = *tmpCv
+				rs[j+i] = tmpR
+			}
+			defer wg.Done()
+		}(i)
+
 	}
+	wg.Wait()
 
 	return &cv, rs
 }
@@ -223,23 +212,18 @@ func EncryptIntVectorGetRs(pubkey kyber.Point, intArray []int64) (*CipherVector,
 func EncryptScalarVector(pubkey kyber.Point, intArray []kyber.Scalar) *CipherVector {
 	var wg sync.WaitGroup
 	cv := make(CipherVector, len(intArray))
-	if PARALLELIZE {
-		for i := 0; i < len(intArray); i = i + VPARALLELIZE {
-			wg.Add(1)
-			go func(i int) {
-				for j := 0; j < VPARALLELIZE && (j+i < len(intArray)); j++ {
-					cv[j+i] = *EncryptScalar(pubkey, intArray[j+i])
-				}
-				defer wg.Done()
-			}(i)
 
-		}
-		wg.Wait()
-	} else {
-		for i, n := range intArray {
-			cv[i] = *EncryptScalar(pubkey, n)
-		}
+	for i := 0; i < len(intArray); i = i + VPARALLELIZE {
+		wg.Add(1)
+		go func(i int) {
+			for j := 0; j < VPARALLELIZE && (j+i < len(intArray)); j++ {
+				cv[j+i] = *EncryptScalar(pubkey, intArray[j+i])
+			}
+			defer wg.Done()
+		}(i)
+
 	}
+	wg.Wait()
 
 	return &cv
 }
@@ -386,35 +370,32 @@ func (c *CipherText) MulCipherTextbyScalar(cMul CipherText, a kyber.Scalar) {
 	c.K = SuiTe.Point().Mul(a, cMul.K)
 }
 
-// Add two ciphervectors and stores result in receiver.
-func (cv *CipherVector) Add(cv1, cv2 CipherVector) {
-	var wg sync.WaitGroup
-	if PARALLELIZE {
-		for i := 0; i < len(cv1); i = i + VPARALLELIZE {
-			wg.Add(1)
-			go func(i int) {
-				for j := 0; j < VPARALLELIZE && (j+i < len(cv1)); j++ {
-					(*cv)[i+j].Add(cv1[i+j], cv2[i+j])
-				}
-				defer wg.Done()
-			}(i)
-
-		}
-
-	} else {
-		for i := range cv1 {
-			(*cv)[i].Add(cv1[i], cv2[i])
-		}
-	}
-	if PARALLELIZE {
-		wg.Wait()
-	}
-}
-
 // Sub two ciphertexts and stores result in receiver.
 func (c *CipherText) Sub(c1, c2 CipherText) {
 	c.C = SuiTe.Point().Sub(c1.C, c2.C)
 	c.K = SuiTe.Point().Sub(c1.K, c2.K)
+}
+
+// Equal checks equality between ciphertexts.
+func (c *CipherText) Equal(c2 *CipherText) bool {
+	return c2.K.Equal(c.K) && c2.C.Equal(c.C)
+}
+
+// Add two ciphervectors and stores result in receiver.
+func (cv *CipherVector) Add(cv1, cv2 CipherVector) {
+	var wg sync.WaitGroup
+
+	for i := 0; i < len(cv1); i = i + VPARALLELIZE {
+		wg.Add(1)
+		go func(i int) {
+			for j := 0; j < VPARALLELIZE && (j+i < len(cv1)); j++ {
+				(*cv)[i+j].Add(cv1[i+j], cv2[i+j])
+			}
+			defer wg.Done()
+		}(i)
+
+	}
+	wg.Wait()
 }
 
 // Sub two cipherVectors and stores result in receiver.
@@ -442,9 +423,12 @@ func (cv *CipherVector) Equal(cv2 *CipherVector) bool {
 	return true
 }
 
-// Equal checks equality between ciphertexts.
-func (c *CipherText) Equal(c2 *CipherText) bool {
-	return c2.K.Equal(c.K) && c2.C.Equal(c.C)
+func (cv *CipherVector) Acum() CipherText {
+	acum := (*cv)[0]
+	for i := 1; i < len(*cv); i++ {
+		acum.Add(acum, (*cv)[i])
+	}
+	return acum
 }
 
 // Representation
@@ -705,21 +689,17 @@ func ArrayCipherVectorToBytes(data []CipherVector) ([]byte, []byte) {
 	wg := StartParallelize(length)
 	var mutex sync.Mutex
 	for i := range data {
-		if PARALLELIZE {
-			go func(i int) {
-				defer wg.Done()
+		go func(i int) {
+			defer wg.Done()
 
-				mutex.Lock()
-				data := data[i]
-				mutex.Unlock()
-				bb[i], cvLengths[i] = data.ToBytes()
-			}(i)
-		} else {
-			bb[i], cvLengths[i] = data[i].ToBytes()
-		}
-
+			mutex.Lock()
+			data := data[i]
+			mutex.Unlock()
+			bb[i], cvLengths[i] = data.ToBytes()
+		}(i)
 	}
 	EndParallelize(wg)
+
 	for _, v := range bb {
 		b = append(b, v...)
 	}
@@ -742,16 +722,11 @@ func FromBytesToArrayCipherVector(data []byte, cvLengthsByte []byte) []CipherVec
 		cv := make(CipherVector, cvLengths[i])
 		v := data[bytePos:nextBytePos]
 
-		if PARALLELIZE {
-			go func(v []byte, i int) {
-				defer wg.Done()
-				cv.FromBytes(v, cvLengths[i])
-				dataConverted[i] = cv
-			}(v, i)
-		} else {
+		go func(v []byte, i int) {
+			defer wg.Done()
 			cv.FromBytes(v, cvLengths[i])
 			dataConverted[i] = cv
-		}
+		}(v, i)
 
 		// advance pointer
 		bytePos = nextBytePos

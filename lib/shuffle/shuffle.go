@@ -45,14 +45,10 @@ func ShuffleSequence(inputList []libunlynx.CipherVector, g, h kyber.Point, preco
 
 	wg := libunlynx.StartParallelize(k)
 	for i := 0; i < k; i++ {
-		if libunlynx.PARALLELIZE {
-			go func(outputList []libunlynx.CipherVector, i int) {
-				defer wg.Done()
-				shuffle(pi, i, inputList, outputList, NQ, beta, precomputedPoints, g, h)
-			}(outputList, i)
-		} else {
+		go func(outputList []libunlynx.CipherVector, i int) {
+			defer wg.Done()
 			shuffle(pi, i, inputList, outputList, NQ, beta, precomputedPoints, g, h)
-		}
+		}(outputList, i)
 	}
 	libunlynx.EndParallelize(wg)
 
@@ -72,15 +68,10 @@ func shuffle(pi []int, i int, inputList, outputList []libunlynx.CipherVector, NQ
 		} else {
 			cipher = precomputedPoints[index][j]
 		}
-		if libunlynx.PARALLELIZE {
-			go func(j int) {
-				defer wg.Done()
-				outputList[i][j] = rerandomize(inputList[index], b, b, cipher, g, h, j)
-			}(j)
-		} else {
+		go func(j int) {
+			defer wg.Done()
 			outputList[i][j] = rerandomize(inputList[index], b, b, cipher, g, h, j)
-		}
-
+		}(j)
 	}
 	libunlynx.EndParallelize(wg)
 }

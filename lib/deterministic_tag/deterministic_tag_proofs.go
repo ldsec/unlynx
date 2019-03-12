@@ -17,8 +17,6 @@ type PublishedDDTCreationProof struct {
 	Ciminus11Si kyber.Point
 	CTbef       libunlynx.CipherText
 	CTaft       libunlynx.CipherText
-	K           *kyber.Point
-	SB          *kyber.Point
 }
 
 // PublishedDDTCreationListProof contains all the info about proofs for the deterministic tagging of one sequence of ciphertexts (creation)
@@ -36,14 +34,19 @@ type PublishedDDTAdditionProof struct {
 	Proof []byte
 }
 
+// PublishedDDTAdditionListProof contains all the info about multiple proofs for the deterministic tagging (addition)
+type PublishedDDTAdditionListProof struct {
+	Pdap []PublishedDDTAdditionProof
+}
+
 // DETERMINISTIC TAG proofs
 //______________________________________________________________________________________________________________________
 
 // Creation
 //______________________________________________________________________________________________________________________
 
-// createPredicateDeterministicTag creates predicate for deterministic tagging proof
-func createPredicateDeterministicTag() (predicate proof.Predicate) {
+// createPredicateDeterministicTagCr creates predicate for deterministic tagging proof
+func createPredicateDeterministicTagCr() (predicate proof.Predicate) {
 	// For ZKP
 	log1 := proof.Rep("ci1", "s", "ciminus11")
 	log2 := proof.Rep("K", "k", "B")
@@ -61,9 +64,9 @@ func createPredicateDeterministicTag() (predicate proof.Predicate) {
 	return
 }
 
-// DeterministicTagProofCreation creates a deterministic tag proof for one ciphertext
-func DeterministicTagProofCreation(ctBef, ctAft libunlynx.CipherText, K kyber.Point, k, s kyber.Scalar, list bool) PublishedDDTCreationProof {
-	predicate := createPredicateDeterministicTag()
+// DeterministicTagCrProofCreation creates a deterministic tag proof for one ciphertext
+func DeterministicTagCrProofCreation(ctBef, ctAft libunlynx.CipherText, K kyber.Point, k, s kyber.Scalar) PublishedDDTCreationProof {
+	predicate := createPredicateDeterministicTagCr()
 
 	ci1 := ctAft.K
 	ciminus11 := ctBef.K
@@ -81,39 +84,27 @@ func DeterministicTagProofCreation(ctBef, ctAft libunlynx.CipherText, K kyber.Po
 		log.Fatal("---------Prover:", err.Error())
 	}
 
-	// if we have a list of deterministic tag proofs we do not need to store K and SB (they are the same for all the proofs)
-	if list {
-		// this saves some space
-		return PublishedDDTCreationProof{Proof: Proof, Ciminus11Si: ciminus11Si, CTbef: ctBef, CTaft: ctAft}
-	} else {
-		SB := libunlynx.SuiTe.Point().Mul(s, B)
-		return PublishedDDTCreationProof{Proof: Proof, Ciminus11Si: ciminus11Si, CTbef: ctBef, CTaft: ctAft, K: &K, SB: &SB}
-	}
+	return PublishedDDTCreationProof{Proof: Proof, Ciminus11Si: ciminus11Si, CTbef: ctBef, CTaft: ctAft}
 }
 
-// DeterministicTagListProofCreation creates a list of deterministic tag proofs (multiple ciphertexts)
-func DeterministicTagListProofCreation(vBef, vAft libunlynx.CipherVector, K kyber.Point, k, s kyber.Scalar) PublishedDDTCreationListProof {
+// DeterministicTagCrListProofCreation creates a list of deterministic tag proofs (multiple ciphertexts)
+func DeterministicTagCrListProofCreation(vBef, vAft libunlynx.CipherVector, K kyber.Point, k, s kyber.Scalar) PublishedDDTCreationListProof {
 	listProofs := PublishedDDTCreationListProof{}
 	listProofs.Dcp = make([]PublishedDDTCreationProof, len(vBef))
 
 	var wg sync.WaitGroup
-	if libunlynx.PARALLELIZE {
-		for i := 0; i < len(vBef); i += libunlynx.VPARALLELIZE {
-			wg.Add(1)
-			go func(i int) {
-				for j := 0; j < libunlynx.VPARALLELIZE && (j+i < len(vBef)); j++ {
-					listProofs.Dcp[i+j] = DeterministicTagProofCreation(vBef[i+j], vAft[i+j], K, k, s, true)
-				}
-				defer wg.Done()
-			}(i)
 
-		}
-		wg.Wait()
-	} else {
-		for i, v := range vBef {
-			listProofs.Dcp[i] = DeterministicTagProofCreation(v, vAft[i], K, k, s, true)
-		}
+	for i := 0; i < len(vBef); i += libunlynx.VPARALLELIZE {
+		wg.Add(1)
+		go func(i int) {
+			for j := 0; j < libunlynx.VPARALLELIZE && (j+i < len(vBef)); j++ {
+				listProofs.Dcp[i+j] = DeterministicTagCrProofCreation(vBef[i+j], vAft[i+j], K, k, s)
+			}
+			defer wg.Done()
+		}(i)
+
 	}
+	wg.Wait()
 
 	listProofs.K = K
 	listProofs.SB = libunlynx.SuiTe.Point().Mul(s, libunlynx.SuiTe.Point().Base())
@@ -121,9 +112,9 @@ func DeterministicTagListProofCreation(vBef, vAft libunlynx.CipherVector, K kybe
 	return listProofs
 }
 
-// DeterministicTagProofVerification verifies a deterministic tag proof for one ciphertext
-func DeterministicTagProofVerification(prf PublishedDDTCreationProof, K, SB kyber.Point) bool {
-	predicate := createPredicateDeterministicTag()
+// DeterministicTagCrProofVerification verifies a deterministic tag proof for one ciphertext
+func DeterministicTagCrProofVerification(prf PublishedDDTCreationProof, K, SB kyber.Point) bool {
+	predicate := createPredicateDeterministicTagCr()
 	B := libunlynx.SuiTe.Point().Base()
 	ci1 := prf.CTaft.K
 	ciminus11 := prf.CTbef.K
@@ -140,8 +131,8 @@ func DeterministicTagProofVerification(prf PublishedDDTCreationProof, K, SB kybe
 	return true
 }
 
-// DeterministicTagListProofVerification verifies a list of deterministic tag proofs, if one is wrong, returns false
-func DeterministicTagListProofVerification(pdclp PublishedDDTCreationListProof, percent float64) bool {
+// DeterministicTagCrListProofVerification verifies a list of deterministic tag proofs, if one is wrong, returns false
+func DeterministicTagCrListProofVerification(pdclp PublishedDDTCreationListProof, percent float64) bool {
 	nbrProofsToVerify := int(math.Ceil(percent * float64(len(pdclp.Dcp))))
 
 	wg := libunlynx.StartParallelize(nbrProofsToVerify)
@@ -149,7 +140,7 @@ func DeterministicTagListProofVerification(pdclp PublishedDDTCreationListProof, 
 	for i := 0; i < nbrProofsToVerify; i++ {
 		go func(i int, v PublishedDDTCreationProof) {
 			defer wg.Done()
-			results[i] = DeterministicTagProofVerification(v, pdclp.K, pdclp.SB)
+			results[i] = DeterministicTagCrProofVerification(v, pdclp.K, pdclp.SB)
 		}(i, pdclp.Dcp[i])
 
 	}
@@ -190,6 +181,30 @@ func DeterministicTagAdditionProofCreation(c1 kyber.Point, s kyber.Scalar, c2 ky
 	return PublishedDDTAdditionProof{Proof: Proof, C1: c1, C2: c2, R: r}
 }
 
+// DeterministicTagAdditionProofCreation creates proof for deterministic tagging addition on multiple kyber points
+func DeterministicTagAdditionListProofCreation(c1List []kyber.Point, sList []kyber.Scalar, c2List []kyber.Point, rList []kyber.Point) PublishedDDTAdditionListProof {
+	nbrProofsToCreate := len(c1List)
+
+	listProofs := PublishedDDTAdditionListProof{}
+	listProofs.Pdap = make([]PublishedDDTAdditionProof, nbrProofsToCreate)
+
+	var wg sync.WaitGroup
+
+	for i := 0; i < nbrProofsToCreate; i += libunlynx.VPARALLELIZE {
+		wg.Add(1)
+		go func(i int, c1 kyber.Point, s kyber.Scalar, c2 kyber.Point, r kyber.Point) {
+			for j := 0; j < libunlynx.VPARALLELIZE && (j+i < nbrProofsToCreate); j++ {
+				listProofs.Pdap[i+j] = DeterministicTagAdditionProofCreation(c1, s, c2, r)
+			}
+			defer wg.Done()
+		}(i, c1List[i], sList[i], c2List[i], rList[i])
+
+	}
+	wg.Wait()
+
+	return listProofs
+}
+
 // DeterministicTagAdditionProofVerification verifies a deterministic tag addition proof
 func DeterministicTagAdditionProofVerification(psap PublishedDDTAdditionProof) bool {
 	predicate := createPredicateDeterministicTagAddition()
@@ -206,4 +221,26 @@ func DeterministicTagAdditionProofVerification(psap PublishedDDTAdditionProof) b
 
 	cv := libunlynx.SuiTe.Point().Add(psap.C1, psap.C2)
 	return partProof && reflect.DeepEqual(cv, psap.R)
+}
+
+// DeterministicTagAdditionListProofVerification verifies multiple deterministic tag addition proofs
+func DeterministicTagAdditionListProofVerification(pdalp PublishedDDTAdditionListProof, percent float64) bool {
+	nbrProofsToVerify := int(math.Ceil(percent * float64(len(pdalp.Pdap))))
+
+	wg := libunlynx.StartParallelize(nbrProofsToVerify)
+	results := make([]bool, nbrProofsToVerify)
+	for i := 0; i < nbrProofsToVerify; i++ {
+		go func(i int, v PublishedDDTAdditionProof) {
+			defer wg.Done()
+			results[i] = DeterministicTagAdditionProofVerification(v)
+		}(i, pdalp.Pdap[i])
+
+	}
+	libunlynx.EndParallelize(wg)
+	finalResult := true
+	for _, v := range results {
+		finalResult = finalResult && v
+	}
+	return finalResult
+
 }

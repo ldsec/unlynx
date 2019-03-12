@@ -1,6 +1,9 @@
 package protocolsunlynxutils_test
 
 import (
+	"testing"
+	"time"
+
 	"github.com/dedis/kyber/util/random"
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/network"
@@ -9,8 +12,7 @@ import (
 	"github.com/lca1/unlynx/protocols"
 	"github.com/lca1/unlynx/protocols/utils"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
+	"go.dedis.ch/onet/log"
 )
 
 func TestLocalAggregation(t *testing.T) {
@@ -47,7 +49,11 @@ func TestLocalAggregation(t *testing.T) {
 	protocol.Proofs = true
 	feedback := protocol.FeedbackChannel
 
-	go protocol.Start()
+	go func() {
+		if err := protocol.Start(); err != nil {
+			log.Fatal("Error to Start <LocalAggregation> protocol")
+		}
+	}()
 
 	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*5*2) * time.Millisecond
 
