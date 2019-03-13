@@ -234,7 +234,6 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 	if p.IsRoot() {
 		p.FeedbackChannel <- TaggedData
 	} else {
-		// Forward switched message.
 		sendingDet(*p, deterministicTaggingTarget)
 	}
 
