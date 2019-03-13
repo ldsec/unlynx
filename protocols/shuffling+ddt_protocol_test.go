@@ -4,13 +4,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/util/random"
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/lib/shuffle"
 	"github.com/lca1/unlynx/protocols"
 	"github.com/stretchr/testify/assert"
 )
@@ -49,11 +47,7 @@ func TestShufflingPlusDDTProtocol(t *testing.T) {
 	}
 	protocol.TargetData = &testData
 
-	protocol.Proofs = false
-	protocol.ProofFunc = func(shuffleTarget, shuffledData []libunlynx.CipherVector, collectiveKey kyber.Point, beta [][]kyber.Scalar, pi []int) *libunlynxshuffle.PublishedShufflingProof {
-		proof := libunlynxshuffle.ShuffleProofCreation(shuffleTarget, shuffledData, libunlynx.SuiTe.Point().Base(), collectiveKey, beta, pi)
-		return &proof
-	}
+	protocol.Proofs = true
 
 	feedback := protocol.FeedbackChannel
 	go func() {
@@ -66,7 +60,6 @@ func TestShufflingPlusDDTProtocol(t *testing.T) {
 
 	select {
 	case result := <-feedback:
-		log.LLvl1(result)
 		for _, v := range result {
 			assert.True(t, result[0][0].Equal(&v[0]))
 		}
@@ -86,10 +79,7 @@ func NewShufflingPlusDDTTest(tni *onet.TreeNodeInstance) (onet.ProtocolInstance,
 	clientPrivate := libunlynx.SuiTe.Scalar().Pick(random.New())
 	protocol.SurveySecretKey = &clientPrivate
 
-	protocol.Proofs = false
-	protocol.ProofFunc = func(shuffleTarget, shuffledData []libunlynx.CipherVector, collectiveKey kyber.Point, beta [][]kyber.Scalar, pi []int) *libunlynxshuffle.PublishedShufflingProof {
-		proof := libunlynxshuffle.ShuffleProofCreation(shuffleTarget, shuffledData, libunlynx.SuiTe.Point().Base(), collectiveKey, beta, pi)
-		return &proof
-	}
+	protocol.Proofs = true
+
 	return protocol, err
 }

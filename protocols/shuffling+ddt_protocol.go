@@ -83,9 +83,7 @@ type ShufflingPlusDDTProtocol struct {
 	nextNodeInCircuit *onet.TreeNode
 
 	// Proofs
-	Proofs    bool
-	ProofFunc proofShuffleFunction             // proof function for when we want to do something different with the proofs (e.g. insert in the blockchain)
-	MapPIs    map[string]onet.ProtocolInstance // protocol instances to be able to call protocols inside protocols (e.g. proof_collection_protocol)
+	Proofs bool
 }
 
 // NewShufflingPlusDDTProtocol constructs neff shuffle + ddt protocol instance.
@@ -145,8 +143,6 @@ func (p *ShufflingPlusDDTProtocol) Dispatch() error {
 
 	shufflingPlusDDTBytesMessageLength := <-p.LengthNodeChannel
 
-	log.LLvl1(p.ServerIdentity().String())
-
 	tmp := <-p.PreviousNodeInPathChannel
 	sm := ShufflingPlusDDTMessage{}
 	sm.FromBytes(tmp.Data, tmp.ShuffKey, shufflingPlusDDTBytesMessageLength.CVLengths)
@@ -158,7 +154,7 @@ func (p *ShufflingPlusDDTProtocol) Dispatch() error {
 	shuffledData, pi, beta := libunlynxshuffle.ShuffleSequence(sm.Data, libunlynx.SuiTe.Point().Base(), sm.ShuffKey, p.Precomputed)
 
 	if p.Proofs {
-		p.ProofFunc(sm.Data, shuffledData, p.Roster().Aggregate, beta, pi)
+		libunlynxshuffle.ShuffleProofCreation(sm.Data, shuffledData, libunlynx.SuiTe.Point().Base(), sm.ShuffKey, beta, pi)
 	}
 
 	// STEP 2: Addition of secret (first round of DDT, add value derivated from ephemeral secret to message)
