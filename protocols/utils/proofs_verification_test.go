@@ -38,14 +38,14 @@ func TestProofsVerification(t *testing.T) {
 	cipherOne := *libunlynx.EncryptInt(pubKey, 10)
 	cipherVect := libunlynx.CipherVector{cipherOne, cipherOne}
 
-	// key switching ***********************************************************************************************
+	// key switching ***************************************************************************************************
 	origEphemKeys := []kyber.Point{cipherOne.K, cipherOne.K}
 
 	_, ks2s, rBNegs, vis := libunlynxkeyswitch.KeySwitchSequence(pubKeyNew, origEphemKeys, secKey)
 	pskp := libunlynxkeyswitch.KeySwitchListProofCreation(pubKey, pubKeyNew, secKey, ks2s, rBNegs, vis)
 	keySwitchingProofs := pskp
 
-	// deterministic tagging (creation) ***************************************************************************************
+	// deterministic tagging (creation) ********************************************************************************
 	cipherOne1 := *libunlynx.EncryptInt(pubKey, 10)
 	cipherVect1 := libunlynx.CipherVector{cipherOne1, cipherOne1}
 
@@ -54,7 +54,7 @@ func TestProofsVerification(t *testing.T) {
 	cps := libunlynxdetertag.DeterministicTagCrListProofCreation(cipherVect1, tagSwitchedVect, pubKey, secKey, secKeyNew)
 	deterministicTaggingCrProofs := cps
 
-	// deterministic tagging (addition) *************************************************************************************
+	// deterministic tagging (addition) ********************************************************************************
 
 	tab := []int64{int64(1), int64(1)}
 	cipherVect = *libunlynx.EncryptIntVector(pubKey, tab)
@@ -78,7 +78,7 @@ func TestProofsVerification(t *testing.T) {
 		}
 	}
 
-	// local aggregation *******************************************************************************************
+	// local aggregation ***********************************************************************************************
 	cipherOne2 := *libunlynx.EncryptInt(pubKey, 10)
 	cipherVect2 := libunlynx.CipherVector{cipherOne2, cipherOne2}
 
@@ -90,7 +90,7 @@ func TestProofsVerification(t *testing.T) {
 	aggregationProofs := libunlynxaggr.PublishedAggregationListProof{}
 	aggregationProofs.PapList = append(aggregationProofs.PapList, prfAggregation1, prfAggregation2)
 
-	// shuffling ***************************************************************************************************
+	// shuffling *******************************************************************************************************
 	cipherVectorToShuffle := make([]libunlynx.CipherVector, 3)
 	cipherVectorToShuffle[0] = append(append(cipherVect2, cipherVect2...), cipherVect2...)
 	cipherVectorToShuffle[1] = append(append(cipherVect1, cipherVect1...), cipherVect1...)
@@ -105,11 +105,17 @@ func TestProofsVerification(t *testing.T) {
 
 	// add data to protocol *******************************************************************************************
 
-	protocol.TargetOfVerification = protocolsunlynxutils.ProofsToVerify{KeySwitchingProofs: keySwitchingProofs, DetTagCreationProofs: deterministicTaggingCrProofs, DetTagAdditionProofs: deterministicTaggingAddProofs, AggregationProofs: aggregationProofs, ShufflingProofs: shufflingProofs}
+	protocol.TargetOfVerification = protocolsunlynxutils.ProofsToVerify{
+		KeySwitchingProofs:          keySwitchingProofs,
+		DetTagCreationProofs:        deterministicTaggingCrProofs,
+		DetTagAdditionProofs:        deterministicTaggingAddProofs,
+		AggregationProofs:           aggregationProofs,
+		ShufflingProofs:             shufflingProofs,
+		CollectiveAggregationProofs: aggregationProofs,
+	}
 	feedback := protocol.FeedbackChannel
 
-	// keySwitchingProofs -> 1, deterministicTaggingProofs -> 3,deterministicTaggingAddProofs -> 4, aggregationProofs -> 2, shufflingProofs -> 2, collectiveAggregationProofs -> 2
-	expRes := []bool{true, true, false, false, false}
+	expRes := []bool{true, true, false, false, false, false}
 	go func() {
 		if err := protocol.Start(); err != nil {
 			log.Fatal("Error to Start <ProofsVerification> protocol")

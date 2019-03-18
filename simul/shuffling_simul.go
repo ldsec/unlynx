@@ -51,10 +51,12 @@ func (sim *ShufflingSimulation) Setup(dir string, hosts []string) (*onet.Simulat
 
 // Node registers a ShufflingSimul (with access to the ShufflingSimulation object) for every node
 func (sim *ShufflingSimulation) Node(config *onet.SimulationConfig) error {
-	config.Server.ProtocolRegister("ShufflingSimul",
+	if pid, err := config.Server.ProtocolRegister("ShufflingSimul",
 		func(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 			return NewShufflingSimul(tni, sim)
-		})
+		}); err != nil {
+		log.Fatal("Error while registering <ShufflingSimul> with id:", pid)
+	}
 
 	return sim.SimulationBFTree.Node(config)
 }
@@ -74,8 +76,9 @@ func (sim *ShufflingSimulation) Run(config *onet.SimulationConfig) error {
 		//complete protocol time measurement
 		round := libunlynx.StartTimer("_Shuffling(SIMULATION)")
 
-		root.Start()
-
+		if err := root.Start(); err != nil {
+			log.Fatal("Error while starting <Shuffling> Protocol")
+		}
 		<-root.ProtocolInstance().(*protocolsunlynx.ShufflingProtocol).FeedbackChannel
 		libunlynx.EndTimer(round)
 	}

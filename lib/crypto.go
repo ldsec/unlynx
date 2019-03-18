@@ -423,6 +423,7 @@ func (cv *CipherVector) Equal(cv2 *CipherVector) bool {
 	return true
 }
 
+// Acum adds all elements in a ciphervector
 func (cv *CipherVector) Acum() CipherText {
 	acum := (*cv)[0]
 	for i := 1; i < len(*cv); i++ {

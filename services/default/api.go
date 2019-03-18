@@ -77,11 +77,6 @@ func (c *API) SendSurveyResponseQuery(surveyID SurveyID, clearClientResponses []
 	resp := ServiceState{}
 	err = c.SendProtobuf(c.entryPoint, s, &resp)
 
-	if err != nil {
-		log.Fatal("Error while sending data")
-
-	}
-
 	return err
 }
 
@@ -122,29 +117,24 @@ func EncryptDataToSurvey(name string, surveyID SurveyID, dpClearResponses []libu
 	round := libunlynx.StartTimer(name + "_ClientEncryption")
 
 	for i, v := range dpClearResponses {
-		if libunlynx.PARALLELIZE {
-			go func(i int, v libunlynx.DpClearResponse) {
-				// dataRepetitions is used to make the simulations faster by using the same response multiple times
-				// should be set to 1 if no repet
-				i = i * dataRepetitions
-				if i < len(dpResponses) {
-					dpResponses[i] = libunlynx.EncryptDpClearResponse(v, groupKey, count)
+		go func(i int, v libunlynx.DpClearResponse) {
+			// dataRepetitions is used to make the simulations faster by using the same response multiple times
+			// should be set to 1 if no repet
+			i = i * dataRepetitions
+			if i < len(dpResponses) {
+				dpResponses[i] = libunlynx.EncryptDpClearResponse(v, groupKey, count)
 
-					for j := 0; j < dataRepetitions && j+i < len(dpResponses); j++ {
-						dpResponses[i+j].GroupByClear = dpResponses[i].GroupByClear
-						dpResponses[i+j].GroupByEnc = dpResponses[i].GroupByEnc
-						dpResponses[i+j].WhereClear = dpResponses[i].WhereClear
-						dpResponses[i+j].WhereEnc = dpResponses[i].WhereEnc
-						dpResponses[i+j].AggregatingAttributesClear = dpResponses[i].AggregatingAttributesClear
-						dpResponses[i+j].AggregatingAttributesEnc = dpResponses[i].AggregatingAttributesEnc
-					}
+				for j := 0; j < dataRepetitions && j+i < len(dpResponses); j++ {
+					dpResponses[i+j].GroupByClear = dpResponses[i].GroupByClear
+					dpResponses[i+j].GroupByEnc = dpResponses[i].GroupByEnc
+					dpResponses[i+j].WhereClear = dpResponses[i].WhereClear
+					dpResponses[i+j].WhereEnc = dpResponses[i].WhereEnc
+					dpResponses[i+j].AggregatingAttributesClear = dpResponses[i].AggregatingAttributesClear
+					dpResponses[i+j].AggregatingAttributesEnc = dpResponses[i].AggregatingAttributesEnc
 				}
-				defer wg.Done()
-			}(i, v)
-		} else {
-			dpResponses[i] = libunlynx.EncryptDpClearResponse(v, groupKey, count)
-		}
-
+			}
+			defer wg.Done()
+		}(i, v)
 	}
 	libunlynx.EndParallelize(wg)
 	libunlynx.EndTimer(round)

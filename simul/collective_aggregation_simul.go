@@ -76,10 +76,12 @@ func (sim *CollectiveAggregationSimulation) Setup(dir string, hosts []string) (*
 
 // Node registers a CollectiveAggregationSimul (with access to the CollectiveAggregationSimulation object) for every node
 func (sim *CollectiveAggregationSimulation) Node(config *onet.SimulationConfig) error {
-	config.Server.ProtocolRegister("CollectiveAggregationSimul",
+	if pid, err := config.Server.ProtocolRegister("CollectiveAggregationSimul",
 		func(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 			return NewAggregationProtocolSimul(tni, sim)
-		})
+		}); err != nil {
+		log.Fatal("Error while registering <CollectiveAggregationSimul> with id:", pid)
+	}
 
 	return sim.SimulationBFTree.Node(config)
 }
@@ -100,7 +102,9 @@ func (sim *CollectiveAggregationSimulation) Run(config *onet.SimulationConfig) e
 		round := libunlynx.StartTimer("CollectiveAggregation(SIMULATION)")
 
 		log.Lvl1("Start protocol")
-		root.Start()
+		if err := root.Start(); err != nil {
+			log.Fatal("Error while starting <CollectiveAggregation> Protocol")
+		}
 		<-root.ProtocolInstance().(*protocolsunlynx.CollectiveAggregationProtocol).FeedbackChannel
 
 		libunlynx.EndTimer(round)

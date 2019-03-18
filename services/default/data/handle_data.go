@@ -160,15 +160,22 @@ func GenerateData(numDPs, numEntries, numEntriesFiltered, numGroupsClear, numGro
 // flushInt64Data writes a slice of int64 data to file (writer is the file handler)
 func flushInt64Data(writer *bufio.Writer, slice []int64) {
 	for _, g := range slice {
-		fmt.Fprint(writer, fmt.Sprintf("%v ", g))
-		writer.Flush()
+		if _, err := fmt.Fprint(writer, fmt.Sprintf("%v ", g)); err != nil {
+			log.Fatal(err)
+		}
+		if err := writer.Flush(); err != nil {
+			log.Fatal(err)
+		}
 	}
-
-	fmt.Fprint(writer, "\n")
-	writer.Flush()
+	if _, err := fmt.Fprint(writer, "\n"); err != nil {
+		log.Fatal(err)
+	}
+	if err := writer.Flush(); err != nil {
+		log.Fatal(err)
+	}
 }
 
-// WriteDataToFile writes the test_data to 'filename'.txt
+// WriteDataToFile writes the testData to 'filename'.txt
 func WriteDataToFile(filename string, testData map[string][]libunlynx.DpClearResponse) {
 	fileHandle, err := os.Create(filename)
 
@@ -177,11 +184,18 @@ func WriteDataToFile(filename string, testData map[string][]libunlynx.DpClearRes
 	}
 
 	writer := bufio.NewWriter(fileHandle)
+	if err := writer.Flush(); err != nil {
+		log.Fatal(err)
+	}
 	defer fileHandle.Close()
 
 	for k, v := range testData {
-		fmt.Fprintln(writer, "#"+k)
-		writer.Flush()
+		if _, err := fmt.Fprintln(writer, "#"+k); err != nil {
+			log.Fatal(err)
+		}
+		if err := writer.Flush(); err != nil {
+			log.Fatal(err)
+		}
 
 		for _, entry := range v {
 			flushInt64Data(writer, libunlynxtools.ConvertMapToData(entry.GroupByClear, "g", 0))
@@ -194,7 +208,7 @@ func WriteDataToFile(filename string, testData map[string][]libunlynx.DpClearRes
 	}
 }
 
-// ReadDataFromFile reads the test_data from 'filename'.txt
+// ReadDataFromFile reads the testData from 'filename'.txt
 func ReadDataFromFile(filename string) map[string][]libunlynx.DpClearResponse {
 	testData := make(map[string][]libunlynx.DpClearResponse)
 
@@ -297,7 +311,7 @@ func ClearExpectedResult(expectedResult []libunlynx.DpClearResponse) []libunlynx
 	return clearExpectedResult
 }
 
-// ComputeExpectedResult computes the expected results from the test_data (we can then compare with the result obtained by service UnLynx)
+// ComputeExpectedResult computes the expected results from the testData (we can then compare with the result obtained by service UnLynx)
 func ComputeExpectedResult(testData map[string][]libunlynx.DpClearResponse, dataRepetitions int, clear bool) []libunlynx.DpClearResponse {
 	allData := make([]libunlynx.DpClearResponse, 0)
 

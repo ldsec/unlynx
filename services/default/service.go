@@ -411,7 +411,7 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 
 		if tn.IsRoot() {
 			clientResponses := make([]libunlynx.ProcessResponse, 0)
-			noiseArray := libunlynxdiffprivacy.GenerateNoiseValues(1000, 0, 1, 0.1)
+			noiseArray := libunlynxdiffprivacy.GenerateNoiseValues(1000, 0, 1, 0.1, 0)
 			for _, v := range noiseArray {
 				clientResponses = append(clientResponses, libunlynx.ProcessResponse{GroupByEnc: nil, AggregatingAttributes: libunlynx.IntArrayToCipherVector([]int64{int64(v)})})
 			}

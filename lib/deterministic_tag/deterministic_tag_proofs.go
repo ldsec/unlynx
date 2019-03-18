@@ -181,7 +181,7 @@ func DeterministicTagAdditionProofCreation(c1 kyber.Point, s kyber.Scalar, c2 ky
 	return PublishedDDTAdditionProof{Proof: Proof, C1: c1, C2: c2, R: r}
 }
 
-// DeterministicTagAdditionProofCreation creates proof for deterministic tagging addition on multiple kyber points
+// DeterministicTagAdditionListProofCreation creates proof for deterministic tagging addition on multiple kyber points
 func DeterministicTagAdditionListProofCreation(c1List []kyber.Point, sList []kyber.Scalar, c2List []kyber.Point, rList []kyber.Point) PublishedDDTAdditionListProof {
 	nbrProofsToCreate := len(c1List)
 

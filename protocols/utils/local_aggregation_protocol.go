@@ -70,11 +70,7 @@ func (p *LocalAggregationProtocol) Start() error {
 
 	if p.Proofs {
 		for k, v := range cvMap {
-			palp := libunlynxaggr.AggregationListProofCreation(v, resultingMap[k].AggregatingAttributes)
-			/* TODO: delete this*/
-			if libunlynxaggr.AggregationListProofVerification(palp, 1.0) == false {
-				log.Fatal("nooo")
-			}
+			libunlynxaggr.AggregationListProofCreation(v, resultingMap[k].AggregatingAttributes)
 		}
 	}
 

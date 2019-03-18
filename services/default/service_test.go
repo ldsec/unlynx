@@ -7,10 +7,11 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/lca1/unlynx/services/default"
+
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/services/default"
 	"github.com/stretchr/testify/assert"
 )
 

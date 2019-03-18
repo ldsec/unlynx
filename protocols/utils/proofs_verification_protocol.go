@@ -63,35 +63,41 @@ var finalResult = make(chan []bool)
 func (p *ProofsVerificationProtocol) Start() error {
 
 	// we have 6 different types of proofs (check ProofsToVerify struct)
-	result := make([]bool, 5)
+	result := make([]bool, 6)
 
-	// key switching ***********************************************************************************
+	// key switching ***************************************************************************************************
 	keySwitchTime := libunlynx.StartTimer(p.Name() + "_KeySwitchingVerif")
 	result[0] = libunlynxkeyswitch.KeySwitchListProofVerification(p.TargetOfVerification.KeySwitchingProofs, 1.0)
 	libunlynx.EndTimer(keySwitchTime)
 
-	// deterministic tagging (creation) ***********************************************************************************
+	// deterministic tagging (creation) ********************************************************************************
 	detTagTime := libunlynx.StartTimer(p.Name() + "_DetTagVerif")
 	result[1] = libunlynxdetertag.DeterministicTagCrListProofVerification(p.TargetOfVerification.DetTagCreationProofs, 1.0)
 	libunlynx.EndTimer(detTagTime)
 
-	// deterministic tagging (addition) ***********************************************************************************
+	// deterministic tagging (addition) ********************************************************************************
 
 	detTagAddTime := libunlynx.StartTimer(p.Name() + "_DetTagAddVerif")
 	result[2] = libunlynxdetertag.DeterministicTagAdditionListProofVerification(p.TargetOfVerification.DetTagAdditionProofs, 1.0)
 	libunlynx.EndTimer(detTagAddTime)
 
-	// local aggregation ***********************************************************************************
+	// local aggregation ***********************************************************************************************
 
 	localAggrTime := libunlynx.StartTimer(p.Name() + "_LocalAggrVerif")
 	result[3] = libunlynxaggr.AggregationListProofVerification(p.TargetOfVerification.AggregationProofs, 1.0)
 	libunlynx.EndTimer(localAggrTime)
 
-	// shuffling ***********************************************************************************
+	// shuffling *******************************************************************************************************
 
 	shufflingTime := libunlynx.StartTimer(p.Name() + "_ShufflingVerif")
 	result[4] = libunlynxshuffle.ShuffleListProofVerification(p.TargetOfVerification.ShufflingProofs, p.Roster().Aggregate, 1.0)
 	libunlynx.EndTimer(shufflingTime)
+
+	// collective aggregation ******************************************************************************************
+
+	collectiveAggrTime := libunlynx.StartTimer(p.Name() + "_CollectiveAggrVerif")
+	result[5] = libunlynxaggr.AggregationListProofVerification(p.TargetOfVerification.CollectiveAggregationProofs, 1.0)
+	libunlynx.EndTimer(collectiveAggrTime)
 
 	finalResult <- result
 	return nil

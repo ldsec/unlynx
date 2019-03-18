@@ -149,40 +149,36 @@ func (s *Store) PushDeterministicFilteredResponses(detFilteredResponses []libunl
 	}
 	if proofsB {
 		for k, v := range cvMap {
-			palp := libunlynxaggr.AggregationListProofCreation(v, s.LocAggregatedProcessResponse[k].AggregatingAttributes)
-			/* TODO: delete this*/
-			if libunlynxaggr.AggregationListProofVerification(palp, 1.0) == false {
-				log.Fatal("nooo")
-			}
+			libunlynxaggr.AggregationListProofCreation(v, s.LocAggregatedProcessResponse[k].AggregatingAttributes)
 		}
 	}
 
 	libunlynx.EndTimer(round)
 }
 
-/* FormatAggregationProofs is used to format the data in a way that can be used to create aggregation proofs.
-Example:
-	[
-	GroupingKey = "a"
-	Aggregating Attributes = [2, 3]
-
-	GroupingKey = "b"
-	Aggregating Attributes = [4, 7]
-
-	GroupingKey = "a"
-	Aggregating Attributes = [5, 1]
-	]
-
-	----> return value
-	[
-	GroupingKey = "a"
-	Data = [[2, 5], [3, 1]]
-
-	GroupingKey = "b"
-	Data = [[4], [7]]
-	]
-*/
+// FormatAggregationProofs is used to format the data in a way that can be used to create aggregation proofs.
+//		Example:
+//			[
+//			GroupingKey = "a"
+//			Aggregating Attributes = [2, 3]
+//
+//			GroupingKey = "b"
+//			Aggregating Attributes = [4, 7]
+//
+//			GroupingKey = "a"
+//			Aggregating Attributes = [5, 1]
+//			]
+//
+//		----> return value
+//			[
+//			GroupingKey = "a"
+//			Data = [[2, 5], [3, 1]]
+//
+//			GroupingKey = "b"
+//			Data = [[4], [7]]
+//			]
 func FormatAggregationProofs(originalData libunlynx.FilteredResponseDet, res map[libunlynx.GroupingKey][]libunlynx.CipherVector) {
+
 	if _, ok := res[originalData.DetTagGroupBy]; ok {
 		for i, ct := range originalData.Fr.AggregatingAttributes {
 			container := res[originalData.DetTagGroupBy]

@@ -1,15 +1,17 @@
 package main
 
 import (
+	"strconv"
+
+	"github.com/lca1/unlynx/services/default"
+
 	"github.com/BurntSushi/toml"
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/simul/monitor"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/tools"
-	"github.com/lca1/unlynx/services/default"
 	"github.com/lca1/unlynx/services/default/data"
-	"strconv"
 )
 
 //Defines the simulation for the default service to be run with cothority/simul.
@@ -143,30 +145,19 @@ func (sim *SimulationUnLynx) Run(config *onet.SimulationConfig) error {
 		wg := libunlynx.StartParallelize(len(dataHolder))
 
 		for i, client := range dataHolder {
-			start1 := libunlynx.StartTimer(strconv.Itoa(i) + "_IndividualSendingData")
-			if libunlynx.PARALLELIZE {
-				go func(i int, client *servicesunlynxdefault.API) {
-					dataCollection := testData[strconv.Itoa(i)]
-					server := el.List[i%nbrHosts]
+			start := libunlynx.StartTimer(strconv.Itoa(i) + "_IndividualSendingData")
+			go func(i int, client *servicesunlynxdefault.API) {
+				defer wg.Done()
 
-					client = servicesunlynxdefault.NewUnLynxClient(server, strconv.Itoa(i+1))
-					client.SendSurveyResponseQuery(*surveyID, dataCollection, el.Aggregate, sim.DataRepetitions, count)
-					defer wg.Done()
-				}(i, client)
-			} else {
-				start2 := libunlynx.StartTimer(strconv.Itoa(i) + "_IndividualNewUnLynxClient")
+				dataCollection := testData[strconv.Itoa(i)]
+				server := el.List[i%nbrHosts]
 
-				client = servicesunlynxdefault.NewUnLynxClient(el.List[i%nbrHosts], strconv.Itoa(i+1))
-
-				libunlynx.EndTimer(start2)
-				start3 := libunlynx.StartTimer(strconv.Itoa(i) + "_IndividualSendSurveyResults")
-
-				client.SendSurveyResponseQuery(*surveyID, testData[strconv.Itoa(i)], el.Aggregate, sim.DataRepetitions, count)
-
-				libunlynx.EndTimer(start3)
-
-			}
-			libunlynx.EndTimer(start1)
+				client = servicesunlynxdefault.NewUnLynxClient(server, strconv.Itoa(i+1))
+				if err := client.SendSurveyResponseQuery(*surveyID, dataCollection, el.Aggregate, sim.DataRepetitions, count); err != nil {
+					log.Fatal("Error while sending DP (" + client.String() + ") responses")
+				}
+			}(i, client)
+			libunlynx.EndTimer(start)
 
 		}
 		libunlynx.EndParallelize(wg)

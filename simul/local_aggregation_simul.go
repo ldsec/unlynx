@@ -108,7 +108,9 @@ func (sim *LocalAggregationSimulation) Run(config *onet.SimulationConfig) error 
 
 		round := libunlynx.StartTimer("_LocalAggregation(Simulation")
 
-		root.Start()
+		if err := root.Start(); err != nil {
+			log.Fatal("Error while starting <LocalAggregation> Protocol")
+		}
 		results := <-root.ProtocolInstance().(*protocolsunlynxutils.LocalAggregationProtocol).FeedbackChannel
 		log.Lvl1("Number of aggregated lines: ", len(results))
 

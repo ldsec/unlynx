@@ -52,10 +52,12 @@ func (sim *DeterministicTaggingSimulation) Setup(dir string, hosts []string) (*o
 
 // Node registers a DeterministicTaggingSimul (with access to the DeterministicTaggingSimulation object) for every node
 func (sim *DeterministicTaggingSimulation) Node(config *onet.SimulationConfig) error {
-	config.Server.ProtocolRegister("DeterministicTaggingSimul",
+	if pid, err := config.Server.ProtocolRegister("DeterministicTaggingSimul",
 		func(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 			return NewDeterministicTaggingSimul(tni, sim)
-		})
+		}); err != nil {
+		log.Fatal("Error while registering <DeterministicTaggingSimul> with id:", pid)
+	}
 
 	return sim.SimulationBFTree.Node(config)
 }
@@ -74,7 +76,9 @@ func (sim *DeterministicTaggingSimulation) Run(config *onet.SimulationConfig) er
 
 		//complete protocol time measurement
 		round := monitor.NewTimeMeasure("DetTagging(SIMULATION)")
-		root.Start()
+		if err := root.Start(); err != nil {
+			log.Fatal("Error while starting <DeterministicTagging> Protocol")
+		}
 
 		<-root.ProtocolInstance().(*protocolsunlynx.DeterministicTaggingProtocol).FeedbackChannel
 

@@ -78,7 +78,9 @@ func (sim *LocalClearAggregationSimulation) Run(config *onet.SimulationConfig) e
 		root.ProtocolInstance().(*protocolsunlynxutils.LocalClearAggregationProtocol).TargetOfAggregation = testData["0"]
 
 		round := monitor.NewTimeMeasure("LocalClearAggregation(SIMULATION)")
-		root.Start()
+		if err := root.Start(); err != nil {
+			log.Fatal("Error while starting <LocalClearAggregation> Protocol")
+		}
 		results := <-root.ProtocolInstance().(*protocolsunlynxutils.LocalClearAggregationProtocol).FeedbackChannel
 		log.Lvl1("Number of aggregated lines (groups): ", len(results))
 

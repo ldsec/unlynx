@@ -142,24 +142,28 @@ func (p *ShufflingPlusDDTProtocol) Dispatch() error {
 	defer p.Done()
 
 	shufflingPlusDDTBytesMessageLength := <-p.LengthNodeChannel
-
 	tmp := <-p.PreviousNodeInPathChannel
+
+	readData := libunlynx.StartTimer(p.Name() + "_ShufflingPlusDDT(ReadData)")
 	sm := ShufflingPlusDDTMessage{}
 	sm.FromBytes(tmp.Data, tmp.ShuffKey, shufflingPlusDDTBytesMessageLength.CVLengths)
+	libunlynx.EndTimer(readData)
 
 	// STEP 1: Shuffling of the data
+	step1 := libunlynx.StartTimer(p.Name() + "_ShufflingPlusDDT(Step1-Shuffling)")
 	if p.Precomputed != nil {
 		log.Lvl1(p.Name(), " uses pre-computation in shuffling")
 	}
 	shuffledData, pi, beta := libunlynxshuffle.ShuffleSequence(sm.Data, libunlynx.SuiTe.Point().Base(), sm.ShuffKey, p.Precomputed)
+	libunlynx.EndTimer(step1)
 
 	if p.Proofs {
 		libunlynxshuffle.ShuffleProofCreation(sm.Data, shuffledData, libunlynx.SuiTe.Point().Base(), sm.ShuffKey, beta, pi)
 	}
 
 	// STEP 2: Addition of secret (first round of DDT, add value derivated from ephemeral secret to message)
+	step2 := libunlynx.StartTimer(p.Name() + "_ShufflingPlusDDT(Step2-DDTAddition)")
 	toAdd := libunlynx.SuiTe.Point().Mul(*p.SurveySecretKey, libunlynx.SuiTe.Point().Base()) //siB (basically)
-
 	wg := sync.WaitGroup{}
 	for i := 0; i < len(shuffledData); i += libunlynx.VPARALLELIZE {
 		wg.Add(1)
@@ -177,10 +181,12 @@ func (p *ShufflingPlusDDTProtocol) Dispatch() error {
 		}(i)
 	}
 	wg.Wait()
+	libunlynx.EndTimer(step2)
 
 	log.Lvl1(p.ServerIdentity(), " preparation round for deterministic tagging")
 
 	// STEP 3: Partial Decryption (second round of DDT, deterministic tag creation)
+	step3 := libunlynx.StartTimer(p.Name() + "_ShufflingPlusDDT(Step3-DDT)")
 	wg = sync.WaitGroup{}
 	for i := 0; i < len(shuffledData); i += libunlynx.VPARALLELIZE {
 		wg.Add(1)
@@ -197,12 +203,13 @@ func (p *ShufflingPlusDDTProtocol) Dispatch() error {
 		}(i)
 	}
 	wg.Wait()
+	libunlynx.EndTimer(step3)
 
 	var taggedData []libunlynx.DeterministCipherVector
 
 	if p.IsRoot() {
+		prepareResult := libunlynx.StartTimer(p.Name() + "_ShufflingPlusDDT(PrepareResult)")
 		taggedData = make([]libunlynx.DeterministCipherVector, len(*p.TargetData))
-
 		size := 0
 		for i, v := range shuffledData {
 			taggedData[i] = make(libunlynx.DeterministCipherVector, len(v))
@@ -211,7 +218,7 @@ func (p *ShufflingPlusDDTProtocol) Dispatch() error {
 				size++
 			}
 		}
-
+		libunlynx.EndTimer(prepareResult)
 		log.Lvl1(p.ServerIdentity(), " completed shuffling+DDT protocol (", size, "responses )")
 	} else {
 		log.Lvl1(p.ServerIdentity(), " carried on shuffling+DDT protocol")
@@ -223,11 +230,14 @@ func (p *ShufflingPlusDDTProtocol) Dispatch() error {
 	if p.IsRoot() {
 		p.FeedbackChannel <- taggedData
 	} else {
+		sendData := libunlynx.StartTimer(p.Name() + "_ShufflingPlusDDT(SendData)")
 		message := ShufflingPlusDDTBytesMessage{}
 		var cvBytesLengths []byte
 		message.Data, cvBytesLengths = (&ShufflingPlusDDTMessage{Data: shuffledData}).ToBytes()
 		// we have to subtract the key p.Public to the shuffling key (we partially decrypt during tagging)
 		message.ShuffKey = libunlynx.AbstractPointsToBytes([]kyber.Point{sm.ShuffKey.Sub(sm.ShuffKey, p.Public())})
+		libunlynx.EndTimer(sendData)
+
 		p.sendToNext(&ShufflingPlusDDTBytesLength{cvBytesLengths})
 		p.sendToNext(&message)
 	}

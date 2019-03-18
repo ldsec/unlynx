@@ -10,10 +10,11 @@ package protocolsunlynx
 import (
 	"errors"
 
-	"github.com/lca1/unlynx/lib/aggregation"
 	"github.com/lca1/unlynx/lib/store"
 
 	"sync"
+
+	"github.com/lca1/unlynx/lib/aggregation"
 
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
@@ -174,7 +175,6 @@ func (p *CollectiveAggregationProtocol) ascendingAggregationPhase() *map[libunly
 	roundTotComput := libunlynx.StartTimer(p.Name() + "_CollectiveAggregation(ascendingAggregation)")
 
 	if !p.IsLeaf() {
-
 		length := make([]cadmbLengthStruct, 0)
 		for _, v := range <-p.LengthNodeChannel {
 			length = append(length, v)
@@ -183,26 +183,27 @@ func (p *CollectiveAggregationProtocol) ascendingAggregationPhase() *map[libunly
 		for _, v := range <-p.ChildDataChannel {
 			datas = append(datas, v)
 		}
+
+		cvMap := make(map[libunlynx.GroupingKey][]libunlynx.CipherVector)
+
+		if p.Proofs {
+			for k, v := range *p.GroupedData {
+				libunlynxstore.FormatAggregationProofs(libunlynx.FilteredResponseDet{DetTagGroupBy: k, Fr: v}, cvMap)
+			}
+		}
 		for i, v := range length {
 			childrenContribution := ChildAggregatedDataMessage{}
 			childrenContribution.FromBytes(datas[i].Data, v.GacbLength, v.AabLength, v.DtbLength)
-			c1 := make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse)
 
-			if p.Proofs {
-				//need to save previous state
-				for i, v := range *p.GroupedData {
-					c1[i] = v
-				}
-			}
 			roundComput := libunlynx.StartTimer(p.Name() + "_CollectiveAggregation(Aggregation)")
 
-			cvMap := make(map[libunlynx.GroupingKey][]libunlynx.CipherVector)
 			for _, aggr := range childrenContribution.ChildData {
+				localAggr, ok := (*p.GroupedData)[aggr.DetTagGroupBy]
+
 				if p.Proofs {
 					libunlynxstore.FormatAggregationProofs(aggr, cvMap)
 				}
 
-				localAggr, ok := (*p.GroupedData)[aggr.DetTagGroupBy]
 				if ok {
 					tmp := libunlynx.NewCipherVector(len(localAggr.AggregatingAttributes))
 					tmp.Add(localAggr.AggregatingAttributes, aggr.Fr.AggregatingAttributes)
@@ -213,16 +214,13 @@ func (p *CollectiveAggregationProtocol) ascendingAggregationPhase() *map[libunly
 				}
 				(*p.GroupedData)[aggr.DetTagGroupBy] = localAggr
 			}
-
 			libunlynx.EndTimer(roundComput)
+
 			roundProofs := libunlynx.StartTimer(p.Name() + "_CollectiveAggregation(Proof-2ndPart)")
+
 			if p.Proofs {
 				for k, v := range cvMap {
-					palp := libunlynxaggr.AggregationListProofCreation(v, (*p.GroupedData)[k].AggregatingAttributes)
-					/* TODO: delete this*/
-					if libunlynxaggr.AggregationListProofVerification(palp, 1.0) == false {
-						log.Fatal("nooo")
-					}
+					libunlynxaggr.AggregationListProofCreation(v, (*p.GroupedData)[k].AggregatingAttributes)
 				}
 			}
 			libunlynx.EndTimer(roundProofs)
