@@ -10,8 +10,6 @@ package protocolsunlynx
 import (
 	"errors"
 
-	"github.com/lca1/unlynx/lib/store"
-
 	"sync"
 
 	"github.com/lca1/unlynx/lib/aggregation"
@@ -85,6 +83,9 @@ type cadmbLengthStruct struct {
 	CADBLengthMessage
 }
 
+// proofCollectiveAggregationFunction defines a function that does 'stuff' with the collective aggregation proofs
+type proofCollectiveAggregationFunction func([]libunlynx.CipherVector, libunlynx.CipherVector) *libunlynxaggr.PublishedAggregationListProof
+
 // Protocol
 //______________________________________________________________________________________________________________________
 
@@ -103,7 +104,11 @@ type CollectiveAggregationProtocol struct {
 	// Protocol state data
 	GroupedData *map[libunlynx.GroupingKey]libunlynx.FilteredResponse
 	SimpleData  *[]libunlynx.CipherText
-	Proofs      bool
+
+	// Proofs
+	Proofs    bool
+	ProofFunc proofCollectiveAggregationFunction // proof function for when we want to do something different with the proofs (e.g. insert in the blockchain)
+	MapPIs    map[string]onet.ProtocolInstance   // protocol instances to be able to call protocols inside protocols (e.g. proof_collection_protocol)
 }
 
 // NewCollectiveAggregationProtocol initializes the protocol instance.
@@ -149,9 +154,31 @@ func (p *CollectiveAggregationProtocol) Dispatch() error {
 		p.aggregationAnnouncementPhase()
 	}
 
+	// 3. Proof generation (a) - before local aggregation
+	cvMap := make(map[libunlynx.GroupingKey][]libunlynx.CipherVector)
+	if p.Proofs {
+		if p.Proofs {
+			for k, v := range *p.GroupedData {
+				frd := libunlynx.FilteredResponseDet{DetTagGroupBy: k, Fr: v}
+				frd.FormatAggregationProofs(cvMap)
+			}
+		}
+	}
+
 	// 2. Ascending aggregation phase
-	aggregatedData := p.ascendingAggregationPhase()
+	aggregatedData := p.ascendingAggregationPhase(cvMap)
 	log.Lvl1(p.ServerIdentity(), " completed aggregation phase (", len(*aggregatedData), "group(s) )")
+
+	// 3. Proof generation (b) - after local aggregation
+	if p.Proofs {
+		data := make([]libunlynx.CipherVector, 0)
+		dataRes := make(libunlynx.CipherVector, 0)
+		for k, v := range cvMap {
+			data = append(data, v...)
+			dataRes = append(dataRes, (*aggregatedData)[k].AggregatingAttributes...)
+		}
+		p.ProofFunc(data, dataRes)
+	}
 
 	// 3. Result reporting
 	if p.IsRoot() {
@@ -171,7 +198,7 @@ func (p *CollectiveAggregationProtocol) aggregationAnnouncementPhase() {
 }
 
 // Results pushing up the tree containing aggregation results.
-func (p *CollectiveAggregationProtocol) ascendingAggregationPhase() *map[libunlynx.GroupingKey]libunlynx.FilteredResponse {
+func (p *CollectiveAggregationProtocol) ascendingAggregationPhase(cvMap map[libunlynx.GroupingKey][]libunlynx.CipherVector) *map[libunlynx.GroupingKey]libunlynx.FilteredResponse {
 	roundTotComput := libunlynx.StartTimer(p.Name() + "_CollectiveAggregation(ascendingAggregation)")
 
 	if !p.IsLeaf() {
@@ -184,13 +211,6 @@ func (p *CollectiveAggregationProtocol) ascendingAggregationPhase() *map[libunly
 			datas = append(datas, v)
 		}
 
-		cvMap := make(map[libunlynx.GroupingKey][]libunlynx.CipherVector)
-
-		if p.Proofs {
-			for k, v := range *p.GroupedData {
-				libunlynxstore.FormatAggregationProofs(libunlynx.FilteredResponseDet{DetTagGroupBy: k, Fr: v}, cvMap)
-			}
-		}
 		for i, v := range length {
 			childrenContribution := ChildAggregatedDataMessage{}
 			childrenContribution.FromBytes(datas[i].Data, v.GacbLength, v.AabLength, v.DtbLength)
@@ -201,7 +221,7 @@ func (p *CollectiveAggregationProtocol) ascendingAggregationPhase() *map[libunly
 				localAggr, ok := (*p.GroupedData)[aggr.DetTagGroupBy]
 
 				if p.Proofs {
-					libunlynxstore.FormatAggregationProofs(aggr, cvMap)
+					aggr.FormatAggregationProofs(cvMap)
 				}
 
 				if ok {
@@ -218,11 +238,6 @@ func (p *CollectiveAggregationProtocol) ascendingAggregationPhase() *map[libunly
 
 			roundProofs := libunlynx.StartTimer(p.Name() + "_CollectiveAggregation(Proof-2ndPart)")
 
-			if p.Proofs {
-				for k, v := range cvMap {
-					libunlynxaggr.AggregationListProofCreation(v, (*p.GroupedData)[k].AggregatingAttributes)
-				}
-			}
 			libunlynx.EndTimer(roundProofs)
 		}
 	}

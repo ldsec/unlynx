@@ -7,7 +7,6 @@ import (
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/aggregation"
-	"github.com/lca1/unlynx/lib/store"
 	"github.com/lca1/unlynx/lib/tools"
 )
 
@@ -60,7 +59,7 @@ func (p *LocalAggregationProtocol) Start() error {
 		libunlynxtools.AddInMap(resultingMap, v.DetTagGroupBy, v.Fr)
 
 		if p.Proofs {
-			libunlynxstore.FormatAggregationProofs(v, cvMap)
+			v.FormatAggregationProofs(cvMap)
 		}
 
 	}

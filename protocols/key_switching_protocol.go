@@ -243,6 +243,8 @@ func (p *KeySwitchingProtocol) ascendingKSPhase() *libunlynx.CipherVector {
 		}
 		for i := range length { // len of length is number of children
 			cv := libunlynx.CipherVector{}
+			log.LLvl1(datas[i].Data)
+			log.LLvl1(libunlynx.UnsafeCastBytesToInts(length[i].Length)[0])
 			cv.FromBytes(datas[i].Data, libunlynx.UnsafeCastBytesToInts(length[i].Length)[0])
 			sumCv := libunlynx.NewCipherVector(len(cv))
 			sumCv.Add(*p.NodeContribution, cv)

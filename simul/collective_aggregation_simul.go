@@ -5,6 +5,7 @@ import (
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/aggregation"
 	"github.com/lca1/unlynx/protocols"
 )
 
@@ -116,10 +117,15 @@ func (sim *CollectiveAggregationSimulation) Run(config *onet.SimulationConfig) e
 // NewAggregationProtocolSimul is a simulation specific protocol instance constructor that injects test data.
 func NewAggregationProtocolSimul(tni *onet.TreeNodeInstance, sim *CollectiveAggregationSimulation) (onet.ProtocolInstance, error) {
 	protocol, err := protocolsunlynx.NewCollectiveAggregationProtocol(tni)
-	pap := protocol.(*protocolsunlynx.CollectiveAggregationProtocol)
+	collectiveAggr := protocol.(*protocolsunlynx.CollectiveAggregationProtocol)
 
 	data := createDataSet(sim.NbrGroups, sim.NbrAggrAttributes, sim.NbrGroupAttributes)
-	pap.GroupedData = &data
-	pap.Proofs = sim.Proofs
-	return pap, err
+	collectiveAggr.GroupedData = &data
+	collectiveAggr.Proofs = sim.Proofs
+	collectiveAggr.ProofFunc = func(data []libunlynx.CipherVector, res libunlynx.CipherVector) *libunlynxaggr.PublishedAggregationListProof {
+		proof := libunlynxaggr.AggregationListProofCreation(data, res)
+		return &proof
+	}
+
+	return collectiveAggr, err
 }

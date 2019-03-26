@@ -4,6 +4,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/lca1/unlynx/lib/aggregation"
+
 	"github.com/lca1/unlynx/lib/key_switch"
 
 	"github.com/Knetic/govaluate"
@@ -387,8 +389,13 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 		groupedData := survey.PullLocallyAggregatedResponses()
 		s.Survey.Put(string(target), survey)
 
-		pi.(*protocolsunlynx.CollectiveAggregationProtocol).GroupedData = &groupedData
-		pi.(*protocolsunlynx.CollectiveAggregationProtocol).Proofs = survey.Query.Proofs
+		collectiveAggr := pi.(*protocolsunlynx.CollectiveAggregationProtocol)
+		collectiveAggr.GroupedData = &groupedData
+		collectiveAggr.Proofs = survey.Query.Proofs
+		collectiveAggr.ProofFunc = func(data []libunlynx.CipherVector, res libunlynx.CipherVector) *libunlynxaggr.PublishedAggregationListProof {
+			proof := libunlynxaggr.AggregationListProofCreation(data, res)
+			return &proof
+		}
 
 		counter := len(tn.Roster().List) - 1
 		for counter > 0 {

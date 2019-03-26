@@ -1,17 +1,15 @@
 package main
 
 import (
-	"github.com/lca1/unlynx/lib/aggregation"
-	"github.com/lca1/unlynx/lib/deterministic_tag"
-	"github.com/lca1/unlynx/lib/key_switch"
-	"github.com/lca1/unlynx/lib/store"
-
 	"github.com/BurntSushi/toml"
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/util/random"
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/aggregation"
+	"github.com/lca1/unlynx/lib/deterministic_tag"
+	"github.com/lca1/unlynx/lib/key_switch"
 	"github.com/lca1/unlynx/lib/shuffle"
 	"github.com/lca1/unlynx/lib/tools"
 	"github.com/lca1/unlynx/protocols"
@@ -160,7 +158,7 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 		cvMap := make(map[libunlynx.GroupingKey][]libunlynx.CipherVector)
 		for _, v := range detResponses {
 			libunlynxtools.AddInMap(comparisonMap, v.DetTagGroupBy, v.Fr)
-			libunlynxstore.FormatAggregationProofs(v, cvMap)
+			v.FormatAggregationProofs(cvMap)
 		}
 
 		aggregationProofs := libunlynxaggr.PublishedAggregationListProof{}
@@ -202,8 +200,9 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 		for i, v := range c1 {
 			libunlynxtools.AddInMap(c3, i, v)
 			libunlynxtools.AddInMap(c3, i, v)
-			libunlynxstore.FormatAggregationProofs(libunlynx.FilteredResponseDet{DetTagGroupBy: i, Fr: v}, cvMap)
-			libunlynxstore.FormatAggregationProofs(libunlynx.FilteredResponseDet{DetTagGroupBy: i, Fr: v}, cvMap)
+			frd := libunlynx.FilteredResponseDet{DetTagGroupBy: i, Fr: v}
+			frd.FormatAggregationProofs(cvMap)
+			frd.FormatAggregationProofs(cvMap)
 		}
 
 		collAggrProofs := libunlynxaggr.PublishedAggregationListProof{}

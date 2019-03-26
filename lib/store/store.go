@@ -143,7 +143,7 @@ func (s *Store) PushDeterministicFilteredResponses(detFilteredResponses []libunl
 		s.Mutex.Unlock()
 
 		if proofsB {
-			FormatAggregationProofs(v, cvMap)
+			v.FormatAggregationProofs(cvMap)
 		}
 
 	}
@@ -154,46 +154,6 @@ func (s *Store) PushDeterministicFilteredResponses(detFilteredResponses []libunl
 	}
 
 	libunlynx.EndTimer(round)
-}
-
-// FormatAggregationProofs is used to format the data in a way that can be used to create aggregation proofs.
-//		Example:
-//			[
-//			GroupingKey = "a"
-//			Aggregating Attributes = [2, 3]
-//
-//			GroupingKey = "b"
-//			Aggregating Attributes = [4, 7]
-//
-//			GroupingKey = "a"
-//			Aggregating Attributes = [5, 1]
-//			]
-//
-//		----> return value
-//			[
-//			GroupingKey = "a"
-//			Data = [[2, 5], [3, 1]]
-//
-//			GroupingKey = "b"
-//			Data = [[4], [7]]
-//			]
-func FormatAggregationProofs(originalData libunlynx.FilteredResponseDet, res map[libunlynx.GroupingKey][]libunlynx.CipherVector) {
-
-	if _, ok := res[originalData.DetTagGroupBy]; ok {
-		for i, ct := range originalData.Fr.AggregatingAttributes {
-			container := res[originalData.DetTagGroupBy]
-			container[i] = append(container[i], ct)
-			res[originalData.DetTagGroupBy] = container
-		}
-	} else { // if no elements are in the map yet
-		container := make([]libunlynx.CipherVector, len(originalData.Fr.AggregatingAttributes))
-		for i, ct := range originalData.Fr.AggregatingAttributes {
-			tmp := make(libunlynx.CipherVector, 0)
-			tmp = append(tmp, ct)
-			container[i] = tmp
-			res[originalData.DetTagGroupBy] = container
-		}
-	}
 }
 
 // HasNextAggregatedResponse verifies the presence of locally aggregated results.

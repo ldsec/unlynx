@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lca1/unlynx/lib/aggregation"
+
 	"github.com/dedis/kyber/util/random"
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
@@ -180,6 +182,11 @@ func NewCollectiveAggregationTestSimple(tni *onet.TreeNodeInstance) (onet.Protoc
 
 	protocol.SimpleData = &simpleSlice
 	protocol.GroupedData = nil
+	protocol.Proofs = true
+	protocol.ProofFunc = func(data []libunlynx.CipherVector, res libunlynx.CipherVector) *libunlynxaggr.PublishedAggregationListProof {
+		proof := libunlynxaggr.AggregationListProofCreation(data, res)
+		return &proof
+	}
 
 	return protocol, err
 }

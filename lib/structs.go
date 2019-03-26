@@ -3,13 +3,13 @@ package libunlynx
 
 import (
 	"crypto/cipher"
-	"reflect"
+	"encoding/binary"
 	"strconv"
 	"strings"
 	"sync"
-	"unsafe"
 
 	"github.com/dedis/kyber"
+	"github.com/dedis/onet/log"
 )
 
 // Objects
@@ -192,6 +192,45 @@ func ComputeE(index int, cv CipherVector, seed []byte) kyber.Scalar {
 	randomCipher.Write(dataK)
 
 	return SuiTe.Scalar().Pick(randomCipher)
+}
+
+// FormatAggregationProofs is used to format the data in a way that can be used to create aggregation proofs.
+//		Example:
+//			[
+//			GroupingKey = "a"
+//			Aggregating Attributes = [2, 3]
+//
+//			GroupingKey = "b"
+//			Aggregating Attributes = [4, 7]
+//
+//			GroupingKey = "a"
+//			Aggregating Attributes = [5, 1]
+//			]
+//
+//		----> return value
+//			[
+//			GroupingKey = "a"
+//			Data = [[2, 5], [3, 1]]
+//
+//			GroupingKey = "b"
+//			Data = [[4], [7]]
+//			]
+func (crd *FilteredResponseDet) FormatAggregationProofs(res map[GroupingKey][]CipherVector) {
+	if _, ok := res[crd.DetTagGroupBy]; ok {
+		for i, ct := range crd.Fr.AggregatingAttributes {
+			container := res[crd.DetTagGroupBy]
+			container[i] = append(container[i], ct)
+			res[crd.DetTagGroupBy] = container
+		}
+	} else { // if no elements are in the map yet
+		container := make([]CipherVector, len(crd.Fr.AggregatingAttributes))
+		for i, ct := range crd.Fr.AggregatingAttributes {
+			tmp := make(CipherVector, 0)
+			tmp = append(tmp, ct)
+			container[i] = tmp
+			res[crd.DetTagGroupBy] = container
+		}
+	}
 }
 
 // DpClearResponse
@@ -448,22 +487,24 @@ func MapBytesToMapCipherText(mapBytes map[string][]byte) map[string]CipherText {
 	return nil
 }
 
-// cast using reflect []int <-> []byte
-// from http://stackoverflow.com/questions/17539001/converting-int32-to-byte-array-in-go
-
-// IntByteSize is the byte size of an int in memory
-const IntByteSize = int(unsafe.Sizeof(int(0)))
-
 // UnsafeCastIntsToBytes casts a slice of ints to a slice of bytes
 func UnsafeCastIntsToBytes(ints []int) []byte {
-	length := len(ints) * IntByteSize
-	hdr := reflect.SliceHeader{Data: uintptr(unsafe.Pointer(&ints[0])), Len: length, Cap: length}
-	return *(*[]byte)(unsafe.Pointer(&hdr))
+	bsFinal := make([]byte, 0)
+	for _, num := range ints {
+		buf := make([]byte, 4)
+		binary.BigEndian.PutUint32(buf, uint32(num))
+		bsFinal = append(bsFinal, buf...)
+	}
+	return bsFinal
 }
 
 // UnsafeCastBytesToInts casts a slice of bytes to a slice of ints
 func UnsafeCastBytesToInts(bytes []byte) []int {
-	length := len(bytes) / IntByteSize
-	hdr := reflect.SliceHeader{Data: uintptr(unsafe.Pointer(&bytes[0])), Len: length, Cap: length}
-	return *(*[]int)(unsafe.Pointer(&hdr))
+	intsFinal := make([]int, 0)
+	log.LLvl1(len(bytes))
+	for i := 0; i < len(bytes); i += 4 {
+		x := binary.BigEndian.Uint32(bytes[i : i+4])
+		intsFinal = append(intsFinal, int(x))
+	}
+	return intsFinal
 }
