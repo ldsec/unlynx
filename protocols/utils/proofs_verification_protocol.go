@@ -5,9 +5,9 @@
 package protocolsunlynxutils
 
 import (
-	"github.com/dedis/onet"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/proofs"
+	"go.dedis.ch/onet/v3"
 )
 
 // ProofsVerificationProtocolName is the registered name for the proof verification protocol.

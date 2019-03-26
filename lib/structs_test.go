@@ -1,10 +1,10 @@
 package libunlynx_test
 
 import (
-	"github.com/dedis/kyber"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/tools"
 	"github.com/stretchr/testify/assert"
+	"go.dedis.ch/kyber/v3"
 	"strconv"
 	"testing"
 )

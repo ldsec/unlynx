@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"encoding/csv"
 	"fmt"
-	"github.com/dedis/onet/log"
+	"go.dedis.ch/onet/v3/log"
 	"os"
 	"strings"
 )

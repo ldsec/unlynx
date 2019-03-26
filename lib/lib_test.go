@@ -1,7 +1,7 @@
 package libunlynx_test
 
 import (
-	"github.com/dedis/onet/log"
+	"go.dedis.ch/onet/v3/log"
 	"testing"
 )
 
