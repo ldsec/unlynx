@@ -36,7 +36,7 @@ type PublishedShufflingProofBytes struct {
 
 // PublishedShufflingListProof contains a list of shuffling proofs
 type PublishedShufflingListProof struct {
-	Pslp []PublishedShufflingProof
+	List []PublishedShufflingProof
 }
 
 // SHUFFLE proofs
@@ -44,7 +44,7 @@ type PublishedShufflingListProof struct {
 
 // ShuffleProofCreation creates a shuffle proof
 func ShuffleProofCreation(originalList, shuffledList []libunlynx.CipherVector, g, h kyber.Point, beta [][]kyber.Scalar, pi []int) PublishedShufflingProof {
-	e := originalList[0].CipherVectorTag(h)
+	e := CipherVectorComputeE(h, originalList[0])
 	k := len(originalList)
 	// compress data for each line (each list) into one element
 	Xhat := make([]kyber.Point, k)
@@ -89,14 +89,14 @@ func ShuffleListProofCreation(originalList, shuffledList [][]libunlynx.CipherVec
 	nbrProofsToCreate := len(originalList)
 
 	listProofs := PublishedShufflingListProof{}
-	listProofs.Pslp = make([]PublishedShufflingProof, nbrProofsToCreate)
+	listProofs.List = make([]PublishedShufflingProof, nbrProofsToCreate)
 
 	var wg sync.WaitGroup
 	for i := 0; i < nbrProofsToCreate; i += libunlynx.VPARALLELIZE {
 		wg.Add(1)
 		go func(i int, originalList, shuffledList [][]libunlynx.CipherVector, g, h []kyber.Point, beta [][][]kyber.Scalar, pi [][]int) {
 			for j := 0; j < libunlynx.VPARALLELIZE && (j+i < nbrProofsToCreate); j++ {
-				listProofs.Pslp[i+j] = ShuffleProofCreation(originalList[i+j], shuffledList[i+j], g[i+j], h[i+j], beta[i+j], pi[i+j])
+				listProofs.List[i+j] = ShuffleProofCreation(originalList[i+j], shuffledList[i+j], g[i+j], h[i+j], beta[i+j], pi[i+j])
 			}
 			defer wg.Done()
 		}(i, originalList, shuffledList, gList, hList, betaList, piList)
@@ -108,7 +108,7 @@ func ShuffleListProofCreation(originalList, shuffledList [][]libunlynx.CipherVec
 
 // ShuffleProofVerification verifies a shuffle proof
 func ShuffleProofVerification(psp PublishedShufflingProof, seed kyber.Point) bool {
-	e := psp.OriginalList[0].CipherVectorTag(seed)
+	e := CipherVectorComputeE(seed, psp.OriginalList[0])
 	var x, y, xbar, ybar []kyber.Point
 
 	wg := libunlynx.StartParallelize(2)
@@ -135,24 +135,72 @@ func ShuffleProofVerification(psp PublishedShufflingProof, seed kyber.Point) boo
 }
 
 // ShuffleListProofVerification verifies a list of shuffle proofs
-func ShuffleListProofVerification(listProofs PublishedShufflingListProof, seed kyber.Point, percent float64) bool {
-	nbrProofsToVerify := int(math.Ceil(percent * float64(len(listProofs.Pslp))))
+func ShuffleListProofVerification(pslp PublishedShufflingListProof, seed kyber.Point, percent float64) bool {
+	nbrProofsToVerify := int(math.Ceil(percent * float64(len(pslp.List))))
 
-	wg := libunlynx.StartParallelize(nbrProofsToVerify)
 	results := make([]bool, nbrProofsToVerify)
-	for i := 0; i < nbrProofsToVerify; i++ {
-		go func(i int, v PublishedShufflingProof) {
-			defer wg.Done()
-			results[i] = ShuffleProofVerification(v, seed)
-		}(i, listProofs.Pslp[i])
 
+	var wg sync.WaitGroup
+	for i := 0; i < nbrProofsToVerify; i += libunlynx.VPARALLELIZE {
+		wg.Add(1)
+		go func(i int, seed kyber.Point) {
+			for j := 0; j < libunlynx.VPARALLELIZE && (i+j) < nbrProofsToVerify; j++ {
+				results[i+j] = ShuffleProofVerification(pslp.List[i+j], seed)
+			}
+			defer wg.Done()
+		}(i, seed)
 	}
-	libunlynx.EndParallelize(wg)
+	wg.Wait()
+
 	finalResult := true
 	for _, v := range results {
 		finalResult = finalResult && v
 	}
 	return finalResult
+}
+
+// CipherVectorComputeE computes all the e's for a ciphervector based on a seed h
+func CipherVectorComputeE(h kyber.Point, cv libunlynx.CipherVector) []kyber.Scalar {
+	length := len(cv)
+	es := make([]kyber.Scalar, length)
+
+	seed, _ := h.MarshalBinary()
+	var wg sync.WaitGroup
+
+	for i := 0; i < length; i = i + libunlynx.VPARALLELIZE {
+		wg.Add(1)
+		go func(i int, cv libunlynx.CipherVector) {
+			defer wg.Done()
+			for j := 0; j < libunlynx.VPARALLELIZE && (j+i < length); j++ {
+				es[i+j] = computeE(i+j, cv, seed)
+			}
+
+		}(i, cv)
+
+	}
+	wg.Wait()
+
+	return es
+}
+
+// computeE computes e used in a shuffle proof. Computation based on a public seed.
+func computeE(index int, cv libunlynx.CipherVector, seed []byte) kyber.Scalar {
+	var dataC []byte
+	var dataK []byte
+
+	randomCipher := libunlynx.SuiTe.XOF(seed)
+
+	dataC, _ = cv[index].C.MarshalBinary()
+	dataK, _ = cv[index].K.MarshalBinary()
+
+	if _, err := randomCipher.Write(dataC); err != nil {
+		log.Fatal(err)
+	}
+	if _, err := randomCipher.Write(dataK); err != nil {
+		log.Fatal(err)
+	}
+
+	return libunlynx.SuiTe.Scalar().Pick(randomCipher)
 }
 
 // Compress

@@ -70,30 +70,30 @@ func TestAddRmProof(t *testing.T) {
 	assert.True(t, libunlynxaddrm.AddRmListProofVerification(prfVectSub, 1.0))
 
 	// Test 2
-	prfVectAdd.Arp[0].CtBef = resultAdd[0]
-	prfVectAdd.Arp[0].CtAft = resultAdd[0]
+	prfVectAdd.List[0].CtBef = resultAdd[0]
+	prfVectAdd.List[0].CtAft = resultAdd[0]
 
-	prfVectSub.Arp[0].CtBef = resultAdd[0]
-	prfVectSub.Arp[0].CtAft = resultSub[0]
+	prfVectSub.List[0].CtBef = resultAdd[0]
+	prfVectSub.List[0].CtAft = resultSub[0]
 
 	assert.False(t, libunlynxaddrm.AddRmListProofVerification(prfVectAdd, 1.0))
 	assert.False(t, libunlynxaddrm.AddRmListProofVerification(prfVectSub, 1.0))
 
 	// Test 3
-	prfVectAdd.Arp[0].CtBef = cipherArray[0]
-	prfVectAdd.Arp[0].CtAft = resultSub[0]
+	prfVectAdd.List[0].CtBef = cipherArray[0]
+	prfVectAdd.List[0].CtAft = resultSub[0]
 
-	prfVectSub.Arp[0].CtBef = cipherArray[0]
-	prfVectSub.Arp[0].CtAft = resultAdd[0]
+	prfVectSub.List[0].CtBef = cipherArray[0]
+	prfVectSub.List[0].CtAft = resultAdd[0]
 
 	assert.False(t, libunlynxaddrm.AddRmListProofVerification(prfVectAdd, 1.0))
 	assert.False(t, libunlynxaddrm.AddRmListProofVerification(prfVectSub, 1.0))
 
 	// Test 4
-	prfVectAdd.Arp[0].CtAft = resultAdd[0]
+	prfVectAdd.List[0].CtAft = resultAdd[0]
 	prfVectAdd.Krm = pubKey
 
-	prfVectSub.Arp[0].CtAft = resultSub[0]
+	prfVectSub.List[0].CtAft = resultSub[0]
 	prfVectSub.Krm = pubKey
 
 	assert.False(t, libunlynxaddrm.AddRmListProofVerification(prfVectAdd, 1.0))

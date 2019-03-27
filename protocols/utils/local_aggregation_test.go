@@ -9,7 +9,6 @@ import (
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/lib/tools"
 	"github.com/lca1/unlynx/protocols"
 	"github.com/lca1/unlynx/protocols/utils"
 	"github.com/stretchr/testify/assert"
@@ -42,7 +41,7 @@ func TestLocalAggregation(t *testing.T) {
 
 	comparisonMap := make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse)
 	for _, v := range detResponses {
-		libunlynxtools.AddInMap(comparisonMap, v.DetTagGroupBy, v.Fr)
+		libunlynx.AddInMap(comparisonMap, v.DetTagGroupBy, v.Fr)
 	}
 
 	protocol.TargetOfAggregation = detResponses

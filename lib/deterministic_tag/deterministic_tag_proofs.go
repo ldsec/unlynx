@@ -21,9 +21,9 @@ type PublishedDDTCreationProof struct {
 
 // PublishedDDTCreationListProof contains all the info about proofs for the deterministic tagging of one sequence of ciphertexts (creation)
 type PublishedDDTCreationListProof struct {
-	Dcp []PublishedDDTCreationProof
-	K   kyber.Point
-	SB  kyber.Point
+	List []PublishedDDTCreationProof
+	K    kyber.Point
+	SB   kyber.Point
 }
 
 // PublishedDDTAdditionProof contains all the info about proofs for the deterministic tagging (addition)
@@ -36,7 +36,7 @@ type PublishedDDTAdditionProof struct {
 
 // PublishedDDTAdditionListProof contains all the info about multiple proofs for the deterministic tagging (addition)
 type PublishedDDTAdditionListProof struct {
-	Pdap []PublishedDDTAdditionProof
+	List []PublishedDDTAdditionProof
 }
 
 // DETERMINISTIC TAG proofs
@@ -90,15 +90,14 @@ func DeterministicTagCrProofCreation(ctBef, ctAft libunlynx.CipherText, K kyber.
 // DeterministicTagCrListProofCreation creates a list of deterministic tag proofs (multiple ciphertexts)
 func DeterministicTagCrListProofCreation(vBef, vAft libunlynx.CipherVector, K kyber.Point, k, s kyber.Scalar) PublishedDDTCreationListProof {
 	listProofs := PublishedDDTCreationListProof{}
-	listProofs.Dcp = make([]PublishedDDTCreationProof, len(vBef))
+	listProofs.List = make([]PublishedDDTCreationProof, len(vBef))
 
 	var wg sync.WaitGroup
-
 	for i := 0; i < len(vBef); i += libunlynx.VPARALLELIZE {
 		wg.Add(1)
 		go func(i int) {
 			for j := 0; j < libunlynx.VPARALLELIZE && (j+i < len(vBef)); j++ {
-				listProofs.Dcp[i+j] = DeterministicTagCrProofCreation(vBef[i+j], vAft[i+j], K, k, s)
+				listProofs.List[i+j] = DeterministicTagCrProofCreation(vBef[i+j], vAft[i+j], K, k, s)
 			}
 			defer wg.Done()
 		}(i)
@@ -133,18 +132,21 @@ func DeterministicTagCrProofVerification(prf PublishedDDTCreationProof, K, SB ky
 
 // DeterministicTagCrListProofVerification verifies a list of deterministic tag proofs, if one is wrong, returns false
 func DeterministicTagCrListProofVerification(pdclp PublishedDDTCreationListProof, percent float64) bool {
-	nbrProofsToVerify := int(math.Ceil(percent * float64(len(pdclp.Dcp))))
-
-	wg := libunlynx.StartParallelize(nbrProofsToVerify)
+	nbrProofsToVerify := int(math.Ceil(percent * float64(len(pdclp.List))))
 	results := make([]bool, nbrProofsToVerify)
-	for i := 0; i < nbrProofsToVerify; i++ {
-		go func(i int, v PublishedDDTCreationProof) {
-			defer wg.Done()
-			results[i] = DeterministicTagCrProofVerification(v, pdclp.K, pdclp.SB)
-		}(i, pdclp.Dcp[i])
 
+	var wg sync.WaitGroup
+	for i := 0; i < nbrProofsToVerify; i += libunlynx.VPARALLELIZE {
+		wg.Add(1)
+		go func(i int, K, SB kyber.Point) {
+			for j := 0; j < libunlynx.VPARALLELIZE && (i+j) < nbrProofsToVerify; j++ {
+				results[i+j] = DeterministicTagCrProofVerification(pdclp.List[i+j], K, SB)
+			}
+			defer wg.Done()
+		}(i, pdclp.K, pdclp.SB)
 	}
-	libunlynx.EndParallelize(wg)
+	wg.Wait()
+
 	finalResult := true
 	for _, v := range results {
 		finalResult = finalResult && v
@@ -186,15 +188,14 @@ func DeterministicTagAdditionListProofCreation(c1List []kyber.Point, sList []kyb
 	nbrProofsToCreate := len(c1List)
 
 	listProofs := PublishedDDTAdditionListProof{}
-	listProofs.Pdap = make([]PublishedDDTAdditionProof, nbrProofsToCreate)
+	listProofs.List = make([]PublishedDDTAdditionProof, nbrProofsToCreate)
 
 	var wg sync.WaitGroup
-
 	for i := 0; i < nbrProofsToCreate; i += libunlynx.VPARALLELIZE {
 		wg.Add(1)
 		go func(i int, c1 kyber.Point, s kyber.Scalar, c2 kyber.Point, r kyber.Point) {
 			for j := 0; j < libunlynx.VPARALLELIZE && (j+i < nbrProofsToCreate); j++ {
-				listProofs.Pdap[i+j] = DeterministicTagAdditionProofCreation(c1, s, c2, r)
+				listProofs.List[i+j] = DeterministicTagAdditionProofCreation(c1, s, c2, r)
 			}
 			defer wg.Done()
 		}(i, c1List[i], sList[i], c2List[i], rList[i])
@@ -225,22 +226,24 @@ func DeterministicTagAdditionProofVerification(psap PublishedDDTAdditionProof) b
 
 // DeterministicTagAdditionListProofVerification verifies multiple deterministic tag addition proofs
 func DeterministicTagAdditionListProofVerification(pdalp PublishedDDTAdditionListProof, percent float64) bool {
-	nbrProofsToVerify := int(math.Ceil(percent * float64(len(pdalp.Pdap))))
-
-	wg := libunlynx.StartParallelize(nbrProofsToVerify)
+	nbrProofsToVerify := int(math.Ceil(percent * float64(len(pdalp.List))))
 	results := make([]bool, nbrProofsToVerify)
-	for i := 0; i < nbrProofsToVerify; i++ {
-		go func(i int, v PublishedDDTAdditionProof) {
-			defer wg.Done()
-			results[i] = DeterministicTagAdditionProofVerification(v)
-		}(i, pdalp.Pdap[i])
 
+	var wg sync.WaitGroup
+	for i := 0; i < nbrProofsToVerify; i += libunlynx.VPARALLELIZE {
+		wg.Add(1)
+		go func(i int) {
+			for j := 0; j < libunlynx.VPARALLELIZE && (i+j) < nbrProofsToVerify; j++ {
+				results[i+j] = DeterministicTagAdditionProofVerification(pdalp.List[i+j])
+			}
+			defer wg.Done()
+		}(i)
 	}
-	libunlynx.EndParallelize(wg)
+	wg.Wait()
+
 	finalResult := true
 	for _, v := range results {
 		finalResult = finalResult && v
 	}
 	return finalResult
-
 }

@@ -9,6 +9,8 @@ package protocolsunlynx
 import (
 	"errors"
 
+	"github.com/lca1/unlynx/lib/tools"
+
 	"github.com/dedis/kyber"
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
@@ -243,7 +245,7 @@ func (p *KeySwitchingProtocol) ascendingKSPhase() *libunlynx.CipherVector {
 		}
 		for i := range length { // len of length is number of children
 			cv := libunlynx.CipherVector{}
-			cv.FromBytes(datas[i].Data, libunlynx.UnsafeCastBytesToInts(length[i].Length)[0])
+			cv.FromBytes(datas[i].Data, libunlynxtools.UnsafeCastBytesToInts(length[i].Length)[0])
 			sumCv := libunlynx.NewCipherVector(len(cv))
 			sumCv.Add(*p.NodeContribution, cv)
 			p.NodeContribution = sumCv
@@ -254,7 +256,7 @@ func (p *KeySwitchingProtocol) ascendingKSPhase() *libunlynx.CipherVector {
 	//libunlynx.EndTimer(keySwitchingAscendingAggregation)
 
 	if !p.IsRoot() {
-		if err := p.SendToParent(&LengthMessage{Length: libunlynx.UnsafeCastIntsToBytes([]int{len(*p.NodeContribution)})}); err != nil {
+		if err := p.SendToParent(&LengthMessage{Length: libunlynxtools.UnsafeCastIntsToBytes([]int{len(*p.NodeContribution)})}); err != nil {
 			log.Fatal("Node "+p.ServerIdentity().String()+" failed to broadcast LengthMessage (", err, ")")
 		}
 		message, _ := (*p.NodeContribution).ToBytes()

@@ -79,7 +79,7 @@ type ShufflingPlusDDTProtocol struct {
 	// Protocol state data
 	TargetData        *[]libunlynx.CipherVector
 	SurveySecretKey   *kyber.Scalar
-	Precomputed       []libunlynx.CipherVectorScalar
+	Precomputed       []libunlynxshuffle.CipherVectorScalar
 	nextNodeInCircuit *onet.TreeNode
 
 	// Proofs

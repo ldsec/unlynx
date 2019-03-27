@@ -2,6 +2,7 @@ package libunlynxaggr
 
 import (
 	"math"
+	"sync"
 
 	"github.com/lca1/unlynx/lib"
 )
@@ -21,13 +22,16 @@ type PublishedAggregationProofBytes struct {
 
 // PublishedAggregationListProof contains a list of aggregation proofs
 type PublishedAggregationListProof struct {
-	PapList []PublishedAggregationProof
+	List []PublishedAggregationProof
 }
 
 // PublishedAggregationListProofBytes is the 'bytes' equivalent of PublishedAggregationListProof
 type PublishedAggregationListProofBytes struct {
-	PapList []PublishedAggregationProofBytes
+	List []PublishedAggregationProofBytes
 }
+
+// AGGREGATION proofs
+//______________________________________________________________________________________________________________________
 
 // AggregationProofCreation creates a proof for aggregation
 func AggregationProofCreation(data libunlynx.CipherVector, aggregationResult libunlynx.CipherText) PublishedAggregationProof {
@@ -37,11 +41,21 @@ func AggregationProofCreation(data libunlynx.CipherVector, aggregationResult lib
 // AggregationListProofCreation creates multiple proofs for aggregation
 func AggregationListProofCreation(data []libunlynx.CipherVector, aggregationResults []libunlynx.CipherText) PublishedAggregationListProof {
 	papList := PublishedAggregationListProof{}
-	papList.PapList = make([]PublishedAggregationProof, 0)
-	for i, v := range data {
-		pap := AggregationProofCreation(v, aggregationResults[i])
-		papList.PapList = append(papList.PapList, pap)
+	papList.List = make([]PublishedAggregationProof, len(data))
+
+	var wg sync.WaitGroup
+	for i := 0; i < len(data); i += libunlynx.VPARALLELIZE {
+		wg.Add(1)
+		go func(i int) {
+			for j := 0; j < libunlynx.VPARALLELIZE && (i+j) < len(data); j++ {
+				pap := AggregationProofCreation(data[i+j], aggregationResults[i+j])
+				papList.List[i+j] = pap
+			}
+			defer wg.Done()
+		}(i)
 	}
+	wg.Wait()
+
 	return papList
 }
 
@@ -53,18 +67,21 @@ func AggregationProofVerification(pap PublishedAggregationProof) bool {
 
 // AggregationListProofVerification verifies multiple aggregation proofs
 func AggregationListProofVerification(palp PublishedAggregationListProof, percent float64) bool {
-	nbrProofsToVerify := int(math.Ceil(percent * float64(len(palp.PapList))))
-
-	wg := libunlynx.StartParallelize(nbrProofsToVerify)
+	nbrProofsToVerify := int(math.Ceil(percent * float64(len(palp.List))))
 	results := make([]bool, nbrProofsToVerify)
-	for i := 0; i < nbrProofsToVerify; i++ {
-		go func(i int, v PublishedAggregationProof) {
-			defer wg.Done()
-			results[i] = AggregationProofVerification(v)
-		}(i, palp.PapList[i])
 
+	var wg sync.WaitGroup
+	for i := 0; i < nbrProofsToVerify; i += libunlynx.VPARALLELIZE {
+		wg.Add(1)
+		go func(i int) {
+			for j := 0; j < libunlynx.VPARALLELIZE && (i+j) < nbrProofsToVerify; j++ {
+				results[i+j] = AggregationProofVerification(palp.List[i+j])
+			}
+			defer wg.Done()
+		}(i)
 	}
-	libunlynx.EndParallelize(wg)
+	wg.Wait()
+
 	finalResult := true
 	for _, v := range results {
 		finalResult = finalResult && v
@@ -85,7 +102,7 @@ func (pap *PublishedAggregationProof) ToBytes() PublishedAggregationProofBytes {
 	return papb
 }
 
-// FromBytes converts back bytes to PublishedKSProof
+// FromBytes converts back bytes to PublishedAggregationProof
 func (pap *PublishedAggregationProof) FromBytes(papb PublishedAggregationProofBytes) {
 	pap.AggregationResult.FromBytes(papb.AggregationResult)
 	pap.Data.FromBytes(papb.Data, int(papb.DataLen))
@@ -95,12 +112,12 @@ func (pap *PublishedAggregationProof) FromBytes(papb PublishedAggregationProofBy
 func (palp *PublishedAggregationListProof) ToBytes() PublishedAggregationListProofBytes {
 	palpb := PublishedAggregationListProofBytes{}
 
-	palpb.PapList = make([]PublishedAggregationProofBytes, len(palp.PapList))
-	wg := libunlynx.StartParallelize(len(palpb.PapList))
-	for i, pap := range palp.PapList {
+	palpb.List = make([]PublishedAggregationProofBytes, len(palp.List))
+	wg := libunlynx.StartParallelize(len(palpb.List))
+	for i, pap := range palp.List {
 		go func(index int, pap PublishedAggregationProof) {
 			defer wg.Done()
-			palpb.PapList[index] = pap.ToBytes()
+			palpb.List[index] = pap.ToBytes()
 		}(i, pap)
 	}
 	libunlynx.EndParallelize(wg)
@@ -109,14 +126,14 @@ func (palp *PublishedAggregationListProof) ToBytes() PublishedAggregationListPro
 
 // FromBytes converts bytes back to PublishedAggregationListProof
 func (palp *PublishedAggregationListProof) FromBytes(palpb PublishedAggregationListProofBytes) {
-	palp.PapList = make([]PublishedAggregationProof, len(palpb.PapList))
-	wg := libunlynx.StartParallelize(len(palpb.PapList))
-	for i, papb := range palpb.PapList {
+	palp.List = make([]PublishedAggregationProof, len(palpb.List))
+	wg := libunlynx.StartParallelize(len(palpb.List))
+	for i, papb := range palpb.List {
 		go func(index int, papb PublishedAggregationProofBytes) {
 			defer wg.Done()
 			tmp := PublishedAggregationProof{}
 			tmp.FromBytes(papb)
-			palp.PapList[index] = tmp
+			palp.List[index] = tmp
 		}(i, papb)
 	}
 	libunlynx.EndParallelize(wg)

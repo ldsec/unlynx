@@ -23,7 +23,7 @@ var pub = make([]kyber.Point, nbrNodes)
 var groupPub = libunlynx.SuiTe.Point().Null()
 var groupSec = libunlynx.SuiTe.Scalar().Zero()
 
-var precomputes = make([][]libunlynx.CipherVectorScalar, nbrNodes)
+var precomputes = make([][]libunlynxshuffle.CipherVectorScalar, nbrNodes)
 
 func TestShuffling(t *testing.T) {
 	defer log.AfterTest(t)
@@ -38,7 +38,7 @@ func TestShuffling(t *testing.T) {
 	}
 	for i := 0; i < nbrNodes; i++ {
 		privBytes, _ := priv[i].MarshalBinary()
-		precomputes[i] = libunlynx.CreatePrecomputedRandomize(libunlynx.SuiTe.Point().Base(), groupPub, libunlynx.SuiTe.XOF(privBytes), 4, 10)
+		precomputes[i] = libunlynxshuffle.CreatePrecomputedRandomize(libunlynx.SuiTe.Point().Base(), groupPub, libunlynx.SuiTe.XOF(privBytes), 4, 10)
 	}
 	aggregateKey := groupPub
 

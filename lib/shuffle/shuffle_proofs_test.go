@@ -3,6 +3,8 @@ package libunlynxshuffle_test
 import (
 	"testing"
 
+	"github.com/lca1/unlynx/lib/tools"
+
 	"github.com/dedis/kyber"
 
 	"github.com/dedis/kyber/util/key"
@@ -30,7 +32,7 @@ func TestPublishedShufflingProof_ToBytes(t *testing.T) {
 	psp.H = keys.Public
 
 	tabInt := []int{1, 2, 3, 6}
-	psp.HashProof = libunlynx.UnsafeCastIntsToBytes(tabInt)
+	psp.HashProof = libunlynxtools.UnsafeCastIntsToBytes(tabInt)
 
 	pspb := psp.ToBytes()
 
@@ -68,4 +70,15 @@ func TestShufflingProof(t *testing.T) {
 	PublishedShufflingListProof := libunlynxshuffle.ShuffleListProofCreation([][]libunlynx.CipherVector{responses, responses}, [][]libunlynx.CipherVector{responsesShuffled, responses}, []kyber.Point{libunlynx.SuiTe.Point().Base(), libunlynx.SuiTe.Point().Base()}, []kyber.Point{keys.Public, keys.Public}, [][][]kyber.Scalar{beta, beta}, [][]int{pi, pi})
 
 	assert.False(t, libunlynxshuffle.ShuffleListProofVerification(PublishedShufflingListProof, keys.Public, 1.0))
+}
+
+func TestCipherVectorComputeE(t *testing.T) {
+	const N = 1
+	groupKey, _, _ := libunlynx.GenKeys(N)
+
+	target := []int64{1, 2, 3, 4, 5}
+	cv := libunlynx.EncryptIntVector(groupKey, target)
+
+	es := libunlynxshuffle.CipherVectorComputeE(groupKey, *cv)
+	_ = es
 }

@@ -61,10 +61,10 @@ func TestDeterministicTagProofCreation(t *testing.T) {
 	assert.False(t, libunlynxdetertag.DeterministicTagCrListProofVerification(dtpList, 1.0))
 	dtpList.SB = auxSB
 
-	auxEl := dtpList.Dcp[0]
-	dtpList.Dcp[0].CTbef = cipherOne
+	auxEl := dtpList.List[0]
+	dtpList.List[0].CTbef = cipherOne
 	assert.False(t, libunlynxdetertag.DeterministicTagCrListProofVerification(dtpList, 1.0))
-	dtpList.Dcp[0] = auxEl
+	dtpList.List[0] = auxEl
 
 	assert.True(t, libunlynxdetertag.DeterministicTagCrListProofVerification(dtpList, 1.0))
 }

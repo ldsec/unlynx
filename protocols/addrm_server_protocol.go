@@ -73,7 +73,7 @@ func (p *AddRmServerProtocol) Start() error {
 
 	roundProof = libunlynx.StartTimer(p.Name() + "_AddRmServer(PROOFSVerif)")
 
-	if p.Proofs && len(proofs.Arp) == 0 {
+	if p.Proofs && len(proofs.List) == 0 {
 		log.Fatal("Something went wrong during the creation of the add/rm proofs")
 	}
 	libunlynxaddrm.AddRmListProofVerification(proofs, 1.0)

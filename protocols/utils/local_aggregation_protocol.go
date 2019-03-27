@@ -7,7 +7,6 @@ import (
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/aggregation"
-	"github.com/lca1/unlynx/lib/tools"
 )
 
 // LocalAggregationProtocolName is the registered name for the local aggregation protocol.
@@ -56,7 +55,7 @@ func (p *LocalAggregationProtocol) Start() error {
 
 	cvMap := make(map[libunlynx.GroupingKey][]libunlynx.CipherVector)
 	for _, v := range p.TargetOfAggregation {
-		libunlynxtools.AddInMap(resultingMap, v.DetTagGroupBy, v.Fr)
+		libunlynx.AddInMap(resultingMap, v.DetTagGroupBy, v.Fr)
 
 		if p.Proofs {
 			v.FormatAggregationProofs(cvMap)

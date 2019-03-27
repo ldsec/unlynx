@@ -101,7 +101,6 @@ func (s *Store) InsertDpResponse(cr libunlynx.DpResponse, proofsB bool, groupBy,
 		}
 
 	}
-
 }
 
 // HasNextDpResponse permits to verify if there are new DP responses to be processed.
@@ -139,7 +138,7 @@ func (s *Store) PushDeterministicFilteredResponses(detFilteredResponses []libunl
 	cvMap := make(map[libunlynx.GroupingKey][]libunlynx.CipherVector)
 	for _, v := range detFilteredResponses {
 		s.Mutex.Lock()
-		libunlynxtools.AddInMap(s.LocAggregatedProcessResponse, v.DetTagGroupBy, v.Fr)
+		libunlynx.AddInMap(s.LocAggregatedProcessResponse, v.DetTagGroupBy, v.Fr)
 		s.Mutex.Unlock()
 
 		if proofsB {
@@ -250,7 +249,7 @@ func AddInClear(s []libunlynx.DpClearResponse) []libunlynx.DpClearResponse {
 func (s *Store) PushCothorityAggregatedFilteredResponses(sNew map[libunlynx.GroupingKey]libunlynx.FilteredResponse) {
 	for key, value := range sNew {
 		s.Mutex.Lock()
-		libunlynxtools.AddInMap(s.GroupedDeterministicFilteredResponses, key, value)
+		libunlynx.AddInMap(s.GroupedDeterministicFilteredResponses, key, value)
 		s.Mutex.Unlock()
 	}
 }

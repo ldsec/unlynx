@@ -81,7 +81,7 @@ type ShufflingProtocol struct {
 
 	// Protocol state data
 	ShuffleTarget     *[]libunlynx.CipherVector
-	Precomputed       []libunlynx.CipherVectorScalar
+	Precomputed       []libunlynxshuffle.CipherVectorScalar
 	nextNodeInCircuit *onet.TreeNode
 
 	// Proofs

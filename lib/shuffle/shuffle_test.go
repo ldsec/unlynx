@@ -4,6 +4,9 @@ import (
 	"os"
 	"testing"
 
+	"github.com/dedis/onet/log"
+	"github.com/lca1/unlynx/lib/tools"
+
 	"github.com/dedis/kyber/util/random"
 	"github.com/dedis/onet"
 	"github.com/lca1/unlynx/lib"
@@ -49,7 +52,9 @@ func TestShuffleSequence(t *testing.T) {
 }
 
 func TestPrecomputationWritingForShuffling(t *testing.T) {
-	os.Remove("pre_compute_multiplications.gob")
+	if err := os.Remove("pre_compute_multiplications.gob"); err != nil {
+		log.Fatal("Error removing pre_compute_multiplications.gob file:", err)
+	}
 	local := onet.NewLocalTest(libunlynx.SuiTe)
 	_, el, _ := local.GenTree(3, true)
 	defer local.CloseAll()
@@ -68,4 +73,50 @@ func TestPrecomputationWritingForShuffling(t *testing.T) {
 	precompute = libunlynxshuffle.ReadPrecomputedFile("pre_compute_multiplications.gob")
 	assert.Equal(t, len(precompute), lineSize)
 
+}
+
+const file = "pre_compute_multiplications.gob"
+
+func TestWriteToGobFile(t *testing.T) {
+	dataCipher := make([]libunlynxshuffle.CipherVectorScalar, 0)
+
+	cipher := libunlynxshuffle.CipherVectorScalar{}
+
+	v1 := libunlynx.SuiTe.Scalar().Pick(random.New())
+	v2 := libunlynx.SuiTe.Scalar().Pick(random.New())
+
+	cipher.S = append(cipher.S, v1, v2)
+
+	vK := libunlynx.SuiTe.Point()
+	vC := libunlynx.SuiTe.Point()
+
+	ct := libunlynx.CipherText{K: vK, C: vC}
+
+	cipher.CipherV = append(cipher.CipherV, ct)
+	dataCipher = append(dataCipher, cipher)
+
+	// we need bytes (or any other serializable data) to be able to store in a gob file
+	encoded, err := libunlynxshuffle.EncodeCipherVectorScalar(dataCipher)
+
+	if err != nil {
+		log.Fatal("Error during marshling")
+	}
+
+	libunlynxtools.WriteToGobFile(file, encoded)
+}
+
+func TestReadFromGobFile(t *testing.T) {
+	var encoded []libunlynxshuffle.CipherVectorScalarBytes
+
+	libunlynxtools.ReadFromGobFile(file, &encoded)
+
+	_, err := libunlynxshuffle.DecodeCipherVectorScalar(encoded)
+
+	if err != nil {
+		log.Fatal("Error during unmarshling")
+	}
+
+	if err := os.Remove("pre_compute_multiplications.gob"); err != nil {
+		log.Fatal("Error removing pre_compute_multiplications.gob file:", err)
+	}
 }

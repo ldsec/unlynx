@@ -55,7 +55,7 @@ type Survey struct {
 	*libunlynxstore.Store
 	Query             SurveyCreationQuery
 	SurveySecretKey   kyber.Scalar
-	ShufflePrecompute []libunlynx.CipherVectorScalar
+	ShufflePrecompute []libunlynxshuffle.CipherVectorScalar
 	Lengths           [][]int
 	TargetOfSwitch    []libunlynx.ProcessResponse
 

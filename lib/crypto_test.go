@@ -5,6 +5,8 @@ import (
 	"strings"
 	"testing"
 
+	"go.dedis.ch/onet/log"
+
 	"github.com/dedis/kyber/util/key"
 
 	"github.com/dedis/kyber"
@@ -253,7 +255,9 @@ func TestB64Serialization(t *testing.T) {
 
 		// with deserialize
 		ctDeserializedBis := libunlynx.NewCipherText()
-		ctDeserializedBis.Deserialize(ctSerialized)
+		if err := ctDeserializedBis.Deserialize(ctSerialized); err != nil {
+			log.Fatal(err)
+		}
 		decValBis := libunlynx.DecryptInt(secKey, *ctDeserializedBis)
 		assert.Equal(t, target[i], decValBis)
 		assert.Equal(t, decVal, decValBis)

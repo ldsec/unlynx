@@ -60,7 +60,7 @@ func TestProofsVerification(t *testing.T) {
 	cipherVect = *libunlynx.EncryptIntVector(pubKey, tab)
 
 	deterministicTaggingAddProofs := libunlynxdetertag.PublishedDDTAdditionListProof{}
-	deterministicTaggingAddProofs.Pdap = make([]libunlynxdetertag.PublishedDDTAdditionProof, 0)
+	deterministicTaggingAddProofs.List = make([]libunlynxdetertag.PublishedDDTAdditionProof, 0)
 
 	toAdd := libunlynx.SuiTe.Point().Mul(secKeyNew, libunlynx.SuiTe.Point().Base())
 	toAddWrong := libunlynx.SuiTe.Point().Mul(secKey, libunlynx.SuiTe.Point().Base())
@@ -74,7 +74,7 @@ func TestProofsVerification(t *testing.T) {
 			}
 
 			prf := libunlynxdetertag.DeterministicTagAdditionProofCreation(cipherVect[i].C, secKeyNew, toAdd, tmp)
-			deterministicTaggingAddProofs.Pdap = append(deterministicTaggingAddProofs.Pdap, prf)
+			deterministicTaggingAddProofs.List = append(deterministicTaggingAddProofs.List, prf)
 		}
 	}
 
@@ -88,7 +88,7 @@ func TestProofsVerification(t *testing.T) {
 	prfAggregation2 := libunlynxaggr.AggregationProofCreation(cipherVect2, cipherVect2[0])
 
 	aggregationProofs := libunlynxaggr.PublishedAggregationListProof{}
-	aggregationProofs.PapList = append(aggregationProofs.PapList, prfAggregation1, prfAggregation2)
+	aggregationProofs.List = append(aggregationProofs.List, prfAggregation1, prfAggregation2)
 
 	// shuffling *******************************************************************************************************
 	cipherVectorToShuffle := make([]libunlynx.CipherVector, 3)
@@ -101,7 +101,7 @@ func TestProofsVerification(t *testing.T) {
 	prfShuffling2 := libunlynxshuffle.ShuffleProofCreation(cipherVectorToShuffle, cipherVectorToShuffle, libunlynx.SuiTe.Point().Base(), pubKey, beta, pi)
 
 	shufflingProofs := libunlynxshuffle.PublishedShufflingListProof{}
-	shufflingProofs.Pslp = append(shufflingProofs.Pslp, prfShuffling1, prfShuffling2)
+	shufflingProofs.List = append(shufflingProofs.List, prfShuffling1, prfShuffling2)
 
 	// add data to protocol *******************************************************************************************
 

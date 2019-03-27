@@ -1,19 +1,20 @@
 package libunlynxshuffle
 
 import (
+	"crypto/cipher"
 	"math/big"
 	"os"
-
-	"github.com/dedis/kyber/util/random"
+	"sync"
 
 	"github.com/dedis/kyber"
+	"github.com/dedis/kyber/util/random"
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/tools"
 )
 
 // ShuffleSequence applies shuffling to a ciphervector
-func ShuffleSequence(inputList []libunlynx.CipherVector, g, h kyber.Point, precomputed []libunlynx.CipherVectorScalar) ([]libunlynx.CipherVector, []int, [][]kyber.Scalar) {
+func ShuffleSequence(inputList []libunlynx.CipherVector, g, h kyber.Point, precomputed []CipherVectorScalar) ([]libunlynx.CipherVector, []int, [][]kyber.Scalar) {
 	maxUint := ^uint(0)
 	maxInt := int(maxUint >> 1)
 
@@ -98,13 +99,41 @@ func rerandomize(cv libunlynx.CipherVector, a, b kyber.Scalar, cipher libunlynx.
 // Precomputation
 //______________________________________________________________________________________________________________________
 
+// CreatePrecomputedRandomize creates precomputed values for shuffling using public key and size parameters
+func CreatePrecomputedRandomize(g, h kyber.Point, rand cipher.Stream, lineSize, nbrLines int) []CipherVectorScalar {
+	result := make([]CipherVectorScalar, nbrLines)
+	wg := libunlynx.StartParallelize(len(result))
+	var mutex sync.Mutex
+	for i := range result {
+		result[i].CipherV = make(libunlynx.CipherVector, lineSize)
+		result[i].S = make([]kyber.Scalar, lineSize)
+
+		go func(i int) {
+			defer (*wg).Done()
+
+			for w := range result[i].CipherV {
+				mutex.Lock()
+				tmp := libunlynx.SuiTe.Scalar().Pick(rand)
+				mutex.Unlock()
+
+				result[i].S[w] = tmp
+				result[i].CipherV[w].K = libunlynx.SuiTe.Point().Mul(tmp, g)
+				result[i].CipherV[w].C = libunlynx.SuiTe.Point().Mul(tmp, h)
+			}
+
+		}(i)
+	}
+	libunlynx.EndParallelize(wg)
+	return result
+}
+
 // PrecomputeForShuffling precomputes data to be used in the shuffling protocol (to make it faster) and saves it in a .gob file
-func PrecomputeForShuffling(serverName, gobFile string, surveySecret kyber.Scalar, collectiveKey kyber.Point, lineSize int) []libunlynx.CipherVectorScalar {
+func PrecomputeForShuffling(serverName, gobFile string, surveySecret kyber.Scalar, collectiveKey kyber.Point, lineSize int) []CipherVectorScalar {
 	log.Lvl1(serverName, " precomputes for shuffling")
 	scalarBytes, _ := surveySecret.MarshalBinary()
-	precomputeShuffle := libunlynx.CreatePrecomputedRandomize(libunlynx.SuiTe.Point().Base(), collectiveKey, libunlynx.SuiTe.XOF(scalarBytes), lineSize*2, 10)
+	precomputeShuffle := CreatePrecomputedRandomize(libunlynx.SuiTe.Point().Base(), collectiveKey, libunlynx.SuiTe.XOF(scalarBytes), lineSize*2, 10)
 
-	encoded, err := libunlynxtools.EncodeCipherVectorScalar(precomputeShuffle)
+	encoded, err := EncodeCipherVectorScalar(precomputeShuffle)
 
 	if err != nil {
 		log.Error("Error during marshaling")
@@ -115,17 +144,17 @@ func PrecomputeForShuffling(serverName, gobFile string, surveySecret kyber.Scala
 }
 
 // PrecomputationWritingForShuffling reads the precomputation data from  .gob file if it already exists or generates a new one
-func PrecomputationWritingForShuffling(appFlag bool, gobFile, serverName string, surveySecret kyber.Scalar, collectiveKey kyber.Point, lineSize int) []libunlynx.CipherVectorScalar {
+func PrecomputationWritingForShuffling(appFlag bool, gobFile, serverName string, surveySecret kyber.Scalar, collectiveKey kyber.Point, lineSize int) []CipherVectorScalar {
 	log.Lvl1(serverName, " precomputes for shuffling")
-	var precomputeShuffle []libunlynx.CipherVectorScalar
+	var precomputeShuffle []CipherVectorScalar
 	if appFlag {
 		if _, err := os.Stat(gobFile); os.IsNotExist(err) {
 			precomputeShuffle = PrecomputeForShuffling(serverName, gobFile, surveySecret, collectiveKey, lineSize)
 		} else {
-			var encoded []libunlynx.CipherVectorScalarBytes
+			var encoded []CipherVectorScalarBytes
 			libunlynxtools.ReadFromGobFile(gobFile, &encoded)
 
-			precomputeShuffle, err = libunlynxtools.DecodeCipherVectorScalar(encoded)
+			precomputeShuffle, err = DecodeCipherVectorScalar(encoded)
 
 			if len(precomputeShuffle[0].CipherV) < lineSize {
 
@@ -136,19 +165,19 @@ func PrecomputationWritingForShuffling(appFlag bool, gobFile, serverName string,
 		}
 	} else {
 		scalarBytes, _ := surveySecret.MarshalBinary()
-		precomputeShuffle = libunlynx.CreatePrecomputedRandomize(libunlynx.SuiTe.Point().Base(), collectiveKey, libunlynx.SuiTe.XOF(scalarBytes), lineSize*2, 10)
+		precomputeShuffle = CreatePrecomputedRandomize(libunlynx.SuiTe.Point().Base(), collectiveKey, libunlynx.SuiTe.XOF(scalarBytes), lineSize*2, 10)
 	}
 	return precomputeShuffle
 }
 
 // ReadPrecomputedFile reads the precomputation data from a .gob file
-func ReadPrecomputedFile(fileName string) []libunlynx.CipherVectorScalar {
-	var precomputeShuffle []libunlynx.CipherVectorScalar
+func ReadPrecomputedFile(fileName string) []CipherVectorScalar {
+	var precomputeShuffle []CipherVectorScalar
 	if _, err := os.Stat(fileName); !os.IsNotExist(err) {
-		var encoded []libunlynx.CipherVectorScalarBytes
+		var encoded []CipherVectorScalarBytes
 		libunlynxtools.ReadFromGobFile(fileName, &encoded)
 
-		precomputeShuffle, _ = libunlynxtools.DecodeCipherVectorScalar(encoded)
+		precomputeShuffle, _ = DecodeCipherVectorScalar(encoded)
 	} else {
 		precomputeShuffle = nil
 	}

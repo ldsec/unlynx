@@ -20,12 +20,12 @@ type PublishedAddRmProof struct {
 
 // PublishedAddRmListProof contains multiple proofs for adding/removing a server
 type PublishedAddRmListProof struct {
-	Arp   []PublishedAddRmProof
+	List  []PublishedAddRmProof
 	Krm   kyber.Point
 	ToAdd bool
 }
 
-// Add/Remove protocol proofs
+// ADD/REMOVE proofs
 //______________________________________________________________________________________________________________________
 
 // createPredicateAddRm creates predicate for add/rm server protocol
@@ -61,27 +61,27 @@ func AddRmProofCreation(cBef, cAft libunlynx.CipherText, K kyber.Point, k kyber.
 	pval := map[string]kyber.Point{"B": B, "Krm": K, "c2": c2, "rB": rB}
 
 	prover := predicate.Prover(libunlynx.SuiTe, sval, pval, nil) // computes: commitment, challenge, response
-	Proof, err := proof.HashProve(libunlynx.SuiTe, "proofTest", prover)
+	proof, err := proof.HashProve(libunlynx.SuiTe, "proofTest", prover)
 
 	if err != nil {
 		log.Fatal("---------Prover:", err.Error())
 	}
 
-	return PublishedAddRmProof{Proof: Proof, CtBef: cBef, CtAft: cAft, RB: rB}
+	return PublishedAddRmProof{Proof: proof, CtBef: cBef, CtAft: cAft, RB: rB}
 }
 
 // AddRmListProofCreation creates proof for add/rm server protocol for one ciphervector
 func AddRmListProofCreation(vBef, vAft libunlynx.CipherVector, K kyber.Point, k kyber.Scalar, toAdd bool) PublishedAddRmListProof {
-	var wg sync.WaitGroup
 	result := PublishedAddRmListProof{}
-	result.Arp = make([]PublishedAddRmProof, len(vBef))
+	result.List = make([]PublishedAddRmProof, len(vBef))
 
+	var wg sync.WaitGroup
 	for i := 0; i < len(vBef); i += libunlynx.VPARALLELIZE {
 		wg.Add(1)
 		go func(i int) {
 			for j := 0; j < libunlynx.VPARALLELIZE && (i+j) < len(vBef); j++ {
 				proofAux := AddRmProofCreation(vBef[i+j], vAft[i+j], K, k, toAdd)
-				result.Arp[i+j] = proofAux
+				result.List[i+j] = proofAux
 			}
 			defer wg.Done()
 		}(i)
@@ -119,17 +119,20 @@ func AddRmProofVerification(cp PublishedAddRmProof, K kyber.Point, toAdd bool) b
 
 // AddRmListProofVerification verifies multiple add/rm proofs
 func AddRmListProofVerification(parp PublishedAddRmListProof, percent float64) bool {
-	nbrProofsToVerify := int(math.Ceil(percent * float64(len(parp.Arp))))
-
-	wg := libunlynx.StartParallelize(nbrProofsToVerify)
+	nbrProofsToVerify := int(math.Ceil(percent * float64(len(parp.List))))
 	results := make([]bool, nbrProofsToVerify)
-	for i, v := range parp.Arp {
-		go func(idx int, v PublishedAddRmProof, krm kyber.Point, toadd bool) {
+
+	var wg sync.WaitGroup
+	for i := 0; i < len(parp.List); i += libunlynx.VPARALLELIZE {
+		wg.Add(1)
+		go func(i int, krm kyber.Point, toadd bool) {
+			for j := 0; j < libunlynx.VPARALLELIZE && (i+j) < len(parp.List); j++ {
+				results[i+j] = AddRmProofVerification(parp.List[i+j], krm, toadd)
+			}
 			defer wg.Done()
-			results[idx] = AddRmProofVerification(v, krm, toadd)
-		}(i, v, parp.Krm, parp.ToAdd)
+		}(i, parp.Krm, parp.ToAdd)
 	}
-	libunlynx.EndParallelize(wg)
+	wg.Wait()
 
 	finalResult := true
 	for _, v := range results {

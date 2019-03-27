@@ -101,7 +101,7 @@ func NewShufflingSimul(tni *onet.TreeNodeInstance, sim *ShufflingSimulation) (on
 		if err != nil {
 			panic("error unmarshiling scalar")
 		}
-		pap.Precomputed = libunlynx.CreatePrecomputedRandomize(libunlynx.SuiTe.Point().Base(), tni.Roster().Aggregate, libunlynx.SuiTe.XOF(b), int(sim.NbrGroupAttributes)+int(sim.NbrAggrAttributes), 10)
+		pap.Precomputed = libunlynxshuffle.CreatePrecomputedRandomize(libunlynx.SuiTe.Point().Base(), tni.Roster().Aggregate, libunlynx.SuiTe.XOF(b), int(sim.NbrGroupAttributes)+int(sim.NbrAggrAttributes), 10)
 	}
 	if tni.IsRoot() {
 		aggregateKey := pap.Roster().Aggregate

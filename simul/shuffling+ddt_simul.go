@@ -6,6 +6,7 @@ import (
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/shuffle"
 	"github.com/lca1/unlynx/protocols"
 )
 
@@ -103,7 +104,7 @@ func NewShufflingPlusDDTSimul(tni *onet.TreeNodeInstance, sim *ShufflingPlusDDTS
 			}
 			shufflingKey.Sub(shufflingKey, tni.Roster().List[tni.Tree().List()[i].RosterIndex].Public)
 		}
-		prot.Precomputed = libunlynx.CreatePrecomputedRandomize(libunlynx.SuiTe.Point().Base(), shufflingKey, libunlynx.SuiTe.XOF(b), 1, int(sim.NbrResponses))
+		prot.Precomputed = libunlynxshuffle.CreatePrecomputedRandomize(libunlynx.SuiTe.Point().Base(), shufflingKey, libunlynx.SuiTe.XOF(b), 1, int(sim.NbrResponses))
 		libunlynx.EndTimer(precompute)
 	}
 	if tni.IsRoot() {

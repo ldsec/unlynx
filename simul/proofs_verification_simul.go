@@ -11,7 +11,6 @@ import (
 	"github.com/lca1/unlynx/lib/deterministic_tag"
 	"github.com/lca1/unlynx/lib/key_switch"
 	"github.com/lca1/unlynx/lib/shuffle"
-	"github.com/lca1/unlynx/lib/tools"
 	"github.com/lca1/unlynx/protocols"
 	"github.com/lca1/unlynx/protocols/utils"
 )
@@ -105,18 +104,18 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 		cipherVect = *libunlynx.EncryptIntVector(pubKey, tab)
 
 		deterministicTaggingAddProofs := libunlynxdetertag.PublishedDDTAdditionListProof{}
-		deterministicTaggingAddProofs.Pdap = make([]libunlynxdetertag.PublishedDDTAdditionProof, 0)
+		deterministicTaggingAddProofs.List = make([]libunlynxdetertag.PublishedDDTAdditionProof, 0)
 
 		toAdd := libunlynx.SuiTe.Point().Mul(secKeyNew, libunlynx.SuiTe.Point().Base())
 		for i := range cipherVect {
 			tmp := libunlynx.SuiTe.Point().Add(cipherVect[i].C, toAdd)
 			prf := libunlynxdetertag.DeterministicTagAdditionProofCreation(cipherVect[i].C, secKeyNew, toAdd, tmp)
-			deterministicTaggingAddProofs.Pdap = append(deterministicTaggingAddProofs.Pdap, prf)
+			deterministicTaggingAddProofs.List = append(deterministicTaggingAddProofs.List, prf)
 		}
 
-		oneVectorProofs := deterministicTaggingAddProofs.Pdap
+		oneVectorProofs := deterministicTaggingAddProofs.List
 		for i := 0; i < (sim.NbrResponses*sim.NbrServers)-1; i++ {
-			deterministicTaggingAddProofs.Pdap = append(deterministicTaggingAddProofs.Pdap, oneVectorProofs...)
+			deterministicTaggingAddProofs.List = append(deterministicTaggingAddProofs.List, oneVectorProofs...)
 
 		}
 
@@ -157,7 +156,7 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 		comparisonMap := make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse)
 		cvMap := make(map[libunlynx.GroupingKey][]libunlynx.CipherVector)
 		for _, v := range detResponses {
-			libunlynxtools.AddInMap(comparisonMap, v.DetTagGroupBy, v.Fr)
+			libunlynx.AddInMap(comparisonMap, v.DetTagGroupBy, v.Fr)
 			v.FormatAggregationProofs(cvMap)
 		}
 
@@ -166,7 +165,7 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 			aggregationProofs = libunlynxaggr.AggregationListProofCreation(v, comparisonMap[k].AggregatingAttributes)
 
 			for i := 0; i <= sim.NbrServers; i++ {
-				aggregationProofs.PapList = append(aggregationProofs.PapList, aggregationProofs.PapList...)
+				aggregationProofs.List = append(aggregationProofs.List, aggregationProofs.List...)
 			}
 		}
 
@@ -184,31 +183,31 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 		shufflingProof := libunlynxshuffle.ShuffleProofCreation(listCV, clientResponsesShuffled, libunlynx.SuiTe.Point().Base(), root.Roster().Aggregate, beta, pi)
 
 		shufflingProofs := libunlynxshuffle.PublishedShufflingListProof{}
-		shufflingProofs.Pslp = make([]libunlynxshuffle.PublishedShufflingProof, sim.NbrServers*sim.NbrServers)
-		for i := range shufflingProofs.Pslp {
-			shufflingProofs.Pslp[i] = shufflingProof
+		shufflingProofs.List = make([]libunlynxshuffle.PublishedShufflingProof, sim.NbrServers*sim.NbrServers)
+		for i := range shufflingProofs.List {
+			shufflingProofs.List[i] = shufflingProof
 		}
 
 		//collective aggregation ***************************************************************************************
 		cvMap = make(map[libunlynx.GroupingKey][]libunlynx.CipherVector)
 		c1 := make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse)
 		for _, v := range detResponses {
-			libunlynxtools.AddInMap(c1, v.DetTagGroupBy, v.Fr)
+			libunlynx.AddInMap(c1, v.DetTagGroupBy, v.Fr)
 		}
 
 		c3 := make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse)
 		for i, v := range c1 {
-			libunlynxtools.AddInMap(c3, i, v)
-			libunlynxtools.AddInMap(c3, i, v)
+			libunlynx.AddInMap(c3, i, v)
+			libunlynx.AddInMap(c3, i, v)
 			frd := libunlynx.FilteredResponseDet{DetTagGroupBy: i, Fr: v}
 			frd.FormatAggregationProofs(cvMap)
 			frd.FormatAggregationProofs(cvMap)
 		}
 
 		collAggrProofs := libunlynxaggr.PublishedAggregationListProof{}
-		collAggrProofs.PapList = make([]libunlynxaggr.PublishedAggregationProof, 0)
+		collAggrProofs.List = make([]libunlynxaggr.PublishedAggregationProof, 0)
 		for k, v := range cvMap {
-			collAggrProofs.PapList = append(collAggrProofs.PapList, libunlynxaggr.AggregationListProofCreation(v, c3[k].AggregatingAttributes).PapList...)
+			collAggrProofs.List = append(collAggrProofs.List, libunlynxaggr.AggregationListProofCreation(v, c3[k].AggregatingAttributes).List...)
 		}
 		root.ProtocolInstance().(*protocolsunlynxutils.ProofsVerificationProtocol).TargetOfVerification = protocolsunlynxutils.ProofsToVerify{KeySwitchingProofs: keySwitchingProofs,
 			DetTagCreationProofs: deterministicTaggingCrProofs, DetTagAdditionProofs: deterministicTaggingAddProofs, AggregationProofs: aggregationProofs, ShufflingProofs: shufflingProofs, CollectiveAggregationProofs: collAggrProofs}

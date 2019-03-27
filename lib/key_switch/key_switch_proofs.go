@@ -2,6 +2,7 @@ package libunlynxkeyswitch
 
 import (
 	"math"
+	"sync"
 
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/proof"
@@ -30,16 +31,17 @@ type PublishedKSProofBytes struct {
 
 // PublishedKSListProof is a list of PublishedKSProof
 type PublishedKSListProof struct {
-	Prs []PublishedKSProof
+	List []PublishedKSProof
 }
 
 // PublishedKSListProofBytes is the 'bytes' equivalent of PublishedKSListProof
 type PublishedKSListProofBytes struct {
-	PrsB []PublishedKSProofBytes
+	List []PublishedKSProofBytes
 }
 
 // KEY SWITCH proofs
 //______________________________________________________________________________________________________________________
+
 func createPredicateKeySwitch() (predicate proof.Predicate) {
 	// For ZKP
 	log1 := proof.Rep("viB", "vi", "B")
@@ -73,28 +75,36 @@ func KeySwitchProofCreation(K, Q kyber.Point, k kyber.Scalar, viB, ks2, rBNeg ky
 
 // KeySwitchListProofCreation creates a list of key switch proofs (multiple ciphertexts)
 func KeySwitchListProofCreation(K, Q kyber.Point, k kyber.Scalar, ks2s, rBNegs []kyber.Point, vis []kyber.Scalar) PublishedKSListProof {
-	length := len(vis)
-	viBs := make([]kyber.Point, length)
-	wg := libunlynx.StartParallelize(length)
-	for i, v := range vis {
-		go func(i int, v kyber.Scalar) {
-			defer wg.Done()
-			viBs[i] = libunlynx.SuiTe.Point().Mul(v, libunlynx.SuiTe.Point().Base())
-		}(i, v)
-	}
-	libunlynx.EndParallelize(wg)
+	viBs := make([]kyber.Point, len(vis))
 
-	wg = libunlynx.StartParallelize(len(viBs))
+	var wg1 sync.WaitGroup
+	for i := 0; i < len(viBs); i += libunlynx.VPARALLELIZE {
+		wg1.Add(1)
+		go func(i int) {
+			for j := 0; j < libunlynx.VPARALLELIZE && (j+i < len(viBs)); j++ {
+				viBs[i+j] = libunlynx.SuiTe.Point().Mul(vis[i+j], libunlynx.SuiTe.Point().Base())
+			}
+			defer wg1.Done()
+		}(i)
+
+	}
+	wg1.Wait()
+
 	plop := PublishedKSListProof{}
-	plop.Prs = make([]PublishedKSProof, len(viBs))
-	for i, v := range viBs {
-		go func(i int, v kyber.Point) {
-			defer wg.Done()
-			plop.Prs[i] = KeySwitchProofCreation(K, Q, k, viBs[i], ks2s[i], rBNegs[i], vis[i])
-		}(i, v)
+	plop.List = make([]PublishedKSProof, len(viBs))
+
+	var wg2 sync.WaitGroup
+	for i := 0; i < len(viBs); i += libunlynx.VPARALLELIZE {
+		wg2.Add(1)
+		go func(i int, Q kyber.Point, k kyber.Scalar) {
+			for j := 0; j < libunlynx.VPARALLELIZE && (j+i < len(viBs)); j++ {
+				plop.List[i+j] = KeySwitchProofCreation(K, Q, k, viBs[i+j], ks2s[i+j], rBNegs[i+j], vis[i+j])
+			}
+			defer wg2.Done()
+		}(i, Q, k)
 
 	}
-	libunlynx.EndParallelize(wg)
+	wg2.Wait()
 
 	return plop
 }
@@ -115,17 +125,21 @@ func KeySwitchProofVerification(pop PublishedKSProof) bool {
 
 // KeySwitchListProofVerification verifies a list of key switch proofs, if one is wrong, returns false
 func KeySwitchListProofVerification(pkslp PublishedKSListProof, percent float64) bool {
-	nbrProofsToVerify := int(math.Ceil(percent * float64(len(pkslp.Prs))))
-	wg := libunlynx.StartParallelize(nbrProofsToVerify)
+	nbrProofsToVerify := int(math.Ceil(percent * float64(len(pkslp.List))))
 	results := make([]bool, nbrProofsToVerify)
-	for i := 0; i < nbrProofsToVerify; i++ {
-		go func(i int, v PublishedKSProof) {
-			defer wg.Done()
-			results[i] = KeySwitchProofVerification(v)
-		}(i, pkslp.Prs[i])
 
+	var wg sync.WaitGroup
+	for i := 0; i < nbrProofsToVerify; i += libunlynx.VPARALLELIZE {
+		wg.Add(1)
+		go func(i int) {
+			for j := 0; j < libunlynx.VPARALLELIZE && (i+j) < nbrProofsToVerify; j++ {
+				results[i+j] = KeySwitchProofVerification(pkslp.List[i+j])
+			}
+			defer wg.Done()
+		}(i)
 	}
-	libunlynx.EndParallelize(wg)
+	wg.Wait()
+
 	finalResult := true
 	for _, v := range results {
 		finalResult = finalResult && v
@@ -159,24 +173,24 @@ func (pksp *PublishedKSProof) FromBytes(pkspb PublishedKSProofBytes) {
 func (pkslp *PublishedKSListProof) ToBytes() PublishedKSListProofBytes {
 	pkslpb := PublishedKSListProofBytes{}
 
-	prsB := make([]PublishedKSProofBytes, len(pkslp.Prs))
-	wg := libunlynx.StartParallelize(len(pkslp.Prs))
-	for i, pksp := range pkslp.Prs {
+	prsB := make([]PublishedKSProofBytes, len(pkslp.List))
+	wg := libunlynx.StartParallelize(len(pkslp.List))
+	for i, pksp := range pkslp.List {
 		go func(index int, pksp PublishedKSProof) {
 			defer wg.Done()
 			prsB[index] = pksp.ToBytes()
 		}(i, pksp)
 	}
 	libunlynx.EndParallelize(wg)
-	pkslpb.PrsB = prsB
+	pkslpb.List = prsB
 	return pkslpb
 }
 
 // FromBytes converts bytes back to PublishedKSListProof
 func (pkslp *PublishedKSListProof) FromBytes(pkslpb PublishedKSListProofBytes) {
-	prs := make([]PublishedKSProof, len(pkslpb.PrsB))
-	wg := libunlynx.StartParallelize(len(pkslpb.PrsB))
-	for i, pkspb := range pkslpb.PrsB {
+	prs := make([]PublishedKSProof, len(pkslpb.List))
+	wg := libunlynx.StartParallelize(len(pkslpb.List))
+	for i, pkspb := range pkslpb.List {
 		go func(index int, pkspb PublishedKSProofBytes) {
 			defer wg.Done()
 			tmp := PublishedKSProof{}
@@ -185,5 +199,5 @@ func (pkslp *PublishedKSListProof) FromBytes(pkslpb PublishedKSListProofBytes) {
 		}(i, pkspb)
 	}
 	libunlynx.EndParallelize(wg)
-	pkslp.Prs = prs
+	pkslp.List = prs
 }

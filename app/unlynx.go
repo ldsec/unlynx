@@ -1,11 +1,12 @@
 package appunlynx
 
 import (
+	"os"
+
 	"github.com/dedis/onet/app"
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
 	"gopkg.in/urfave/cli.v1"
-	"os"
 )
 
 const (
@@ -120,7 +121,9 @@ func main() {
 			Name:  "server",
 			Usage: "Start unlynx server",
 			Action: func(c *cli.Context) error {
-				runServer(c)
+				if err := runServer(c); err != nil {
+					log.Fatal("Error during runServer():", err)
+				}
 				return nil
 			},
 			Flags: serverFlags,

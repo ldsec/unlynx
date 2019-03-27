@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lca1/unlynx/lib/shuffle"
+
 	"github.com/dedis/kyber/util/random"
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
@@ -30,12 +32,12 @@ func TestShufflingPlusDDTProtocol(t *testing.T) {
 	for i := 1; i < len(tree.List()); i++ {
 		idx := tree.List()[i].RosterIndex
 		privBytes, _ := tree.Roster.List[idx].GetPrivate().MarshalBinary()
-		precomputes[idx] = libunlynx.CreatePrecomputedRandomize(libunlynx.SuiTe.Point().Base(), shuffKey, libunlynx.SuiTe.XOF(privBytes), 4, 10)
+		precomputes[idx] = libunlynxshuffle.CreatePrecomputedRandomize(libunlynx.SuiTe.Point().Base(), shuffKey, libunlynx.SuiTe.XOF(privBytes), 4, 10)
 		shuffKey.Sub(shuffKey, tree.Roster.List[idx].Public)
 	}
 	idx := tree.List()[0].RosterIndex
 	privBytes, _ := tree.Roster.List[idx].GetPrivate().MarshalBinary()
-	precomputes[0] = libunlynx.CreatePrecomputedRandomize(libunlynx.SuiTe.Point().Base(), shuffKey, libunlynx.SuiTe.XOF(privBytes), 4, 10)
+	precomputes[0] = libunlynxshuffle.CreatePrecomputedRandomize(libunlynx.SuiTe.Point().Base(), shuffKey, libunlynx.SuiTe.XOF(privBytes), 4, 10)
 
 	rootInstance, _ := local.CreateProtocol("ShufflingPlusDDTTest", tree)
 	protocol := rootInstance.(*protocolsunlynx.ShufflingPlusDDTProtocol)

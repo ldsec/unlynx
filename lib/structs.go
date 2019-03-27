@@ -2,16 +2,13 @@
 package libunlynx
 
 import (
-	"crypto/cipher"
-	"encoding/binary"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/dedis/kyber"
 )
 
-// Objects
+// Structs
 //______________________________________________________________________________________________________________________
 
 // SEPARATOR is a string used in the transformation of some struct in []byte
@@ -22,19 +19,6 @@ type GroupingKey string
 
 // TempID unique ID used in related maps which is used when we split a map in two associated maps.
 type TempID uint64
-
-// CipherVectorScalar contains the elements forming precomputed values for shuffling, a CipherVector and the scalars
-// corresponding to each element
-type CipherVectorScalar struct {
-	CipherV CipherVector
-	S       []kyber.Scalar
-}
-
-// CipherVectorScalarBytes is a CipherVectorScalar in bytes
-type CipherVectorScalarBytes struct {
-	CipherV [][][]byte
-	S       [][]byte
-}
 
 // DpClearResponse represents a DP response when data is stored in clear at each server/hospital
 type DpClearResponse struct {
@@ -153,44 +137,14 @@ func (cv *FilteredResponse) Add(cv1, cv2 FilteredResponse) *FilteredResponse {
 	return cv
 }
 
-// CipherVectorTag computes all the e for a process response based on a seed h
-func (cv *CipherVector) CipherVectorTag(h kyber.Point) []kyber.Scalar {
-	length := len(*cv)
-	es := make([]kyber.Scalar, length)
-
-	seed, _ := h.MarshalBinary()
-	var wg sync.WaitGroup
-
-	for i := 0; i < length; i = i + VPARALLELIZE {
-		wg.Add(1)
-		go func(i int) {
-			defer wg.Done()
-			for j := 0; j < VPARALLELIZE && (j+i < length); j++ {
-				es[i+j] = ComputeE(i+j, *cv, seed)
-			}
-
-		}(i)
-
+// AddInMap permits to add a filtered response with its deterministic tag in a map
+func AddInMap(s map[GroupingKey]FilteredResponse, key GroupingKey, added FilteredResponse) {
+	if localResult, ok := s[key]; !ok {
+		s[key] = added
+	} else {
+		tmp := NewFilteredResponse(len(added.GroupByEnc), len(added.AggregatingAttributes))
+		s[key] = *tmp.Add(localResult, added)
 	}
-	wg.Wait()
-
-	return es
-}
-
-// ComputeE computes e used in a shuffle proof. Computation based on a public seed.
-func ComputeE(index int, cv CipherVector, seed []byte) kyber.Scalar {
-	var dataC []byte
-	var dataK []byte
-
-	randomCipher := SuiTe.XOF(seed)
-
-	dataC, _ = cv[index].C.MarshalBinary()
-	dataK, _ = cv[index].K.MarshalBinary()
-
-	randomCipher.Write(dataC)
-	randomCipher.Write(dataK)
-
-	return SuiTe.Scalar().Pick(randomCipher)
 }
 
 // FormatAggregationProofs is used to format the data in a way that can be used to create aggregation proofs.
@@ -262,38 +216,7 @@ func EncryptDpClearResponse(ccr DpClearResponse, encryptionKey kyber.Point, coun
 	return cr
 }
 
-// Other random stuff!! :P
-//______________________________________________________________________________________________________________________
-
-// CreatePrecomputedRandomize creates precomputed values for shuffling using public key and size parameters
-func CreatePrecomputedRandomize(g, h kyber.Point, rand cipher.Stream, lineSize, nbrLines int) []CipherVectorScalar {
-	result := make([]CipherVectorScalar, nbrLines)
-	wg := StartParallelize(len(result))
-	var mutex sync.Mutex
-	for i := range result {
-		result[i].CipherV = make(CipherVector, lineSize)
-		result[i].S = make([]kyber.Scalar, lineSize)
-
-		go func(i int) {
-			defer (*wg).Done()
-
-			for w := range result[i].CipherV {
-				mutex.Lock()
-				tmp := SuiTe.Scalar().Pick(rand)
-				mutex.Unlock()
-
-				result[i].S[w] = tmp
-				result[i].CipherV[w].K = SuiTe.Point().Mul(tmp, g)
-				result[i].CipherV[w].C = SuiTe.Point().Mul(tmp, h)
-			}
-
-		}(i)
-	}
-	EndParallelize(wg)
-	return result
-}
-
-// Conversion
+// Marshal
 //______________________________________________________________________________________________________________________
 
 // ToBytes converts a Filtered to a byte array
@@ -484,25 +407,4 @@ func MapBytesToMapCipherText(mapBytes map[string][]byte) map[string]CipherText {
 	}
 
 	return nil
-}
-
-// UnsafeCastIntsToBytes casts a slice of ints to a slice of bytes
-func UnsafeCastIntsToBytes(ints []int) []byte {
-	bsFinal := make([]byte, 0)
-	for _, num := range ints {
-		buf := make([]byte, 4)
-		binary.BigEndian.PutUint32(buf, uint32(num))
-		bsFinal = append(bsFinal, buf...)
-	}
-	return bsFinal
-}
-
-// UnsafeCastBytesToInts casts a slice of bytes to a slice of ints
-func UnsafeCastBytesToInts(bytes []byte) []int {
-	intsFinal := make([]int, 0)
-	for i := 0; i < len(bytes); i += 4 {
-		x := binary.BigEndian.Uint32(bytes[i : i+4])
-		intsFinal = append(intsFinal, int(x))
-	}
-	return intsFinal
 }

@@ -8,6 +8,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/lca1/unlynx/lib/tools"
+
 	"github.com/dedis/kyber/util/key"
 
 	"github.com/dedis/kyber"
@@ -60,7 +62,9 @@ func NewCipherText() *CipherText {
 // NewCipherTextFromBase64 creates a ciphertext of null elements.
 func NewCipherTextFromBase64(b64Encoded string) *CipherText {
 	cipherText := &CipherText{K: SuiTe.Point().Null(), C: SuiTe.Point().Null()}
-	(*cipherText).Deserialize(b64Encoded)
+	if err := (*cipherText).Deserialize(b64Encoded); err != nil {
+		log.Fatal(err)
+	}
 	return cipherText
 }
 
@@ -325,11 +329,15 @@ func discreteLog(P kyber.Point, checkNeg bool) int64 {
 		start = false
 
 		guessInt = i
-		PointToInt.Put(guess.String(), guessInt)
+		if _, err := PointToInt.Put(guess.String(), guessInt); err != nil {
+			log.Fatal(err)
+		}
 		if checkNeg {
 			guessIntMinus = -guessInt
 			guessNeg = SuiTe.Point().Mul(SuiTe.Scalar().SetInt64(guessIntMinus), B)
-			PointToInt.Put(guessNeg.String(), guessIntMinus)
+			if _, err := PointToInt.Put(guessNeg.String(), guessIntMinus); err != nil {
+				log.Fatal(err)
+			}
 
 			if guessNeg.Equal(P) {
 				foundNeg = true
@@ -442,11 +450,11 @@ func (cv *CipherVector) Acum() CipherText {
 
 // Key is used in order to get a map-friendly representation of grouping attributes to be used as keys.
 func (dcv *DeterministCipherVector) Key() GroupingKey {
-	var key []string
+	var keyV []string
 	for _, a := range *dcv {
-		key = append(key, a.String())
+		keyV = append(keyV, a.String())
 	}
-	return GroupingKey(strings.Join(key, ""))
+	return GroupingKey(strings.Join(keyV, ""))
 }
 
 // Equal checks equality between deterministic ciphervector.
@@ -575,8 +583,12 @@ func (c *CipherText) FromBytes(data []byte) {
 	(*c).K = SuiTe.Point()
 	(*c).C = SuiTe.Point()
 	pointLength := SuiTe.PointLen()
-	(*c).K.UnmarshalBinary(data[:pointLength])
-	(*c).C.UnmarshalBinary(data[pointLength:])
+	if err := (*c).K.UnmarshalBinary(data[:pointLength]); err != nil {
+		log.Fatal(err)
+	}
+	if err := (*c).C.UnmarshalBinary(data[pointLength:]); err != nil {
+		log.Fatal(err)
+	}
 }
 
 // Serialize encodes a CipherText in a base64 string
@@ -709,12 +721,12 @@ func ArrayCipherVectorToBytes(data []CipherVector) ([]byte, []byte) {
 	for _, v := range bb {
 		b = append(b, v...)
 	}
-	return b, UnsafeCastIntsToBytes(cvLengths)
+	return b, libunlynxtools.UnsafeCastIntsToBytes(cvLengths)
 }
 
 // FromBytesToArrayCipherVector converts bytes to an array of CipherVector
 func FromBytesToArrayCipherVector(data []byte, cvLengthsByte []byte) []CipherVector {
-	cvLengths := UnsafeCastBytesToInts(cvLengthsByte)
+	cvLengths := libunlynxtools.UnsafeCastBytesToInts(cvLengthsByte)
 	dataConverted := make([]CipherVector, len(cvLengths))
 	elementSize := CipherTextByteSize()
 

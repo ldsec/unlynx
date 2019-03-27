@@ -33,23 +33,23 @@ func TestKeySwitchingProof(t *testing.T) {
 
 	// verifiy an 'incorrect' list proof
 	ct3 := libunlynx.EncryptInt(keys.Public, int64(3))
-	pkslp.Prs[0].K = ct3.K
+	pkslp.List[0].K = ct3.K
 	verif = libunlynxkeyswitch.KeySwitchListProofVerification(pkslp, 1.0)
 	assert.False(t, verif)
 
-	pkslp.Prs[0].K = keysTarget.Public
+	pkslp.List[0].K = keysTarget.Public
 	verif = libunlynxkeyswitch.KeySwitchListProofVerification(pkslp, 1.0)
 	assert.False(t, verif)
 
-	pkslp.Prs[0].Ks2 = keysTarget.Public
+	pkslp.List[0].Ks2 = keysTarget.Public
 	verif = libunlynxkeyswitch.KeySwitchListProofVerification(pkslp, 1.0)
 	assert.False(t, verif)
 
-	pkslp.Prs[0].ViB = keysTarget.Public
+	pkslp.List[0].ViB = keysTarget.Public
 	verif = libunlynxkeyswitch.KeySwitchListProofVerification(pkslp, 1.0)
 	assert.False(t, verif)
 
-	pkslp.Prs[0].Proof = []byte{2}
+	pkslp.List[0].Proof = []byte{2}
 	verif = libunlynxkeyswitch.KeySwitchListProofVerification(pkslp, 1.0)
 	assert.False(t, verif)
 }

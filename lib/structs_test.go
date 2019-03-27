@@ -34,16 +34,25 @@ func TestAddClientResponse(t *testing.T) {
 	assert.Equal(t, grouping, libunlynx.DecryptIntVector(secKey, &newCr.GroupByEnc))
 }
 
-// TestCipherVectorTagging tests the CipherVector tag method
-func TestCipherVectorTagging(t *testing.T) {
-	const N = 1
-	groupKey, _, _ := libunlynx.GenKeys(N)
+func TestAddInMap(t *testing.T) {
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	_, pubKey := keys.Private, keys.Public
+	gkey := libunlynx.GroupingKey("test")
 
-	target := []int64{1, 2, 3, 4, 5}
-	cv := libunlynx.EncryptIntVector(groupKey, target)
+	cv := make(libunlynx.CipherVector, 5)
+	for i := 0; i < 5; i++ {
+		cv[i] = *libunlynx.EncryptInt(pubKey, int64(i))
+	}
+	fr := libunlynx.FilteredResponse{GroupByEnc: cv, AggregatingAttributes: cv}
 
-	es := cv.CipherVectorTag(groupKey)
-	_ = es
+	mapToTest := make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse)
+	_, ok := mapToTest[gkey]
+	assert.False(t, ok)
+
+	libunlynx.AddInMap(mapToTest, gkey, fr)
+	v, ok2 := mapToTest[gkey]
+	assert.True(t, ok2)
+	assert.Equal(t, v, fr)
 }
 
 // A function that converts and decrypts a map[string][]byte -> map[string]Ciphertext ->  map[string]int64

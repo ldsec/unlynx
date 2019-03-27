@@ -3,6 +3,10 @@ package appunlynx
 import (
 	"os"
 
+	"regexp"
+	"strconv"
+	"strings"
+
 	"github.com/btcsuite/goleveldb/leveldb/errors"
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/app"
@@ -10,16 +14,12 @@ import (
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/services/default"
 	"gopkg.in/urfave/cli.v1"
-	"regexp"
-	"strconv"
-	"strings"
 )
 
 // BEGIN CLIENT: QUERIER ----------
 func startQuery(el *onet.Roster, proofs bool, sum []string, count bool, whereQueryValues []libunlynx.WhereQueryAttribute, predicate string, groupBy []string) {
 	client := servicesunlynxdefault.NewUnLynxClient(el.List[0], strconv.Itoa(0))
 
-	// Generate Survey Data
 	nbrDPs := make(map[string]int64)
 	//how many data providers for each server
 	for _, server := range el.List {
