@@ -6,13 +6,13 @@ import (
 
 	"github.com/dedis/kyber/util/random"
 	"github.com/dedis/onet"
+	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/tools"
 	"github.com/lca1/unlynx/protocols"
 	"github.com/lca1/unlynx/protocols/utils"
 	"github.com/stretchr/testify/assert"
-	"go.dedis.ch/onet/log"
 )
 
 func TestLocalAggregation(t *testing.T) {

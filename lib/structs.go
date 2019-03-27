@@ -9,7 +9,6 @@ import (
 	"sync"
 
 	"github.com/dedis/kyber"
-	"github.com/dedis/onet/log"
 )
 
 // Objects
@@ -501,7 +500,6 @@ func UnsafeCastIntsToBytes(ints []int) []byte {
 // UnsafeCastBytesToInts casts a slice of bytes to a slice of ints
 func UnsafeCastBytesToInts(bytes []byte) []int {
 	intsFinal := make([]int, 0)
-	log.LLvl1(len(bytes))
 	for i := 0; i < len(bytes); i += 4 {
 		x := binary.BigEndian.Uint32(bytes[i : i+4])
 		intsFinal = append(intsFinal, int(x))

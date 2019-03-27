@@ -352,7 +352,12 @@ func discreteLog(P kyber.Point, checkNeg bool) int64 {
 		return guessIntMinus
 	}
 	return guessInt
+}
 
+// CreateDecryptionTable generated the lookup table for decryption of all the integers in [-limit, limit]
+func CreateDecryptionTable(limit int64, pubKey kyber.Point, secKey kyber.Scalar) {
+	dummy := EncryptInt(pubKey, int64(limit))
+	DecryptIntWithNeg(secKey, *dummy)
 }
 
 // Homomorphic Operations
