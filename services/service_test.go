@@ -1,18 +1,16 @@
 package servicesunlynx_test
 
 import (
+	"github.com/dedis/onet"
+	"github.com/dedis/onet/log"
+	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/services"
+	"github.com/stretchr/testify/assert"
 	"os"
 	"reflect"
 	"strconv"
 	"sync"
 	"testing"
-
-	"github.com/lca1/unlynx/services"
-
-	"github.com/dedis/onet"
-	"github.com/dedis/onet/log"
-	"github.com/lca1/unlynx/lib"
-	"github.com/stretchr/testify/assert"
 )
 
 // numberGrpAttr is the number of group attributes.
@@ -103,7 +101,9 @@ func TestCountDPs(t *testing.T) {
 /// Only clear where and group by attributes + tests shuffling if 1 element -> add a dummy one
 func TestServiceClearAttr(t *testing.T) {
 	log.Lvl1("***************************************************************************************************")
-	os.Remove("pre_compute_multiplications.gob")
+	if err := os.Remove("pre_compute_multiplications.gob"); err != nil {
+		log.Fatal(err)
+	}
 	local := onet.NewLocalTest(libunlynx.SuiTe)
 	// generate 5 hosts, they don't connect, they process messages, and they
 	// don't register the tree or entitylist
@@ -174,7 +174,9 @@ func TestServiceClearAttr(t *testing.T) {
 		responses := []libunlynx.DpClearResponse{{WhereClear: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereClear: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr}}
 
 		log.Lvl1(responses)
-		dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
+		if err := dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count); err != nil {
+			log.Fatal(err)
+		}
 
 	}
 
@@ -212,7 +214,9 @@ func TestServiceClearAttr(t *testing.T) {
 /// Only encrypted where and clear group by attributes
 func TestServiceClearGrpEncWhereAttr(t *testing.T) {
 	log.Lvl1("***************************************************************************************************")
-	os.Remove("pre_compute_multiplications.gob")
+	if err := os.Remove("pre_compute_multiplications.gob"); err != nil {
+		log.Fatal(err)
+	}
 	log.SetDebugVisible(2)
 	local := onet.NewLocalTest(libunlynx.SuiTe)
 	// generate 5 hosts, they don't connect, they process messages, and they
@@ -278,7 +282,9 @@ func TestServiceClearGrpEncWhereAttr(t *testing.T) {
 		}
 
 		responses := []libunlynx.DpClearResponse{{WhereEnc: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereEnc: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereEnc: sliceWhere, GroupByClear: sliceGrp1, AggregatingAttributesEnc: aggr}}
-		dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
+		if err := dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count); err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	expectedResults[[3]int64{0, 1, 2}] = []int64{0, 18}
@@ -315,7 +321,9 @@ func TestServiceClearGrpEncWhereAttr(t *testing.T) {
 /// Only clear where and encrypted group by attributes
 func TestServiceEncGrpClearWhereAttr(t *testing.T) {
 	log.Lvl1("***************************************************************************************************")
-	os.Remove("pre_compute_multiplications.gob")
+	if err := os.Remove("pre_compute_multiplications.gob"); err != nil {
+		log.Fatal(err)
+	}
 	log.SetDebugVisible(2)
 	local := onet.NewLocalTest(libunlynx.SuiTe)
 	// generate 5 hosts, they don't connect, they process messages, and they
@@ -382,7 +390,9 @@ func TestServiceEncGrpClearWhereAttr(t *testing.T) {
 		}
 
 		responses := []libunlynx.DpClearResponse{{WhereClear: sliceWhere, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereClear: sliceWhere, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
-		dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
+		if err := dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count); err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	expectedResults[[3]int64{0, 1, 2}] = []int64{0, 9}
@@ -419,7 +429,9 @@ func TestServiceEncGrpClearWhereAttr(t *testing.T) {
 /// Only encrypted attributes
 func TestServiceEncGrpAndWhereAttr(t *testing.T) {
 	log.Lvl1("***************************************************************************************************")
-	os.Remove("pre_compute_multiplications.gob")
+	if err := os.Remove("pre_compute_multiplications.gob"); err != nil {
+		log.Fatal(err)
+	}
 	log.SetDebugVisible(2)
 	local := onet.NewLocalTest(libunlynx.SuiTe)
 	// generate 5 hosts, they don't connect, they process messages, and they
@@ -489,7 +501,9 @@ func TestServiceEncGrpAndWhereAttr(t *testing.T) {
 		}
 
 		responses := []libunlynx.DpClearResponse{{WhereEnc: sliceWhere, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereEnc: sliceWhere, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
-		dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
+		if err := dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count); err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	expectedResults[[3]int64{0, 1, 2}] = []int64{0, 9}
@@ -526,7 +540,9 @@ func TestServiceEncGrpAndWhereAttr(t *testing.T) {
 /// Only encrypted attributes
 func TestServiceEverything(t *testing.T) {
 	log.Lvl1("***************************************************************************************************")
-	os.Remove("pre_compute_multiplications.gob")
+	if err := os.Remove("pre_compute_multiplications.gob"); err != nil {
+		log.Fatal(err)
+	}
 	log.SetDebugVisible(2)
 	local := onet.NewLocalTest(libunlynx.SuiTe)
 	// generate 5 hosts, they don't connect, they process messages, and they
@@ -592,7 +608,9 @@ func TestServiceEverything(t *testing.T) {
 		}
 
 		responses := []libunlynx.DpClearResponse{{WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
-		dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
+		if err := dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count); err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	expectedResults[[3]int64{0, 1, 2}] = []int64{0, 9}
@@ -629,7 +647,9 @@ func TestServiceEverything(t *testing.T) {
 // Only encrypted attributes with count
 func TestServiceEncGrpAndWhereAttrWithCount(t *testing.T) {
 	log.Lvl1("***************************************************************************************************")
-	os.Remove("pre_compute_multiplications.gob")
+	if err := os.Remove("pre_compute_multiplications.gob"); err != nil {
+		log.Fatal(err)
+	}
 	log.SetDebugVisible(2)
 	local := onet.NewLocalTest(libunlynx.SuiTe)
 	// generate 5 hosts, they don't connect, they process messages, and they
@@ -695,7 +715,9 @@ func TestServiceEncGrpAndWhereAttrWithCount(t *testing.T) {
 		}
 
 		responses := []libunlynx.DpClearResponse{{WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
-		dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
+		if err := dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count); err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	expectedResults[[3]int64{0, 1, 2}] = []int64{0, 9, 9}
@@ -735,7 +757,9 @@ func TestServiceEncGrpAndWhereAttrWithCount(t *testing.T) {
 // Servers with no DPs
 func TestAllServersNoDPs(t *testing.T) {
 	log.Lvl1("***************************************************************************************************")
-	os.Remove("pre_compute_multiplications.gob")
+	if err := os.Remove("pre_compute_multiplications.gob"); err != nil {
+		log.Fatal(err)
+	}
 	log.SetDebugVisible(2)
 	local := onet.NewLocalTest(libunlynx.SuiTe)
 	// generate 5 hosts, they don't connect, they process messages, and they
@@ -805,7 +829,9 @@ func TestAllServersNoDPs(t *testing.T) {
 		}
 
 		responses := []libunlynx.DpClearResponse{{WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
-		dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
+		if err := dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count); err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	expectedResults[[3]int64{0, 1, 2}] = []int64{0, 9}
@@ -842,7 +868,9 @@ func TestAllServersNoDPs(t *testing.T) {
 // Servers with a different number of DPs
 func TestAllServersRandomDPs(t *testing.T) {
 	log.Lvl1("***************************************************************************************************")
-	os.Remove("pre_compute_multiplications.gob")
+	if err := os.Remove("pre_compute_multiplications.gob"); err != nil {
+		log.Fatal(err)
+	}
 	log.SetDebugVisible(2)
 	local := onet.NewLocalTest(libunlynx.SuiTe)
 	// generate 5 hosts, they don't connect, they process messages, and they
@@ -919,7 +947,9 @@ func TestAllServersRandomDPs(t *testing.T) {
 		}
 
 		responses := []libunlynx.DpClearResponse{{WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
-		dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
+		if err := dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count); err != nil {
+			log.Fatal(err)
+		}
 	}
 	expectedResults[[3]int64{0, 1, 2}] = []int64{0, 9}
 	expectedResults[[3]int64{1, 2, 3}] = []int64{0, 9}
@@ -959,7 +989,9 @@ func TestAllServersRandomDPs(t *testing.T) {
 // Test multiple requests at the same time
 func TestConcurrentSurveys(t *testing.T) {
 	log.Lvl1("***************************************************************************************************")
-	os.Remove("pre_compute_multiplications.gob")
+	if err := os.Remove("pre_compute_multiplications.gob"); err != nil {
+		log.Fatal(err)
+	}
 	log.SetDebugVisible(2)
 	local := onet.NewLocalTest(libunlynx.SuiTe)
 	// generate 5 hosts, they don't connect, they process messages, and they
@@ -1043,7 +1075,9 @@ func TestConcurrentSurveys(t *testing.T) {
 				}
 
 				responses := []libunlynx.DpClearResponse{{WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
-				dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
+				if err := dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count); err != nil {
+					log.Fatal(err)
+				}
 			}
 			expectedResults[[3]int64{0, 1, 2}] = []int64{0, 9}
 			expectedResults[[3]int64{1, 2, 3}] = []int64{0, 9}
