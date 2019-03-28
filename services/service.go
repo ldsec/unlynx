@@ -292,6 +292,17 @@ func (s *Service) HandleSurveyResponseQuery(resp *SurveyResponseQuery) (network.
 
 // HandleSurveyResultsQuery handles the survey result query by the surveyor.
 func (s *Service) HandleSurveyResultsQuery(resq *SurveyResultsQuery) (network.Message, error) {
+	var el interface{}
+	el = nil
+	for el == nil {
+		el, _ = s.Survey.Get((string)(resq.SurveyID))
+
+		if el != nil {
+			break
+		}
+
+		time.Sleep(time.Millisecond * 100)
+	}
 
 	log.Lvl1(s.ServerIdentity(), " received a survey result query")
 
