@@ -50,7 +50,7 @@ func TestLocalAggregation(t *testing.T) {
 
 	go func() {
 		if err := protocol.Start(); err != nil {
-			log.Fatal("Error to Start <LocalAggregation> protocol")
+			log.Fatal("Error to Start <LocalAggregation> protocol:", err)
 		}
 	}()
 

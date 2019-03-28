@@ -53,7 +53,7 @@ func (sim *ShufflingPlusDDTSimulation) Node(config *onet.SimulationConfig) error
 		func(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 			return NewShufflingPlusDDTSimul(tni, sim)
 		}); err != nil {
-		log.Fatal("Error while registering <ShufflingSimul> with id:", pid)
+		log.Fatal("Error while registering <ShufflingSimul> with id(", pid, "):", err)
 	}
 
 	return sim.SimulationBFTree.Node(config)
@@ -75,7 +75,7 @@ func (sim *ShufflingPlusDDTSimulation) Run(config *onet.SimulationConfig) error 
 		round := libunlynx.StartTimer("_ShufflingPlusDDT(SIMULATION)")
 
 		if err := root.Start(); err != nil {
-			log.Fatal("Error while starting <ShufflingPlusDDT> Protocol")
+			log.Fatal("Error while starting <ShufflingPlusDDT> Protocol:", err)
 		}
 		<-root.ProtocolInstance().(*protocolsunlynx.ShufflingPlusDDTProtocol).FeedbackChannel
 

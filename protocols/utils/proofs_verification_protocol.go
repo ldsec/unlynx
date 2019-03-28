@@ -19,7 +19,7 @@ const ProofsVerificationProtocolName = "ProofsVerification"
 
 func init() {
 	if _, err := onet.GlobalProtocolRegister(ProofsVerificationProtocolName, NewProofsVerificationProtocol); err != nil {
-		log.Fatal("Error registering <LocalAggregationProtocol>")
+		log.Fatal("Error registering <LocalAggregationProtocol>:", err)
 	}
 }
 

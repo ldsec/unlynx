@@ -125,7 +125,7 @@ func (sim *SimulationUnLynx) Run(config *onet.SimulationConfig) error {
 		surveyID, err := client.SendSurveyCreationQuery(el, servicesunlynxdefault.SurveyID(""), nil, nbrDPs, sim.Proofs, false, sum, count, whereQueryValues, predicate, groupBy)
 
 		if err != nil {
-			log.Fatal("Service did not start.")
+			log.Fatal("Service did not start:", err)
 		}
 
 		// RandomGroups (true/false) is to respectively generate random or non random entries
@@ -154,7 +154,7 @@ func (sim *SimulationUnLynx) Run(config *onet.SimulationConfig) error {
 
 				client = servicesunlynxdefault.NewUnLynxClient(server, strconv.Itoa(i+1))
 				if err := client.SendSurveyResponseQuery(*surveyID, dataCollection, el.Aggregate, sim.DataRepetitions, count); err != nil {
-					log.Fatal("Error while sending DP (" + client.String() + ") responses")
+					log.Fatal("Error while sending DP ("+client.String()+") responses:", err)
 				}
 			}(i, client)
 			libunlynx.EndTimer(start)
@@ -167,7 +167,7 @@ func (sim *SimulationUnLynx) Run(config *onet.SimulationConfig) error {
 
 		grp, aggr, err := client.SendSurveyResultsQuery(*surveyID)
 		if err != nil {
-			log.Fatal("Service could not output the results. ", err)
+			log.Fatal("Service could not output the results:", err)
 		}
 
 		libunlynx.EndTimer(start)

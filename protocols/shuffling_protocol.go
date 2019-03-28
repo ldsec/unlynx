@@ -252,7 +252,7 @@ func (p *ShufflingProtocol) Dispatch() error {
 func (p *ShufflingProtocol) sendToNext(msg interface{}) {
 	err := p.SendTo(p.nextNodeInCircuit, msg)
 	if err != nil {
-		log.Fatal("Had an error sending a message: ", err)
+		log.Fatal(err)
 	}
 }
 

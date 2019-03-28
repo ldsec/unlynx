@@ -1,7 +1,9 @@
-package libunlynxdetertag
+package libunlynxdetertag_test
 
 import (
 	"testing"
+
+	"github.com/lca1/unlynx/lib/deterministic_tag"
 
 	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
@@ -17,7 +19,7 @@ func TestDeterministicTagSequence(t *testing.T) {
 	target := []int64{-8358645081376817152, -8358645081376817152, 2, 3, 2, 5}
 	cv := *libunlynx.EncryptIntVector(K, target)
 	for n := 0; n < N; n++ {
-		tmp := DeterministicTagSequence(cv, private[n], secretPrivate[n])
+		tmp := libunlynxdetertag.DeterministicTagSequence(cv, private[n], secretPrivate[n])
 		cv = tmp
 	}
 
@@ -34,8 +36,8 @@ func TestCipherVectorToDeterministicTag(t *testing.T) {
 	cv1 := *libunlynx.EncryptIntVector(K, target)
 	cv2 := *libunlynx.EncryptIntVector(K, target)
 
-	gk1, _ := CipherVectorToDeterministicTag(cv1, private[0], secretPrivate[0], K, false)
-	gk2, _ := CipherVectorToDeterministicTag(cv2, private[0], secretPrivate[0], K, false)
+	gk1, _ := libunlynxdetertag.CipherVectorToDeterministicTag(cv1, private[0], secretPrivate[0], K, false)
+	gk2, _ := libunlynxdetertag.CipherVectorToDeterministicTag(cv2, private[0], secretPrivate[0], K, false)
 
 	assert.Equal(t, gk1, gk2)
 }

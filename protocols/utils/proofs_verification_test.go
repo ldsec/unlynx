@@ -118,7 +118,7 @@ func TestProofsVerification(t *testing.T) {
 	expRes := []bool{true, true, false, false, false, false}
 	go func() {
 		if err := protocol.Start(); err != nil {
-			log.Fatal("Error to Start <ProofsVerification> protocol")
+			log.Fatal("Error to Start <ProofsVerification> protocol:", err)
 		}
 	}()
 

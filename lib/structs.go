@@ -17,9 +17,6 @@ const SEPARATOR = "/-/"
 // GroupingKey is an ID corresponding to grouping attributes.
 type GroupingKey string
 
-// TempID unique ID used in related maps which is used when we split a map in two associated maps.
-type TempID uint64
-
 // DpClearResponse represents a DP response when data is stored in clear at each server/hospital
 type DpClearResponse struct {
 	WhereClear                 map[string]int64
@@ -96,40 +93,6 @@ func NewFilteredResponse(grpEncSize, attrSize int) FilteredResponse {
 	return FilteredResponse{*NewCipherVector(grpEncSize), *NewCipherVector(attrSize)}
 }
 
-// GroupingKey
-//______________________________________________________________________________________________________________________
-
-// Key allows to transform non-encrypted grouping attributes to a tag (groupingkey)
-func Key(ga []int64) GroupingKey {
-	var key []string
-	for _, a := range ga {
-		key = append(key, strconv.Itoa(int(a)))
-		key = append(key, ",")
-	}
-	return GroupingKey(strings.Join(key, ""))
-}
-
-// UnKey permits to go from a tag  non-encrypted grouping attributes to grouping attributes
-func UnKey(gk GroupingKey) []int64 {
-	tab := make([]int64, 0)
-	count := 0
-	nbrString := make([]string, 1)
-	for _, a := range gk {
-		if a != ',' {
-			nbrString[0] = string(a)
-		} else {
-			tmp, _ := strconv.Atoi(strings.Join(nbrString, ""))
-			tab = append(tab, int64(tmp))
-			nbrString = make([]string, 1)
-			count++
-		}
-	}
-	return tab
-}
-
-// ClientResponse
-//______________________________________________________________________________________________________________________
-
 // Add permits to add to FilteredResponses
 func (cv *FilteredResponse) Add(cv1, cv2 FilteredResponse) *FilteredResponse {
 	cv.GroupByEnc = cv1.GroupByEnc
@@ -186,9 +149,6 @@ func (crd *FilteredResponseDet) FormatAggregationProofs(res map[GroupingKey][]Ci
 	}
 }
 
-// DpClearResponse
-//______________________________________________________________________________________________________________________
-
 // EncryptDpClearResponse encrypts a DP response
 func EncryptDpClearResponse(ccr DpClearResponse, encryptionKey kyber.Point, count bool) DpResponseToSend {
 	cr := DpResponseToSend{}
@@ -214,6 +174,37 @@ func EncryptDpClearResponse(ccr DpClearResponse, encryptionKey kyber.Point, coun
 	}
 
 	return cr
+}
+
+// GroupingKey
+//______________________________________________________________________________________________________________________
+
+// Key allows to transform non-encrypted grouping attributes to a tag (groupingkey)
+func Key(ga []int64) GroupingKey {
+	var key []string
+	for _, a := range ga {
+		key = append(key, strconv.Itoa(int(a)))
+		key = append(key, ",")
+	}
+	return GroupingKey(strings.Join(key, ""))
+}
+
+// UnKey permits to go from a tag  non-encrypted grouping attributes to grouping attributes
+func UnKey(gk GroupingKey) []int64 {
+	tab := make([]int64, 0)
+	count := 0
+	nbrString := make([]string, 1)
+	for _, a := range gk {
+		if a != ',' {
+			nbrString[0] = string(a)
+		} else {
+			tmp, _ := strconv.Atoi(strings.Join(nbrString, ""))
+			tab = append(tab, int64(tmp))
+			nbrString = make([]string, 1)
+			count++
+		}
+	}
+	return tab
 }
 
 // Marshal

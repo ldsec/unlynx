@@ -215,7 +215,7 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 		round := libunlynx.StartTimer("ProofsVerification(SIMULATION)")
 
 		if err := root.Start(); err != nil {
-			log.Fatal("Error while starting <ProofsVerification> Protocol")
+			log.Fatal("Error while starting <ProofsVerification> Protocol:", err)
 		}
 		results := <-root.ProtocolInstance().(*protocolsunlynxutils.ProofsVerificationProtocol).FeedbackChannel
 		libunlynx.EndTimer(round)

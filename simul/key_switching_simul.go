@@ -95,7 +95,7 @@ func (sim *KeySwitchingSimulation) Run(config *onet.SimulationConfig) error {
 		round := libunlynx.StartTimer("_KeySwitching(SIMULATION)")
 
 		if err := root.Start(); err != nil {
-			log.Fatal("Error while starting <KeySwitching> Protocol")
+			log.Fatal("Error while starting <KeySwitching> Protocol:", err)
 		}
 		<-root.ProtocolInstance().(*protocolsunlynx.KeySwitchingProtocol).FeedbackChannel
 

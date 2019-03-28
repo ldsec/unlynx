@@ -51,7 +51,7 @@ func TestAddRmServer(t *testing.T) {
 
 	go func() {
 		if err := protocol.Start(); err != nil {
-			log.Fatal("Error to Start <AddRmServer> protocol")
+			log.Fatal("Error to Start <AddRmServer> protocol:", err)
 		}
 	}()
 

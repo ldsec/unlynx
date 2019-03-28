@@ -64,7 +64,7 @@ func AddRmProofCreation(cBef, cAft libunlynx.CipherText, K kyber.Point, k kyber.
 	proof, err := proof.HashProve(libunlynx.SuiTe, "proofTest", prover)
 
 	if err != nil {
-		log.Fatal("---------Prover:", err.Error())
+		log.Fatal("---------Prover:", err)
 	}
 
 	return PublishedAddRmProof{Proof: proof, CtBef: cBef, CtAft: cAft, RB: rB}

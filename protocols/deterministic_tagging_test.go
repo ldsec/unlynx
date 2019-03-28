@@ -68,7 +68,7 @@ func TestDeterministicTagging(t *testing.T) {
 	feedback := protocol.FeedbackChannel
 	go func() {
 		if err := protocol.Start(); err != nil {
-			log.Fatal("Error to start <DeterministicTagging> protocol")
+			log.Fatal("Error to start <DeterministicTagging> protocol:", err)
 		}
 	}()
 

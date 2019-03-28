@@ -54,7 +54,7 @@ func TestShufflingPlusDDTProtocol(t *testing.T) {
 	feedback := protocol.FeedbackChannel
 	go func() {
 		if err := protocol.Start(); err != nil {
-			log.Fatal("Error to start <ShufflingPlusDDT> protocol")
+			log.Fatal("Error to start <ShufflingPlusDDT> protocol:", err)
 		}
 	}()
 

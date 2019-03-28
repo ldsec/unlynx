@@ -44,7 +44,7 @@ func TestCollectiveAggregationGroup(t *testing.T) {
 	//run protocol
 	go func() {
 		if err := protocol.Start(); err != nil {
-			log.Fatal("Error to Start <CollectiveAggregation> protocol")
+			log.Fatal("Error to Start <CollectiveAggregation> protocol:", err)
 		}
 	}()
 	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*5*2) * time.Millisecond
@@ -133,7 +133,7 @@ func TestCollectiveAggregationSimple(t *testing.T) {
 	//run protocol
 	go func() {
 		if err := protocol.Start(); err != nil {
-			log.Fatal("Error to Start <CollectiveAggregation> protocol")
+			log.Fatal("Error to Start <CollectiveAggregation> protocol:", err)
 		}
 	}()
 	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*5*2) * time.Millisecond

@@ -33,7 +33,7 @@ func startQuery(el *onet.Roster, proofs bool, sum []string, count bool, whereQue
 
 	grp, aggr, err := client.SendSurveyResultsQuery(*surveyID)
 	if err != nil {
-		log.Fatal("Service could not output the results.")
+		log.Fatal("Service could not output the results.", err)
 	}
 
 	// Print Output
@@ -140,7 +140,7 @@ func parseQuery(el *onet.Roster, sum string, count bool, where, predicate, group
 		} else { // if it is a value
 			value, err := strconv.Atoi(tmp[i])
 			if err != nil {
-				log.Fatal("Something wrong with the where value")
+				log.Fatal(err)
 			}
 
 			whereFinal = append(whereFinal, libunlynx.WhereQueryAttribute{Name: variable, Value: *libunlynx.EncryptInt(el.Aggregate, int64(value))})

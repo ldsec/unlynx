@@ -35,7 +35,7 @@ func TestLocalClearAggregation(t *testing.T) {
 
 	go func() {
 		if err := protocol.Start(); err != nil {
-			log.Fatal("Error to Start <LocalClearAggregation> protocol")
+			log.Fatal("Error to Start <LocalClearAggregation> protocol:", err)
 		}
 	}()
 

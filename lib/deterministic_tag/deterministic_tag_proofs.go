@@ -81,7 +81,7 @@ func DeterministicTagCrProofCreation(ctBef, ctAft libunlynx.CipherText, K kyber.
 	prover := predicate.Prover(libunlynx.SuiTe, sval, pval, nil) // computes: commitment, challenge, response
 	Proof, err := proof.HashProve(libunlynx.SuiTe, "proofTest", prover)
 	if err != nil {
-		log.Fatal("---------Prover:", err.Error())
+		log.Fatal("---------Prover:", err)
 	}
 
 	return PublishedDDTCreationProof{Proof: Proof, Ciminus11Si: ciminus11Si, CTbef: ctBef, CTaft: ctAft}
@@ -177,7 +177,7 @@ func DeterministicTagAdditionProofCreation(c1 kyber.Point, s kyber.Scalar, c2 ky
 	prover := predicate.Prover(libunlynx.SuiTe, sval, pval, nil) // computes: commitment, challenge, response
 	Proof, err := proof.HashProve(libunlynx.SuiTe, "proofTest", prover)
 	if err != nil {
-		log.Fatal("---------Prover:", err.Error())
+		log.Fatal("---------Prover:", err)
 	}
 
 	return PublishedDDTAdditionProof{Proof: Proof, C1: c1, C2: c2, R: r}

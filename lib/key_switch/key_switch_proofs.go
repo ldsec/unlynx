@@ -67,7 +67,7 @@ func KeySwitchProofCreation(K, Q kyber.Point, k kyber.Scalar, viB, ks2, rBNeg ky
 	prover := predicate.Prover(libunlynx.SuiTe, sval, pval, nil) // computes: commitment, challenge, response
 	Proof, err := proof.HashProve(libunlynx.SuiTe, "proofTest", prover)
 	if err != nil {
-		log.Fatal("---------Prover:", err.Error())
+		log.Fatal("---------Prover:", err)
 	}
 
 	return PublishedKSProof{Proof: Proof, K: K, ViB: viB, Ks2: ks2, RbNeg: rBNeg, Q: Q}

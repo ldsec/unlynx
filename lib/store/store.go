@@ -168,9 +168,9 @@ func (s *Store) PullLocallyAggregatedResponses() map[libunlynx.GroupingKey]libun
 
 }
 
-func (s *Store) nextID() libunlynx.TempID {
+func (s *Store) nextID() uint64 {
 	s.lastID++
-	return libunlynx.TempID(s.lastID)
+	return uint64(s.lastID)
 }
 
 // AddInClear permits to add non-encrypted DP responses

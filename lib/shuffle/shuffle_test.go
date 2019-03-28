@@ -99,7 +99,7 @@ func TestWriteToGobFile(t *testing.T) {
 	encoded, err := libunlynxshuffle.EncodeCipherVectorScalar(dataCipher)
 
 	if err != nil {
-		log.Fatal("Error during marshling")
+		log.Fatal(err)
 	}
 
 	libunlynxtools.WriteToGobFile(file, encoded)
@@ -113,7 +113,7 @@ func TestReadFromGobFile(t *testing.T) {
 	_, err := libunlynxshuffle.DecodeCipherVectorScalar(encoded)
 
 	if err != nil {
-		log.Fatal("Error during unmarshling")
+		log.Fatal(err)
 	}
 
 	if err := os.Remove("pre_compute_multiplications.gob"); err != nil {

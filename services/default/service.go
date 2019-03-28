@@ -69,7 +69,7 @@ type Survey struct {
 
 func castToSurvey(object interface{}, err error) Survey {
 	if err != nil {
-		log.Fatal("Error reading map")
+		log.Fatal("Error reading map:", err)
 	}
 	return object.(Survey)
 }
@@ -476,7 +476,7 @@ func (s *Service) StartProtocol(name string, targetSurvey SurveyID) (onet.Protoc
 
 	pi, err := s.NewProtocol(tn, &conf)
 	if err != nil {
-		log.Fatal("Error running" + name)
+		log.Fatal("Error running"+name+":", err)
 	}
 
 	s.RegisterProtocolInstance(pi)
@@ -514,7 +514,7 @@ func (s *Service) StartService(targetSurvey SurveyID, root bool) error {
 
 	err := s.ShufflingPhase(survey.Query.SurveyID)
 	if err != nil {
-		log.Fatal("Error in the Shuffling Phase")
+		log.Fatal("Error in the Shuffling Phase:", err)
 	}
 
 	libunlynx.EndTimer(start)
@@ -523,7 +523,7 @@ func (s *Service) StartService(targetSurvey SurveyID, root bool) error {
 
 	err = s.TaggingPhase(target.Query.SurveyID)
 	if err != nil {
-		log.Fatal("Error in the Tagging Phase")
+		log.Fatal("Error in the Tagging Phase:", err)
 	}
 
 	// broadcasts the query to unlock waiting channel
@@ -541,7 +541,7 @@ func (s *Service) StartService(targetSurvey SurveyID, root bool) error {
 
 		err = s.AggregationPhase(target.Query.SurveyID)
 		if err != nil {
-			log.Fatal("Error in the Aggregation Phase")
+			log.Fatal("Error in the Aggregation Phase:", err)
 		}
 
 		libunlynx.EndTimer(start)

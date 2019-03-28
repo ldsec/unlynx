@@ -22,7 +22,7 @@ func TestCTKS(t *testing.T) {
 	local := onet.NewLocalTest(libunlynx.SuiTe)
 	pID, err := onet.GlobalProtocolRegister("CTKSTest", NewCTKSTest)
 	if err != nil {
-		log.Fatal("Failed to register the CTKSTest protocol:", pID)
+		log.Fatal("Failed to register the CTKSTest protocol:", err)
 	}
 	_, entityList, tree := local.GenTree(5, true)
 
@@ -60,8 +60,8 @@ func TestCTKS(t *testing.T) {
 	feedback := protocol.FeedbackChannel
 
 	go func() {
-		if protocol.Start() != nil {
-			log.Fatal("Failed to start Key Switching protocol")
+		if err := protocol.Start(); err != nil {
+			log.Fatal("Failed to start Key Switching protocol:", err)
 		}
 	}()
 

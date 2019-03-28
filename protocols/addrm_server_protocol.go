@@ -19,7 +19,7 @@ const AddRmServerProtocolName = "AddRmServer"
 
 func init() {
 	if _, err := onet.GlobalProtocolRegister(AddRmServerProtocolName, NewAddRmProtocol); err != nil {
-		log.Fatal("Error registering <AddRmServerProtocol>")
+		log.Fatal("Error registering <AddRmServerProtocol>:", err)
 	}
 }
 
