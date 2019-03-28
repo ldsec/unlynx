@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lca1/unlynx/data"
+
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
@@ -11,7 +13,6 @@ import (
 	"github.com/lca1/unlynx/lib/store"
 	"github.com/lca1/unlynx/lib/tools"
 	"github.com/lca1/unlynx/protocols/utils"
-	"github.com/lca1/unlynx/services/default/data"
 	"github.com/stretchr/testify/assert"
 )
 

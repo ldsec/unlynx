@@ -20,7 +20,7 @@ import (
 
 func TestCTKS(t *testing.T) {
 	local := onet.NewLocalTest(libunlynx.SuiTe)
-	pID, err := onet.GlobalProtocolRegister("CTKSTest", NewCTKSTest)
+	_, err := onet.GlobalProtocolRegister("CTKSTest", NewCTKSTest)
 	if err != nil {
 		log.Fatal("Failed to register the CTKSTest protocol:", err)
 	}

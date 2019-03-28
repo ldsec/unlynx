@@ -3,6 +3,8 @@ package main
 import (
 	"strconv"
 
+	"github.com/lca1/unlynx/data"
+
 	"github.com/lca1/unlynx/services/default"
 
 	"github.com/BurntSushi/toml"
@@ -11,7 +13,6 @@ import (
 	"github.com/dedis/onet/simul/monitor"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/tools"
-	"github.com/lca1/unlynx/services/default/data"
 )
 
 //Defines the simulation for the default service to be run with cothority/simul.

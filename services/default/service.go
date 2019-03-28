@@ -4,10 +4,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/lca1/unlynx/lib/aggregation"
-
-	"github.com/lca1/unlynx/lib/key_switch"
-
 	"github.com/Knetic/govaluate"
 	"github.com/btcsuite/goleveldb/leveldb/errors"
 	"github.com/dedis/kyber"
@@ -15,13 +11,15 @@ import (
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
 	"github.com/fanliao/go-concurrentMap"
+	"github.com/lca1/unlynx/data"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/aggregation"
 	"github.com/lca1/unlynx/lib/differential_privacy"
+	"github.com/lca1/unlynx/lib/key_switch"
 	"github.com/lca1/unlynx/lib/shuffle"
 	"github.com/lca1/unlynx/lib/store"
 	"github.com/lca1/unlynx/lib/tools"
 	"github.com/lca1/unlynx/protocols"
-	"github.com/lca1/unlynx/services/default/data"
 	"github.com/satori/go.uuid"
 )
 

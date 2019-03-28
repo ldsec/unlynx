@@ -39,15 +39,6 @@ func randomFillInt64Slice(s []int64, max int64) {
 	}
 }
 
-// CreateInt64Slice creates a slice of int64 between min and max
-func CreateInt64Slice(size int64, min int64, max int64) []int64 {
-	slice := make([]int64, size)
-	for i := 0; i < int(size); i++ {
-		slice[i] = int64(random(int(min), int(max)))
-	}
-	return slice
-}
-
 // AllPossibleGroups generates all possible groups given the different groups for the grouping attributes
 // e.g. numType:1,2 -> Groups: [0,0], [0,1]
 func AllPossibleGroups(numType []int64, group []int64, pos int) {

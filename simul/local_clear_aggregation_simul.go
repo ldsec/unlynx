@@ -5,8 +5,8 @@ import (
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/simul/monitor"
+	"github.com/lca1/unlynx/data"
 	"github.com/lca1/unlynx/protocols/utils"
-	"github.com/lca1/unlynx/services/default/data"
 )
 
 func init() {

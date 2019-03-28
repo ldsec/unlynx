@@ -3,7 +3,7 @@ package dataunlynx_test
 import (
 	"testing"
 
-	"github.com/lca1/unlynx/services/default/data"
+	"github.com/lca1/unlynx/data"
 
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
