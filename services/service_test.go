@@ -1,4 +1,4 @@
-package servicesunlynxdefault_test
+package servicesunlynx_test
 
 import (
 	"os"
@@ -7,7 +7,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/lca1/unlynx/services/default"
+	"github.com/lca1/unlynx/services"
 
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
@@ -46,14 +46,14 @@ func TestFilterResponses(t *testing.T) {
 	data = append(data, libunlynx.ProcessResponseDet{PR: libunlynx.ProcessResponse{}, DetTagGroupBy: "", DetTagWhere: whereTrue[:]})
 	data = append(data, libunlynx.ProcessResponseDet{PR: libunlynx.ProcessResponse{}, DetTagGroupBy: "", DetTagWhere: whereFalse[:]})
 
-	result := servicesunlynxdefault.FilterResponses(predicate, whereAttributes, data)
+	result := servicesunlynx.FilterResponses(predicate, whereAttributes, data)
 
 	// 1 result(s) are true
 	assert.Equal(t, len(result), 1)
 
 	data = append(data, libunlynx.ProcessResponseDet{PR: libunlynx.ProcessResponse{}, DetTagGroupBy: "", DetTagWhere: whereTrue[:]})
 
-	result = servicesunlynxdefault.FilterResponses(predicate, whereAttributes, data)
+	result = servicesunlynx.FilterResponses(predicate, whereAttributes, data)
 
 	// 2 result(s) are true
 	assert.Equal(t, len(result), 2)
@@ -79,7 +79,7 @@ func TestFilterResponses(t *testing.T) {
 	data = append(data, libunlynx.ProcessResponseDet{PR: libunlynx.ProcessResponse{}, DetTagGroupBy: "", DetTagWhere: whereTrue2[:]})
 	data = append(data, libunlynx.ProcessResponseDet{PR: libunlynx.ProcessResponse{}, DetTagGroupBy: "", DetTagWhere: whereFalse1[:]})
 
-	result = servicesunlynxdefault.FilterResponses(predicate, whereAttributes, data)
+	result = servicesunlynx.FilterResponses(predicate, whereAttributes, data)
 
 	// 2 result(s) are true
 	assert.Equal(t, len(result), 2)
@@ -94,7 +94,7 @@ func TestCountDPs(t *testing.T) {
 		mapTest["server"+strconv.Itoa(i)] = int64(nbrElementsPerServer)
 	}
 
-	assert.Equal(t, int64(nbrElementsPerServer*nbrServer), servicesunlynxdefault.CountDPs(mapTest))
+	assert.Equal(t, int64(nbrElementsPerServer*nbrServer), servicesunlynx.CountDPs(mapTest))
 }
 
 // TEST BATCH 1 -> encrypted or/and non-encrypted grouping attributes
@@ -111,7 +111,7 @@ func TestServiceClearAttr(t *testing.T) {
 	defer local.CloseAll()
 
 	// Send a request to the service
-	client := servicesunlynxdefault.NewUnLynxClient(el.List[0], strconv.Itoa(0))
+	client := servicesunlynx.NewUnLynxClient(el.List[0], strconv.Itoa(0))
 
 	sum := []string{"s1", "s2"}
 	count := false
@@ -125,7 +125,7 @@ func TestServiceClearAttr(t *testing.T) {
 		nbrDPs[server.String()] = 2 // 2 DPs for each server
 	}
 
-	surveyID, err := client.SendSurveyCreationQuery(el, servicesunlynxdefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
+	surveyID, err := client.SendSurveyCreationQuery(el, servicesunlynx.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
 
 	if err != nil {
 		t.Fatal("Service did not start.", err)
@@ -134,9 +134,9 @@ func TestServiceClearAttr(t *testing.T) {
 	//save values in a map to verify them at the end
 	expectedResults := make(map[[numberGrpAttr]int64][]int64)
 	log.Lvl1("Sending response data... ")
-	dataHolder := make([]*servicesunlynxdefault.API, 10)
+	dataHolder := make([]*servicesunlynx.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
-		dataHolder[i] = servicesunlynxdefault.NewUnLynxClient(el.List[i%5], strconv.Itoa(i+1))
+		dataHolder[i] = servicesunlynx.NewUnLynxClient(el.List[i%5], strconv.Itoa(i+1))
 		grp := [numberGrpAttr]int64{}
 		aggr := make(map[string]int64, numberAttr)
 
@@ -221,7 +221,7 @@ func TestServiceClearGrpEncWhereAttr(t *testing.T) {
 	defer local.CloseAll()
 
 	// Send a request to the service
-	client := servicesunlynxdefault.NewUnLynxClient(el.List[0], strconv.Itoa(0))
+	client := servicesunlynx.NewUnLynxClient(el.List[0], strconv.Itoa(0))
 
 	sum := []string{"s1", "s2"}
 	count := false
@@ -235,7 +235,7 @@ func TestServiceClearGrpEncWhereAttr(t *testing.T) {
 		nbrDPs[server.String()] = 2 // 2 DPs for each server
 	}
 
-	surveyID, err := client.SendSurveyCreationQuery(el, servicesunlynxdefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
+	surveyID, err := client.SendSurveyCreationQuery(el, servicesunlynx.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
 
 	if err != nil {
 		t.Fatal("Service did not start.", err)
@@ -244,9 +244,9 @@ func TestServiceClearGrpEncWhereAttr(t *testing.T) {
 	//save values in a map to verify them at the end
 	expectedResults := make(map[[numberGrpAttr]int64][]int64)
 	log.Lvl1("Sending response data... ")
-	dataHolder := make([]*servicesunlynxdefault.API, 10)
+	dataHolder := make([]*servicesunlynx.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
-		dataHolder[i] = servicesunlynxdefault.NewUnLynxClient(el.List[i%5], strconv.Itoa(i+1))
+		dataHolder[i] = servicesunlynx.NewUnLynxClient(el.List[i%5], strconv.Itoa(i+1))
 		grp := [numberGrpAttr]int64{}
 		aggr := make(map[string]int64, numberAttr)
 
@@ -324,7 +324,7 @@ func TestServiceEncGrpClearWhereAttr(t *testing.T) {
 	defer local.CloseAll()
 
 	// Send a request to the service
-	client := servicesunlynxdefault.NewUnLynxClient(el.List[0], strconv.Itoa(0))
+	client := servicesunlynx.NewUnLynxClient(el.List[0], strconv.Itoa(0))
 
 	sum := []string{"s1", "s2"}
 	count := false
@@ -338,7 +338,7 @@ func TestServiceEncGrpClearWhereAttr(t *testing.T) {
 		nbrDPs[server.String()] = 2 // 2 DPs for each server
 	}
 
-	surveyID, err := client.SendSurveyCreationQuery(el, servicesunlynxdefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
+	surveyID, err := client.SendSurveyCreationQuery(el, servicesunlynx.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
 
 	if err != nil {
 		t.Fatal("Service did not start.", err)
@@ -347,9 +347,9 @@ func TestServiceEncGrpClearWhereAttr(t *testing.T) {
 	//save values in a map to verify them at the end
 	expectedResults := make(map[[numberGrpAttr]int64][]int64)
 	log.Lvl1("Sending response data... ")
-	dataHolder := make([]*servicesunlynxdefault.API, 10)
+	dataHolder := make([]*servicesunlynx.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
-		dataHolder[i] = servicesunlynxdefault.NewUnLynxClient(el.List[i%5], strconv.Itoa(i+1))
+		dataHolder[i] = servicesunlynx.NewUnLynxClient(el.List[i%5], strconv.Itoa(i+1))
 		grp := [numberGrpAttr]int64{}
 		aggr := make(map[string]int64, numberAttr)
 
@@ -428,7 +428,7 @@ func TestServiceEncGrpAndWhereAttr(t *testing.T) {
 	defer local.CloseAll()
 
 	// Send a request to the service
-	client := servicesunlynxdefault.NewUnLynxClient(el.List[0], strconv.Itoa(0))
+	client := servicesunlynx.NewUnLynxClient(el.List[0], strconv.Itoa(0))
 
 	sum := []string{"s1", "s2"}
 	count := false
@@ -442,7 +442,7 @@ func TestServiceEncGrpAndWhereAttr(t *testing.T) {
 		nbrDPs[server.String()] = 2 // 2 DPs for each server
 	}
 
-	surveyID, err := client.SendSurveyCreationQuery(el, servicesunlynxdefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
+	surveyID, err := client.SendSurveyCreationQuery(el, servicesunlynx.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
 
 	if err != nil {
 		t.Fatal("Service did not start.", err)
@@ -451,9 +451,9 @@ func TestServiceEncGrpAndWhereAttr(t *testing.T) {
 	//save values in a map to verify them at the end
 	expectedResults := make(map[[numberGrpAttr]int64][]int64)
 	log.Lvl1("Sending response data... ")
-	dataHolder := make([]*servicesunlynxdefault.API, 10)
+	dataHolder := make([]*servicesunlynx.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
-		dataHolder[i] = servicesunlynxdefault.NewUnLynxClient(el.List[i%5], strconv.Itoa(i+1))
+		dataHolder[i] = servicesunlynx.NewUnLynxClient(el.List[i%5], strconv.Itoa(i+1))
 		grp := [numberGrpAttr]int64{}
 		aggr := make(map[string]int64, numberAttr)
 
@@ -535,7 +535,7 @@ func TestServiceEverything(t *testing.T) {
 	defer local.CloseAll()
 
 	// Send a request to the service
-	client := servicesunlynxdefault.NewUnLynxClient(el.List[0], strconv.Itoa(0))
+	client := servicesunlynx.NewUnLynxClient(el.List[0], strconv.Itoa(0))
 
 	sum := []string{"s1", "s2"}
 	count := false
@@ -549,7 +549,7 @@ func TestServiceEverything(t *testing.T) {
 		nbrDPs[server.String()] = 2 // 2 DPs for each server
 	}
 
-	surveyID, err := client.SendSurveyCreationQuery(el, servicesunlynxdefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
+	surveyID, err := client.SendSurveyCreationQuery(el, servicesunlynx.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
 
 	if err != nil {
 		t.Fatal("Service did not start.", err)
@@ -558,9 +558,9 @@ func TestServiceEverything(t *testing.T) {
 	//save values in a map to verify them at the end
 	expectedResults := make(map[[numberGrpAttr]int64][]int64)
 	log.Lvl1("Sending response data... ")
-	dataHolder := make([]*servicesunlynxdefault.API, 10)
+	dataHolder := make([]*servicesunlynx.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
-		dataHolder[i] = servicesunlynxdefault.NewUnLynxClient(el.List[i%5], strconv.Itoa(i+1))
+		dataHolder[i] = servicesunlynx.NewUnLynxClient(el.List[i%5], strconv.Itoa(i+1))
 		grp := [numberGrpAttr]int64{}
 		aggr := make(map[string]int64, numberAttr)
 
@@ -638,7 +638,7 @@ func TestServiceEncGrpAndWhereAttrWithCount(t *testing.T) {
 	defer local.CloseAll()
 
 	// Send a request to the service
-	client := servicesunlynxdefault.NewUnLynxClient(el.List[0], strconv.Itoa(0))
+	client := servicesunlynx.NewUnLynxClient(el.List[0], strconv.Itoa(0))
 
 	sum := []string{"s1", "s2", "count"}
 	count := true
@@ -652,7 +652,7 @@ func TestServiceEncGrpAndWhereAttrWithCount(t *testing.T) {
 		nbrDPs[server.String()] = 2 // 2 DPs for each server
 	}
 
-	surveyID, err := client.SendSurveyCreationQuery(el, servicesunlynxdefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
+	surveyID, err := client.SendSurveyCreationQuery(el, servicesunlynx.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
 
 	if err != nil {
 		t.Fatal("Service did not start.", err)
@@ -661,9 +661,9 @@ func TestServiceEncGrpAndWhereAttrWithCount(t *testing.T) {
 	//save values in a map to verify them at the end
 	expectedResults := make(map[[numberGrpAttr]int64][]int64)
 	log.Lvl1("Sending response data... ")
-	dataHolder := make([]*servicesunlynxdefault.API, 10)
+	dataHolder := make([]*servicesunlynx.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
-		dataHolder[i] = servicesunlynxdefault.NewUnLynxClient(el.List[i%5], strconv.Itoa(i+1))
+		dataHolder[i] = servicesunlynx.NewUnLynxClient(el.List[i%5], strconv.Itoa(i+1))
 		grp := [numberGrpAttr]int64{}
 		aggr := make(map[string]int64, numberAttr)
 
@@ -744,7 +744,7 @@ func TestAllServersNoDPs(t *testing.T) {
 	defer local.CloseAll()
 
 	// Send a request to the service
-	client := servicesunlynxdefault.NewUnLynxClient(el.List[0], strconv.Itoa(0))
+	client := servicesunlynx.NewUnLynxClient(el.List[0], strconv.Itoa(0))
 
 	sum := []string{"s1", "s2"}
 	count := false
@@ -762,7 +762,7 @@ func TestAllServersNoDPs(t *testing.T) {
 		}
 	}
 
-	surveyID, err := client.SendSurveyCreationQuery(el, servicesunlynxdefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
+	surveyID, err := client.SendSurveyCreationQuery(el, servicesunlynx.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
 
 	if err != nil {
 		t.Fatal("Service did not start.")
@@ -771,9 +771,9 @@ func TestAllServersNoDPs(t *testing.T) {
 	//save values in a map to verify them at the end
 	expectedResults := make(map[[numberGrpAttr]int64][]int64)
 	log.Lvl1("Sending response data... ")
-	dataHolder := make([]*servicesunlynxdefault.API, 10)
+	dataHolder := make([]*servicesunlynx.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
-		dataHolder[i] = servicesunlynxdefault.NewUnLynxClient(el.List[i%2], strconv.Itoa(i+1))
+		dataHolder[i] = servicesunlynx.NewUnLynxClient(el.List[i%2], strconv.Itoa(i+1))
 		grp := [numberGrpAttr]int64{}
 		aggr := make(map[string]int64, numberAttr)
 
@@ -851,7 +851,7 @@ func TestAllServersRandomDPs(t *testing.T) {
 	defer local.CloseAll()
 
 	// Send a request to the service
-	client := servicesunlynxdefault.NewUnLynxClient(el.List[0], strconv.Itoa(0))
+	client := servicesunlynx.NewUnLynxClient(el.List[0], strconv.Itoa(0))
 
 	nbrDPs := make(map[string]int64)
 	//how many data providers for each server
@@ -867,7 +867,7 @@ func TestAllServersRandomDPs(t *testing.T) {
 	predicate := "(v0 == v1 || v2 == v3) && v4 == v5"
 	groupBy := []string{"g1", "g2", "g3"}
 
-	surveyID, err := client.SendSurveyCreationQuery(el, servicesunlynxdefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
+	surveyID, err := client.SendSurveyCreationQuery(el, servicesunlynx.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
 
 	if err != nil {
 		t.Fatal("Service did not start.")
@@ -876,16 +876,16 @@ func TestAllServersRandomDPs(t *testing.T) {
 	//save values in a map to verify them at the end
 	expectedResults := make(map[[numberGrpAttr]int64][]int64)
 	log.Lvl1("Sending response data... ")
-	dataHolder := make([]*servicesunlynxdefault.API, 10)
+	dataHolder := make([]*servicesunlynx.API, 10)
 	for i := 0; i < len(dataHolder); i++ {
 		if i < 2 {
-			dataHolder[i] = servicesunlynxdefault.NewUnLynxClient(el.List[1], strconv.Itoa(i+1))
+			dataHolder[i] = servicesunlynx.NewUnLynxClient(el.List[1], strconv.Itoa(i+1))
 		} else if i == 2 {
-			dataHolder[i] = servicesunlynxdefault.NewUnLynxClient(el.List[2], strconv.Itoa(i+1))
+			dataHolder[i] = servicesunlynx.NewUnLynxClient(el.List[2], strconv.Itoa(i+1))
 		} else if i < 6 {
-			dataHolder[i] = servicesunlynxdefault.NewUnLynxClient(el.List[3], strconv.Itoa(i+1))
+			dataHolder[i] = servicesunlynx.NewUnLynxClient(el.List[3], strconv.Itoa(i+1))
 		} else {
-			dataHolder[i] = servicesunlynxdefault.NewUnLynxClient(el.List[4], strconv.Itoa(i+1))
+			dataHolder[i] = servicesunlynx.NewUnLynxClient(el.List[4], strconv.Itoa(i+1))
 		}
 
 		grp := [numberGrpAttr]int64{}
@@ -975,7 +975,7 @@ func TestConcurrentSurveys(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			// Send a request to the service
-			client := servicesunlynxdefault.NewUnLynxClient(el.List[0], strconv.Itoa(0))
+			client := servicesunlynx.NewUnLynxClient(el.List[0], strconv.Itoa(0))
 
 			nbrDPs := make(map[string]int64)
 			//how many data providers for each server
@@ -991,7 +991,7 @@ func TestConcurrentSurveys(t *testing.T) {
 			predicate := "(v0 == v1 || v2 == v3) && v4 == v5"
 			groupBy := []string{"g1", "g2", "g3"}
 
-			surveyID, err := client.SendSurveyCreationQuery(el, servicesunlynxdefault.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
+			surveyID, err := client.SendSurveyCreationQuery(el, servicesunlynx.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
 
 			if err != nil {
 				t.Fatal("Service did not start.")
@@ -1000,16 +1000,16 @@ func TestConcurrentSurveys(t *testing.T) {
 			//save values in a map to verify them at the end
 			expectedResults := make(map[[numberGrpAttr]int64][]int64)
 			log.Lvl1("Sending response data... ")
-			dataHolder := make([]*servicesunlynxdefault.API, 10)
+			dataHolder := make([]*servicesunlynx.API, 10)
 			for i := 0; i < len(dataHolder); i++ {
 				if i < 2 {
-					dataHolder[i] = servicesunlynxdefault.NewUnLynxClient(el.List[1], strconv.Itoa(i+1))
+					dataHolder[i] = servicesunlynx.NewUnLynxClient(el.List[1], strconv.Itoa(i+1))
 				} else if i == 2 {
-					dataHolder[i] = servicesunlynxdefault.NewUnLynxClient(el.List[2], strconv.Itoa(i+1))
+					dataHolder[i] = servicesunlynx.NewUnLynxClient(el.List[2], strconv.Itoa(i+1))
 				} else if i < 6 {
-					dataHolder[i] = servicesunlynxdefault.NewUnLynxClient(el.List[3], strconv.Itoa(i+1))
+					dataHolder[i] = servicesunlynx.NewUnLynxClient(el.List[3], strconv.Itoa(i+1))
 				} else {
-					dataHolder[i] = servicesunlynxdefault.NewUnLynxClient(el.List[4], strconv.Itoa(i+1))
+					dataHolder[i] = servicesunlynx.NewUnLynxClient(el.List[4], strconv.Itoa(i+1))
 				}
 
 				grp := [numberGrpAttr]int64{}
@@ -1085,5 +1085,5 @@ func TestFilteringFunc(t *testing.T) {
 	log.Lvl1(predicate)
 	log.Lvl1(responsesToFilter)
 	log.Lvl1(whereQueryValues)
-	log.Lvl1(servicesunlynxdefault.FilterResponses(predicate, whereQueryValues, responsesToFilter))
+	log.Lvl1(servicesunlynx.FilterResponses(predicate, whereQueryValues, responsesToFilter))
 }

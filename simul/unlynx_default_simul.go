@@ -3,9 +3,9 @@ package main
 import (
 	"strconv"
 
-	"github.com/lca1/unlynx/data"
+	"github.com/lca1/unlynx/services"
 
-	"github.com/lca1/unlynx/services/default"
+	"github.com/lca1/unlynx/data"
 
 	"github.com/BurntSushi/toml"
 	"github.com/dedis/onet"
@@ -81,7 +81,7 @@ func (sim *SimulationUnLynx) Run(config *onet.SimulationConfig) error {
 
 	for round := 0; round < sim.Rounds; round++ {
 		log.Lvl1("Starting round", round, el)
-		client := servicesunlynxdefault.NewUnLynxClient(el.List[0], strconv.Itoa(0))
+		client := servicesunlynx.NewUnLynxClient(el.List[0], strconv.Itoa(0))
 
 		// Define how many data providers for each server
 		nbrDPs := make(map[string]int64)
@@ -123,7 +123,7 @@ func (sim *SimulationUnLynx) Run(config *onet.SimulationConfig) error {
 			groupBy[i] = "g" + strconv.Itoa(i)
 		}
 
-		surveyID, err := client.SendSurveyCreationQuery(el, servicesunlynxdefault.SurveyID(""), nil, nbrDPs, sim.Proofs, false, sum, count, whereQueryValues, predicate, groupBy)
+		surveyID, err := client.SendSurveyCreationQuery(el, servicesunlynx.SurveyID(""), nil, nbrDPs, sim.Proofs, false, sum, count, whereQueryValues, predicate, groupBy)
 
 		if err != nil {
 			log.Fatal("Service did not start:", err)
@@ -142,18 +142,18 @@ func (sim *SimulationUnLynx) Run(config *onet.SimulationConfig) error {
 		}
 
 		log.Lvl1("Sending response data... ")
-		dataHolder := make([]*servicesunlynxdefault.API, sim.NbrDPs)
+		dataHolder := make([]*servicesunlynx.API, sim.NbrDPs)
 		wg := libunlynx.StartParallelize(len(dataHolder))
 
 		for i, client := range dataHolder {
 			start := libunlynx.StartTimer(strconv.Itoa(i) + "_IndividualSendingData")
-			go func(i int, client *servicesunlynxdefault.API) {
+			go func(i int, client *servicesunlynx.API) {
 				defer wg.Done()
 
 				dataCollection := testData[strconv.Itoa(i)]
 				server := el.List[i%nbrHosts]
 
-				client = servicesunlynxdefault.NewUnLynxClient(server, strconv.Itoa(i+1))
+				client = servicesunlynx.NewUnLynxClient(server, strconv.Itoa(i+1))
 				if err := client.SendSurveyResponseQuery(*surveyID, dataCollection, el.Aggregate, sim.DataRepetitions, count); err != nil {
 					log.Fatal("Error while sending DP ("+client.String()+") responses:", err)
 				}

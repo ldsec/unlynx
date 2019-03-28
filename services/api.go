@@ -1,4 +1,4 @@
-package servicesunlynxdefault
+package servicesunlynx
 
 import (
 	"github.com/dedis/kyber"

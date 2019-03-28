@@ -2,7 +2,6 @@ package appunlynx
 
 import (
 	"os"
-
 	"regexp"
 	"strconv"
 	"strings"
@@ -12,13 +11,13 @@ import (
 	"github.com/dedis/onet/app"
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/services/default"
+	"github.com/lca1/unlynx/services"
 	"gopkg.in/urfave/cli.v1"
 )
 
 // BEGIN CLIENT: QUERIER ----------
 func startQuery(el *onet.Roster, proofs bool, sum []string, count bool, whereQueryValues []libunlynx.WhereQueryAttribute, predicate string, groupBy []string) {
-	client := servicesunlynxdefault.NewUnLynxClient(el.List[0], strconv.Itoa(0))
+	client := servicesunlynx.NewUnLynxClient(el.List[0], strconv.Itoa(0))
 
 	nbrDPs := make(map[string]int64)
 	//how many data providers for each server
@@ -26,7 +25,7 @@ func startQuery(el *onet.Roster, proofs bool, sum []string, count bool, whereQue
 		nbrDPs[server.String()] = 1 // 1 DP for each server
 	}
 
-	surveyID, err := client.SendSurveyCreationQuery(el, servicesunlynxdefault.SurveyID(""), nil, nbrDPs, proofs, true, sum, count, whereQueryValues, predicate, groupBy)
+	surveyID, err := client.SendSurveyCreationQuery(el, servicesunlynx.SurveyID(""), nil, nbrDPs, proofs, true, sum, count, whereQueryValues, predicate, groupBy)
 	if err != nil {
 		log.Fatal("Service did not start.", err)
 	}
