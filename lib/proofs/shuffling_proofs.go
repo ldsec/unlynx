@@ -77,7 +77,7 @@ func checkShuffleProof(g, h kyber.Point, Xhat, Yhat, XhatBar, YhatBar []kyber.Po
 	err := proof.HashVerify(libunlynx.SuiTe, "PairShuffle", verifier, prf)
 
 	if err != nil {
-		log.LLvl1("-----------verify failed (with XharBar)")
+		log.Lvl1("-----------verify failed (with XhatBar)")
 		return false
 	}
 
