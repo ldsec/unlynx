@@ -6,11 +6,11 @@ import (
 	"os"
 	"sync"
 
-	"github.com/dedis/kyber"
-	"github.com/dedis/kyber/util/random"
-	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/tools"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/util/random"
+	"go.dedis.ch/onet/v3/log"
 )
 
 // ShuffleSequence applies shuffling to a ciphervector

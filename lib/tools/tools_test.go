@@ -1,9 +1,9 @@
 package libunlynxtools_test
 
 import (
+	"github.com/lca1/unlynx/lib/tools"
 	"testing"
 
-	. "github.com/lca1/unlynx/lib/tools"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -13,8 +13,8 @@ func TestInt64ArrayToString(t *testing.T) {
 		toTest[i] = int64(i)
 	}
 
-	str := Int64ArrayToString(toTest)
-	retVal := StringToInt64Array(str)
+	str := libunlynxtools.Int64ArrayToString(toTest)
+	retVal := libunlynxtools.StringToInt64Array(str)
 
 	assert.Equal(t, toTest, retVal)
 }
@@ -27,8 +27,8 @@ func TestConvertDataToMap(t *testing.T) {
 
 	first := "test"
 	start := 1
-	mapRes := ConvertDataToMap(toTest, first, start)
-	arrayRes := ConvertMapToData(mapRes, first, start)
+	mapRes := libunlynxtools.ConvertDataToMap(toTest, first, start)
+	arrayRes := libunlynxtools.ConvertMapToData(mapRes, first, start)
 
 	assert.Equal(t, toTest, arrayRes)
 }

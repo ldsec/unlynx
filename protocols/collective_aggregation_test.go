@@ -1,19 +1,17 @@
 package protocolsunlynx_test
 
 import (
+	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/aggregation"
+	"github.com/lca1/unlynx/protocols"
+	"github.com/stretchr/testify/assert"
+	"go.dedis.ch/kyber/v3/util/random"
+	"go.dedis.ch/onet/v3"
+	"go.dedis.ch/onet/v3/log"
+	"go.dedis.ch/onet/v3/network"
 	"reflect"
 	"testing"
 	"time"
-
-	"github.com/lca1/unlynx/lib/aggregation"
-
-	"github.com/dedis/kyber/util/random"
-	"github.com/dedis/onet"
-	"github.com/dedis/onet/log"
-	"github.com/dedis/onet/network"
-	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/protocols"
-	"github.com/stretchr/testify/assert"
 )
 
 var clientPrivate = libunlynx.SuiTe.Scalar().Pick(random.New())

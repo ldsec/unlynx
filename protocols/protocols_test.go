@@ -1,8 +1,9 @@
-package appunlynx
+package protocolsunlynx_test
 
 import (
-	"go.dedis.ch/onet/v3/log"
 	"testing"
+
+	"go.dedis.ch/onet/v3/log"
 )
 
 func TestMain(m *testing.M) {

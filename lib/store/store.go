@@ -3,10 +3,10 @@ package libunlynxstore
 import (
 	"sync"
 
-	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/aggregation"
 	"github.com/lca1/unlynx/lib/tools"
+	"go.dedis.ch/onet/v3/log"
 )
 
 // Store contains all the elements of a survey, it consists of the data structure that each cothority has to

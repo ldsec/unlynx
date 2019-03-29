@@ -4,10 +4,10 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/dedis/kyber/util/key"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/protocols"
 	"github.com/stretchr/testify/assert"
+	"go.dedis.ch/kyber/v3/util/key"
 )
 
 // Create test for the further tools used in protocols and services to ensure shortly if a modification change the behaviour

@@ -6,7 +6,7 @@ UnLynx is developed by lca1 (Laboratory for Communications and Applications in E
 
 ## Documentation
 
-* The UnLynx library does an intensive use of [Overlay-network (ONet) library](https://github.com/dedis/onet) and of the [Advanced Crypto (kyber) library](https://github.com/dedis/kyber).
+* The UnLynx library does an intensive use of [Overlay-network (ONet) library](https://go.dedis.ch/onet/v3onet) and of the [Advanced Crypto (kyber) library](https://go.dedis.ch/onet/v3kyber).
 * For more information regarding the underlying architecture please refer to the stable version of ONet `github.bom/dedis/onet`
 * To check the code organisation, have a look at [Layout](https://github.com/lca1/unlynx/wiki/Layout)
 * For more information on how to run our protocols, services, simulations and apps, go to [Running UnLynx](https://github.com/lca1/unlynx/wiki/Running-UnLynx)
@@ -24,7 +24,21 @@ To use the code of this repository you need to:
 
 ## Version
 
-The version in the `master`-branch is stable and has no incompatible changes.
+We have a development and a stable version. The `master`-branch in `github.com/lca1/unlynx` is the development version that works but can have incompatible changes.
+
+Use one of the latest tags `v1.2b-alpha` that are stable and have no incompatible changes.
+
+**Very Important!!** 
+
+Due to the current changes being made to [onet](https://go.dedis.ch/onet/v3onet) and [kyber](https://go.dedis.ch/onet/v3kyber) (release of v3) you must revert back to previous commits for these two libraries if you want UnLynx to work. This will change in the near future. 
+
+```bash
+cd $GOPATH/src/dedis/onet/
+git checkout 5796104343ef247e2eed58e573f68c566db2136f
+
+cd $GOPATH/src/dedis/kyber/
+git checkout f55fec5463cda138dfc7ff15e4091d12c4ddcbfe
+```
 
 ## License
 

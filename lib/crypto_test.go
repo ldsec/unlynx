@@ -5,14 +5,12 @@ import (
 	"strings"
 	"testing"
 
-	"go.dedis.ch/onet/log"
-
-	"github.com/dedis/kyber/util/key"
-
-	"github.com/dedis/kyber"
-	"github.com/dedis/kyber/util/random"
 	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/util/key"
+	"go.dedis.ch/kyber/v3/util/random"
+	"go.dedis.ch/onet/v3/log"
 )
 
 // TestNullCipherText verifies encryption, decryption and behavior of null ciphertexts.

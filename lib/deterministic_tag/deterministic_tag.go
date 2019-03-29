@@ -3,8 +3,8 @@ package libunlynxdetertag
 import (
 	"sync"
 
-	"github.com/dedis/kyber"
 	"github.com/lca1/unlynx/lib"
+	"go.dedis.ch/kyber/v3"
 )
 
 // DeterministicTagSequence performs the second step in the distributed deterministic tagging process (cycle round) on a ciphervector.

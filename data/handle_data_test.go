@@ -4,10 +4,9 @@ import (
 	"testing"
 
 	"github.com/lca1/unlynx/data"
-
-	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
+	"go.dedis.ch/onet/v3/log"
 )
 
 const filename = "unlynx_test_data.txt"

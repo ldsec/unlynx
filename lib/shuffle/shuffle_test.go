@@ -4,14 +4,13 @@ import (
 	"os"
 	"testing"
 
-	"github.com/dedis/onet/log"
-	"github.com/lca1/unlynx/lib/tools"
-
-	"github.com/dedis/kyber/util/random"
-	"github.com/dedis/onet"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/shuffle"
+	"github.com/lca1/unlynx/lib/tools"
 	"github.com/stretchr/testify/assert"
+	"go.dedis.ch/kyber/v3/util/random"
+	"go.dedis.ch/onet/v3"
+	"go.dedis.ch/onet/v3/log"
 )
 
 func TestShuffleSequence(t *testing.T) {
@@ -52,9 +51,6 @@ func TestShuffleSequence(t *testing.T) {
 }
 
 func TestPrecomputationWritingForShuffling(t *testing.T) {
-	if err := os.Remove("pre_compute_multiplications.gob"); err != nil {
-		log.Fatal("Error removing pre_compute_multiplications.gob file:", err)
-	}
 	local := onet.NewLocalTest(libunlynx.SuiTe)
 	_, el, _ := local.GenTree(3, true)
 	defer local.CloseAll()

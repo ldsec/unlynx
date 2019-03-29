@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/dedis/kyber"
+	"go.dedis.ch/kyber/v3"
 )
 
 // Structs

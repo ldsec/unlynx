@@ -5,13 +5,13 @@
 package protocolsunlynxutils
 
 import (
-	"github.com/dedis/onet"
-	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/aggregation"
 	"github.com/lca1/unlynx/lib/deterministic_tag"
 	"github.com/lca1/unlynx/lib/key_switch"
 	"github.com/lca1/unlynx/lib/shuffle"
+	"go.dedis.ch/onet/v3"
+	"go.dedis.ch/onet/v3/log"
 )
 
 // ProofsVerificationProtocolName is the registered name for the proof verification protocol.

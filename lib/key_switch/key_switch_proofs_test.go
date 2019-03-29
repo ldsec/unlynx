@@ -4,11 +4,11 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"go.dedis.ch/kyber/v3"
 
-	"github.com/dedis/kyber/util/key"
 	"github.com/lca1/unlynx/lib/key_switch"
+	"go.dedis.ch/kyber/v3/util/key"
 
-	"github.com/dedis/kyber"
 	"github.com/lca1/unlynx/lib"
 )
 

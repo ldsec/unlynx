@@ -1,7 +1,7 @@
 package appunlynx
 
 import (
-	"github.com/dedis/onet/app"
+	"go.dedis.ch/onet/v3/app"
 	"gopkg.in/urfave/cli.v1"
 
 	// Empty imports to have the init-functions called which should

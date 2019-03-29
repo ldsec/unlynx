@@ -3,8 +3,8 @@ package libunlynxdiffprivacy
 import (
 	"math"
 
-	"github.com/dedis/onet/log"
 	"github.com/r0fls/gostats"
+	"go.dedis.ch/onet/v3/log"
 )
 
 // GenerateNoiseValues generates a number of n noise values from a given probabilistic distribution

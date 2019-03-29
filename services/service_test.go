@@ -1,11 +1,11 @@
 package servicesunlynx_test
 
 import (
-	"github.com/dedis/onet"
-	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/services"
 	"github.com/stretchr/testify/assert"
+	"go.dedis.ch/onet/v3"
+	"go.dedis.ch/onet/v3/log"
 	"os"
 	"reflect"
 	"strconv"
@@ -101,9 +101,7 @@ func TestCountDPs(t *testing.T) {
 /// Only clear where and group by attributes + tests shuffling if 1 element -> add a dummy one
 func TestServiceClearAttr(t *testing.T) {
 	log.Lvl1("***************************************************************************************************")
-	if err := os.Remove("pre_compute_multiplications.gob"); err != nil {
-		log.Fatal(err)
-	}
+	os.Remove("pre_compute_multiplications.gob")
 	local := onet.NewLocalTest(libunlynx.SuiTe)
 	// generate 5 hosts, they don't connect, they process messages, and they
 	// don't register the tree or entitylist
@@ -214,9 +212,7 @@ func TestServiceClearAttr(t *testing.T) {
 /// Only encrypted where and clear group by attributes
 func TestServiceClearGrpEncWhereAttr(t *testing.T) {
 	log.Lvl1("***************************************************************************************************")
-	if err := os.Remove("pre_compute_multiplications.gob"); err != nil {
-		log.Fatal(err)
-	}
+	os.Remove("pre_compute_multiplications.gob")
 	log.SetDebugVisible(2)
 	local := onet.NewLocalTest(libunlynx.SuiTe)
 	// generate 5 hosts, they don't connect, they process messages, and they
@@ -321,9 +317,7 @@ func TestServiceClearGrpEncWhereAttr(t *testing.T) {
 /// Only clear where and encrypted group by attributes
 func TestServiceEncGrpClearWhereAttr(t *testing.T) {
 	log.Lvl1("***************************************************************************************************")
-	if err := os.Remove("pre_compute_multiplications.gob"); err != nil {
-		log.Fatal(err)
-	}
+	os.Remove("pre_compute_multiplications.gob")
 	log.SetDebugVisible(2)
 	local := onet.NewLocalTest(libunlynx.SuiTe)
 	// generate 5 hosts, they don't connect, they process messages, and they
@@ -429,9 +423,7 @@ func TestServiceEncGrpClearWhereAttr(t *testing.T) {
 /// Only encrypted attributes
 func TestServiceEncGrpAndWhereAttr(t *testing.T) {
 	log.Lvl1("***************************************************************************************************")
-	if err := os.Remove("pre_compute_multiplications.gob"); err != nil {
-		log.Fatal(err)
-	}
+	os.Remove("pre_compute_multiplications.gob")
 	log.SetDebugVisible(2)
 	local := onet.NewLocalTest(libunlynx.SuiTe)
 	// generate 5 hosts, they don't connect, they process messages, and they
@@ -540,9 +532,7 @@ func TestServiceEncGrpAndWhereAttr(t *testing.T) {
 /// Only encrypted attributes
 func TestServiceEverything(t *testing.T) {
 	log.Lvl1("***************************************************************************************************")
-	if err := os.Remove("pre_compute_multiplications.gob"); err != nil {
-		log.Fatal(err)
-	}
+	os.Remove("pre_compute_multiplications.gob")
 	log.SetDebugVisible(2)
 	local := onet.NewLocalTest(libunlynx.SuiTe)
 	// generate 5 hosts, they don't connect, they process messages, and they
@@ -647,9 +637,7 @@ func TestServiceEverything(t *testing.T) {
 // Only encrypted attributes with count
 func TestServiceEncGrpAndWhereAttrWithCount(t *testing.T) {
 	log.Lvl1("***************************************************************************************************")
-	if err := os.Remove("pre_compute_multiplications.gob"); err != nil {
-		log.Fatal(err)
-	}
+	os.Remove("pre_compute_multiplications.gob")
 	log.SetDebugVisible(2)
 	local := onet.NewLocalTest(libunlynx.SuiTe)
 	// generate 5 hosts, they don't connect, they process messages, and they
@@ -757,9 +745,7 @@ func TestServiceEncGrpAndWhereAttrWithCount(t *testing.T) {
 // Servers with no DPs
 func TestAllServersNoDPs(t *testing.T) {
 	log.Lvl1("***************************************************************************************************")
-	if err := os.Remove("pre_compute_multiplications.gob"); err != nil {
-		log.Fatal(err)
-	}
+	os.Remove("pre_compute_multiplications.gob")
 	log.SetDebugVisible(2)
 	local := onet.NewLocalTest(libunlynx.SuiTe)
 	// generate 5 hosts, they don't connect, they process messages, and they
@@ -868,9 +854,7 @@ func TestAllServersNoDPs(t *testing.T) {
 // Servers with a different number of DPs
 func TestAllServersRandomDPs(t *testing.T) {
 	log.Lvl1("***************************************************************************************************")
-	if err := os.Remove("pre_compute_multiplications.gob"); err != nil {
-		log.Fatal(err)
-	}
+	os.Remove("pre_compute_multiplications.gob")
 	log.SetDebugVisible(2)
 	local := onet.NewLocalTest(libunlynx.SuiTe)
 	// generate 5 hosts, they don't connect, they process messages, and they
@@ -989,9 +973,7 @@ func TestAllServersRandomDPs(t *testing.T) {
 // Test multiple requests at the same time
 func TestConcurrentSurveys(t *testing.T) {
 	log.Lvl1("***************************************************************************************************")
-	if err := os.Remove("pre_compute_multiplications.gob"); err != nil {
-		log.Fatal(err)
-	}
+	os.Remove("pre_compute_multiplications.gob")
 	log.SetDebugVisible(2)
 	local := onet.NewLocalTest(libunlynx.SuiTe)
 	// generate 5 hosts, they don't connect, they process messages, and they

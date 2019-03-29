@@ -6,8 +6,8 @@ import (
 	"github.com/lca1/unlynx/lib/aggregation"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/dedis/kyber/util/key"
 	"github.com/lca1/unlynx/lib"
+	"go.dedis.ch/kyber/v3/util/key"
 )
 
 func TestAggregationProof(t *testing.T) {

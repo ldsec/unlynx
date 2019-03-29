@@ -5,9 +5,9 @@ import (
 
 	"github.com/lca1/unlynx/lib/add_rm"
 
-	"github.com/dedis/kyber/util/random"
 	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
+	"go.dedis.ch/kyber/v3/util/random"
 )
 
 func TestAddRmProof(t *testing.T) {

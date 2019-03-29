@@ -1,21 +1,20 @@
 package protocolsunlynx_test
 
 import (
-	"github.com/dedis/kyber"
-
 	"testing"
 	"time"
 
 	"github.com/lca1/unlynx/lib/key_switch"
 	"github.com/lca1/unlynx/protocols"
+	"go.dedis.ch/kyber/v3"
 
 	"reflect"
 
-	"github.com/dedis/kyber/util/random"
-	"github.com/dedis/onet"
-	"github.com/dedis/onet/log"
-	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
+	"go.dedis.ch/kyber/v3/util/random"
+	"go.dedis.ch/onet/v3"
+	"go.dedis.ch/onet/v3/log"
+	"go.dedis.ch/onet/v3/network"
 )
 
 func TestCTKS(t *testing.T) {

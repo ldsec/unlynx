@@ -10,10 +10,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/store"
 	"github.com/lca1/unlynx/lib/tools"
+	"go.dedis.ch/onet/v3/log"
 )
 
 // Groups identifies all different groups to be added to the test data file

@@ -3,16 +3,14 @@ package main
 import (
 	"strconv"
 
-	"github.com/lca1/unlynx/services"
-
-	"github.com/lca1/unlynx/data"
-
 	"github.com/BurntSushi/toml"
-	"github.com/dedis/onet"
-	"github.com/dedis/onet/log"
-	"github.com/dedis/onet/simul/monitor"
+	"github.com/lca1/unlynx/data"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/tools"
+	"github.com/lca1/unlynx/services"
+	"go.dedis.ch/onet/v3"
+	"go.dedis.ch/onet/v3/log"
+	"go.dedis.ch/onet/v3/simul/monitor"
 )
 
 //Defines the simulation for the default service to be run with cothority/simul.
@@ -144,7 +142,6 @@ func (sim *SimulationUnLynx) Run(config *onet.SimulationConfig) error {
 		log.Lvl1("Sending response data... ")
 		dataHolder := make([]*servicesunlynx.API, sim.NbrDPs)
 		wg := libunlynx.StartParallelize(len(dataHolder))
-
 		for i, client := range dataHolder {
 			start := libunlynx.StartTimer(strconv.Itoa(i) + "_IndividualSendingData")
 			go func(i int, client *servicesunlynx.API) {

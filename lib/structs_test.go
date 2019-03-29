@@ -4,11 +4,11 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/dedis/kyber"
-	"github.com/dedis/kyber/util/key"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/tools"
 	"github.com/stretchr/testify/assert"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/util/key"
 )
 
 // TestAddClientResponse tests the addition of two client response objects

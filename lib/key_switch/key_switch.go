@@ -4,9 +4,9 @@ import (
 	"sync"
 
 	"github.com/lca1/unlynx/lib"
+	"go.dedis.ch/kyber/v3"
 
-	"github.com/dedis/kyber"
-	"github.com/dedis/kyber/util/random"
+	"go.dedis.ch/kyber/v3/util/random"
 )
 
 // KeySwitchSequence implements the key switching operation on a ciphervector.

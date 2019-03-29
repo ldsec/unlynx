@@ -4,11 +4,11 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"go.dedis.ch/kyber/v3"
 
-	"github.com/dedis/kyber"
-	"github.com/dedis/kyber/util/key"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/key_switch"
+	"go.dedis.ch/kyber/v3/util/key"
 )
 
 // TesKeySwitchingProof test key switching of a sequence of ciphertexts

@@ -4,10 +4,9 @@ import (
 	"testing"
 
 	"github.com/lca1/unlynx/lib/tools"
+	"go.dedis.ch/kyber/v3"
 
-	"github.com/dedis/kyber"
-
-	"github.com/dedis/kyber/util/key"
+	"go.dedis.ch/kyber/v3/util/key"
 
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/shuffle"

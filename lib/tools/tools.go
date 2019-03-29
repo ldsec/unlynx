@@ -9,8 +9,8 @@ import (
 	"strings"
 
 	"github.com/btcsuite/goleveldb/leveldb/errors"
-	"github.com/dedis/onet"
-	"github.com/dedis/onet/log"
+	"go.dedis.ch/onet/v3"
+	"go.dedis.ch/onet/v3/log"
 )
 
 // SendISMOthers sends a message to all other services

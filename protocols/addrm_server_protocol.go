@@ -6,12 +6,11 @@ package protocolsunlynx
 import (
 	"sync"
 
-	"github.com/lca1/unlynx/lib/add_rm"
-
-	"github.com/dedis/kyber"
-	"github.com/dedis/onet"
-	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/add_rm"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/onet/v3"
+	"go.dedis.ch/onet/v3/log"
 )
 
 // AddRmServerProtocolName is the registered name for the local aggregation protocol.

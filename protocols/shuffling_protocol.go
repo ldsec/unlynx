@@ -5,16 +5,14 @@ package protocolsunlynx
 
 import (
 	"errors"
-
-	"github.com/lca1/unlynx/lib/shuffle"
-
 	"time"
 
-	"github.com/dedis/kyber"
-	"github.com/dedis/onet"
-	"github.com/dedis/onet/log"
-	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/shuffle"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/onet/v3"
+	"go.dedis.ch/onet/v3/log"
+	"go.dedis.ch/onet/v3/network"
 )
 
 // ShufflingProtocolName is the registered name for the neff shuffle protocol.

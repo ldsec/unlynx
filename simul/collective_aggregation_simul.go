@@ -2,11 +2,11 @@ package main
 
 import (
 	"github.com/BurntSushi/toml"
-	"github.com/dedis/onet"
-	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/aggregation"
 	"github.com/lca1/unlynx/protocols"
+	"go.dedis.ch/onet/v3"
+	"go.dedis.ch/onet/v3/log"
 )
 
 func createDataSet(numberGroups, numberAttributes, numberGroupAttr int) map[libunlynx.GroupingKey]libunlynx.FilteredResponse {

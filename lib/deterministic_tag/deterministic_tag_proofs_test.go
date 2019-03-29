@@ -3,11 +3,11 @@ package libunlynxdetertag_test
 import (
 	"testing"
 
-	"github.com/dedis/kyber"
-	"github.com/dedis/kyber/util/key"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/deterministic_tag"
 	"github.com/stretchr/testify/assert"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/util/key"
 )
 
 func TestDeterministicTagProofCreation(t *testing.T) {

@@ -4,11 +4,11 @@ import (
 	"math"
 	"sync"
 
-	"github.com/dedis/kyber"
-	"github.com/dedis/kyber/proof"
-	shuffleKyber "github.com/dedis/kyber/shuffle"
-	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/proof"
+	shuffleKyber "go.dedis.ch/kyber/v3/shuffle"
+	"go.dedis.ch/onet/v3/log"
 )
 
 // Structs
