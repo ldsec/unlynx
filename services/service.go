@@ -65,13 +65,6 @@ type Survey struct {
 	Noise libunlynx.CipherText
 }
 
-func castToSurvey(object interface{}, err error) Survey {
-	if err != nil || object == nil {
-		log.Fatal("Error reading map:", err)
-	}
-	return object.(Survey)
-}
-
 // MsgTypes defines the Message Type ID for all the service's intra-messages.
 type MsgTypes struct {
 	msgSurveyCreationQuery network.MessageTypeID
@@ -127,6 +120,13 @@ type Service struct {
 	*onet.ServiceProcessor
 
 	Survey *concurrent.ConcurrentMap
+}
+
+func castToSurvey(object interface{}, err error) Survey {
+	if err != nil || object == nil {
+		log.Fatal("Error reading map:", err)
+	}
+	return object.(Survey)
 }
 
 func (s *Service) getSurvey(sid SurveyID) Survey {
@@ -532,19 +532,15 @@ func (s *Service) StartProtocol(name string, targetSurvey SurveyID) (onet.Protoc
 		log.Fatal("Error running "+name+" :", err)
 	}
 
-	if err := s.RegisterProtocolInstance(pi); err != nil {
-		log.Fatal("Error registering protocol <", name, ">:", err)
+	err = s.RegisterProtocolInstance(pi)
+	if err != nil {
+		return nil, err
 	}
-
 	go func() {
-		if err := pi.Dispatch(); err != nil {
-			log.Fatal("Error in Dispatch for protocol <", name, ">:", err)
-		}
+		log.ErrFatal(pi.Dispatch())
 	}()
 	go func() {
-		if err := pi.Start(); err != nil {
-			log.Fatal("Error in Start for protocol <", name, ">:", err)
-		}
+		log.ErrFatal(pi.Start())
 	}()
 
 	return pi, err
