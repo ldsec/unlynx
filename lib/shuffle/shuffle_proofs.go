@@ -126,8 +126,8 @@ func ShuffleProofVerification(psp PublishedShufflingProof, seed kyber.Point) boo
 	verifier := shuffleKyber.Verifier(libunlynx.SuiTe, psp.G, psp.H, x, y, xbar, ybar)
 	err := proof.HashVerify(libunlynx.SuiTe, "PairShuffle", verifier, psp.HashProof)
 	if err != nil {
-		log.LLvl1(err)
-		log.LLvl1("-----------verify failed (with XharBar)")
+		log.Lvl1(err)
+		log.Lvl1("-----------verify failed (with XhaBar)")
 		return false
 	}
 

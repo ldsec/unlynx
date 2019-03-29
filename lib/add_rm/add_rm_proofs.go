@@ -61,13 +61,13 @@ func AddRmProofCreation(cBef, cAft libunlynx.CipherText, K kyber.Point, k kyber.
 	pval := map[string]kyber.Point{"B": B, "Krm": K, "c2": c2, "rB": rB}
 
 	prover := predicate.Prover(libunlynx.SuiTe, sval, pval, nil) // computes: commitment, challenge, response
-	proof, err := proof.HashProve(libunlynx.SuiTe, "proofTest", prover)
+	proofTmp, err := proof.HashProve(libunlynx.SuiTe, "proofTest", prover)
 
 	if err != nil {
 		log.Fatal("---------Prover:", err)
 	}
 
-	return PublishedAddRmProof{Proof: proof, CtBef: cBef, CtAft: cAft, RB: rB}
+	return PublishedAddRmProof{Proof: proofTmp, CtBef: cBef, CtAft: cAft, RB: rB}
 }
 
 // AddRmListProofCreation creates proof for add/rm server protocol for one ciphervector

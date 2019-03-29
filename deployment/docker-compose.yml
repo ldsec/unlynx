@@ -6,5 +6,5 @@ services:
       context: ../
       dockerfile: deployment/Dockerfile
     ports:
-    - "2000"
-    - "2001"
+      - "2000"
+      - "2001"
