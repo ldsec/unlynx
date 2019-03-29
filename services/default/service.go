@@ -695,7 +695,6 @@ func (s *Service) KeySwitchingPhase(targetSurvey SurveyID) error {
 }
 
 func (s *Service) getSurvey(sid SurveyID) Survey {
-	log.Printf("%s: getting %s", s.ServerIdentity(), sid)
 	surv, err := s.Survey.Get(string(sid))
 	if err != nil || surv == nil {
 		log.Fatalf("Error '%s' while getting surveyID %x", err, sid)
@@ -704,7 +703,6 @@ func (s *Service) getSurvey(sid SurveyID) Survey {
 }
 
 func (s *Service) putSurvey(sid SurveyID, surv Survey) error {
-	log.Printf("%s: putting %s", s.ServerIdentity(), sid)
 	_, err := s.Survey.Put(string(sid), surv)
 	return err
 }
