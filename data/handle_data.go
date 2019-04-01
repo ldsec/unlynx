@@ -166,6 +166,15 @@ func flushInt64Data(writer *bufio.Writer, slice []int64) {
 	}
 }
 
+// CreateInt64Slice creates a slice of int64 between min and max
+func CreateInt64Slice(size int64, min int64, max int64) []int64 {
+	slice := make([]int64, size)
+	for i := 0; i < int(size); i++ {
+		slice[i] = int64(random(int(min), int(max)))
+	}
+	return slice
+}
+
 // WriteDataToFile writes the testData to 'filename'.txt
 func WriteDataToFile(filename string, testData map[string][]libunlynx.DpClearResponse) {
 	fileHandle, err := os.Create(filename)
