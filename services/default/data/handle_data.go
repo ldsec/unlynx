@@ -17,7 +17,7 @@ import (
 )
 
 // Groups identifies all different groups to be added to the test data file
-var Groups [][]int64
+//var Groups [][]int64
 
 // FillInt64Slice fills a slice with the same value v
 func FillInt64Slice(s []int64, v int64) {
@@ -39,30 +39,21 @@ func randomFillInt64Slice(s []int64, max int64) {
 	}
 }
 
-// CreateInt64Slice creates a slice of int64 between min and max
-func CreateInt64Slice(size int64, min int64, max int64) []int64 {
-	slice := make([]int64, size)
-	for i := 0; i < int(size); i++ {
-		slice[i] = int64(random(int(min), int(max)))
-	}
-	return slice
-}
-
 // AllPossibleGroups generates all possible groups given the different groups for the grouping attributes
 // e.g. numType:1,2 -> Groups: [0,0], [0,1]
-func AllPossibleGroups(numType []int64, group []int64, pos int) {
+func AllPossibleGroups(numType []int64, group []int64, pos int, groups *[][]int64) {
 	if pos == len(numType) {
 		tmp := make([]int64, 0)
 		for _, el := range group {
 			tmp = append(tmp, el)
 		}
-		Groups = append(Groups, tmp)
+		*groups = append(*groups, tmp)
 	} else {
 		for i := 0; i < int(numType[pos]); i++ {
 			group = append(group, int64(i))
 
 			pos++
-			AllPossibleGroups(numType, group, pos)
+			AllPossibleGroups(numType, group, pos, groups)
 			pos--
 
 			group = append(group[:len(group)-1], group[len(group):]...)
@@ -74,9 +65,9 @@ func AllPossibleGroups(numType []int64, group []int64, pos int) {
 //
 //  	filename:    name of the file (.txt) where we will store the test data
 //
-//	numDPs: 		number of clients/hosts (or in other words data holders)
+//	    numDPs: 		    number of clients/hosts (or in other words data holders)
 //  	numEntries: 		number of survey entries (ClientClearResponse) per host
-//	numEntriesFiltered: 	number of survey entries to keep (after the where filtering)
+//	    numEntriesFiltered: number of survey entries to keep (after the where filtering)
 //  	numGroupsClear: 	number of grouping attributes in clear
 //      numGroupsEnc:   	number of grouping attributes encrypted
 //  	numWhereClear: 		number of where attributes in clear
@@ -84,7 +75,7 @@ func AllPossibleGroups(numType []int64, group []int64, pos int) {
 //  	numAggrClear:   	number of aggregating attributes in clear
 //  	numAggrEnc:    		number of aggregating attributes encrypted
 //  	numType:    		number of different groups inside a group attribute
-//	randomGroups: 		true -> groups are generated randomly, false -> we cover all possible groups
+//	    randomGroups: 		true -> groups are generated randomly, false -> we cover all possible groups
 //TODO where + whereClear
 func GenerateData(numDPs, numEntries, numEntriesFiltered, numGroupsClear, numGroupsEnc,
 	numWhereClear, numWhereEnc, numAggrClear, numAggrEnc int64, numType []int64, randomGroups bool) map[string][]libunlynx.DpClearResponse {
@@ -103,15 +94,16 @@ func GenerateData(numDPs, numEntries, numEntriesFiltered, numGroupsClear, numGro
 		}
 
 		if int64(numElem) == numEntries {
-			Groups = make([][]int64, 0)
+			groups := make([][]int64, 0)
 			group := make([]int64, 0)
-			AllPossibleGroups(numType[:], group, 0)
+			AllPossibleGroups(numType[:], group, 0, &groups)
 		} else {
 			log.Fatal("Please ensure that the number of groups is the same as the number of entries")
 			return nil
 		}
 	}
 
+	groups := make([][]int64, 0)
 	for i := int64(0); i < numDPs; i++ {
 		dpData := make([]libunlynx.DpClearResponse, numEntries)
 
@@ -139,7 +131,7 @@ func GenerateData(numDPs, numEntries, numEntriesFiltered, numGroupsClear, numGro
 					grp[k] = int64(random(0, int(numType[k])))
 				}
 			} else {
-				grp = Groups[j]
+				grp = groups[j]
 			}
 
 			dpData[j] = libunlynx.DpClearResponse{
@@ -160,15 +152,31 @@ func GenerateData(numDPs, numEntries, numEntriesFiltered, numGroupsClear, numGro
 // flushInt64Data writes a slice of int64 data to file (writer is the file handler)
 func flushInt64Data(writer *bufio.Writer, slice []int64) {
 	for _, g := range slice {
-		fmt.Fprint(writer, fmt.Sprintf("%v ", g))
-		writer.Flush()
+		if _, err := fmt.Fprint(writer, fmt.Sprintf("%v ", g)); err != nil {
+			log.Fatal(err)
+		}
+		if err := writer.Flush(); err != nil {
+			log.Fatal(err)
+		}
 	}
-
-	fmt.Fprint(writer, "\n")
-	writer.Flush()
+	if _, err := fmt.Fprint(writer, "\n"); err != nil {
+		log.Fatal(err)
+	}
+	if err := writer.Flush(); err != nil {
+		log.Fatal(err)
+	}
 }
 
-// WriteDataToFile writes the test_data to 'filename'.txt
+// CreateInt64Slice creates a slice of int64 between min and max
+func CreateInt64Slice(size int64, min int64, max int64) []int64 {
+	slice := make([]int64, size)
+	for i := 0; i < int(size); i++ {
+		slice[i] = int64(random(int(min), int(max)))
+	}
+	return slice
+}
+
+// WriteDataToFile writes the testData to 'filename'.txt
 func WriteDataToFile(filename string, testData map[string][]libunlynx.DpClearResponse) {
 	fileHandle, err := os.Create(filename)
 
@@ -177,11 +185,18 @@ func WriteDataToFile(filename string, testData map[string][]libunlynx.DpClearRes
 	}
 
 	writer := bufio.NewWriter(fileHandle)
+	if err := writer.Flush(); err != nil {
+		log.Fatal(err)
+	}
 	defer fileHandle.Close()
 
 	for k, v := range testData {
-		fmt.Fprintln(writer, "#"+k)
-		writer.Flush()
+		if _, err := fmt.Fprintln(writer, "#"+k); err != nil {
+			log.Fatal(err)
+		}
+		if err := writer.Flush(); err != nil {
+			log.Fatal(err)
+		}
 
 		for _, entry := range v {
 			flushInt64Data(writer, libunlynxtools.ConvertMapToData(entry.GroupByClear, "g", 0))
@@ -194,7 +209,7 @@ func WriteDataToFile(filename string, testData map[string][]libunlynx.DpClearRes
 	}
 }
 
-// ReadDataFromFile reads the test_data from 'filename'.txt
+// ReadDataFromFile reads the testData from 'filename'.txt
 func ReadDataFromFile(filename string) map[string][]libunlynx.DpClearResponse {
 	testData := make(map[string][]libunlynx.DpClearResponse)
 
@@ -297,7 +312,7 @@ func ClearExpectedResult(expectedResult []libunlynx.DpClearResponse) []libunlynx
 	return clearExpectedResult
 }
 
-// ComputeExpectedResult computes the expected results from the test_data (we can then compare with the result obtained by service UnLynx)
+// ComputeExpectedResult computes the expected results from the testData (we can then compare with the result obtained by service UnLynx)
 func ComputeExpectedResult(testData map[string][]libunlynx.DpClearResponse, dataRepetitions int, clear bool) []libunlynx.DpClearResponse {
 	allData := make([]libunlynx.DpClearResponse, 0)
 
