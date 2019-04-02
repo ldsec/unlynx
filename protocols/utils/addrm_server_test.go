@@ -1,11 +1,11 @@
-package protocolsunlynx_test
+package protocolsunlynxutils_test
 
 import (
+	"github.com/lca1/unlynx/protocols/utils"
 	"testing"
 	"time"
 
 	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/protocols"
 	"github.com/stretchr/testify/assert"
 	"go.dedis.ch/kyber/v3/util/random"
 	"go.dedis.ch/onet/v3"
@@ -23,7 +23,7 @@ func TestAddRmServer(t *testing.T) {
 	if err != nil {
 		t.Fatal("Couldn't start protocol:", err)
 	}
-	protocol := rootInstance.(*protocolsunlynx.AddRmServerProtocol)
+	protocol := rootInstance.(*protocolsunlynxutils.AddRmServerProtocol)
 
 	secKey := libunlynx.SuiTe.Scalar().Pick(random.New())
 	pubKey := libunlynx.SuiTe.Point().Mul(secKey, libunlynx.SuiTe.Point().Base())

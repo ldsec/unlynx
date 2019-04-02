@@ -1,7 +1,7 @@
-// Package protocolsunlynx implements the addrm_server protocol.
+// Package protocolsunlynxutils implements the addrm_server protocol.
 // It permits to removes/adds a conode from the collective authority or, in other words,
 // it removes/adds a server's contribution from the original ciphertexts.
-package protocolsunlynx
+package protocolsunlynxutils
 
 import (
 	"sync"

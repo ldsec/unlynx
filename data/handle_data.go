@@ -17,7 +17,7 @@ import (
 )
 
 // Groups identifies all different groups to be added to the test data file
-var Groups [][]int64
+//var Groups [][]int64
 
 // FillInt64Slice fills a slice with the same value v
 func FillInt64Slice(s []int64, v int64) {
@@ -41,19 +41,19 @@ func randomFillInt64Slice(s []int64, max int64) {
 
 // AllPossibleGroups generates all possible groups given the different groups for the grouping attributes
 // e.g. numType:1,2 -> Groups: [0,0], [0,1]
-func AllPossibleGroups(numType []int64, group []int64, pos int) {
+func AllPossibleGroups(numType []int64, group []int64, pos int, groups *[][]int64) {
 	if pos == len(numType) {
 		tmp := make([]int64, 0)
 		for _, el := range group {
 			tmp = append(tmp, el)
 		}
-		Groups = append(Groups, tmp)
+		*groups = append(*groups, tmp)
 	} else {
 		for i := 0; i < int(numType[pos]); i++ {
 			group = append(group, int64(i))
 
 			pos++
-			AllPossibleGroups(numType, group, pos)
+			AllPossibleGroups(numType, group, pos, groups)
 			pos--
 
 			group = append(group[:len(group)-1], group[len(group):]...)
@@ -65,9 +65,9 @@ func AllPossibleGroups(numType []int64, group []int64, pos int) {
 //
 //  	filename:    name of the file (.txt) where we will store the test data
 //
-//	numDPs: 		number of clients/hosts (or in other words data holders)
+//	    numDPs: 		    number of clients/hosts (or in other words data holders)
 //  	numEntries: 		number of survey entries (ClientClearResponse) per host
-//	numEntriesFiltered: 	number of survey entries to keep (after the where filtering)
+//	    numEntriesFiltered: number of survey entries to keep (after the where filtering)
 //  	numGroupsClear: 	number of grouping attributes in clear
 //      numGroupsEnc:   	number of grouping attributes encrypted
 //  	numWhereClear: 		number of where attributes in clear
@@ -75,7 +75,7 @@ func AllPossibleGroups(numType []int64, group []int64, pos int) {
 //  	numAggrClear:   	number of aggregating attributes in clear
 //  	numAggrEnc:    		number of aggregating attributes encrypted
 //  	numType:    		number of different groups inside a group attribute
-//	randomGroups: 		true -> groups are generated randomly, false -> we cover all possible groups
+//	    randomGroups: 		true -> groups are generated randomly, false -> we cover all possible groups
 //TODO where + whereClear
 func GenerateData(numDPs, numEntries, numEntriesFiltered, numGroupsClear, numGroupsEnc,
 	numWhereClear, numWhereEnc, numAggrClear, numAggrEnc int64, numType []int64, randomGroups bool) map[string][]libunlynx.DpClearResponse {
@@ -94,15 +94,16 @@ func GenerateData(numDPs, numEntries, numEntriesFiltered, numGroupsClear, numGro
 		}
 
 		if int64(numElem) == numEntries {
-			Groups = make([][]int64, 0)
+			groups := make([][]int64, 0)
 			group := make([]int64, 0)
-			AllPossibleGroups(numType[:], group, 0)
+			AllPossibleGroups(numType[:], group, 0, &groups)
 		} else {
 			log.Fatal("Please ensure that the number of groups is the same as the number of entries")
 			return nil
 		}
 	}
 
+	groups := make([][]int64, 0)
 	for i := int64(0); i < numDPs; i++ {
 		dpData := make([]libunlynx.DpClearResponse, numEntries)
 
@@ -130,7 +131,7 @@ func GenerateData(numDPs, numEntries, numEntriesFiltered, numGroupsClear, numGro
 					grp[k] = int64(random(0, int(numType[k])))
 				}
 			} else {
-				grp = Groups[j]
+				grp = groups[j]
 			}
 
 			dpData[j] = libunlynx.DpClearResponse{

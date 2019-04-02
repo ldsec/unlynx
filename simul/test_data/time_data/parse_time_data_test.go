@@ -1,4 +1,4 @@
-package timedata_test
+package timedataunlynx_test
 
 import (
 	"testing"
@@ -28,21 +28,21 @@ var flags = []string{"bf", "depth", "rounds", "runwait", "servers", "\n",
 
 func TestReadTomlSetup(t *testing.T) {
 	t.Skip()
-	timedata.ReadTomlSetup(filenameToml, 0)
+	timedataunlynx.ReadTomlSetup(filenameToml, 0)
 }
 
 func TestReadDataToCSVFile(t *testing.T) {
 	t.Skip()
-	timedata.ReadDataFromCSVFile(filenameRead, flags)
+	timedataunlynx.ReadDataFromCSVFile(filenameRead, flags)
 }
 
 func TestWriteDataFromCSVFile(t *testing.T) {
 	t.Skip()
-	testTimeData := timedata.ReadDataFromCSVFile(filenameRead, flags)
+	testTimeData := timedataunlynx.ReadDataFromCSVFile(filenameRead, flags)
 
-	timedata.CreateCSVFile(filenameWrite)
+	timedataunlynx.CreateCSVFile(filenameWrite)
 	for i := 0; i < len(testTimeData[flags[0]]); i++ {
-		setup := timedata.ReadTomlSetup(filenameToml, i)
-		timedata.WriteDataFromCSVFile(filenameWrite, flags, testTimeData, i, setup)
+		setup := timedataunlynx.ReadTomlSetup(filenameToml, i)
+		timedataunlynx.WriteDataFromCSVFile(filenameWrite, flags, testTimeData, i, setup)
 	}
 }

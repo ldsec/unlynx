@@ -25,16 +25,15 @@ var numType = [...]int64{2, 5}
 var testData map[string][]libunlynx.DpClearResponse
 
 func TestAllPossibleGroups(t *testing.T) {
-	dataunlynx.Groups = make([][]int64, 0)
-
+	groups := make([][]int64, 0)
 	group := make([]int64, 0)
-	dataunlynx.AllPossibleGroups(numType[:], group, 0)
+	dataunlynx.AllPossibleGroups(numType[:], group, 0, &groups)
 
 	numElem := 1
 	for _, el := range numType {
 		numElem = numElem * int(el)
 	}
-	assert.Equal(t, numElem, len(dataunlynx.Groups), "Some elements are missing")
+	assert.Equal(t, numElem, len(groups), "Some elements are missing")
 }
 
 func TestGenerateData(t *testing.T) {
