@@ -92,7 +92,7 @@ func openGroupToml(tomlFileName string) (*onet.Roster, error) {
 	return el.Roster, nil
 }
 
-func checkRegex(input, expression string) bool{
+func checkRegex(input, expression string) bool {
 	var aux = regexp.MustCompile(expression)
 	return aux.MatchString(input)
 }
