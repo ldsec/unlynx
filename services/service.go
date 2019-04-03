@@ -132,7 +132,7 @@ func castToSurvey(object interface{}, err error) Survey {
 func (s *Service) getSurvey(sid SurveyID, step int) Survey {
 	surv, err := s.Survey.Get(string(sid))
 	if err != nil || surv == nil {
-		log.Fatalf("Error '%s' while getting surveyID %x", err, sid, step)
+		log.Fatalf("Error '%s' while getting surveyID %x %d, %s", err, sid, step, s.ServerIdentity().String())
 	}
 	return surv.(Survey)
 }
@@ -283,7 +283,7 @@ func (s *Service) HandleSurveyResponseQuery(resp *SurveyResponseQuery) (network.
 
 	survey := el.(Survey)
 	if survey.Query.SurveyID == resp.SurveyID {
-		<-s.getSurvey(resp.SurveyID,3).SurveyChannel
+		<-s.getSurvey(resp.SurveyID, 3).SurveyChannel
 
 		s.PushData(resp, survey.Query.Proofs)
 
@@ -635,7 +635,7 @@ func (s *Service) StartService(targetSurvey SurveyID, root bool) error {
 
 // ShufflingPhase performs the shuffling of the ClientResponses
 func (s *Service) ShufflingPhase(targetSurvey SurveyID) error {
-	survey := s.getSurvey(targetSurvey,14)
+	survey := s.getSurvey(targetSurvey, 14)
 
 	if len(survey.DpResponses) == 0 && len(survey.DpResponsesAggr) == 0 {
 		log.Lvl1(s.ServerIdentity(), " no data to shuffle")
