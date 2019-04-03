@@ -3,6 +3,7 @@ package appunlynx
 import (
 	"os"
 
+	"github.com/btcsuite/goleveldb/leveldb/errors"
 	"github.com/lca1/unlynx/lib"
 	"go.dedis.ch/onet/v3/app"
 	"go.dedis.ch/onet/v3/log"
@@ -122,7 +123,7 @@ func main() {
 			Usage: "Start unlynx server",
 			Action: func(c *cli.Context) error {
 				if err := runServer(c); err != nil {
-					log.Fatal("Error during runServer():", err)
+					return errors.New("Error during runServer():" + err.Error())
 				}
 				return nil
 			},
@@ -134,10 +135,10 @@ func main() {
 					Usage:   "Setup server configuration (interactive)",
 					Action: func(c *cli.Context) error {
 						if c.String(optionConfig) != "" {
-							log.Fatal("[-] Configuration file option cannot be used for the 'setup' command")
+							return errors.New("[-] Configuration file option cannot be used for the 'setup' command")
 						}
 						if c.GlobalIsSet("debug") {
-							log.Fatal("[-] Debug option cannot be used for the 'setup' command")
+							return errors.New("[-] Debug option cannot be used for the 'setup' command")
 						}
 						app.InteractiveConfig(libunlynx.SuiTe, BinaryName)
 						return nil
