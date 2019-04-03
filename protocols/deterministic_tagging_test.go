@@ -34,7 +34,7 @@ func TestDeterministicTagging(t *testing.T) {
 
 	aggregateKey := entityList.Aggregate
 
-	//create data for test
+	// create data for test
 	testCipherVect := make(libunlynx.CipherVector, 1)
 	expRes := []int64{1}
 	for i, p := range expRes {

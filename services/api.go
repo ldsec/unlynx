@@ -91,7 +91,6 @@ func (c *API) SendSurveyResultsQuery(surveyID SurveyID) (*[][]int64, *[][]int64,
 
 	log.Lvl1(c, " got the survey result from ", c.entryPoint)
 
-	//grpClear := make([][]int64, len(resp.Results))
 	grp := make([][]int64, len(resp.Results))
 	aggr := make([][]int64, len(resp.Results))
 	for i, res := range resp.Results {

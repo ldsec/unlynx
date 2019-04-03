@@ -122,7 +122,7 @@ func NewShufflingProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, erro
 // Start is called at the root node and starts the execution of the protocol.
 func (p *ShufflingProtocol) Start() error {
 
-	//shufflingStart := libunlynx.StartTimer(p.Name() + "_Shuffling(START)")
+	shufflingStart := libunlynx.StartTimer(p.Name() + "_Shuffling(START)")
 
 	if p.ShuffleTarget == nil {
 		return errors.New("no map given as shuffling target")
@@ -153,14 +153,14 @@ func (p *ShufflingProtocol) Start() error {
 
 	libunlynx.EndTimer(shufflingStartNoProof)
 
-	//shufflingStartProof := libunlynx.StartTimer(p.Name() + "_Shuffling(START-Proof)")
+	shufflingStartProof := libunlynx.StartTimer(p.Name() + "_Shuffling(START-Proof)")
 
 	if p.Proofs {
 		p.ProofFunc(shuffleTarget, shuffledData, collectiveKey, beta, pi)
 	}
 
-	//libunlynx.EndTimer(shufflingStartProof)
-	//libunlynx.EndTimer(shufflingStart)
+	libunlynx.EndTimer(shufflingStartProof)
+	libunlynx.EndTimer(shufflingStart)
 
 	p.ExecTimeStart += time.Since(timer)
 
@@ -186,7 +186,7 @@ func (p *ShufflingProtocol) Dispatch() error {
 	shuffleTarget := sm.Data
 
 	timer := time.Now()
-	//shufflingDispatch := libunlynx.StartTimer(p.Name() + "_Shuffling(DISPATCH)")
+	shufflingDispatch := libunlynx.StartTimer(p.Name() + "_Shuffling(DISPATCH)")
 
 	collectiveKey := p.Roster().Aggregate
 	// when testing protocol
@@ -203,19 +203,19 @@ func (p *ShufflingProtocol) Dispatch() error {
 	var beta [][]kyber.Scalar
 
 	if !p.IsRoot() {
-		//shufflingDispatchNoProof := libunlynx.StartTimer(p.Name() + "_Shuffling(DISPATCH-noProof)")
+		shufflingDispatchNoProof := libunlynx.StartTimer(p.Name() + "_Shuffling(DISPATCH-noProof)")
 
 		shuffledData, pi, beta = libunlynxshuffle.ShuffleSequence(shuffleTarget, libunlynx.SuiTe.Point().Base(), collectiveKey, p.Precomputed)
 
-		//libunlynx.EndTimer(shufflingDispatchNoProof)
+		libunlynx.EndTimer(shufflingDispatchNoProof)
 
-		//shufflingDispatchProof := libunlynx.StartTimer("_Shuffling(DISPATCH-Proof)")
+		shufflingDispatchProof := libunlynx.StartTimer("_Shuffling(DISPATCH-Proof)")
 
 		if p.Proofs {
 			p.ProofFunc(shuffleTarget, shuffledData, collectiveKey, beta, pi)
 		}
 
-		//libunlynx.EndTimer(shufflingDispatchProof)
+		libunlynx.EndTimer(shufflingDispatchProof)
 
 	}
 
@@ -227,7 +227,7 @@ func (p *ShufflingProtocol) Dispatch() error {
 		log.Lvl1(p.ServerIdentity(), " carried on shuffling.")
 	}
 
-	//libunlynx.EndTimer(shufflingDispatch)
+	libunlynx.EndTimer(shufflingDispatch)
 
 	// If this tree node is the root, then protocol reached the end.
 	if p.IsRoot() {

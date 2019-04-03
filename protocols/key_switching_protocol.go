@@ -140,7 +140,7 @@ func NewKeySwitchingProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, e
 // Start is called at the root to begin the execution of the protocol.
 func (p *KeySwitchingProtocol) Start() error {
 
-	//keySwitchingStart := libunlynx.StartTimer(p.Name() + "_KeySwitching(START)")
+	keySwitchingStart := libunlynx.StartTimer(p.Name() + "_KeySwitching(START)")
 
 	if p.TargetOfSwitch == nil {
 		return errors.New("no ciphertext given as key switching target")
@@ -173,7 +173,7 @@ func (p *KeySwitchingProtocol) Start() error {
 		log.Fatal("Root " + p.ServerIdentity().String() + " failed to broadcast DownMessageBytes")
 	}
 
-	//libunlynx.EndTimer(keySwitchingStart)
+	libunlynx.EndTimer(keySwitchingStart)
 
 	return nil
 }
@@ -230,7 +230,7 @@ func (p *KeySwitchingProtocol) announcementKSPhase() (kyber.Point, []kyber.Point
 // Results pushing up the tree containing key switching results.
 func (p *KeySwitchingProtocol) ascendingKSPhase() *libunlynx.CipherVector {
 
-	//keySwitchingAscendingAggregation := libunlynx.StartTimer(p.Name() + "_KeySwitching(ascendingAggregation)")
+	keySwitchingAscendingAggregation := libunlynx.StartTimer(p.Name() + "_KeySwitching(ascendingAggregation)")
 
 	if !p.IsLeaf() {
 		length := make([]LengthStruct, 0)
@@ -252,7 +252,7 @@ func (p *KeySwitchingProtocol) ascendingKSPhase() *libunlynx.CipherVector {
 		}
 	}
 
-	//libunlynx.EndTimer(keySwitchingAscendingAggregation)
+	libunlynx.EndTimer(keySwitchingAscendingAggregation)
 
 	if !p.IsRoot() {
 		if err := p.SendToParent(&LengthMessage{Length: libunlynxtools.UnsafeCastIntsToBytes([]int{len(*p.NodeContribution)})}); err != nil {

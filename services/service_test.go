@@ -167,8 +167,6 @@ func TestServiceClearAttr(t *testing.T) {
 		for j := 0; j < numberAttr; j++ {
 			aggr["s"+strconv.Itoa(j+1)] = int64(j)
 		}
-
-		//responses:= []lib.DpClearResponse{{WhereClear: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr},{WhereClear: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr},{WhereClear: sliceWhere, GroupByClear: sliceGrp1, AggregatingAttributesEnc: aggr}}
 		responses := []libunlynx.DpClearResponse{{WhereClear: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereClear: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr}}
 
 		log.Lvl1(responses)
@@ -179,7 +177,6 @@ func TestServiceClearAttr(t *testing.T) {
 	}
 
 	expectedResults[[3]int64{0, 1, 2}] = []int64{0, 18}
-	//expectedResults[[3]int64{1,2,3}] = []int64{0,9}
 	grp, aggr, err := client.SendSurveyResultsQuery(*surveyID)
 
 	if err != nil {

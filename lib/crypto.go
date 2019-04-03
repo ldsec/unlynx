@@ -20,7 +20,6 @@ import (
 const MaxHomomorphicInt int64 = 100000
 
 // PointToInt creates a map between EC points and integers.
-//var PointToInt = make(map[string]int64, MaxHomomorphicInt)
 var PointToInt = concurrent.NewConcurrentMap()
 var currentGreatestM kyber.Point
 var currentGreatestInt int64

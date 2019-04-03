@@ -59,8 +59,7 @@ type ChildAggregatedDataBytesMessage struct {
 type CADBLengthMessage struct {
 	GacbLength int
 	AabLength  int
-	//PgaebLength int
-	DtbLength int
+	DtbLength  int
 }
 
 // Structs
@@ -308,7 +307,6 @@ func (sm *ChildAggregatedDataMessage) ToBytes() ([]byte, int, int, int) {
 
 	var gacbLength int
 	var aabLength int
-	//var pgaebLength int
 	var dtbLength int
 
 	wg := libunlynx.StartParallelize(len((*sm).ChildData))

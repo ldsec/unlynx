@@ -309,8 +309,6 @@ func (dtm *DeterministicTaggingMessage) ToBytes() []byte {
 
 // FromBytes converts a byte array to a DeterministicTaggingMessage. Note that you need to create the (empty) object beforehand.
 func (dtm *DeterministicTaggingMessage) FromBytes(data []byte) {
-
-	//cvLengths := UnsafeCastBytesToInts(cvLengthsByte)
 	elementSize := libunlynx.CipherTextByteSize()
 	(*dtm).Data = make([]libunlynx.CipherText, len(data)/elementSize)
 

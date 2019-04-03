@@ -170,7 +170,6 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 		}
 
 		//shuffling ****************************************************************************************************
-
 		log.Lvl1("Starting shuffling (can take some time)")
 		responsesToShuffle := make([]libunlynx.ProcessResponse, sim.NbrResponses/sim.NbrServers)
 		for i := 0; i < sim.NbrResponses/sim.NbrServers; i++ {

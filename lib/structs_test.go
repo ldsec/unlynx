@@ -29,7 +29,6 @@ func TestAddClientResponse(t *testing.T) {
 	newCr.AggregatingAttributes = *libunlynx.NewCipherVector(len(cr1.AggregatingAttributes))
 	newCr.Add(cr1, cr2)
 
-	//assert.Equal(t, grouping, lib.UnKey(newCr.GroupingAttributesClear))
 	assert.Equal(t, sum, libunlynx.DecryptIntVector(secKey, &newCr.AggregatingAttributes))
 	assert.Equal(t, grouping, libunlynx.DecryptIntVector(secKey, &newCr.GroupByEnc))
 }

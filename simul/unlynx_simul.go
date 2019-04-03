@@ -131,9 +131,6 @@ func (sim *SimulationUnLynx) Run(config *onet.SimulationConfig) error {
 		testData := dataunlynx.GenerateData(int64(sim.NbrDPs), sim.NbrResponsesTot, sim.NbrResponsesFiltered, sim.NbrGroupsClear, sim.NbrGroupsEnc,
 			sim.NbrWhereClear, sim.NbrWhereEncrypted, sim.NbrAggrClear, sim.NbrAggrEncrypted, sim.NbrGroupAttributes, sim.RandomGroups)
 
-		/*log.Lvl1("Saving test data...")
-		data.WriteDataToFile("unlynx_test_data.txt", testData)*/
-
 		/// START SERVICE PROTOCOL
 		if libunlynx.TIME {
 			start = monitor.NewTimeMeasure("SendingData")

@@ -16,9 +16,6 @@ import (
 	"go.dedis.ch/onet/v3/log"
 )
 
-// Groups identifies all different groups to be added to the test data file
-//var Groups [][]int64
-
 // FillInt64Slice fills a slice with the same value v
 func FillInt64Slice(s []int64, v int64) {
 	for i := 0; i < len(s); i++ {
@@ -111,8 +108,6 @@ func GenerateData(numDPs, numEntries, numEntriesFiltered, numGroupsClear, numGro
 			aggr := make([]int64, numAggrEnc+numAggrClear)
 
 			// Toggle random data or not (2 -> just 0's or 1's)
-
-			//FillInt64Slice(aggr,int64(1))
 			randomFillInt64Slice(aggr, 2)
 
 			grp := make([]int64, numGroupsClear+numGroupsEnc)
