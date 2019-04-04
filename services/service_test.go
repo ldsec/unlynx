@@ -770,9 +770,8 @@ func TestAllServersNoDPs(t *testing.T) {
 	}
 
 	surveyID, err := client.SendSurveyCreationQuery(el, servicesunlynx.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
-
 	if err != nil {
-		t.Fatal("Service did not start.")
+		t.Fatal("Service did not start:", err)
 	}
 
 	//save values in a map to verify them at the end
