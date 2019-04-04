@@ -2,6 +2,7 @@ package dataunlynx
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"math"
 	"math/rand"
@@ -13,7 +14,6 @@ import (
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/store"
 	"github.com/lca1/unlynx/lib/tools"
-	"go.dedis.ch/onet/v3/log"
 )
 
 // FillInt64Slice fills a slice with the same value v
@@ -75,11 +75,10 @@ func AllPossibleGroups(numType []int64, group []int64, pos int, groups *[][]int6
 //	    randomGroups: 		true -> groups are generated randomly, false -> we cover all possible groups
 //TODO where + whereClear
 func GenerateData(numDPs, numEntries, numEntriesFiltered, numGroupsClear, numGroupsEnc,
-	numWhereClear, numWhereEnc, numAggrClear, numAggrEnc int64, numType []int64, randomGroups bool) map[string][]libunlynx.DpClearResponse {
+	numWhereClear, numWhereEnc, numAggrClear, numAggrEnc int64, numType []int64, randomGroups bool) (map[string][]libunlynx.DpClearResponse, error) {
 
 	if int64(len(numType)) != (numGroupsClear + numGroupsEnc) {
-		log.Fatal("Please ensure that you specify the number of group types for each grouping attribute")
-		return nil
+		return nil, errors.New("specify the correct number of group types for each grouping attribute")
 	}
 
 	testData := make(map[string][]libunlynx.DpClearResponse)
@@ -95,8 +94,7 @@ func GenerateData(numDPs, numEntries, numEntriesFiltered, numGroupsClear, numGro
 			group := make([]int64, 0)
 			AllPossibleGroups(numType[:], group, 0, &groups)
 		} else {
-			log.Fatal("Please ensure that the number of groups is the same as the number of entries")
-			return nil
+			return nil, errors.New("the number of groups is different from the number of entries")
 		}
 	}
 
@@ -141,25 +139,26 @@ func GenerateData(numDPs, numEntries, numEntriesFiltered, numGroupsClear, numGro
 		}
 		testData[fmt.Sprintf("%v", i)] = dpData
 	}
-	return testData
+	return testData, nil
 }
 
 // flushInt64Data writes a slice of int64 data to file (writer is the file handler)
-func flushInt64Data(writer *bufio.Writer, slice []int64) {
+func flushInt64Data(writer *bufio.Writer, slice []int64) error {
 	for _, g := range slice {
 		if _, err := fmt.Fprint(writer, fmt.Sprintf("%v ", g)); err != nil {
-			log.Fatal(err)
+			return err
 		}
 		if err := writer.Flush(); err != nil {
-			log.Fatal(err)
+			return err
 		}
 	}
 	if _, err := fmt.Fprint(writer, "\n"); err != nil {
-		log.Fatal(err)
+		return err
 	}
 	if err := writer.Flush(); err != nil {
-		log.Fatal(err)
+		return err
 	}
+	return nil
 }
 
 // CreateInt64Slice creates a slice of int64 between min and max
@@ -172,46 +171,57 @@ func CreateInt64Slice(size int64, min int64, max int64) []int64 {
 }
 
 // WriteDataToFile writes the testData to 'filename'.txt
-func WriteDataToFile(filename string, testData map[string][]libunlynx.DpClearResponse) {
+func WriteDataToFile(filename string, testData map[string][]libunlynx.DpClearResponse) error {
 	fileHandle, err := os.Create(filename)
-
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	writer := bufio.NewWriter(fileHandle)
 	if err := writer.Flush(); err != nil {
-		log.Fatal(err)
+		return err
 	}
 	defer fileHandle.Close()
 
 	for k, v := range testData {
 		if _, err := fmt.Fprintln(writer, "#"+k); err != nil {
-			log.Fatal(err)
+			return err
 		}
 		if err := writer.Flush(); err != nil {
-			log.Fatal(err)
+			return err
 		}
 
 		for _, entry := range v {
-			flushInt64Data(writer, libunlynxtools.ConvertMapToData(entry.GroupByClear, "g", 0))
-			flushInt64Data(writer, libunlynxtools.ConvertMapToData(entry.GroupByEnc, "g", len(entry.GroupByClear)))
-			flushInt64Data(writer, libunlynxtools.ConvertMapToData(entry.WhereClear, "w", 0))
-			flushInt64Data(writer, libunlynxtools.ConvertMapToData(entry.WhereEnc, "w", len(entry.WhereClear)))
-			flushInt64Data(writer, libunlynxtools.ConvertMapToData(entry.AggregatingAttributesClear, "s", 0))
-			flushInt64Data(writer, libunlynxtools.ConvertMapToData(entry.AggregatingAttributesEnc, "s", len(entry.AggregatingAttributesClear)))
+			if err := flushInt64Data(writer, libunlynxtools.ConvertMapToData(entry.GroupByClear, "g", 0)); err != nil {
+				return err
+			}
+			if err := flushInt64Data(writer, libunlynxtools.ConvertMapToData(entry.GroupByEnc, "g", len(entry.GroupByClear))); err != nil {
+				return err
+			}
+			if err := flushInt64Data(writer, libunlynxtools.ConvertMapToData(entry.WhereClear, "w", 0)); err != nil {
+				return err
+			}
+			if err := flushInt64Data(writer, libunlynxtools.ConvertMapToData(entry.WhereEnc, "w", len(entry.WhereClear))); err != nil {
+				return err
+			}
+			if err := flushInt64Data(writer, libunlynxtools.ConvertMapToData(entry.AggregatingAttributesClear, "s", 0)); err != nil {
+				return err
+			}
+			if err := flushInt64Data(writer, libunlynxtools.ConvertMapToData(entry.AggregatingAttributesEnc, "s", len(entry.AggregatingAttributesClear))); err != nil {
+				return err
+			}
 		}
 	}
+	return nil
 }
 
 // ReadDataFromFile reads the testData from 'filename'.txt
-func ReadDataFromFile(filename string) map[string][]libunlynx.DpClearResponse {
+func ReadDataFromFile(filename string) (map[string][]libunlynx.DpClearResponse, error) {
 	testData := make(map[string][]libunlynx.DpClearResponse)
 
 	fileHandle, err := os.Open(filename)
 	if err != nil {
-		log.Fatal(err)
-		return nil
+		return nil, err
 	}
 	defer fileHandle.Close()
 
@@ -267,11 +277,9 @@ func ReadDataFromFile(filename string) map[string][]libunlynx.DpClearResponse {
 	testData[id] = container
 
 	if err := scanner.Err(); err != nil {
-		log.Fatal(err)
-		return nil
+		return nil, err
 	}
-
-	return testData
+	return testData, nil
 }
 
 // joinMaps concatenates two similar maps of type map[string]int64

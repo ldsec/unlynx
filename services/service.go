@@ -272,7 +272,11 @@ func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.
 				break
 			}
 		}
-		testData := dataunlynx.ReadDataFromFile("unlynx_test_data.txt")
+		testData, err := dataunlynx.ReadDataFromFile("unlynx_test_data.txt")
+		if err != nil {
+			return nil, err
+		}
+
 		resp := EncryptDataToSurvey(s.ServerIdentity().String(), recq.SurveyID, testData[strconv.Itoa(index)], recq.Roster.Aggregate, 1, recq.Count)
 		s.PushData(resp, recq.Proofs)
 

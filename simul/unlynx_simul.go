@@ -128,8 +128,11 @@ func (sim *SimulationUnLynx) Run(config *onet.SimulationConfig) error {
 		}
 
 		// RandomGroups (true/false) is to respectively generate random or non random entries
-		testData := dataunlynx.GenerateData(int64(sim.NbrDPs), sim.NbrResponsesTot, sim.NbrResponsesFiltered, sim.NbrGroupsClear, sim.NbrGroupsEnc,
+		testData, err := dataunlynx.GenerateData(int64(sim.NbrDPs), sim.NbrResponsesTot, sim.NbrResponsesFiltered, sim.NbrGroupsClear, sim.NbrGroupsEnc,
 			sim.NbrWhereClear, sim.NbrWhereEncrypted, sim.NbrAggrClear, sim.NbrAggrEncrypted, sim.NbrGroupAttributes, sim.RandomGroups)
+		if err != nil {
+			return err
+		}
 
 		/// START SERVICE PROTOCOL
 		if libunlynx.TIME {

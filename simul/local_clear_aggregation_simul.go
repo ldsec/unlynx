@@ -69,9 +69,11 @@ func (sim *LocalClearAggregationSimulation) Run(config *onet.SimulationConfig) e
 			types[0] = int64(sim.NbrGroups)
 		}
 
-		testData := dataunlynx.GenerateData(1, int64(sim.NbrResponses), int64(sim.NbrResponses), int64(sim.NbrGroupAttributes), 0,
+		testData, err := dataunlynx.GenerateData(1, int64(sim.NbrResponses), int64(sim.NbrResponses), int64(sim.NbrGroupAttributes), 0,
 			int64(sim.NbrWhereAttributes), 0, int64(sim.NbrAggrAttributes), 0, types, true)
-
+		if err != nil {
+			return err
+		}
 		log.Lvl1("starting protocol with ", len(testData), " responses")
 
 		//protocol

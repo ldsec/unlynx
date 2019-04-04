@@ -6,7 +6,6 @@ import (
 	"github.com/lca1/unlynx/data"
 	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
-	"go.dedis.ch/onet/v3/log"
 )
 
 const filename = "unlynx_test_data.txt"
@@ -37,25 +36,25 @@ func TestAllPossibleGroups(t *testing.T) {
 }
 
 func TestGenerateData(t *testing.T) {
-	testData = dataunlynx.GenerateData(numDPs, numEntries, numEntriesFiltered, numGroupsClear, numGroupsEnc,
+	testData, _ = dataunlynx.GenerateData(numDPs, numEntries, numEntriesFiltered, numGroupsClear, numGroupsEnc,
 		numWhereClear, numWhereEnc, numAggrClear, numAggrEnc, numType[:], true)
 }
 
 func TestWriteDataToFile(t *testing.T) {
-	dataunlynx.WriteDataToFile(filename, testData)
+	_ = dataunlynx.WriteDataToFile(filename, testData)
 }
 
 func TestReadDataFromFile(t *testing.T) {
-	dataunlynx.ReadDataFromFile(filename)
+	_, _ = dataunlynx.ReadDataFromFile(filename)
 }
 
 func TestCompareClearResponses(t *testing.T) {
-	dataunlynx.ReadDataFromFile(filename)
-	assert.Equal(t, testData, dataunlynx.ReadDataFromFile(filename), "Data should be the same")
+	data, _ := dataunlynx.ReadDataFromFile(filename)
+	assert.Equal(t, testData, data, "Data should be the same")
 }
 
 func TestComputeExpectedResult(t *testing.T) {
-	log.Lvl1(dataunlynx.ComputeExpectedResult(dataunlynx.ReadDataFromFile(filename), 1, false))
-	assert.Equal(t, dataunlynx.CompareClearResponses(dataunlynx.ComputeExpectedResult(testData, 1, false), dataunlynx.ComputeExpectedResult(dataunlynx.ReadDataFromFile(filename), 1, false)), true, "Result should be the same")
-	assert.Equal(t, dataunlynx.CompareClearResponses(dataunlynx.ComputeExpectedResult(testData, 1, true), dataunlynx.ComputeExpectedResult(dataunlynx.ReadDataFromFile(filename), 1, true)), true, "Result should be the same")
+	data, _ := dataunlynx.ReadDataFromFile(filename)
+	assert.Equal(t, dataunlynx.CompareClearResponses(dataunlynx.ComputeExpectedResult(testData, 1, false), dataunlynx.ComputeExpectedResult(data, 1, false)), true, "Result should be the same")
+	assert.Equal(t, dataunlynx.CompareClearResponses(dataunlynx.ComputeExpectedResult(testData, 1, true), dataunlynx.ComputeExpectedResult(data, 1, true)), true, "Result should be the same")
 }
