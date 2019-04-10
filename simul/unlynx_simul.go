@@ -1,7 +1,9 @@
 package main
 
 import (
+	"errors"
 	"strconv"
+	"sync"
 
 	"github.com/BurntSushi/toml"
 	"github.com/lca1/unlynx/data"
@@ -72,8 +74,7 @@ func (sim *SimulationUnLynx) Run(config *onet.SimulationConfig) error {
 
 	// Does not make sense to have more servers than clients!!
 	if nbrHosts > sim.NbrDPs {
-		log.Fatal("hosts:", nbrHosts, "must be the same or lower as num_clients:", sim.NbrDPs)
-		return nil
+		return errors.New("hosts: " + strconv.FormatInt(int64(nbrHosts), 10) + " must be the same or lower as num_clients " + strconv.FormatInt(int64(sim.NbrDPs), 10))
 	}
 	el := (*config.Tree).Roster
 
@@ -122,9 +123,8 @@ func (sim *SimulationUnLynx) Run(config *onet.SimulationConfig) error {
 		}
 
 		surveyID, err := client.SendSurveyCreationQuery(el, servicesunlynx.SurveyID(""), nil, nbrDPs, sim.Proofs, false, sum, count, whereQueryValues, predicate, groupBy)
-
 		if err != nil {
-			log.Fatal("Service did not start:", err)
+			return err
 		}
 
 		// RandomGroups (true/false) is to respectively generate random or non random entries
@@ -142,6 +142,8 @@ func (sim *SimulationUnLynx) Run(config *onet.SimulationConfig) error {
 		log.Lvl1("Sending response data... ")
 		dataHolder := make([]*servicesunlynx.API, sim.NbrDPs)
 		wg := libunlynx.StartParallelize(len(dataHolder))
+
+		mutex := sync.Mutex{}
 		for i, client := range dataHolder {
 			start := libunlynx.StartTimer(strconv.Itoa(i) + "_IndividualSendingData")
 			go func(i int, client *servicesunlynx.API) {
@@ -152,7 +154,10 @@ func (sim *SimulationUnLynx) Run(config *onet.SimulationConfig) error {
 
 				client = servicesunlynx.NewUnLynxClient(server, strconv.Itoa(i+1))
 				if err := client.SendSurveyResponseQuery(*surveyID, dataCollection, el.Aggregate, sim.DataRepetitions, count); err != nil {
-					log.Fatal("Error while sending DP ("+client.String()+") responses:", err)
+					mutex.Lock()
+					err = errors.New("Error while sending DP ("+client.String()+") responses:" + err.Error())
+					log.Error(err)
+					mutex.Unlock()
 				}
 			}(i, client)
 			libunlynx.EndTimer(start)
@@ -161,11 +166,15 @@ func (sim *SimulationUnLynx) Run(config *onet.SimulationConfig) error {
 		libunlynx.EndParallelize(wg)
 		libunlynx.EndTimer(start)
 
+		if err != nil {
+			return err
+		}
+
 		start := libunlynx.StartTimer("Simulation")
 
 		grp, aggr, err := client.SendSurveyResultsQuery(*surveyID)
 		if err != nil {
-			log.Fatal("Service could not output the results:", err)
+			return errors.New("Service could not output the results: " + err.Error())
 		}
 
 		libunlynx.EndTimer(start)

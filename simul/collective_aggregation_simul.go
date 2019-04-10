@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"github.com/BurntSushi/toml"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/aggregation"
@@ -81,7 +82,7 @@ func (sim *CollectiveAggregationSimulation) Node(config *onet.SimulationConfig) 
 		func(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 			return NewAggregationProtocolSimul(tni, sim)
 		}); err != nil {
-		log.Fatal("Error while registering <CollectiveAggregationSimul> with id (", pid, "):", err)
+		return errors.New("Error while registering <CollectiveAggregationSimul> with id (" + pid.String() + "):" + err.Error())
 	}
 
 	return sim.SimulationBFTree.Node(config)
@@ -104,7 +105,7 @@ func (sim *CollectiveAggregationSimulation) Run(config *onet.SimulationConfig) e
 
 		log.Lvl1("Start protocol")
 		if err := root.Start(); err != nil {
-			log.Fatal("Error while starting <CollectiveAggregation> Protocol:", err)
+			return err
 		}
 		<-root.ProtocolInstance().(*protocolsunlynx.CollectiveAggregationProtocol).FeedbackChannel
 

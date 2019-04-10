@@ -1,10 +1,10 @@
 package servicesunlynx
 
 import (
+	"errors"
 	"strconv"
 
 	"github.com/Knetic/govaluate"
-	"github.com/btcsuite/goleveldb/leveldb/errors"
 	"github.com/fanliao/go-concurrentMap"
 	"github.com/lca1/unlynx/data"
 	"github.com/lca1/unlynx/lib"

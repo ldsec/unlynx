@@ -3,12 +3,12 @@ package libunlynxtools
 import (
 	"encoding/binary"
 	"encoding/gob"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
 	"strings"
 
-	"github.com/btcsuite/goleveldb/leveldb/errors"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
 )

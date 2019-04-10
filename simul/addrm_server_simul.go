@@ -81,7 +81,7 @@ func (sim *AddRmSimulation) Run(config *onet.SimulationConfig) error {
 		round := libunlynx.StartTimer("_LocalAddRm(Simulation")
 
 		if err := root.Start(); err != nil {
-			log.Fatal("Error while starting <LocalAddRm> Protocol:", err)
+			return err
 		}
 		results := <-root.ProtocolInstance().(*protocolsunlynxutils.AddRmServerProtocol).FeedbackChannel
 		log.Lvl1("Number of aggregated lines: ", len(results))

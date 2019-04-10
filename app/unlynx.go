@@ -1,9 +1,9 @@
 package appunlynx
 
 import (
+	"errors"
 	"os"
 
-	"github.com/btcsuite/goleveldb/leveldb/errors"
 	"github.com/lca1/unlynx/lib"
 	"go.dedis.ch/onet/v3/app"
 	"go.dedis.ch/onet/v3/log"

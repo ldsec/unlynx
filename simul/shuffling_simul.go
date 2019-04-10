@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"github.com/BurntSushi/toml"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/shuffle"
@@ -55,7 +56,7 @@ func (sim *ShufflingSimulation) Node(config *onet.SimulationConfig) error {
 		func(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 			return NewShufflingSimul(tni, sim)
 		}); err != nil {
-		log.Fatal("Error while registering <ShufflingSimul> with id(", pid, "):", err)
+		return errors.New("Error while registering <ShufflingSimul> with id (" + pid.String() + "):" + err.Error())
 	}
 
 	return sim.SimulationBFTree.Node(config)
@@ -77,7 +78,7 @@ func (sim *ShufflingSimulation) Run(config *onet.SimulationConfig) error {
 		round := libunlynx.StartTimer("_Shuffling(SIMULATION)")
 
 		if err := root.Start(); err != nil {
-			log.Fatal("Error while starting <Shuffling> Protocol:", err)
+			return err
 		}
 		<-root.ProtocolInstance().(*protocolsunlynx.ShufflingProtocol).FeedbackChannel
 		libunlynx.EndTimer(round)

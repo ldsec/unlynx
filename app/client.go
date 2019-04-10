@@ -1,12 +1,12 @@
 package appunlynx
 
 import (
+	"errors"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
 
-	"github.com/btcsuite/goleveldb/leveldb/errors"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/services"
 	"go.dedis.ch/onet/v3"

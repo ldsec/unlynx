@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"github.com/BurntSushi/toml"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/aggregation"
@@ -217,7 +218,7 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 		round := libunlynx.StartTimer("ProofsVerification(SIMULATION)")
 
 		if err := root.Start(); err != nil {
-			log.Fatal("Error while starting <ProofsVerification> Protocol:", err)
+			return err
 		}
 		results := <-root.ProtocolInstance().(*protocolsunlynxutils.ProofsVerificationProtocol).FeedbackChannel
 		libunlynx.EndTimer(round)
@@ -225,17 +226,17 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 		log.Lvl1(len(results), " proofs verified")
 
 		if results[0] == false {
-			log.Fatal("Key Switching proofs failed!")
+			return errors.New("key switching proofs failed")
 		} else if results[1] == false {
-			log.Fatal("Deterministic Tagging (creation) proofs failed!")
+			return errors.New("deterministic tagging (creation) proofs failed")
 		} else if results[2] == false {
-			log.Fatal("Deterministic Tagging (addition) proofs failed!")
+			return errors.New("deterministic tagging (addition) proofs failed")
 		} else if results[3] == false {
-			log.Fatal("Local Aggregation proofs failed!")
+			return errors.New("local aggregation proofs failed")
 		} else if results[4] == false {
-			log.Fatal("Shuffling proofs failed!")
+			return errors.New("shuffling proofs failed")
 		} else if results[5] == false {
-			log.Fatal("Collective Aggregation proofs failed!")
+			return errors.New("collective aggregation proofs failed")
 		}
 	}
 	return nil
