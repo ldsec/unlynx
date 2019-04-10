@@ -21,7 +21,7 @@ func init() {
 	network.RegisterMessage(ShufflingPlusDDTBytesMessage{})
 	network.RegisterMessage(ShufflingPlusDDTBytesLength{})
 	if _, err := onet.GlobalProtocolRegister(ShufflingPlusDDTProtocolName, NewShufflingPlusDDTProtocol); err != nil {
-		log.Fatal("Failed to register the <ShufflingPlusDDTProtocol> protocol:", err)
+		log.Fatal("Failed to register the <ShufflingPlusDDT> protocol: ", err)
 	}
 }
 
@@ -125,9 +125,14 @@ func (p *ShufflingPlusDDTProtocol) Start() error {
 
 	message := ShufflingPlusDDTBytesMessage{}
 	var cvLengthsByte []byte
+	var err error
 
 	message.Data, cvLengthsByte = (&ShufflingPlusDDTMessage{Data: shuffleTarget}).ToBytes()
-	message.ShuffKey = libunlynx.AbstractPointsToBytes([]kyber.Point{p.Tree().Roster.Aggregate})
+	message.ShuffKey, err = libunlynx.AbstractPointsToBytes([]kyber.Point{p.Tree().Roster.Aggregate})
+
+	if err != nil {
+		return err
+	}
 
 	p.sendToNext(&ShufflingPlusDDTBytesLength{CVLengths: cvLengthsByte})
 	p.sendToNext(&message)
@@ -228,27 +233,37 @@ func (p *ShufflingPlusDDTProtocol) Dispatch() error {
 	if p.IsRoot() {
 		p.FeedbackChannel <- taggedData
 	} else {
+		var err error
+
 		sendData := libunlynx.StartTimer(p.Name() + "_ShufflingPlusDDT(SendData)")
 		message := ShufflingPlusDDTBytesMessage{}
 		var cvBytesLengths []byte
 		message.Data, cvBytesLengths = (&ShufflingPlusDDTMessage{Data: shuffledData}).ToBytes()
 		// we have to subtract the key p.Public to the shuffling key (we partially decrypt during tagging)
-		message.ShuffKey = libunlynx.AbstractPointsToBytes([]kyber.Point{sm.ShuffKey.Sub(sm.ShuffKey, p.Public())})
+		message.ShuffKey, err = libunlynx.AbstractPointsToBytes([]kyber.Point{sm.ShuffKey.Sub(sm.ShuffKey, p.Public())})
 		libunlynx.EndTimer(sendData)
+		if err != nil {
+			return err
+		}
 
-		p.sendToNext(&ShufflingPlusDDTBytesLength{cvBytesLengths})
-		p.sendToNext(&message)
+		if err := p.sendToNext(&ShufflingPlusDDTBytesLength{cvBytesLengths}); err != nil {
+			return err
+		}
+		if err := p.sendToNext(&message); err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
 // Sends the message msg to the next node in the circuit based on the next TreeNode in Tree.List().
-func (p *ShufflingPlusDDTProtocol) sendToNext(msg interface{}) {
+func (p *ShufflingPlusDDTProtocol) sendToNext(msg interface{}) error {
 	err := p.SendTo(p.nextNodeInCircuit, msg)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
+	return nil
 }
 
 // Marshal
@@ -260,7 +275,12 @@ func (spddtm *ShufflingPlusDDTMessage) ToBytes() ([]byte, []byte) {
 }
 
 // FromBytes converts a byte array to a ShufflingPlusDDTMessage. Note that you need to create the (empty) object beforehand.
-func (spddtm *ShufflingPlusDDTMessage) FromBytes(data []byte, shuffKey []byte, cvLengthsByte []byte) {
+func (spddtm *ShufflingPlusDDTMessage) FromBytes(data []byte, shuffKey []byte, cvLengthsByte []byte) error {
 	(*spddtm).Data = libunlynx.FromBytesToArrayCipherVector(data, cvLengthsByte)
-	(*spddtm).ShuffKey = libunlynx.FromBytesToAbstractPoints(shuffKey)[0]
+	dataP, err := libunlynx.FromBytesToAbstractPoints(shuffKey)
+	if err != nil {
+		return err
+	}
+	(*spddtm).ShuffKey = dataP[0]
+	return nil
 }

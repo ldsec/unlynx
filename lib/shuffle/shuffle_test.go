@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.dedis.ch/kyber/v3/util/random"
 	"go.dedis.ch/onet/v3"
-	"go.dedis.ch/onet/v3/log"
 )
 
 func TestShuffleSequence(t *testing.T) {
@@ -92,27 +91,14 @@ func TestWriteToGobFile(t *testing.T) {
 	dataCipher = append(dataCipher, cipher)
 
 	// we need bytes (or any other serializable data) to be able to store in a gob file
-	encoded, err := libunlynxshuffle.EncodeCipherVectorScalar(dataCipher)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
+	encoded, _ := libunlynxshuffle.EncodeCipherVectorScalar(dataCipher)
 	libunlynxtools.WriteToGobFile(file, encoded)
 }
 
 func TestReadFromGobFile(t *testing.T) {
 	var encoded []libunlynxshuffle.CipherVectorScalarBytes
-
 	libunlynxtools.ReadFromGobFile(file, &encoded)
 
-	_, err := libunlynxshuffle.DecodeCipherVectorScalar(encoded)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if err := os.Remove("pre_compute_multiplications.gob"); err != nil {
-		log.Fatal("Error removing pre_compute_multiplications.gob file:", err)
-	}
+	_, _ = libunlynxshuffle.DecodeCipherVectorScalar(encoded)
+	os.Remove("pre_compute_multiplications.gob")
 }

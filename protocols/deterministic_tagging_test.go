@@ -18,17 +18,15 @@ func TestDeterministicTagging(t *testing.T) {
 	local := onet.NewLocalTest(libunlynx.SuiTe)
 
 	// You must register this protocol before creating the servers
-	if _, err := onet.GlobalProtocolRegister("DeterministicTaggingTest", NewDeterministicTaggingTest); err != nil {
-		log.Fatal("Error registering <DeterministicTaggingTest>:", err)
-	}
+	_, err := onet.GlobalProtocolRegister("DeterministicTaggingTest", NewDeterministicTaggingTest)
+	assert.NoError(t, err, "Error registering <DeterministicTaggingTest>")
+
 	_, entityList, tree := local.GenTree(5, true)
 
 	defer local.CloseAll()
 
 	rootInstance, err := local.CreateProtocol("DeterministicTaggingTest", tree)
-	if err != nil {
-		t.Fatal("Couldn't start protocol:", err)
-	}
+	assert.NoError(t, err)
 
 	protocol := rootInstance.(*protocolsunlynx.DeterministicTaggingProtocol)
 
@@ -67,12 +65,11 @@ func TestDeterministicTagging(t *testing.T) {
 	protocol.TargetOfSwitch = &cta
 	feedback := protocol.FeedbackChannel
 	go func() {
-		if err := protocol.Start(); err != nil {
-			log.Fatal("Error to start <DeterministicTagging> protocol:", err)
-		}
+		err := protocol.Start()
+		assert.NoError(t, err)
 	}()
 
-	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*5*2) * time.Millisecond
+	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*10) * time.Millisecond
 
 	select {
 	case encryptedResult := <-feedback:

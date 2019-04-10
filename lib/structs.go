@@ -150,30 +150,46 @@ func (crd *FilteredResponseDet) FormatAggregationProofs(res map[GroupingKey][]Ci
 }
 
 // EncryptDpClearResponse encrypts a DP response
-func EncryptDpClearResponse(ccr DpClearResponse, encryptionKey kyber.Point, count bool) DpResponseToSend {
+func EncryptDpClearResponse(ccr DpClearResponse, encryptionKey kyber.Point, count bool) (DpResponseToSend, error) {
 	cr := DpResponseToSend{}
 	cr.GroupByClear = ccr.GroupByClear
 	cr.GroupByEnc = make(map[string][]byte, len(ccr.GroupByEnc))
 	for i, v := range ccr.GroupByEnc {
-		cr.GroupByEnc[i] = (*EncryptInt(encryptionKey, v)).ToBytes()
+		data, err := (*EncryptInt(encryptionKey, v)).ToBytes()
+		if err != nil {
+			return DpResponseToSend{}, err
+		}
+		cr.GroupByEnc[i] = data
 	}
 	//cr.GroupByEnc = *EncryptIntVector(encryptionKey, ccr.GroupByEnc)
 	cr.WhereClear = ccr.WhereClear
 	cr.WhereEnc = make(map[string][]byte, len(ccr.WhereEnc))
 	for i, v := range ccr.WhereEnc {
-		cr.WhereEnc[i] = (*EncryptInt(encryptionKey, v)).ToBytes()
+		data, err := (*EncryptInt(encryptionKey, v)).ToBytes()
+		if err != nil {
+			return DpResponseToSend{}, err
+		}
+		cr.WhereEnc[i] = data
 	}
 	//cr.WhereEnc = *EncryptIntVector(encryptionKey, ccr.WhereEnc)
 	cr.AggregatingAttributesClear = ccr.AggregatingAttributesClear
 	cr.AggregatingAttributesEnc = make(map[string][]byte, len(ccr.AggregatingAttributesEnc))
 	for i, v := range ccr.AggregatingAttributesEnc {
-		cr.AggregatingAttributesEnc[i] = (*EncryptInt(encryptionKey, v)).ToBytes()
+		data, err := (*EncryptInt(encryptionKey, v)).ToBytes()
+		if err != nil {
+			return DpResponseToSend{}, err
+		}
+		cr.AggregatingAttributesEnc[i] = data
 	}
 	if count {
-		cr.AggregatingAttributesEnc["count"] = (*EncryptInt(encryptionKey, int64(1))).ToBytes()
+		data, err := (*EncryptInt(encryptionKey, int64(1))).ToBytes()
+		if err != nil {
+			return DpResponseToSend{}, err
+		}
+		cr.AggregatingAttributesEnc["count"] = data
 	}
 
-	return cr
+	return cr, nil
 }
 
 // GroupingKey
@@ -211,20 +227,27 @@ func UnKey(gk GroupingKey) []int64 {
 //______________________________________________________________________________________________________________________
 
 // ToBytes converts a Filtered to a byte array
-func (cv *FilteredResponse) ToBytes() ([]byte, int, int) {
+func (cv *FilteredResponse) ToBytes() ([]byte, int, int, error) {
 	b := make([]byte, 0)
 	pgaeb := make([]byte, 0)
 	pgaebLength := 0
 
-	aab, aabLength := (*cv).AggregatingAttributes.ToBytes()
+	aab, aabLength, err := (*cv).AggregatingAttributes.ToBytes()
+	if err != nil {
+		return nil, 0, 0, err
+	}
+
 	if (*cv).GroupByEnc != nil {
-		pgaeb, pgaebLength = (*cv).GroupByEnc.ToBytes()
+		pgaeb, pgaebLength, err = (*cv).GroupByEnc.ToBytes()
+		if err != nil {
+			return nil, 0, 0, err
+		}
 	}
 
 	b = append(b, aab...)
 	b = append(b, pgaeb...)
 
-	return b, pgaebLength, aabLength
+	return b, pgaebLength, aabLength, nil
 }
 
 // FromBytes converts a byte array to a FilteredResponse. Note that you need to create the (empty) object beforehand.
@@ -244,15 +267,18 @@ func (cv *FilteredResponse) FromBytes(data []byte, aabLength, pgaebLength int) {
 }
 
 // ToBytes converts a FilteredResponseDet to a byte array
-func (crd *FilteredResponseDet) ToBytes() ([]byte, int, int, int) {
-	b, gacbLength, aabLength := (*crd).Fr.ToBytes()
+func (crd *FilteredResponseDet) ToBytes() ([]byte, int, int, int, error) {
+	b, gacbLength, aabLength, err := (*crd).Fr.ToBytes()
+	if err != nil {
+		return nil, 0, 0, 0, err
+	}
 
 	dtbgb := []byte((*crd).DetTagGroupBy)
 	dtbgbLength := len(dtbgb)
 
 	b = append(b, dtbgb...)
 
-	return b, gacbLength, aabLength, dtbgbLength
+	return b, gacbLength, aabLength, dtbgbLength, nil
 }
 
 // FromBytes converts a byte array to a FilteredResponseDet. Note that you need to create the (empty) object beforehand.
@@ -274,22 +300,33 @@ func (crd *FilteredResponseDet) FromBytes(data []byte, gacbLength, aabLength, dt
 }
 
 // ToBytes converts a ProcessResponse to a byte array
-func (cv *ProcessResponse) ToBytes() ([]byte, int, int, int) {
+func (cv *ProcessResponse) ToBytes() ([]byte, int, int, int, error) {
 	b := make([]byte, 0)
 	pgaeb := make([]byte, 0)
 	pgaebLength := 0
 
-	gacb, gacbLength := (*cv).GroupByEnc.ToBytes()
-	aab, aabLength := (*cv).AggregatingAttributes.ToBytes()
+	gacb, gacbLength, err := (*cv).GroupByEnc.ToBytes()
+	if err != nil {
+		return nil, 0, 0, 0, err
+	}
+
+	aab, aabLength, err := (*cv).AggregatingAttributes.ToBytes()
+	if err != nil {
+		return nil, 0, 0, 0, err
+	}
+
 	if (*cv).WhereEnc != nil {
-		pgaeb, pgaebLength = (*cv).WhereEnc.ToBytes()
+		pgaeb, pgaebLength, err = (*cv).WhereEnc.ToBytes()
+		if err != nil {
+			return nil, 0, 0, 0, err
+		}
 	}
 
 	b = append(b, gacb...)
 	b = append(b, aab...)
 	b = append(b, pgaeb...)
 
-	return b, gacbLength, aabLength, pgaebLength
+	return b, gacbLength, aabLength, pgaebLength, nil
 }
 
 // FromBytes converts a byte array to a ProcessResponse. Note that you need to create the (empty) object beforehand.
@@ -313,8 +350,11 @@ func (cv *ProcessResponse) FromBytes(data []byte, gacbLength, aabLength, pgaebLe
 }
 
 // ToBytes converts a ProcessResponseDet to a byte array
-func (crd *ProcessResponseDet) ToBytes() ([]byte, int, int, int, int, int) {
-	b, gacbLength, aabLength, pgaebLength := (*crd).PR.ToBytes()
+func (crd *ProcessResponseDet) ToBytes() ([]byte, int, int, int, int, int, error) {
+	b, gacbLength, aabLength, pgaebLength, err := (*crd).PR.ToBytes()
+	if err != nil {
+		return nil, 0, 0, 0, 0, 0, err
+	}
 
 	dtbgb := []byte((*crd).DetTagGroupBy)
 	dtbgbLength := len(dtbgb)
@@ -327,7 +367,7 @@ func (crd *ProcessResponseDet) ToBytes() ([]byte, int, int, int, int, int) {
 
 	b = append(b, dtbgb...)
 	b = append(b, dtbw...)
-	return b, gacbLength, aabLength, pgaebLength, dtbgbLength, dtbwLength
+	return b, gacbLength, aabLength, pgaebLength, dtbgbLength, dtbwLength, nil
 }
 
 // FromBytes converts a byte array to a ProcessResponseDet. Note that you need to create the (empty) object beforehand.

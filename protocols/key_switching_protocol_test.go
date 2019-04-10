@@ -1,6 +1,7 @@
 package protocolsunlynx_test
 
 import (
+	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
 
@@ -20,9 +21,8 @@ import (
 func TestCTKS(t *testing.T) {
 	local := onet.NewLocalTest(libunlynx.SuiTe)
 	_, err := onet.GlobalProtocolRegister("CTKSTest", NewCTKSTest)
-	if err != nil {
-		log.Fatal("Failed to register the CTKSTest protocol:", err)
-	}
+	assert.NoError(t, err, "Failed to register the CTKSTest protocol")
+
 	_, entityList, tree := local.GenTree(5, true)
 
 	defer local.CloseAll()
@@ -59,12 +59,11 @@ func TestCTKS(t *testing.T) {
 	feedback := protocol.FeedbackChannel
 
 	go func() {
-		if err := protocol.Start(); err != nil {
-			log.Fatal("Failed to start Key Switching protocol:", err)
-		}
+		err := protocol.Start()
+		assert.NoError(t, err)
 	}()
 
-	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*5*2) * time.Millisecond
+	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*10) * time.Millisecond
 
 	select {
 	case encryptedResult := <-feedback:

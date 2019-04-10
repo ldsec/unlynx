@@ -41,9 +41,9 @@ func TestShuffling(t *testing.T) {
 	aggregateKey := groupPub
 
 	// You must register this protocol before creating the servers
-	if _, err := onet.GlobalProtocolRegister("ShufflingTest", NewShufflingTest); err != nil {
-		log.Fatal("Failed to register the <ShufflingTest> protocol:", err)
-	}
+	_, err := onet.GlobalProtocolRegister("ShufflingTest", NewShufflingTest)
+	assert.NoError(t, err, "Failed to register the <ShufflingTest> protocol")
+
 	_, _, tree := local.GenTree(nbrNodes, true)
 	defer local.CloseAll()
 
@@ -90,9 +90,8 @@ func TestShuffling(t *testing.T) {
 
 	feedback := protocol.FeedbackChannel
 	go func() {
-		if err := protocol.Start(); err != nil {
-			log.Fatal("Error to start <Shuffling> protocol:", err)
-		}
+		err := protocol.Start()
+		assert.NoError(t, err)
 	}()
 
 	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*10) * time.Millisecond

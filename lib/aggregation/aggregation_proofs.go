@@ -1,6 +1,7 @@
 package libunlynxaggr
 
 import (
+	"go.dedis.ch/onet/v3/log"
 	"math"
 	"sync"
 
@@ -93,13 +94,22 @@ func AggregationListProofVerification(palp PublishedAggregationListProof, percen
 //______________________________________________________________________________________________________________________
 
 // ToBytes converts PublishedAggregationProof to bytes
-func (pap *PublishedAggregationProof) ToBytes() PublishedAggregationProofBytes {
+func (pap *PublishedAggregationProof) ToBytes() (PublishedAggregationProofBytes, error) {
 	papb := PublishedAggregationProofBytes{}
 	var dataLen int
-	papb.Data, dataLen = pap.Data.ToBytes()
+	var err error
+	papb.Data, dataLen, err = pap.Data.ToBytes()
+	if err != nil {
+		return PublishedAggregationProofBytes{}, err
+	}
+
 	papb.DataLen = int64(dataLen)
-	papb.AggregationResult = pap.AggregationResult.ToBytes()
-	return papb
+	papb.AggregationResult, err = pap.AggregationResult.ToBytes()
+	if err != nil {
+		return PublishedAggregationProofBytes{}, err
+	}
+
+	return papb, nil
 }
 
 // FromBytes converts back bytes to PublishedAggregationProof
@@ -109,7 +119,7 @@ func (pap *PublishedAggregationProof) FromBytes(papb PublishedAggregationProofBy
 }
 
 // ToBytes converts PublishedAggregationListProof to bytes
-func (palp *PublishedAggregationListProof) ToBytes() PublishedAggregationListProofBytes {
+func (palp *PublishedAggregationListProof) ToBytes() (PublishedAggregationListProofBytes, error) {
 	palpb := PublishedAggregationListProofBytes{}
 
 	palpb.List = make([]PublishedAggregationProofBytes, len(palp.List))
@@ -117,11 +127,15 @@ func (palp *PublishedAggregationListProof) ToBytes() PublishedAggregationListPro
 	for i, pap := range palp.List {
 		go func(index int, pap PublishedAggregationProof) {
 			defer wg.Done()
-			palpb.List[index] = pap.ToBytes()
+			var err error
+			palpb.List[index], err = pap.ToBytes()
+			if err != nil {
+				log.Error(err)
+			}
 		}(i, pap)
 	}
 	libunlynx.EndParallelize(wg)
-	return palpb
+	return palpb, nil
 }
 
 // FromBytes converts bytes back to PublishedAggregationListProof

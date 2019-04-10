@@ -172,7 +172,11 @@ func CipherVectorComputeE(h kyber.Point, cv libunlynx.CipherVector) []kyber.Scal
 		go func(i int, cv libunlynx.CipherVector) {
 			defer wg.Done()
 			for j := 0; j < libunlynx.VPARALLELIZE && (j+i < length); j++ {
-				es[i+j] = computeE(i+j, cv, seed)
+				e, err := computeE(i+j, cv, seed)
+				if err != nil {
+					log.Error(err)
+				}
+				es[i+j] = e
 			}
 
 		}(i, cv)
@@ -184,7 +188,7 @@ func CipherVectorComputeE(h kyber.Point, cv libunlynx.CipherVector) []kyber.Scal
 }
 
 // computeE computes e used in a shuffle proof. Computation based on a public seed.
-func computeE(index int, cv libunlynx.CipherVector, seed []byte) kyber.Scalar {
+func computeE(index int, cv libunlynx.CipherVector, seed []byte) (kyber.Scalar, error) {
 	var dataC []byte
 	var dataK []byte
 
@@ -194,13 +198,13 @@ func computeE(index int, cv libunlynx.CipherVector, seed []byte) kyber.Scalar {
 	dataK, _ = cv[index].K.MarshalBinary()
 
 	if _, err := randomCipher.Write(dataC); err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 	if _, err := randomCipher.Write(dataK); err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
-	return libunlynx.SuiTe.Scalar().Pick(randomCipher)
+	return libunlynx.SuiTe.Scalar().Pick(randomCipher), nil
 }
 
 // Compress
@@ -320,9 +324,18 @@ func (psp *PublishedShufflingProof) ToBytes() PublishedShufflingProofBytes {
 	go func(G, H kyber.Point, HashProof []byte) {
 		defer wg.Done()
 
-		tmpGBytes := libunlynx.AbstractPointsToBytes([]kyber.Point{G})
+		dataG, err := libunlynx.AbstractPointsToBytes([]kyber.Point{G})
+		if err != nil {
+			log.Error(err)
+		}
+		tmpGBytes := dataG
 		pspb.G = &tmpGBytes
-		tmpHBytes := libunlynx.AbstractPointsToBytes([]kyber.Point{H})
+
+		dataH, err := libunlynx.AbstractPointsToBytes([]kyber.Point{H})
+		if err != nil {
+			log.Error(err)
+		}
+		tmpHBytes := dataH
 		pspb.H = &tmpHBytes
 
 		pspb.HashProof = psp.HashProof
@@ -334,10 +347,22 @@ func (psp *PublishedShufflingProof) ToBytes() PublishedShufflingProofBytes {
 }
 
 // FromBytes transforms bytes back to PublishedShufflingProof
-func (psp *PublishedShufflingProof) FromBytes(pspb PublishedShufflingProofBytes) {
+func (psp *PublishedShufflingProof) FromBytes(pspb PublishedShufflingProofBytes) error {
 	psp.OriginalList = libunlynx.FromBytesToArrayCipherVector(*pspb.OriginalList, *pspb.OriginalListLength)
 	psp.ShuffledList = libunlynx.FromBytesToArrayCipherVector(*pspb.ShuffledList, *pspb.ShuffledListLength)
-	psp.G = libunlynx.FromBytesToAbstractPoints(*pspb.G)[0]
-	psp.H = libunlynx.FromBytesToAbstractPoints(*pspb.H)[0]
+
+	g, err := libunlynx.FromBytesToAbstractPoints(*pspb.G)
+	if err != nil {
+		return err
+	}
+	psp.G = g[0]
+
+	h, err := libunlynx.FromBytesToAbstractPoints(*pspb.H)
+	if err != nil {
+		return err
+	}
+	psp.H = h[0]
 	psp.HashProof = pspb.HashProof
+
+	return nil
 }

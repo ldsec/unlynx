@@ -109,7 +109,10 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 		toAdd := libunlynx.SuiTe.Point().Mul(secKeyNew, libunlynx.SuiTe.Point().Base())
 		for i := range cipherVect {
 			tmp := libunlynx.SuiTe.Point().Add(cipherVect[i].C, toAdd)
-			prf := libunlynxdetertag.DeterministicTagAdditionProofCreation(cipherVect[i].C, secKeyNew, toAdd, tmp)
+			prf, err := libunlynxdetertag.DeterministicTagAdditionProofCreation(cipherVect[i].C, secKeyNew, toAdd, tmp)
+			if err != nil {
+				return err
+			}
 			deterministicTaggingAddProofs.List = append(deterministicTaggingAddProofs.List, prf)
 		}
 

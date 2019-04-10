@@ -27,25 +27,23 @@ func TestCollectiveAggregationGroup(t *testing.T) {
 	local := onet.NewLocalTest(libunlynx.SuiTe)
 
 	// You must register this protocol before creating the servers
-	if _, err := onet.GlobalProtocolRegister("CollectiveAggregationTestGroup", NewCollectiveAggregationTestGroups); err != nil {
-		log.Fatal("Error registering <CollectiveAggregationTestGroup>:", err)
-	}
+	_, err := onet.GlobalProtocolRegister("CollectiveAggregationTestGroup", NewCollectiveAggregationTestGroups)
+	assert.NoError(t, err, "Error registering <CollectiveAggregationTestGroup>")
+
 	_, _, tree := local.GenTree(10, true)
 	defer local.CloseAll()
 
 	p, err := local.CreateProtocol("CollectiveAggregationTestGroup", tree)
-	if err != nil {
-		t.Fatal("Couldn't start protocol:", err)
-	}
+	assert.NoError(t, err)
+
 	protocol := p.(*protocolsunlynx.CollectiveAggregationProtocol)
 
 	//run protocol
 	go func() {
-		if err := protocol.Start(); err != nil {
-			log.Fatal("Error to Start <CollectiveAggregation> protocol:", err)
-		}
+		err := protocol.Start()
+		assert.NoError(t, err)
 	}()
-	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*5*2) * time.Millisecond
+	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*10) * time.Millisecond
 
 	feedback := protocol.FeedbackChannel
 
@@ -116,25 +114,23 @@ func TestCollectiveAggregationSimple(t *testing.T) {
 	local := onet.NewLocalTest(libunlynx.SuiTe)
 
 	// You must register this protocol before creating the servers
-	if _, err := onet.GlobalProtocolRegister("CollectiveAggregationTestSimple", NewCollectiveAggregationTestSimple); err != nil {
-		log.Fatal("Error registering <CollectiveAggregationTestSimple>:", err)
-	}
+	_, err := onet.GlobalProtocolRegister("CollectiveAggregationTestSimple", NewCollectiveAggregationTestSimple)
+	assert.NoError(t, err, "Error registering <CollectiveAggregationTestSimple>:")
+
 	_, _, tree := local.GenTree(10, true)
 	defer local.CloseAll()
 
 	p, err := local.CreateProtocol("CollectiveAggregationTestSimple", tree)
-	if err != nil {
-		t.Fatal("Couldn't start protocol:", err)
-	}
+	assert.NoError(t, err)
+
 	protocol := p.(*protocolsunlynx.CollectiveAggregationProtocol)
 
 	//run protocol
 	go func() {
-		if err := protocol.Start(); err != nil {
-			log.Fatal("Error to Start <CollectiveAggregation> protocol:", err)
-		}
+		err := protocol.Start()
+		assert.NoError(t, err)
 	}()
-	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*5*2) * time.Millisecond
+	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*10) * time.Millisecond
 
 	feedback := protocol.FeedbackChannel
 

@@ -1,6 +1,7 @@
 package libunlynxkeyswitch
 
 import (
+	"errors"
 	"math"
 	"sync"
 
@@ -59,7 +60,7 @@ func createPredicateKeySwitch() (predicate proof.Predicate) {
 }
 
 // KeySwitchProofCreation creates a key switch proof for one ciphertext
-func KeySwitchProofCreation(K, Q kyber.Point, k kyber.Scalar, viB, ks2, rBNeg kyber.Point, vi kyber.Scalar) PublishedKSProof {
+func KeySwitchProofCreation(K, Q kyber.Point, k kyber.Scalar, viB, ks2, rBNeg kyber.Point, vi kyber.Scalar) (PublishedKSProof, error) {
 	predicate := createPredicateKeySwitch()
 	sval := map[string]kyber.Scalar{"vi": vi, "k": k}
 	pval := map[string]kyber.Point{"K": K, "viB": viB, "ks2": ks2, "rBNeg": rBNeg, "Q": Q}
@@ -67,10 +68,10 @@ func KeySwitchProofCreation(K, Q kyber.Point, k kyber.Scalar, viB, ks2, rBNeg ky
 	prover := predicate.Prover(libunlynx.SuiTe, sval, pval, nil) // computes: commitment, challenge, response
 	Proof, err := proof.HashProve(libunlynx.SuiTe, "proofTest", prover)
 	if err != nil {
-		log.Fatal("---------Prover:", err)
+		return PublishedKSProof{}, errors.New("---------Prover:" + err.Error())
 	}
 
-	return PublishedKSProof{Proof: Proof, K: K, ViB: viB, Ks2: ks2, RbNeg: rBNeg, Q: Q}
+	return PublishedKSProof{Proof: Proof, K: K, ViB: viB, Ks2: ks2, RbNeg: rBNeg, Q: Q}, nil
 }
 
 // KeySwitchListProofCreation creates a list of key switch proofs (multiple ciphertexts)
@@ -98,7 +99,11 @@ func KeySwitchListProofCreation(K, Q kyber.Point, k kyber.Scalar, ks2s, rBNegs [
 		wg2.Add(1)
 		go func(i int, Q kyber.Point, k kyber.Scalar) {
 			for j := 0; j < libunlynx.VPARALLELIZE && (j+i < len(viBs)); j++ {
-				plop.List[i+j] = KeySwitchProofCreation(K, Q, k, viBs[i+j], ks2s[i+j], rBNegs[i+j], vis[i+j])
+				proofAux, err := KeySwitchProofCreation(K, Q, k, viBs[i+j], ks2s[i+j], rBNegs[i+j], vis[i+j])
+				if err != nil {
+					log.Error(err)
+				}
+				plop.List[i+j] = proofAux
 			}
 			defer wg2.Done()
 		}(i, Q, k)
@@ -151,22 +156,32 @@ func KeySwitchListProofVerification(pkslp PublishedKSListProof, percent float64)
 //______________________________________________________________________________________________________________________
 
 // ToBytes converts PublishedKSProof to bytes
-func (pksp *PublishedKSProof) ToBytes() PublishedKSProofBytes {
+func (pksp *PublishedKSProof) ToBytes() (PublishedKSProofBytes, error) {
 	popb := PublishedKSProofBytes{}
 	popb.Proof = pksp.Proof
-	popb.KVibKs2RbNegQ = libunlynx.AbstractPointsToBytes([]kyber.Point{pksp.K, pksp.ViB, pksp.Ks2, pksp.RbNeg, pksp.Q})
-	return popb
+	data, err := libunlynx.AbstractPointsToBytes([]kyber.Point{pksp.K, pksp.ViB, pksp.Ks2, pksp.RbNeg, pksp.Q})
+	if err != nil {
+		return PublishedKSProofBytes{}, err
+	}
+	popb.KVibKs2RbNegQ = data
+	return popb, nil
 }
 
 // FromBytes converts back bytes to PublishedKSProof
-func (pksp *PublishedKSProof) FromBytes(pkspb PublishedKSProofBytes) {
+func (pksp *PublishedKSProof) FromBytes(pkspb PublishedKSProofBytes) error {
 	pksp.Proof = pkspb.Proof
-	KVibKs2RbnegQ := libunlynx.FromBytesToAbstractPoints(pkspb.KVibKs2RbNegQ)
+	data, err := libunlynx.FromBytesToAbstractPoints(pkspb.KVibKs2RbNegQ)
+	if err != nil {
+		return err
+	}
+	KVibKs2RbnegQ := data
 	pksp.K = KVibKs2RbnegQ[0]
 	pksp.ViB = KVibKs2RbnegQ[1]
 	pksp.Ks2 = KVibKs2RbnegQ[2]
 	pksp.RbNeg = KVibKs2RbnegQ[3]
 	pksp.Q = KVibKs2RbnegQ[4]
+
+	return nil
 }
 
 // ToBytes converts PublishedKSListProof to bytes
@@ -178,7 +193,11 @@ func (pkslp *PublishedKSListProof) ToBytes() PublishedKSListProofBytes {
 	for i, pksp := range pkslp.List {
 		go func(index int, pksp PublishedKSProof) {
 			defer wg.Done()
-			prsB[index] = pksp.ToBytes()
+			data, err := pksp.ToBytes()
+			if err != nil {
+				log.Error(err)
+			}
+			prsB[index] = data
 		}(i, pksp)
 	}
 	libunlynx.EndParallelize(wg)

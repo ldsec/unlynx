@@ -50,12 +50,11 @@ func TestAddRmServer(t *testing.T) {
 	protocol.KeyToRm = secKeyAddRm
 
 	go func() {
-		if err := protocol.Start(); err != nil {
-			log.Fatal("Error to Start <AddRmServer> protocol:", err)
-		}
+		err := protocol.Start()
+		assert.NoError(t, err)
 	}()
 
-	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*5*2) * time.Millisecond
+	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*10) * time.Millisecond
 
 	select {
 	case results := <-feedback:

@@ -1,6 +1,7 @@
 package libunlynxaddrm
 
 import (
+	"errors"
 	"math"
 	"sync"
 
@@ -44,7 +45,7 @@ func createPredicateAddRm() (predicate proof.Predicate) {
 }
 
 // AddRmProofCreation creates proof for add/rm server protocol for one ciphertext
-func AddRmProofCreation(cBef, cAft libunlynx.CipherText, K kyber.Point, k kyber.Scalar, toAdd bool) PublishedAddRmProof {
+func AddRmProofCreation(cBef, cAft libunlynx.CipherText, K kyber.Point, k kyber.Scalar, toAdd bool) (PublishedAddRmProof, error) {
 	predicate := createPredicateAddRm()
 
 	B := libunlynx.SuiTe.Point().Base()
@@ -64,10 +65,10 @@ func AddRmProofCreation(cBef, cAft libunlynx.CipherText, K kyber.Point, k kyber.
 	proofTmp, err := proof.HashProve(libunlynx.SuiTe, "proofTest", prover)
 
 	if err != nil {
-		log.Fatal("---------Prover:", err)
+		return PublishedAddRmProof{}, errors.New("---------Prover:" + err.Error())
 	}
 
-	return PublishedAddRmProof{Proof: proofTmp, CtBef: cBef, CtAft: cAft, RB: rB}
+	return PublishedAddRmProof{Proof: proofTmp, CtBef: cBef, CtAft: cAft, RB: rB}, nil
 }
 
 // AddRmListProofCreation creates proof for add/rm server protocol for one ciphervector
@@ -80,7 +81,10 @@ func AddRmListProofCreation(vBef, vAft libunlynx.CipherVector, K kyber.Point, k 
 		wg.Add(1)
 		go func(i int) {
 			for j := 0; j < libunlynx.VPARALLELIZE && (i+j) < len(vBef); j++ {
-				proofAux := AddRmProofCreation(vBef[i+j], vAft[i+j], K, k, toAdd)
+				proofAux, err := AddRmProofCreation(vBef[i+j], vAft[i+j], K, k, toAdd)
+				if err != nil {
+					log.Error(err)
+				}
 				result.List[i+j] = proofAux
 			}
 			defer wg.Done()

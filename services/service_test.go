@@ -170,9 +170,8 @@ func TestServiceClearAttr(t *testing.T) {
 		responses := []libunlynx.DpClearResponse{{WhereClear: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereClear: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr}}
 
 		log.Lvl1(responses)
-		if err := dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count); err != nil {
-			log.Fatal(err)
-		}
+		err := dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
+		assert.NoError(t, err)
 
 	}
 
@@ -275,9 +274,8 @@ func TestServiceClearGrpEncWhereAttr(t *testing.T) {
 		}
 
 		responses := []libunlynx.DpClearResponse{{WhereEnc: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereEnc: sliceWhere, GroupByClear: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereEnc: sliceWhere, GroupByClear: sliceGrp1, AggregatingAttributesEnc: aggr}}
-		if err := dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count); err != nil {
-			log.Fatal(err)
-		}
+		err := dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
+		assert.NoError(t, err)
 	}
 
 	expectedResults[[3]int64{0, 1, 2}] = []int64{0, 18}
@@ -381,9 +379,8 @@ func TestServiceEncGrpClearWhereAttr(t *testing.T) {
 		}
 
 		responses := []libunlynx.DpClearResponse{{WhereClear: sliceWhere, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereClear: sliceWhere, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
-		if err := dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count); err != nil {
-			log.Fatal(err)
-		}
+		err := dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
+		assert.NoError(t, err)
 	}
 
 	expectedResults[[3]int64{0, 1, 2}] = []int64{0, 9}
@@ -490,9 +487,8 @@ func TestServiceEncGrpAndWhereAttr(t *testing.T) {
 		}
 
 		responses := []libunlynx.DpClearResponse{{WhereEnc: sliceWhere, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereEnc: sliceWhere, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
-		if err := dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count); err != nil {
-			log.Fatal(err)
-		}
+		err := dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
+		assert.NoError(t, err)
 	}
 
 	expectedResults[[3]int64{0, 1, 2}] = []int64{0, 9}
@@ -595,9 +591,8 @@ func TestServiceEverything(t *testing.T) {
 		}
 
 		responses := []libunlynx.DpClearResponse{{WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
-		if err := dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count); err != nil {
-			log.Fatal(err)
-		}
+		err := dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
+		assert.NoError(t, err)
 	}
 
 	expectedResults[[3]int64{0, 1, 2}] = []int64{0, 9}
@@ -700,9 +695,8 @@ func TestServiceEncGrpAndWhereAttrWithCount(t *testing.T) {
 		}
 
 		responses := []libunlynx.DpClearResponse{{WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
-		if err := dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count); err != nil {
-			log.Fatal(err)
-		}
+		err := dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
+		assert.NoError(t, err)
 	}
 
 	expectedResults[[3]int64{0, 1, 2}] = []int64{0, 9, 9}
@@ -811,9 +805,8 @@ func TestAllServersNoDPs(t *testing.T) {
 		}
 
 		responses := []libunlynx.DpClearResponse{{WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
-		if err := dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count); err != nil {
-			log.Fatal(err)
-		}
+		err := dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
+		assert.NoError(t, err)
 	}
 
 	expectedResults[[3]int64{0, 1, 2}] = []int64{0, 9}
@@ -927,9 +920,8 @@ func TestAllServersRandomDPs(t *testing.T) {
 		}
 
 		responses := []libunlynx.DpClearResponse{{WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
-		if err := dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count); err != nil {
-			log.Fatal(err)
-		}
+		err := dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
+		assert.NoError(t, err)
 	}
 	expectedResults[[3]int64{0, 1, 2}] = []int64{0, 9}
 	expectedResults[[3]int64{1, 2, 3}] = []int64{0, 9}
@@ -1053,9 +1045,8 @@ func TestConcurrentSurveys(t *testing.T) {
 				}
 
 				responses := []libunlynx.DpClearResponse{{WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp, AggregatingAttributesEnc: aggr}, {WhereClear: sliceWhere, WhereEnc: sliceWhere, GroupByClear: sliceGrp, GroupByEnc: sliceGrp1, AggregatingAttributesEnc: aggr}}
-				if err := dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count); err != nil {
-					log.Fatal(err)
-				}
+				err := dataHolder[i].SendSurveyResponseQuery(*surveyID, responses, el.Aggregate, 1, count)
+				assert.NoError(t, err)
 			}
 			expectedResults[[3]int64{0, 1, 2}] = []int64{0, 9}
 			expectedResults[[3]int64{1, 2, 3}] = []int64{0, 9}

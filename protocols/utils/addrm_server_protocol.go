@@ -4,6 +4,7 @@
 package protocolsunlynxutils
 
 import (
+	"errors"
 	"sync"
 
 	"github.com/lca1/unlynx/lib"
@@ -18,7 +19,7 @@ const AddRmServerProtocolName = "AddRmServer"
 
 func init() {
 	if _, err := onet.GlobalProtocolRegister(AddRmServerProtocolName, NewAddRmProtocol); err != nil {
-		log.Fatal("Error registering <AddRmServerProtocol>:", err)
+		log.Fatal("Failed to register the <AddRmServer> protocol: ", err)
 	}
 }
 
@@ -73,7 +74,7 @@ func (p *AddRmServerProtocol) Start() error {
 	roundProof = libunlynx.StartTimer(p.Name() + "_AddRmServer(PROOFSVerif)")
 
 	if p.Proofs && len(proofs.List) == 0 {
-		log.Fatal("Something went wrong during the creation of the add/rm proofs")
+		return errors.New("something went wrong during the creation of the add/rm proofs")
 	}
 	libunlynxaddrm.AddRmListProofVerification(proofs, 1.0)
 

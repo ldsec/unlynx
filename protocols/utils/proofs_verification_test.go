@@ -13,7 +13,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/onet/v3"
-	"go.dedis.ch/onet/v3/log"
 	"go.dedis.ch/onet/v3/network"
 )
 
@@ -73,7 +72,8 @@ func TestProofsVerification(t *testing.T) {
 				tmp = libunlynx.SuiTe.Point().Add(cipherVect[i].C, toAddWrong)
 			}
 
-			prf := libunlynxdetertag.DeterministicTagAdditionProofCreation(cipherVect[i].C, secKeyNew, toAdd, tmp)
+			prf, err := libunlynxdetertag.DeterministicTagAdditionProofCreation(cipherVect[i].C, secKeyNew, toAdd, tmp)
+			assert.NoError(t, err)
 			deterministicTaggingAddProofs.List = append(deterministicTaggingAddProofs.List, prf)
 		}
 	}
@@ -117,9 +117,8 @@ func TestProofsVerification(t *testing.T) {
 
 	expRes := []bool{true, true, false, false, false, false}
 	go func() {
-		if err := protocol.Start(); err != nil {
-			log.Fatal("Error to Start <ProofsVerification> protocol:", err)
-		}
+		err := protocol.Start()
+		assert.NoError(t, err)
 	}()
 
 	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*10) * time.Millisecond

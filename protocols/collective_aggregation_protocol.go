@@ -30,7 +30,7 @@ func init() {
 	network.RegisterMessage(ChildAggregatedDataBytesMessage{})
 	network.RegisterMessage(CADBLengthMessage{})
 	if _, err := onet.GlobalProtocolRegister(CollectiveAggregationProtocolName, NewCollectiveAggregationProtocol); err != nil {
-		log.Fatal("Error registering <CollectiveAggregationProtocol>:", err)
+		log.Fatal("Failed to register the <CollectiveAggregation> protocol: ", err)
 	}
 }
 
@@ -136,7 +136,7 @@ func NewCollectiveAggregationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolIn
 func (p *CollectiveAggregationProtocol) Start() error {
 	log.Lvl1(p.ServerIdentity(), " started a Colective Aggregation Protocol")
 	if err := p.SendToChildren(&DataReferenceMessage{}); err != nil {
-		log.Fatal("Error sending <DataReferenceMessage>:", err)
+		return errors.New("Error sending <DataReferenceMessage>:" + err.Error())
 	}
 	return nil
 }
@@ -163,7 +163,10 @@ func (p *CollectiveAggregationProtocol) Dispatch() error {
 	}
 
 	// 2. Ascending aggregation phase
-	aggregatedData := p.ascendingAggregationPhase(cvMap)
+	aggregatedData, err := p.ascendingAggregationPhase(cvMap)
+	if err != nil {
+		return err
+	}
 	log.Lvl1(p.ServerIdentity(), " completed aggregation phase (", len(*aggregatedData), "group(s) )")
 
 	// 3. Proof generation (b) - after local aggregation
@@ -185,17 +188,18 @@ func (p *CollectiveAggregationProtocol) Dispatch() error {
 }
 
 // Announce forwarding down the tree.
-func (p *CollectiveAggregationProtocol) aggregationAnnouncementPhase() {
+func (p *CollectiveAggregationProtocol) aggregationAnnouncementPhase() error {
 	dataReferenceMessage := <-p.DataReferenceChannel
 	if !p.IsLeaf() {
 		if err := p.SendToChildren(&dataReferenceMessage.DataReferenceMessage); err != nil {
-			log.Fatal("Error sending <DataReferenceMessage>:", err)
+			return errors.New("Error sending <DataReferenceMessage>:" + err.Error())
 		}
 	}
+	return nil
 }
 
 // Results pushing up the tree containing aggregation results.
-func (p *CollectiveAggregationProtocol) ascendingAggregationPhase(cvMap map[libunlynx.GroupingKey][]libunlynx.CipherVector) *map[libunlynx.GroupingKey]libunlynx.FilteredResponse {
+func (p *CollectiveAggregationProtocol) ascendingAggregationPhase(cvMap map[libunlynx.GroupingKey][]libunlynx.CipherVector) (*map[libunlynx.GroupingKey]libunlynx.FilteredResponse, error) {
 	roundTotComput := libunlynx.StartTimer(p.Name() + "_CollectiveAggregation(ascendingAggregation)")
 
 	if !p.IsLeaf() {
@@ -259,27 +263,27 @@ func (p *CollectiveAggregationProtocol) ascendingAggregationPhase(cvMap map[libu
 		childrenContribution.FromBytes(message.Data, gacbLength, aabLength, dtbLength)
 
 		if err := p.SendToParent(&CADBLengthMessage{gacbLength, aabLength, dtbLength}); err != nil {
-			log.Fatal("Error sending <CADBLengthMessage>:", err)
+			return nil, errors.New("Error sending <CADBLengthMessage>:" + err.Error())
 		}
 		if err := p.SendToParent(&message); err != nil {
-			log.Fatal("Error sending <ChildAggregatedDataMessage>:", err)
+			return nil, errors.New("Error sending <ChildAggregatedDataMessage>:" + err.Error())
 		}
 	}
 
-	return p.GroupedData
+	return p.GroupedData, nil
 }
 
 // Setup and return the data needed in the aggregation to a usable format
-func (p *CollectiveAggregationProtocol) checkData() {
+func (p *CollectiveAggregationProtocol) checkData() error {
 	// If no data is passed to the collection protocol
 	if p.GroupedData == nil && p.SimpleData == nil {
-		log.Fatal("no data reference is provided")
+		return errors.New("no data reference is provided")
 		// If both data entry points are used
 	} else if p.GroupedData != nil && p.SimpleData != nil {
-		log.Fatal("two data references are given in the struct")
+		return errors.New("two data references are given in the struct")
 		// If we are using the GroupedData keep everything as is
 	} else if p.GroupedData != nil {
-		return
+		return nil
 		// If we are using the SimpleData struct we must convert it to a GroupedData struct
 	} else {
 		result := make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse)
@@ -293,6 +297,7 @@ func (p *CollectiveAggregationProtocol) checkData() {
 		}
 		p.GroupedData = &result
 		p.SimpleData = nil
+		return nil
 	}
 }
 
@@ -319,7 +324,10 @@ func (sm *ChildAggregatedDataMessage) ToBytes() ([]byte, int, int, int) {
 			data := (*sm).ChildData[i]
 			mutexCD.Unlock()
 
-			aux, gacbAux, aabAux, dtbAux := data.ToBytes()
+			aux, gacbAux, aabAux, dtbAux, err := data.ToBytes()
+			if err != nil {
+				log.Error(err)
+			}
 
 			mutexCD.Lock()
 			bb[i] = aux

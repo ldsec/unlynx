@@ -10,7 +10,6 @@ import (
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/util/key"
 	"go.dedis.ch/kyber/v3/util/random"
-	"go.dedis.ch/onet/v3/log"
 )
 
 // TestNullCipherText verifies encryption, decryption and behavior of null ciphertexts.
@@ -173,8 +172,14 @@ func TestAbstractPointsConverter(t *testing.T) {
 		aps = append(aps, ap)
 	}
 
-	apsBytes := libunlynx.AbstractPointsToBytes(aps)
-	newAps := libunlynx.FromBytesToAbstractPoints(apsBytes)
+	apsBytes, err := libunlynx.AbstractPointsToBytes(aps)
+	if err != nil {
+		t.Fatal(err)
+	}
+	newAps, err := libunlynx.FromBytesToAbstractPoints(apsBytes)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	for i, el := range aps {
 		if !reflect.DeepEqual(el.String(), newAps[i].String()) {
@@ -193,10 +198,10 @@ func TestCiphertextConverter(t *testing.T) {
 	target := int64(2)
 	ct := libunlynx.EncryptInt(pubKey, target)
 
-	ctb := ct.ToBytes()
+	ctb, _ := ct.ToBytes()
 
 	newCT := libunlynx.CipherText{}
-	newCT.FromBytes(ctb)
+	_ = newCT.FromBytes(ctb)
 
 	p := libunlynx.DecryptInt(secKey, newCT)
 
@@ -211,7 +216,8 @@ func TestCipherVectorConverter(t *testing.T) {
 	target := []int64{0, 1, 3, 103, 103}
 	cv := libunlynx.EncryptIntVector(pubKey, target)
 
-	cvb, length := cv.ToBytes()
+	cvb, length, err := cv.ToBytes()
+	assert.NoError(t, err)
 
 	newCV := libunlynx.CipherVector{}
 	newCV.FromBytes(cvb, length)
@@ -244,17 +250,21 @@ func TestB64Serialization(t *testing.T) {
 	cv := libunlynx.EncryptIntVector(pubKey, target)
 
 	for i, ct := range *cv {
-		ctSerialized := ct.Serialize()
+		ctSerialized, err := ct.Serialize()
+		assert.NoError(t, err)
 
 		// with newciphertext
-		ctDeserialized := libunlynx.NewCipherTextFromBase64(ctSerialized)
+		ctDeserialized, err := libunlynx.NewCipherTextFromBase64(ctSerialized)
+		if err != nil {
+			t.Fatal(err)
+		}
 		decVal := libunlynx.DecryptInt(secKey, *ctDeserialized)
 		assert.Equal(t, target[i], decVal)
 
 		// with deserialize
 		ctDeserializedBis := libunlynx.NewCipherText()
-		if err := ctDeserializedBis.Deserialize(ctSerialized); err != nil {
-			log.Fatal(err)
+		if err = ctDeserializedBis.Deserialize(ctSerialized); err != nil {
+			t.Fatal(err)
 		}
 		decValBis := libunlynx.DecryptInt(secKey, *ctDeserializedBis)
 		assert.Equal(t, target[i], decValBis)

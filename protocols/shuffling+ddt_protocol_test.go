@@ -21,9 +21,9 @@ func TestShufflingPlusDDTProtocol(t *testing.T) {
 	local := onet.NewLocalTest(libunlynx.SuiTe)
 
 	// You must register this protocol before creating the servers
-	if _, err := onet.GlobalProtocolRegister("ShufflingPlusDDTTest", NewShufflingPlusDDTTest); err != nil {
-		log.Fatal("Failed to register the <ShufflingPlusDDTTest> protocol:", err)
-	}
+	_, err := onet.GlobalProtocolRegister("ShufflingPlusDDTTest", NewShufflingPlusDDTTest)
+	assert.NoError(t, err, "Failed to register the <ShufflingPlusDDTTest> protocol")
+
 	_, _, tree := local.GenTree(nbrNodes, true)
 	defer local.CloseAll()
 	tree.List()
@@ -53,9 +53,8 @@ func TestShufflingPlusDDTProtocol(t *testing.T) {
 
 	feedback := protocol.FeedbackChannel
 	go func() {
-		if err := protocol.Start(); err != nil {
-			log.Fatal("Error to start <ShufflingPlusDDT> protocol:", err)
-		}
+		err := protocol.Start()
+		assert.NoError(t, err)
 	}()
 
 	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*10) * time.Millisecond

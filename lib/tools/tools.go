@@ -105,29 +105,36 @@ func ConvertMapToData(data map[string]int64, first string, start int) []int64 {
 }
 
 // WriteToGobFile stores object (e.g. lib.Enc_CipherVectorScalar) in a gob file. Note that the object must contain serializable stuff, for example byte arrays.
-func WriteToGobFile(path string, object interface{}) {
+func WriteToGobFile(path string, object interface{}) error {
 	file, err := os.Create(path)
 	defer file.Close()
 
 	if err == nil {
 		encoder := gob.NewEncoder(file)
 		if err := encoder.Encode(object); err != nil {
-			log.Fatal(err)
+			return err
 		}
 	} else {
-		log.Fatal("Could not write Gob file: ", err)
+		return errors.New("Could not write Gob file:" + err.Error())
 	}
+
+	return nil
 }
 
 // ReadFromGobFile reads data from gob file to the object
-func ReadFromGobFile(path string, object interface{}) {
+func ReadFromGobFile(path string, object interface{}) error {
 	file, err := os.Open(path)
 	defer file.Close()
 
 	if err == nil {
 		decoder := gob.NewDecoder(file)
 		err = decoder.Decode(object)
+		if err != nil {
+			return err
+		}
 	} else {
-		log.Fatal("Could not read Gob file: ", err)
+		return errors.New("Could not read Gob file:" + err.Error())
 	}
+
+	return nil
 }

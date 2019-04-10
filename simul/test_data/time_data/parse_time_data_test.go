@@ -1,6 +1,7 @@
 package timedataunlynx_test
 
 import (
+	"github.com/stretchr/testify/assert"
 	"testing"
 
 	"github.com/lca1/unlynx/simul/test_data/time_data"
@@ -28,21 +29,28 @@ var flags = []string{"bf", "depth", "rounds", "runwait", "servers", "\n",
 
 func TestReadTomlSetup(t *testing.T) {
 	t.Skip()
-	timedataunlynx.ReadTomlSetup(filenameToml, 0)
+	_, err := timedataunlynx.ReadTomlSetup(filenameToml, 0)
+	assert.NoError(t, err)
 }
 
 func TestReadDataToCSVFile(t *testing.T) {
 	t.Skip()
-	timedataunlynx.ReadDataFromCSVFile(filenameRead, flags)
+	_, err := timedataunlynx.ReadDataFromCSVFile(filenameRead, flags)
+	assert.NoError(t, err)
 }
 
 func TestWriteDataFromCSVFile(t *testing.T) {
 	t.Skip()
-	testTimeData := timedataunlynx.ReadDataFromCSVFile(filenameRead, flags)
+	testTimeData, err := timedataunlynx.ReadDataFromCSVFile(filenameRead, flags)
+	assert.NoError(t, err)
 
-	timedataunlynx.CreateCSVFile(filenameWrite)
+	err = timedataunlynx.CreateCSVFile(filenameWrite)
+	assert.NoError(t, err)
 	for i := 0; i < len(testTimeData[flags[0]]); i++ {
-		setup := timedataunlynx.ReadTomlSetup(filenameToml, i)
-		timedataunlynx.WriteDataFromCSVFile(filenameWrite, flags, testTimeData, i, setup)
+		setup, err := timedataunlynx.ReadTomlSetup(filenameToml, i)
+		assert.NoError(t, err)
+
+		err = timedataunlynx.WriteDataFromCSVFile(filenameWrite, flags, testTimeData, i, setup)
+		assert.NoError(t, err)
 	}
 }

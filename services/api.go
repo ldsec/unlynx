@@ -121,7 +121,11 @@ func EncryptDataToSurvey(name string, surveyID SurveyID, dpClearResponses []libu
 			// should be set to 1 if no repet
 			i = i * dataRepetitions
 			if i < len(dpResponses) {
-				dpResponses[i] = libunlynx.EncryptDpClearResponse(v, groupKey, count)
+				var err error
+				dpResponses[i], err = libunlynx.EncryptDpClearResponse(v, groupKey, count)
+				if err != nil {
+					log.Error(err)
+				}
 
 				for j := 0; j < dataRepetitions && j+i < len(dpResponses); j++ {
 					dpResponses[i+j].GroupByClear = dpResponses[i].GroupByClear

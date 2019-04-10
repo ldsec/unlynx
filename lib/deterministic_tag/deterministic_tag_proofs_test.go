@@ -21,7 +21,7 @@ func TestDeterministicTagProofCreation(t *testing.T) {
 
 	// test tagging at ciphertext level
 	cipherOneDetTagged := libunlynxdetertag.DeterministicTag(cipherOne, secKey, secretContrib)
-	dtp := libunlynxdetertag.DeterministicTagCrProofCreation(cipherOne, cipherOneDetTagged, pubKey, secKey, secretContrib)
+	dtp, _ := libunlynxdetertag.DeterministicTagCrProofCreation(cipherOne, cipherOneDetTagged, pubKey, secKey, secretContrib)
 	sb := libunlynx.SuiTe.Point().Mul(secretContrib, libunlynx.SuiTe.Point().Base())
 	assert.True(t, libunlynxdetertag.DeterministicTagCrProofVerification(dtp, pubKey, sb))
 
@@ -79,19 +79,19 @@ func TestDeterministicTaggingAdditionProof(t *testing.T) {
 	toAdd := libunlynx.SuiTe.Point().Mul(secKey, libunlynx.SuiTe.Point().Base())
 	tmp := libunlynx.SuiTe.Point().Add(cipherOne.C, toAdd)
 
-	prf := libunlynxdetertag.DeterministicTagAdditionProofCreation(cipherOne.C, secKey, toAdd, tmp)
+	prf, _ := libunlynxdetertag.DeterministicTagAdditionProofCreation(cipherOne.C, secKey, toAdd, tmp)
 	assert.True(t, libunlynxdetertag.DeterministicTagAdditionProofVerification(prf))
 
-	prf = libunlynxdetertag.DeterministicTagAdditionProofCreation(toAdd, secKey, toAdd, tmp)
+	prf, _ = libunlynxdetertag.DeterministicTagAdditionProofCreation(toAdd, secKey, toAdd, tmp)
 	assert.False(t, libunlynxdetertag.DeterministicTagAdditionProofVerification(prf))
 
-	prf = libunlynxdetertag.DeterministicTagAdditionProofCreation(cipherOne.C, secretContrib, toAdd, tmp)
+	prf, _ = libunlynxdetertag.DeterministicTagAdditionProofCreation(cipherOne.C, secretContrib, toAdd, tmp)
 	assert.False(t, libunlynxdetertag.DeterministicTagAdditionProofVerification(prf))
 
-	prf = libunlynxdetertag.DeterministicTagAdditionProofCreation(cipherOne.C, secKey, cipherOne.C, tmp)
+	prf, _ = libunlynxdetertag.DeterministicTagAdditionProofCreation(cipherOne.C, secKey, cipherOne.C, tmp)
 	assert.False(t, libunlynxdetertag.DeterministicTagAdditionProofVerification(prf))
 
-	prf = libunlynxdetertag.DeterministicTagAdditionProofCreation(cipherOne.C, secKey, toAdd, toAdd)
+	prf, _ = libunlynxdetertag.DeterministicTagAdditionProofCreation(cipherOne.C, secKey, toAdd, toAdd)
 	assert.False(t, libunlynxdetertag.DeterministicTagAdditionProofVerification(prf))
 
 	prfList := libunlynxdetertag.DeterministicTagAdditionListProofCreation([]kyber.Point{cipherOne.C, cipherOne.C}, []kyber.Scalar{secKey, secKey}, []kyber.Point{toAdd, toAdd}, []kyber.Point{tmp, tmp})

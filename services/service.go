@@ -130,12 +130,12 @@ type Service struct {
 	Survey *concurrent.ConcurrentMap
 }
 
-func (s *Service) getSurvey(sid SurveyID) Survey {
+func (s *Service) getSurvey(sid SurveyID) (Survey, error) {
 	surv, err := s.Survey.Get(string(sid))
 	if err != nil || surv == nil {
-		log.Fatal("Error", err, "while getting surveyID", sid)
+		return Survey{}, errors.New("Error" + err.Error() + "while getting surveyID" + string(sid))
 	}
-	return surv.(Survey)
+	return surv.(Survey), nil
 }
 
 func (s *Service) putSurvey(sid SurveyID, surv Survey) error {
@@ -151,19 +151,19 @@ func NewService(c *onet.Context) (onet.Service, error) {
 	}
 	var cerr error
 	if cerr = newUnLynxInstance.RegisterHandler(newUnLynxInstance.HandleSurveyCreationQuery); cerr != nil {
-		log.Fatal("Wrong Handler.", cerr)
+		return nil, errors.New("Wrong Handler." + cerr.Error())
 	}
 	if cerr = newUnLynxInstance.RegisterHandler(newUnLynxInstance.HandleSurveyResponseQuery); cerr != nil {
-		log.Fatal("Wrong Handler.", cerr)
+		return nil, errors.New("Wrong Handler." + cerr.Error())
 	}
 	if cerr = newUnLynxInstance.RegisterHandler(newUnLynxInstance.HandleSurveyResultsQuery); cerr != nil {
-		log.Fatal("Wrong Handler.", cerr)
+		return nil, errors.New("Wrong Handler." + cerr.Error())
 	}
 	if cerr = newUnLynxInstance.RegisterHandler(newUnLynxInstance.HandleDDTfinished); cerr != nil {
-		log.Fatal("Wrong Handler.", cerr)
+		return nil, errors.New("Wrong Handler." + cerr.Error())
 	}
 	if cerr = newUnLynxInstance.RegisterHandler(newUnLynxInstance.HandleQueryBroadcastFinished); cerr != nil {
-		log.Fatal("Wrong Handler.", cerr)
+		return nil, errors.New("Wrong Handler." + cerr.Error())
 	}
 
 	c.RegisterProcessor(newUnLynxInstance, msgTypes.msgSurveyCreationQuery)
@@ -195,17 +195,24 @@ func (s *Service) Process(msg *network.Envelope) {
 }
 
 // PushData is used to store incoming data by servers
-func (s *Service) PushData(resp *SurveyResponseQuery, proofs bool) {
-	survey := s.getSurvey(resp.SurveyID)
+func (s *Service) PushData(resp *SurveyResponseQuery, proofs bool) error {
+	survey, err := s.getSurvey(resp.SurveyID)
+	if err != nil {
+		return err
+	}
+
 	for _, v := range resp.Responses {
 		dr := libunlynx.DpResponse{}
 		dr.FromDpResponseToSend(v)
 		survey.InsertDpResponse(dr, proofs, survey.Query.GroupBy, survey.Query.Sum, survey.Query.Where)
 	}
-	err := s.putSurvey(resp.SurveyID, survey)
-	log.ErrFatal(err)
+	err = s.putSurvey(resp.SurveyID, survey)
+	if err != nil {
+		return err
+	}
 
 	log.Lvl1(s.ServerIdentity(), " uploaded response data for survey ", resp.SurveyID)
+	return nil
 }
 
 // Query Handlers
@@ -278,16 +285,28 @@ func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.
 		}
 
 		resp := EncryptDataToSurvey(s.ServerIdentity().String(), recq.SurveyID, testData[strconv.Itoa(index)], recq.Roster.Aggregate, 1, recq.Count)
-		s.PushData(resp, recq.Proofs)
+		err = s.PushData(resp, recq.Proofs)
+		if err != nil {
+			return nil, err
+		}
 
 		//number of data providers who have already pushed the data
-		s.getSurvey(resp.SurveyID).DpChannel <- 1
+		survey, err := s.getSurvey(resp.SurveyID)
+		if err != nil {
+			return nil, err
+		}
+		survey.DpChannel <- 1
 	}
 
 	if recq.IntraMessage == false {
+		survey, err := s.getSurvey(recq.SurveyID)
+		if err != nil {
+			return nil, err
+		}
+
 		counter := len(recq.Roster.List) - 1
 		for counter > 0 {
-			counter = counter - (<-s.getSurvey(recq.SurveyID).SurveyChannel)
+			counter = counter - (<-survey.SurveyChannel)
 		}
 	}
 	return &ServiceState{recq.SurveyID}, nil
@@ -295,11 +314,16 @@ func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.
 
 // HandleSurveyResponseQuery handles a survey answers submission by a subject.
 func (s *Service) HandleSurveyResponseQuery(resp *SurveyResponseQuery) (network.Message, error) {
-	survey := s.getSurvey(resp.SurveyID)
-	s.PushData(resp, survey.Query.Proofs)
+	survey, err := s.getSurvey(resp.SurveyID)
+	if err != nil {
+		return nil, err
+	}
+	if err = s.PushData(resp, survey.Query.Proofs); err != nil {
+		return nil, err
+	}
 
 	//number of data providers who have already pushed the data
-	s.getSurvey(resp.SurveyID).DpChannel <- 1
+	survey.DpChannel <- 1
 	return &ServiceState{"1"}, nil
 }
 
@@ -307,9 +331,17 @@ func (s *Service) HandleSurveyResponseQuery(resp *SurveyResponseQuery) (network.
 func (s *Service) HandleSurveyResultsQuery(resq *SurveyResultsQuery) (network.Message, error) {
 	log.Lvl1(s.ServerIdentity(), " received a survey result query")
 
-	survey := s.getSurvey(resq.SurveyID)
+	survey, err := s.getSurvey(resq.SurveyID)
+	if err != nil {
+		return nil, err
+	}
+
 	survey.Query.ClientPubKey = resq.ClientPublic
-	err := s.putSurvey(resq.SurveyID, survey)
+	err = s.putSurvey(resq.SurveyID, survey)
+	if err != nil {
+		return nil, err
+	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -329,7 +361,10 @@ func (s *Service) HandleSurveyResultsQuery(resq *SurveyResultsQuery) (network.Me
 
 		log.Lvl1(s.ServerIdentity(), " completed the query processing...")
 
-		survey := s.getSurvey(resq.SurveyID)
+		survey, err := s.getSurvey(resq.SurveyID)
+		if err != nil {
+			return nil, err
+		}
 		results := survey.PullDeliverableResults(false, libunlynx.CipherText{})
 		err = s.putSurvey(resq.SurveyID, survey)
 		if err != nil {
@@ -344,14 +379,21 @@ func (s *Service) HandleSurveyResultsQuery(resq *SurveyResultsQuery) (network.Me
 
 // HandleDDTfinished handles the message DDTfinished: one of the nodes is ready to perform a collective aggregation
 func (s *Service) HandleDDTfinished(recq *DDTfinished) (network.Message, error) {
-	s.getSurvey(recq.SurveyID).DDTChannel <- 1
+	survey, err := s.getSurvey(recq.SurveyID)
+	if err != nil {
+		return nil, err
+	}
+	survey.DDTChannel <- 1
 	return nil, nil
 }
 
 // HandleQueryBroadcastFinished handles the message QueryBroadcastFinished: one of the nodes has already received the query
 func (s *Service) HandleQueryBroadcastFinished(recq *QueryBroadcastFinished) (network.Message, error) {
-	log.LLvl1(recq.SurveyID)
-	s.getSurvey(recq.SurveyID).SurveyChannel <- 1
+	survey, err := s.getSurvey(recq.SurveyID)
+	if err != nil {
+		return nil, err
+	}
+	survey.SurveyChannel <- 1
 	return nil, nil
 }
 
@@ -368,7 +410,10 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 	var pi onet.ProtocolInstance
 
 	target := SurveyID(string(conf.Data))
-	survey := s.getSurvey(SurveyID(conf.Data))
+	survey, err := s.getSurvey(SurveyID(conf.Data))
+	if err != nil {
+		return nil, err
+	}
 
 	switch tn.ProtocolName() {
 	case protocolsunlynx.ShufflingProtocolName:
@@ -448,7 +493,7 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 
 		counter := len(tn.Roster().List) - 1
 		for counter > 0 {
-			counter = counter - (<-s.getSurvey(SurveyID(conf.Data)).DDTChannel)
+			counter = counter - (<-survey.DDTChannel)
 		}
 
 	case protocolsunlynx.DROProtocolName:
@@ -518,7 +563,10 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 
 // StartProtocol starts a specific protocol (Pipeline, Shuffling, etc.)
 func (s *Service) StartProtocol(name string, targetSurvey SurveyID) (onet.ProtocolInstance, error) {
-	tmp := s.getSurvey(targetSurvey)
+	tmp, err := s.getSurvey(targetSurvey)
+	if err != nil {
+		return nil, err
+	}
 	tree := tmp.Query.Roster.GenerateNaryTreeWithRoot(2, s.ServerIdentity())
 
 	var tn *onet.TreeNodeInstance
@@ -528,7 +576,7 @@ func (s *Service) StartProtocol(name string, targetSurvey SurveyID) (onet.Protoc
 
 	pi, err := s.NewProtocol(tn, &conf)
 	if err != nil {
-		log.Fatal("Error running "+name+" :", err)
+		return nil, errors.New("Error running " + name + " :" + err.Error())
 	}
 
 	err = s.RegisterProtocolInstance(pi)
@@ -552,25 +600,31 @@ func (s *Service) StartProtocol(name string, targetSurvey SurveyID) (onet.Protoc
 func (s *Service) StartService(targetSurvey SurveyID, root bool) error {
 	log.Lvl1(s.ServerIdentity(), " is waiting on channel")
 
-	survey := s.getSurvey(targetSurvey)
+	survey, err := s.getSurvey(targetSurvey)
+	if err != nil {
+		return err
+	}
 
 	counter := survey.Query.MapDPs[s.ServerIdentity().String()]
 	for counter > int64(0) {
 		log.Lvl1(s.ServerIdentity(), " is waiting for ", counter, " data providers to send their data")
-		counter = counter - int64(<-s.getSurvey(targetSurvey).DpChannel)
+		counter = counter - int64(<-survey.DpChannel)
 	}
 	log.Lvl1("All data providers (", survey.Query.MapDPs[s.ServerIdentity().String()], ") for server ", s.ServerIdentity(), " have sent their data")
 
 	log.Lvl1(s.ServerIdentity(), " starts a UnLynx Protocol for survey ", targetSurvey)
 
-	target := s.getSurvey(targetSurvey)
+	target, err := s.getSurvey(targetSurvey)
+	if err != nil {
+		return err
+	}
 
 	// Shuffling Phase
 	start := libunlynx.StartTimer(s.ServerIdentity().String() + "_ShufflingPhase")
 
-	err := s.ShufflingPhase(survey.Query.SurveyID)
+	err = s.ShufflingPhase(survey.Query.SurveyID)
 	if err != nil {
-		log.Fatal("Error in the Shuffling Phase:", err)
+		return errors.New("Error in the Shuffling Phase: " + err.Error())
 	}
 
 	libunlynx.EndTimer(start)
@@ -579,7 +633,7 @@ func (s *Service) StartService(targetSurvey SurveyID, root bool) error {
 
 	err = s.TaggingPhase(target.Query.SurveyID)
 	if err != nil {
-		log.Fatal("Error in the Tagging Phase:", err)
+		return errors.New("Error in the Tagging Phase: " + err.Error())
 	}
 
 	// broadcasts the query to unlock waiting channel
@@ -597,7 +651,7 @@ func (s *Service) StartService(targetSurvey SurveyID, root bool) error {
 
 		err = s.AggregationPhase(target.Query.SurveyID)
 		if err != nil {
-			log.Fatal("Error in the Aggregation Phase:", err)
+			return errors.New("Error in the Aggregation Phase: " + err.Error())
 		}
 
 		libunlynx.EndTimer(start)
@@ -609,7 +663,7 @@ func (s *Service) StartService(targetSurvey SurveyID, root bool) error {
 
 		err := s.DROPhase(target.Query.SurveyID)
 		if err != nil {
-			return err
+			return errors.New("Error in the DRO Phase: " + err.Error())
 		}
 
 		libunlynx.EndTimer(start)
@@ -621,7 +675,7 @@ func (s *Service) StartService(targetSurvey SurveyID, root bool) error {
 
 		err := s.KeySwitchingPhase(target.Query.SurveyID)
 		if err != nil {
-			return err
+			return errors.New("Error in the Key Switching Phase: " + err.Error())
 		}
 
 		libunlynx.EndTimer(start)
@@ -632,7 +686,10 @@ func (s *Service) StartService(targetSurvey SurveyID, root bool) error {
 
 // ShufflingPhase performs the shuffling of the ClientResponses
 func (s *Service) ShufflingPhase(targetSurvey SurveyID) error {
-	survey := s.getSurvey(targetSurvey)
+	survey, err := s.getSurvey(targetSurvey)
+	if err != nil {
+		return err
+	}
 
 	if len(survey.DpResponses) == 0 && len(survey.DpResponsesAggr) == 0 {
 		log.Lvl1(s.ServerIdentity(), " no data to shuffle")
@@ -644,7 +701,12 @@ func (s *Service) ShufflingPhase(targetSurvey SurveyID) error {
 		return err
 	}
 	tmpShufflingResult := <-pi.(*protocolsunlynx.ShufflingProtocol).FeedbackChannel
-	shufflingResult := protocolsunlynx.MatrixCipherTextToProcessResponse(tmpShufflingResult, s.getSurvey(targetSurvey).Lengths)
+
+	survey, err = s.getSurvey(targetSurvey)
+	if err != nil {
+		return err
+	}
+	shufflingResult := protocolsunlynx.MatrixCipherTextToProcessResponse(tmpShufflingResult, survey.Lengths)
 
 	survey.PushShuffledProcessResponses(shufflingResult)
 	err = s.putSurvey(targetSurvey, survey)
@@ -653,7 +715,10 @@ func (s *Service) ShufflingPhase(targetSurvey SurveyID) error {
 
 // TaggingPhase performs the private grouping on the currently collected data.
 func (s *Service) TaggingPhase(targetSurvey SurveyID) error {
-	survey := s.getSurvey(targetSurvey)
+	survey, err := s.getSurvey(targetSurvey)
+	if err != nil {
+		return err
+	}
 
 	if len(survey.ShuffledProcessResponses) == 0 {
 		log.Lvl1(s.ServerIdentity(), "  for survey ", survey.Query.SurveyID, " has no data to det tag")
@@ -666,7 +731,12 @@ func (s *Service) TaggingPhase(targetSurvey SurveyID) error {
 	}
 
 	tmpDeterministicTaggingResult := <-pi.(*protocolsunlynx.DeterministicTaggingProtocol).FeedbackChannel
-	deterministicTaggingResult := protocolsunlynx.DeterCipherVectorToProcessResponseDet(tmpDeterministicTaggingResult, s.getSurvey(targetSurvey).TargetOfSwitch)
+
+	survey, err = s.getSurvey(targetSurvey)
+	if err != nil {
+		return err
+	}
+	deterministicTaggingResult := protocolsunlynx.DeterCipherVectorToProcessResponseDet(tmpDeterministicTaggingResult, survey.TargetOfSwitch)
 
 	var queryWhereTag []libunlynx.WhereQueryAttributeTagged
 	for i, v := range deterministicTaggingResult[:len(survey.Query.Where)] {
@@ -695,7 +765,11 @@ func (s *Service) AggregationPhase(targetSurvey SurveyID) error {
 	}
 	cothorityAggregatedData := <-pi.(*protocolsunlynx.CollectiveAggregationProtocol).FeedbackChannel
 
-	survey := s.getSurvey(targetSurvey)
+	survey, err := s.getSurvey(targetSurvey)
+	if err != nil {
+		return err
+	}
+
 	survey.PushCothorityAggregatedFilteredResponses(cothorityAggregatedData.GroupedData)
 	err = s.putSurvey(targetSurvey, survey)
 	return err
@@ -708,7 +782,10 @@ func (s *Service) DROPhase(targetSurvey SurveyID) error {
 		return err
 	}
 
-	survey := s.getSurvey(targetSurvey)
+	survey, err := s.getSurvey(targetSurvey)
+	if err != nil {
+		return err
+	}
 
 	tmpShufflingResult := <-pi.(*protocolsunlynx.ShufflingProtocol).FeedbackChannel
 	shufflingResult := protocolsunlynx.MatrixCipherTextToProcessResponse(tmpShufflingResult, survey.Lengths)
@@ -725,7 +802,10 @@ func (s *Service) KeySwitchingPhase(targetSurvey SurveyID) error {
 		return err
 	}
 
-	survey := s.getSurvey(targetSurvey)
+	survey, err := s.getSurvey(targetSurvey)
+	if err != nil {
+		return err
+	}
 
 	tmpKeySwitchedAggregatedResponses := <-pi.(*protocolsunlynx.KeySwitchingProtocol).FeedbackChannel
 	keySwitchedAggregatedResponses := protocolsunlynx.CipherVectorToFilteredResponse(tmpKeySwitchedAggregatedResponses, survey.Lengths)

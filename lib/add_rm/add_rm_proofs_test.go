@@ -31,7 +31,7 @@ func TestAddRmProof(t *testing.T) {
 
 	//addition
 	result.C = libunlynx.SuiTe.Point().Add(cipherOne.C, tmp)
-	prf := libunlynxaddrm.AddRmProofCreation(cipherOne, result, pubKeyNew, secKeyNew, true)
+	prf, _ := libunlynxaddrm.AddRmProofCreation(cipherOne, result, pubKeyNew, secKeyNew, true)
 	assert.True(t, libunlynxaddrm.AddRmProofVerification(prf, pubKeyNew, true))
 	assert.False(t, libunlynxaddrm.AddRmProofVerification(prf, pubKey, true))
 	assert.False(t, libunlynxaddrm.AddRmProofVerification(prf, pubKeyNew, false))
@@ -42,7 +42,7 @@ func TestAddRmProof(t *testing.T) {
 	tmp = libunlynx.SuiTe.Point().Mul(secKeyNew, cipherOne.K)
 	result.K = cipherOne.K
 	result.C = libunlynx.SuiTe.Point().Sub(cipherOne.C, tmp)
-	prf = libunlynxaddrm.AddRmProofCreation(cipherOne, result, pubKeyNew, secKeyNew, false)
+	prf, _ = libunlynxaddrm.AddRmProofCreation(cipherOne, result, pubKeyNew, secKeyNew, false)
 	assert.True(t, libunlynxaddrm.AddRmProofVerification(prf, pubKeyNew, false))
 	assert.False(t, libunlynxaddrm.AddRmProofVerification(prf, pubKey, false))
 	assert.False(t, libunlynxaddrm.AddRmProofVerification(prf, pubKeyNew, true))

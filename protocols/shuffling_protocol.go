@@ -23,7 +23,7 @@ func init() {
 	network.RegisterMessage(ShufflingBytesMessage{})
 	network.RegisterMessage(ShufflingBytesMessageLength{})
 	if _, err := onet.GlobalProtocolRegister(ShufflingProtocolName, NewShufflingProtocol); err != nil {
-		log.Fatal("Failed to register the <ShufflingProtocol> protocol:", err)
+		log.Fatal("Failed to register the <Shuffling> protocol: ", err)
 	}
 }
 
@@ -239,19 +239,24 @@ func (p *ShufflingProtocol) Dispatch() error {
 		var cvBytesLengths []byte
 		message.Data, cvBytesLengths = (&ShufflingMessage{shuffledData}).ToBytes()
 
-		p.sendToNext(&ShufflingBytesMessageLength{cvBytesLengths})
-		p.sendToNext(&message)
+		if err := p.sendToNext(&ShufflingBytesMessageLength{cvBytesLengths}); err != nil {
+			return err
+		}
+		if err := p.sendToNext(&message); err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
 // Sends the message msg to the next node in the circuit based on the next TreeNode in Tree.List().
-func (p *ShufflingProtocol) sendToNext(msg interface{}) {
+func (p *ShufflingProtocol) sendToNext(msg interface{}) error {
 	err := p.SendTo(p.nextNodeInCircuit, msg)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
+	return nil
 }
 
 // Marshal

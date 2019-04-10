@@ -88,7 +88,8 @@ func TestEncryptDpClearResponse(t *testing.T) {
 		AggregatingAttributesEnc:   aggrEnc,
 	}
 
-	cr := libunlynx.EncryptDpClearResponse(ccr, pubKey, false)
+	cr, err := libunlynx.EncryptDpClearResponse(ccr, pubKey, false)
+	assert.NoError(t, err)
 
 	assert.Equal(t, ccr.GroupByClear, groupingClear)
 	assert.Equal(t, ccr.GroupByEnc, decryptMapBytes(secKey, cr.GroupByEnc))
@@ -108,7 +109,8 @@ func TestFilteredResponseConverter(t *testing.T) {
 
 	cr := libunlynx.FilteredResponse{GroupByEnc: *libunlynx.EncryptIntVector(pubKey, grouping), AggregatingAttributes: *libunlynx.EncryptIntVector(pubKey, aggregating)}
 
-	crb, acbLength, aabLength := cr.ToBytes()
+	crb, acbLength, aabLength, err := cr.ToBytes()
+	assert.NoError(t, err)
 
 	newCr := libunlynx.FilteredResponse{}
 	newCr.FromBytes(crb, aabLength, acbLength)
@@ -127,7 +129,8 @@ func TestClientResponseDetConverter(t *testing.T) {
 
 	crd := libunlynx.FilteredResponseDet{DetTagGroupBy: libunlynx.Key([]int64{1}), Fr: libunlynx.FilteredResponse{GroupByEnc: *libunlynx.EncryptIntVector(pubKey, grouping), AggregatingAttributes: *libunlynx.EncryptIntVector(pubKey, aggregating)}}
 
-	crb, acbLength, aabLength, dtbLength := crd.ToBytes()
+	crb, acbLength, aabLength, dtbLength, err := crd.ToBytes()
+	assert.NoError(t, err)
 
 	newCrd := libunlynx.FilteredResponseDet{}
 	newCrd.FromBytes(crb, acbLength, aabLength, dtbLength)
@@ -152,7 +155,8 @@ func TestProcessResponseConverter(t *testing.T) {
 		AggregatingAttributes: *libunlynx.EncryptIntVector(pubKey, aggregating),
 	}
 
-	b, gacbLength, aabLength, pgaebLength := pr.ToBytes()
+	b, gacbLength, aabLength, pgaebLength, err := pr.ToBytes()
+	assert.NoError(t, err)
 	newPr := libunlynx.ProcessResponse{}
 	newPr.FromBytes(b, gacbLength, aabLength, pgaebLength)
 
@@ -184,7 +188,8 @@ func TestProcessResponseDetConverter(t *testing.T) {
 		DetTagWhere:   detTagWhere,
 	}
 
-	b, gacbLength, aabLength, pgaebLength, dtbgbLength, dtbwLength := prDet.ToBytes()
+	b, gacbLength, aabLength, pgaebLength, dtbgbLength, dtbwLength, err := prDet.ToBytes()
+	assert.NoError(t, err)
 	newPrDet := libunlynx.ProcessResponseDet{
 		PR:            libunlynx.ProcessResponse{},
 		DetTagGroupBy: "",
@@ -211,12 +216,17 @@ func TestDPResponseConverter(t *testing.T) {
 		AggregatingAttributesEnc:   make(map[string][]byte),
 	}
 	for i := 0; i < k; i++ {
+		var err error
+
 		dpResponseToSend.GroupByClear[strconv.Itoa(i)] = int64(i)
 		dpResponseToSend.WhereClear[strconv.Itoa(i)] = int64(i)
 		dpResponseToSend.AggregatingAttributesClear[strconv.Itoa(i)] = int64(i)
-		dpResponseToSend.GroupByEnc[strconv.Itoa(i)] = libunlynx.EncryptInt(pubKey, int64(i)).ToBytes()
-		dpResponseToSend.WhereEnc[strconv.Itoa(i)] = libunlynx.EncryptInt(pubKey, int64(i)).ToBytes()
-		dpResponseToSend.AggregatingAttributesEnc[strconv.Itoa(i)] = libunlynx.EncryptInt(pubKey, int64(i)).ToBytes()
+		dpResponseToSend.GroupByEnc[strconv.Itoa(i)], err = libunlynx.EncryptInt(pubKey, int64(i)).ToBytes()
+		assert.NoError(t, err)
+		dpResponseToSend.WhereEnc[strconv.Itoa(i)], err = libunlynx.EncryptInt(pubKey, int64(i)).ToBytes()
+		assert.NoError(t, err)
+		dpResponseToSend.AggregatingAttributesEnc[strconv.Itoa(i)], err = libunlynx.EncryptInt(pubKey, int64(i)).ToBytes()
+		assert.NoError(t, err)
 	}
 
 	dpResponse := libunlynx.DpResponse{
@@ -246,8 +256,10 @@ func TestMapBytesToMapCipherText(t *testing.T) {
 
 	k := 5
 	bMap := make(map[string][]byte)
+	var err error
 	for i := 0; i < k; i++ {
-		bMap[strconv.Itoa(i)] = libunlynx.EncryptInt(pubKey, int64(i)).ToBytes()
+		bMap[strconv.Itoa(i)], err = libunlynx.EncryptInt(pubKey, int64(i)).ToBytes()
+		assert.NoError(t, err)
 	}
 	ctMap := libunlynx.MapBytesToMapCipherText(bMap)
 	for i := 0; i < k; i++ {

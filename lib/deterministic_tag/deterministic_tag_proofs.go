@@ -1,6 +1,7 @@
 package libunlynxdetertag
 
 import (
+	"errors"
 	"math"
 	"reflect"
 	"sync"
@@ -65,7 +66,7 @@ func createPredicateDeterministicTagCr() (predicate proof.Predicate) {
 }
 
 // DeterministicTagCrProofCreation creates a deterministic tag proof for one ciphertext
-func DeterministicTagCrProofCreation(ctBef, ctAft libunlynx.CipherText, K kyber.Point, k, s kyber.Scalar) PublishedDDTCreationProof {
+func DeterministicTagCrProofCreation(ctBef, ctAft libunlynx.CipherText, K kyber.Point, k, s kyber.Scalar) (PublishedDDTCreationProof, error) {
 	predicate := createPredicateDeterministicTagCr()
 
 	ci1 := ctAft.K
@@ -81,10 +82,10 @@ func DeterministicTagCrProofCreation(ctBef, ctAft libunlynx.CipherText, K kyber.
 	prover := predicate.Prover(libunlynx.SuiTe, sval, pval, nil) // computes: commitment, challenge, response
 	Proof, err := proof.HashProve(libunlynx.SuiTe, "proofTest", prover)
 	if err != nil {
-		log.Fatal("---------Prover:", err)
+		return PublishedDDTCreationProof{}, errors.New("---------Prover:" + err.Error())
 	}
 
-	return PublishedDDTCreationProof{Proof: Proof, Ciminus11Si: ciminus11Si, CTbef: ctBef, CTaft: ctAft}
+	return PublishedDDTCreationProof{Proof: Proof, Ciminus11Si: ciminus11Si, CTbef: ctBef, CTaft: ctAft}, nil
 }
 
 // DeterministicTagCrListProofCreation creates a list of deterministic tag proofs (multiple ciphertexts)
@@ -97,7 +98,11 @@ func DeterministicTagCrListProofCreation(vBef, vAft libunlynx.CipherVector, K ky
 		wg.Add(1)
 		go func(i int) {
 			for j := 0; j < libunlynx.VPARALLELIZE && (j+i < len(vBef)); j++ {
-				listProofs.List[i+j] = DeterministicTagCrProofCreation(vBef[i+j], vAft[i+j], K, k, s)
+				proofAux, err := DeterministicTagCrProofCreation(vBef[i+j], vAft[i+j], K, k, s)
+				if err != nil {
+					log.Error(err)
+				}
+				listProofs.List[i+j] = proofAux
 			}
 			defer wg.Done()
 		}(i)
@@ -168,7 +173,7 @@ func createPredicateDeterministicTagAddition() (predicate proof.Predicate) {
 }
 
 // DeterministicTagAdditionProofCreation creates proof for deterministic tagging addition on 1 kyber point
-func DeterministicTagAdditionProofCreation(c1 kyber.Point, s kyber.Scalar, c2 kyber.Point, r kyber.Point) PublishedDDTAdditionProof {
+func DeterministicTagAdditionProofCreation(c1 kyber.Point, s kyber.Scalar, c2 kyber.Point, r kyber.Point) (PublishedDDTAdditionProof, error) {
 	predicate := createPredicateDeterministicTagAddition()
 	B := libunlynx.SuiTe.Point().Base()
 	sval := map[string]kyber.Scalar{"s": s}
@@ -177,10 +182,10 @@ func DeterministicTagAdditionProofCreation(c1 kyber.Point, s kyber.Scalar, c2 ky
 	prover := predicate.Prover(libunlynx.SuiTe, sval, pval, nil) // computes: commitment, challenge, response
 	Proof, err := proof.HashProve(libunlynx.SuiTe, "proofTest", prover)
 	if err != nil {
-		log.Fatal("---------Prover:", err)
+		return PublishedDDTAdditionProof{}, errors.New("---------Prover:" + err.Error())
 	}
 
-	return PublishedDDTAdditionProof{Proof: Proof, C1: c1, C2: c2, R: r}
+	return PublishedDDTAdditionProof{Proof: Proof, C1: c1, C2: c2, R: r}, nil
 }
 
 // DeterministicTagAdditionListProofCreation creates proof for deterministic tagging addition on multiple kyber points
@@ -195,7 +200,11 @@ func DeterministicTagAdditionListProofCreation(c1List []kyber.Point, sList []kyb
 		wg.Add(1)
 		go func(i int, c1 kyber.Point, s kyber.Scalar, c2 kyber.Point, r kyber.Point) {
 			for j := 0; j < libunlynx.VPARALLELIZE && (j+i < nbrProofsToCreate); j++ {
-				listProofs.List[i+j] = DeterministicTagAdditionProofCreation(c1, s, c2, r)
+				proofAux, err := DeterministicTagAdditionProofCreation(c1, s, c2, r)
+				if err != nil {
+					log.Error(err)
+				}
+				listProofs.List[i+j] = proofAux
 			}
 			defer wg.Done()
 		}(i, c1List[i], sList[i], c2List[i], rList[i])

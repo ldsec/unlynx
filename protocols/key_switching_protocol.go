@@ -28,7 +28,7 @@ func init() {
 	network.RegisterMessage(UpBytesMessage{})
 	network.RegisterMessage(LengthMessage{})
 	if _, err := onet.GlobalProtocolRegister(KeySwitchingProtocolName, NewKeySwitchingProtocol); err != nil {
-		log.Fatal("Failed to register the <KeySwitching> protocol:", err)
+		log.Fatal("Failed to register the <KeySwitching> protocol: ", err)
 	}
 }
 
@@ -169,8 +169,13 @@ func (p *KeySwitchingProtocol) Start() error {
 	}
 	p.NodeContribution = &switchedCiphers
 
-	if p.SendToChildren(&DownMessageBytes{Data: libunlynx.AbstractPointsToBytes(initialTab)}) != nil {
-		log.Fatal("Root " + p.ServerIdentity().String() + " failed to broadcast DownMessageBytes")
+	data, err := libunlynx.AbstractPointsToBytes(initialTab)
+	if err != nil {
+		return err
+	}
+
+	if err := p.SendToChildren(&DownMessageBytes{Data: data}); err != nil {
+		return errors.New("Root " + p.ServerIdentity().String() + " failed to broadcast DownMessageBytes: " + err.Error())
 	}
 
 	libunlynx.EndTimer(keySwitchingStart)
@@ -184,7 +189,10 @@ func (p *KeySwitchingProtocol) Dispatch() error {
 
 	// 1. Key switching announcement phase
 	if !p.IsRoot() {
-		targetPublicKey, rbs := p.announcementKSPhase()
+		targetPublicKey, rbs, err := p.announcementKSPhase()
+		if err != nil {
+			return err
+		}
 
 		switchedCiphers, ks2s, rBNegs, vis := libunlynxkeyswitch.KeySwitchSequence(targetPublicKey, rbs, p.Private())
 		if p.Proofs {
@@ -215,20 +223,23 @@ func (p *KeySwitchingProtocol) Dispatch() error {
 }
 
 // Announce forwarding down the tree.
-func (p *KeySwitchingProtocol) announcementKSPhase() (kyber.Point, []kyber.Point) {
+func (p *KeySwitchingProtocol) announcementKSPhase() (kyber.Point, []kyber.Point, error) {
 	dataReferenceMessage := <-p.DownChannel
 	if !p.IsLeaf() {
-		if p.SendToChildren(&dataReferenceMessage.DownMessageBytes) != nil {
-			log.Fatal("Node " + p.ServerIdentity().String() + " failed to broadcast DownMessageBytes")
+		if err := p.SendToChildren(&dataReferenceMessage.DownMessageBytes); err != nil {
+			return nil, nil, errors.New("Node " + p.ServerIdentity().String() + " failed to broadcast DownMessageBytes: " + err.Error())
 		}
 	}
-	message := libunlynx.FromBytesToAbstractPoints(dataReferenceMessage.Data)
+	message, err := libunlynx.FromBytesToAbstractPoints(dataReferenceMessage.Data)
+	if err != nil {
+		return nil, nil, err
+	}
 
-	return message[0], message[1:]
+	return message[0], message[1:], nil
 }
 
 // Results pushing up the tree containing key switching results.
-func (p *KeySwitchingProtocol) ascendingKSPhase() *libunlynx.CipherVector {
+func (p *KeySwitchingProtocol) ascendingKSPhase() (*libunlynx.CipherVector, error) {
 
 	keySwitchingAscendingAggregation := libunlynx.StartTimer(p.Name() + "_KeySwitching(ascendingAggregation)")
 
@@ -256,13 +267,17 @@ func (p *KeySwitchingProtocol) ascendingKSPhase() *libunlynx.CipherVector {
 
 	if !p.IsRoot() {
 		if err := p.SendToParent(&LengthMessage{Length: libunlynxtools.UnsafeCastIntsToBytes([]int{len(*p.NodeContribution)})}); err != nil {
-			log.Fatal("Node "+p.ServerIdentity().String()+" failed to broadcast LengthMessage (", err, ")")
+			return nil, errors.New("Node " + p.ServerIdentity().String() + " failed to broadcast LengthMessage ( " + err.Error() + " )")
 		}
-		message, _ := (*p.NodeContribution).ToBytes()
-		if p.SendToParent(&UpBytesMessage{Data: message}) != nil {
-			log.Fatal("Node " + p.ServerIdentity().String() + " failed to broadcast UpBytesMessage")
+		message, _, err := (*p.NodeContribution).ToBytes()
+		if err != nil {
+			return nil, err
+		}
+
+		if err := p.SendToParent(&UpBytesMessage{Data: message}); err != nil {
+			return nil, errors.New("Node " + p.ServerIdentity().String() + " failed to broadcast UpBytesMessage: " + err.Error())
 		}
 	}
 
-	return p.NodeContribution
+	return p.NodeContribution, nil
 }

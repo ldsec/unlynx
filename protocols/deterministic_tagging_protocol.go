@@ -28,7 +28,7 @@ func init() {
 	network.RegisterMessage(DTBLengthMessage{})
 	network.RegisterMessage(libunlynx.ProcessResponseDet{})
 	if _, err := onet.GlobalProtocolRegister(DeterministicTaggingProtocolName, NewDeterministicTaggingProtocol); err != nil {
-		log.Fatal("Error registering <DeterministicTaggingProtocol>:", err)
+		log.Fatal("Failed to register the <DeterministicTagging> protocol: ", err)
 	}
 }
 
@@ -291,10 +291,16 @@ func (dtm *DeterministicTaggingMessage) ToBytes() []byte {
 		wg.Add(1)
 		go func(i int) {
 			for j := 0; j < libunlynx.VPARALLELIZE && (i+j) < length; j++ {
+				var err error
+
 				mutexD.Lock()
 				data := (*dtm).Data[i+j]
 				mutexD.Unlock()
-				bb[i+j] = data.ToBytes()
+				bb[i+j], err = data.ToBytes()
+				if err != nil {
+					log.Error(err)
+				}
+
 			}
 			defer wg.Done()
 		}(i)

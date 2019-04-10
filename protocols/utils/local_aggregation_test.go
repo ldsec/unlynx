@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.dedis.ch/kyber/v3/util/random"
 	"go.dedis.ch/onet/v3"
-	"go.dedis.ch/onet/v3/log"
 	"go.dedis.ch/onet/v3/network"
 )
 
@@ -49,12 +48,11 @@ func TestLocalAggregation(t *testing.T) {
 	feedback := protocol.FeedbackChannel
 
 	go func() {
-		if err := protocol.Start(); err != nil {
-			log.Fatal("Error to Start <LocalAggregation> protocol:", err)
-		}
+		err := protocol.Start()
+		assert.NoError(t, err)
 	}()
 
-	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*5*2) * time.Millisecond
+	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*10) * time.Millisecond
 
 	select {
 	case results := <-feedback:

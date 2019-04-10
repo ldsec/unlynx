@@ -57,12 +57,12 @@ func NewCipherText() *CipherText {
 }
 
 // NewCipherTextFromBase64 creates a ciphertext of null elements.
-func NewCipherTextFromBase64(b64Encoded string) *CipherText {
+func NewCipherTextFromBase64(b64Encoded string) (*CipherText, error) {
 	cipherText := &CipherText{K: SuiTe.Point().Null(), C: SuiTe.Point().Null()}
 	if err := (*cipherText).Deserialize(b64Encoded); err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
-	return cipherText
+	return cipherText, nil
 }
 
 // NewCipherVector creates a ciphervector of null elements.
@@ -247,13 +247,21 @@ func decryptPoint(prikey kyber.Scalar, c CipherText) kyber.Point {
 // DecryptInt decrypts an integer from an ElGamal cipher text where integer are encoded in the exponent.
 func DecryptInt(prikey kyber.Scalar, cipher CipherText) int64 {
 	M := decryptPoint(prikey, cipher)
-	return discreteLog(M, false)
+	v, err := discreteLog(M, false)
+	if err != nil {
+		return 0
+	}
+	return v
 }
 
 // DecryptIntWithNeg decrypts an integer from an ElGamal cipher text where integer are encoded in the exponent.
 func DecryptIntWithNeg(prikey kyber.Scalar, cipher CipherText) int64 {
 	M := decryptPoint(prikey, cipher)
-	return discreteLog(M, true)
+	v, err := discreteLog(M, true)
+	if err != nil {
+		return 0
+	}
+	return v
 }
 
 // DecryptIntVector decrypts a cipherVector.
@@ -294,7 +302,7 @@ func DecryptCheckZeroVector(prikey kyber.Scalar, cipherVector *CipherVector) []i
 }
 
 // Brute-Forces the discrete log for integer decoding.
-func discreteLog(P kyber.Point, checkNeg bool) int64 {
+func discreteLog(P kyber.Point, checkNeg bool) (int64, error) {
 	B := SuiTe.Point().Base()
 
 	//check if the point is already in the table
@@ -302,7 +310,7 @@ func discreteLog(P kyber.Point, checkNeg bool) int64 {
 	decrypted, ok := PointToInt.Get(P.String())
 	if ok == nil && decrypted != nil {
 		mutex.Unlock()
-		return decrypted.(int64)
+		return decrypted.(int64), nil
 	}
 
 	//otherwise, we complete/create the table while decrypting
@@ -327,13 +335,13 @@ func discreteLog(P kyber.Point, checkNeg bool) int64 {
 
 		guessInt = i
 		if _, err := PointToInt.Put(guess.String(), guessInt); err != nil {
-			log.Fatal(err)
+			return -1, err
 		}
 		if checkNeg {
 			guessIntMinus = -guessInt
 			guessNeg = SuiTe.Point().Mul(SuiTe.Scalar().SetInt64(guessIntMinus), B)
 			if _, err := PointToInt.Put(guessNeg.String(), guessIntMinus); err != nil {
-				log.Fatal(err)
+				return -1, err
 			}
 
 			if guessNeg.Equal(P) {
@@ -349,14 +357,14 @@ func discreteLog(P kyber.Point, checkNeg bool) int64 {
 	mutex.Unlock()
 
 	if !foundPos && !foundNeg {
-		log.LLvl1("out of bound encryption, bound is ", MaxHomomorphicInt)
-		return 0
+		log.Error("out of bound encryption, bound is ", MaxHomomorphicInt)
+		return 0, nil
 	}
 
 	if foundNeg {
-		return guessIntMinus
+		return guessIntMinus, nil
 	}
-	return guessInt
+	return guessInt, nil
 }
 
 // CreateDecryptionTable generated the lookup table for decryption of all the integers in [-limit, limit]
@@ -539,14 +547,18 @@ func RandomPermutation(k int) []int {
 //______________________________________________________________________________________________________________________
 
 // ToBytes converts a CipherVector to a byte array
-func (cv *CipherVector) ToBytes() ([]byte, int) {
+func (cv *CipherVector) ToBytes() ([]byte, int, error) {
 	b := make([]byte, 0)
 
 	for _, el := range *cv {
-		b = append(b, el.ToBytes()...)
+		data, err := el.ToBytes()
+		if err != nil {
+			return nil, 0, err
+		}
+		b = append(b, data...)
 	}
 
-	return b, len(*cv)
+	return b, len(*cv), nil
 }
 
 // FromBytes converts a byte array to a CipherVector. Note that you need to create the (empty) object beforehand.
@@ -561,36 +573,41 @@ func (cv *CipherVector) FromBytes(data []byte, length int) {
 }
 
 // ToBytes converts a CipherText to a byte array
-func (c *CipherText) ToBytes() []byte {
+func (c *CipherText) ToBytes() ([]byte, error) {
 	k, errK := (*c).K.MarshalBinary()
 	if errK != nil {
-		log.Fatal(errK)
+		return nil, errK
 	}
 	cP, errC := (*c).C.MarshalBinary()
 	if errC != nil {
-		log.Fatal(errC)
+		return nil, errC
 	}
 	b := append(k, cP...)
 
-	return b
+	return b, nil
 }
 
 // FromBytes converts a byte array to a CipherText. Note that you need to create the (empty) object beforehand.
-func (c *CipherText) FromBytes(data []byte) {
+func (c *CipherText) FromBytes(data []byte) error {
 	(*c).K = SuiTe.Point()
 	(*c).C = SuiTe.Point()
 	pointLength := SuiTe.PointLen()
 	if err := (*c).K.UnmarshalBinary(data[:pointLength]); err != nil {
-		log.Fatal(err)
+		return err
 	}
 	if err := (*c).C.UnmarshalBinary(data[pointLength:]); err != nil {
-		log.Fatal(err)
+		return err
 	}
+	return nil
 }
 
 // Serialize encodes a CipherText in a base64 string
-func (c *CipherText) Serialize() string {
-	return base64.URLEncoding.EncodeToString((*c).ToBytes())
+func (c *CipherText) Serialize() (string, error) {
+	data, err := (*c).ToBytes()
+	if err != nil {
+		return "", err
+	}
+	return base64.URLEncoding.EncodeToString(data), nil
 }
 
 // Deserialize decodes a CipherText from a base64 string
@@ -661,7 +678,7 @@ func DeserializeScalar(encodedScalar string) (kyber.Scalar, error) {
 }
 
 // AbstractPointsToBytes converts an array of kyber.Point to a byte array
-func AbstractPointsToBytes(aps []kyber.Point) []byte {
+func AbstractPointsToBytes(aps []kyber.Point) ([]byte, error) {
 	var err error
 	var apsBytes []byte
 	response := make([]byte, 0)
@@ -669,28 +686,28 @@ func AbstractPointsToBytes(aps []kyber.Point) []byte {
 	for i := range aps {
 		apsBytes, err = aps[i].MarshalBinary()
 		if err != nil {
-			log.Fatal(err)
+			return nil, err
 		}
 
 		response = append(response, apsBytes...)
 	}
-	return response
+	return response, nil
 }
 
 // FromBytesToAbstractPoints converts a byte array to an array of kyber.Point
-func FromBytesToAbstractPoints(target []byte) []kyber.Point {
+func FromBytesToAbstractPoints(target []byte) ([]kyber.Point, error) {
 	var err error
 	aps := make([]kyber.Point, 0)
 	pointLength := SuiTe.PointLen()
 	for i := 0; i < len(target); i += pointLength {
 		ap := SuiTe.Point()
 		if err = ap.UnmarshalBinary(target[i : i+pointLength]); err != nil {
-			log.Fatal(err)
+			return nil, err
 		}
 
 		aps = append(aps, ap)
 	}
-	return aps
+	return aps, nil
 }
 
 // ArrayCipherVectorToBytes converts an array of CipherVector to an array of bytes (plus an array of byte lengths)
@@ -710,7 +727,11 @@ func ArrayCipherVectorToBytes(data []CipherVector) ([]byte, []byte) {
 			mutex.Lock()
 			data := data[i]
 			mutex.Unlock()
-			bb[i], cvLengths[i] = data.ToBytes()
+			var err error
+			bb[i], cvLengths[i], err = data.ToBytes()
+			if err != nil {
+				log.Error(err)
+			}
 		}(i)
 	}
 	EndParallelize(wg)
