@@ -257,8 +257,13 @@ func (p *CollectiveAggregationProtocol) ascendingAggregationPhase(cvMap map[libu
 		message := ChildAggregatedDataBytesMessage{}
 
 		var gacbLength, aabLength, dtbLength int
+		var err error
 
-		message.Data, gacbLength, aabLength, dtbLength = (&ChildAggregatedDataMessage{detAggrResponses}).ToBytes()
+		message.Data, gacbLength, aabLength, dtbLength, err = (&ChildAggregatedDataMessage{detAggrResponses}).ToBytes()
+		if err != nil {
+			return nil, err
+		}
+
 		childrenContribution := ChildAggregatedDataMessage{}
 		childrenContribution.FromBytes(message.Data, gacbLength, aabLength, dtbLength)
 
@@ -305,7 +310,7 @@ func (p *CollectiveAggregationProtocol) checkData() error {
 //______________________________________________________________________________________________________________________
 
 // ToBytes converts a ChildAggregatedDataMessage to a byte array
-func (sm *ChildAggregatedDataMessage) ToBytes() ([]byte, int, int, int) {
+func (sm *ChildAggregatedDataMessage) ToBytes() ([]byte, int, int, int, error) {
 
 	b := make([]byte, 0)
 	bb := make([][]byte, len((*sm).ChildData))
@@ -316,6 +321,7 @@ func (sm *ChildAggregatedDataMessage) ToBytes() ([]byte, int, int, int) {
 
 	wg := libunlynx.StartParallelize(len((*sm).ChildData))
 	var mutexCD sync.Mutex
+	var err error
 	for i := range (*sm).ChildData {
 		go func(i int) {
 			defer wg.Done()
@@ -324,9 +330,12 @@ func (sm *ChildAggregatedDataMessage) ToBytes() ([]byte, int, int, int) {
 			data := (*sm).ChildData[i]
 			mutexCD.Unlock()
 
-			aux, gacbAux, aabAux, dtbAux, err := data.ToBytes()
-			if err != nil {
-				log.Error(err)
+			aux, gacbAux, aabAux, dtbAux, tmpErr := data.ToBytes()
+			if tmpErr != nil {
+				mutexCD.Lock()
+				err = tmpErr
+				mutexCD.Unlock()
+				return
 			}
 
 			mutexCD.Lock()
@@ -340,10 +349,14 @@ func (sm *ChildAggregatedDataMessage) ToBytes() ([]byte, int, int, int) {
 	}
 	libunlynx.EndParallelize(wg)
 
+	if err != nil {
+		return nil, 0, 0, 0, err
+	}
+
 	for _, el := range bb {
 		b = append(b, el...)
 	}
-	return b, gacbLength, aabLength, dtbLength
+	return b, gacbLength, aabLength, dtbLength, nil
 }
 
 // FromBytes converts a byte array to a ChildAggregatedDataMessage. Note that you need to create the (empty) object beforehand.

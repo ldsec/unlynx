@@ -33,7 +33,8 @@ func TestPublishedShufflingProof_ToBytes(t *testing.T) {
 	tabInt := []int{1, 2, 3, 6}
 	psp.HashProof = libunlynxtools.UnsafeCastIntsToBytes(tabInt)
 
-	pspb := psp.ToBytes()
+	pspb, err := psp.ToBytes()
+	assert.NoError(t, err)
 
 	converted := libunlynxshuffle.PublishedShufflingProof{}
 	converted.FromBytes(pspb)
@@ -60,14 +61,16 @@ func TestShufflingProof(t *testing.T) {
 	responses[2] = append(testCipherVect2, testCipherVect1...)
 
 	responsesShuffled, pi, beta := libunlynxshuffle.ShuffleSequence(responses, libunlynx.SuiTe.Point().Base(), keys.Public, nil)
-	PublishedShufflingProof := libunlynxshuffle.ShuffleProofCreation(responses, responsesShuffled, libunlynx.SuiTe.Point().Base(), keys.Public, beta, pi)
+	PublishedShufflingProof, err := libunlynxshuffle.ShuffleProofCreation(responses, responsesShuffled, libunlynx.SuiTe.Point().Base(), keys.Public, beta, pi)
+	assert.NoError(t, err)
 	assert.True(t, libunlynxshuffle.ShuffleProofVerification(PublishedShufflingProof, keys.Public))
 
-	PublishedShufflingProof = libunlynxshuffle.ShuffleProofCreation(responses, responses, libunlynx.SuiTe.Point().Base(), keys.Public, beta, pi)
+	PublishedShufflingProof, err = libunlynxshuffle.ShuffleProofCreation(responses, responses, libunlynx.SuiTe.Point().Base(), keys.Public, beta, pi)
+	assert.NoError(t, err)
 	assert.False(t, libunlynxshuffle.ShuffleProofVerification(PublishedShufflingProof, keys.Public))
 
-	PublishedShufflingListProof := libunlynxshuffle.ShuffleListProofCreation([][]libunlynx.CipherVector{responses, responses}, [][]libunlynx.CipherVector{responsesShuffled, responses}, []kyber.Point{libunlynx.SuiTe.Point().Base(), libunlynx.SuiTe.Point().Base()}, []kyber.Point{keys.Public, keys.Public}, [][][]kyber.Scalar{beta, beta}, [][]int{pi, pi})
-
+	PublishedShufflingListProof, err := libunlynxshuffle.ShuffleListProofCreation([][]libunlynx.CipherVector{responses, responses}, [][]libunlynx.CipherVector{responsesShuffled, responses}, []kyber.Point{libunlynx.SuiTe.Point().Base(), libunlynx.SuiTe.Point().Base()}, []kyber.Point{keys.Public, keys.Public}, [][][]kyber.Scalar{beta, beta}, [][]int{pi, pi})
+	assert.NoError(t, err)
 	assert.False(t, libunlynxshuffle.ShuffleListProofVerification(PublishedShufflingListProof, keys.Public, 1.0))
 }
 
@@ -78,6 +81,6 @@ func TestCipherVectorComputeE(t *testing.T) {
 	target := []int64{1, 2, 3, 4, 5}
 	cv := libunlynx.EncryptIntVector(groupKey, target)
 
-	es := libunlynxshuffle.CipherVectorComputeE(groupKey, *cv)
-	_ = es
+	_, err := libunlynxshuffle.CipherVectorComputeE(groupKey, *cv)
+	assert.NoError(t, err)
 }

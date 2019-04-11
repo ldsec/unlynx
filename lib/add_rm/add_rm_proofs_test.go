@@ -63,8 +63,10 @@ func TestAddRmProof(t *testing.T) {
 	}
 
 	// Test 1
-	prfVectAdd := libunlynxaddrm.AddRmListProofCreation(cipherArray, resultAdd, pubKeyNew, secKeyNew, true)
-	prfVectSub := libunlynxaddrm.AddRmListProofCreation(cipherArray, resultSub, pubKeyNew, secKeyNew, false)
+	prfVectAdd, err := libunlynxaddrm.AddRmListProofCreation(cipherArray, resultAdd, pubKeyNew, secKeyNew, true)
+	assert.NoError(t, err)
+	prfVectSub, err := libunlynxaddrm.AddRmListProofCreation(cipherArray, resultSub, pubKeyNew, secKeyNew, false)
+	assert.NoError(t, err)
 
 	assert.True(t, libunlynxaddrm.AddRmListProofVerification(prfVectAdd, 1.0))
 	assert.True(t, libunlynxaddrm.AddRmListProofVerification(prfVectSub, 1.0))

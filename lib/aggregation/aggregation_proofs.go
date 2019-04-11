@@ -1,7 +1,6 @@
 package libunlynxaggr
 
 import (
-	"go.dedis.ch/onet/v3/log"
 	"math"
 	"sync"
 
@@ -123,18 +122,29 @@ func (palp *PublishedAggregationListProof) ToBytes() (PublishedAggregationListPr
 	palpb := PublishedAggregationListProofBytes{}
 
 	palpb.List = make([]PublishedAggregationProofBytes, len(palp.List))
+
+	var err error
+	mutex := sync.Mutex{}
 	wg := libunlynx.StartParallelize(len(palpb.List))
 	for i, pap := range palp.List {
 		go func(index int, pap PublishedAggregationProof) {
 			defer wg.Done()
-			var err error
-			palpb.List[index], err = pap.ToBytes()
-			if err != nil {
-				log.Error(err)
+			var tmpErr error
+			palpb.List[index], tmpErr = pap.ToBytes()
+			if tmpErr != nil {
+				mutex.Lock()
+				err = tmpErr
+				mutex.Unlock()
+				return
 			}
 		}(i, pap)
 	}
 	libunlynx.EndParallelize(wg)
+
+	if err != nil {
+		return PublishedAggregationListProofBytes{}, err
+	}
+
 	return palpb, nil
 }
 

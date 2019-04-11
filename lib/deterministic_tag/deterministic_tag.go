@@ -54,17 +54,21 @@ func DeterministicTag(ct libunlynx.CipherText, private, secretContrib kyber.Scal
 //______________________________________________________________________________________________________________________
 
 // CipherVectorToDeterministicTag creates a tag (grouping key) from a cipher vector (aggregation of *.C string representation of all the ciphertexts that are in the ciphervector)
-func CipherVectorToDeterministicTag(vBef libunlynx.CipherVector, privKey, secContrib kyber.Scalar, K kyber.Point, proofs bool) (libunlynx.GroupingKey, *PublishedDDTCreationListProof) {
+func CipherVectorToDeterministicTag(vBef libunlynx.CipherVector, privKey, secContrib kyber.Scalar, K kyber.Point, proofs bool) (libunlynx.GroupingKey, *PublishedDDTCreationListProof, error) {
 	vAft := DeterministicTagSequence(vBef, privKey, secContrib)
 
 	var pdclp PublishedDDTCreationListProof
 	if proofs {
-		pdclp = DeterministicTagCrListProofCreation(vBef, vAft, K, privKey, secContrib)
+		var err error
+		pdclp, err = DeterministicTagCrListProofCreation(vBef, vAft, K, privKey, secContrib)
+		if err != nil {
+			return libunlynx.GroupingKey(""), nil, err
+		}
 	}
 
 	deterministicGroupAttributes := make(libunlynx.DeterministCipherVector, len(vAft))
 	for j, c := range vAft {
 		deterministicGroupAttributes[j] = libunlynx.DeterministCipherText{Point: c.C}
 	}
-	return deterministicGroupAttributes.Key(), &pdclp
+	return deterministicGroupAttributes.Key(), &pdclp, nil
 }

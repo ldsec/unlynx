@@ -166,11 +166,19 @@ func (p *ShufflingProtocol) Start() error {
 
 	message := ShufflingBytesMessage{}
 	var cvLengthsByte []byte
-	message.Data, cvLengthsByte = (&ShufflingMessage{shuffledData}).ToBytes()
+	var err error
 
-	p.sendToNext(&ShufflingBytesMessageLength{CVLengths: cvLengthsByte})
-	p.sendToNext(&message)
+	message.Data, cvLengthsByte, err = (&ShufflingMessage{shuffledData}).ToBytes()
+	if err != nil {
+		return err
+	}
 
+	if err := p.sendToNext(&ShufflingBytesMessageLength{CVLengths: cvLengthsByte}); err != nil {
+		return err
+	}
+	if err := p.sendToNext(&message); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -237,7 +245,11 @@ func (p *ShufflingProtocol) Dispatch() error {
 		// Forward switched message.
 		message := ShufflingBytesMessage{}
 		var cvBytesLengths []byte
-		message.Data, cvBytesLengths = (&ShufflingMessage{shuffledData}).ToBytes()
+		var err error
+		message.Data, cvBytesLengths, err = (&ShufflingMessage{shuffledData}).ToBytes()
+		if err != nil {
+			return err
+		}
 
 		if err := p.sendToNext(&ShufflingBytesMessageLength{cvBytesLengths}); err != nil {
 			return err
@@ -263,7 +275,7 @@ func (p *ShufflingProtocol) sendToNext(msg interface{}) error {
 //______________________________________________________________________________________________________________________
 
 // ToBytes converts a ShufflingMessage to a byte array
-func (sm *ShufflingMessage) ToBytes() ([]byte, []byte) {
+func (sm *ShufflingMessage) ToBytes() ([]byte, []byte, error) {
 	return libunlynx.ArrayCipherVectorToBytes(sm.Data)
 }
 

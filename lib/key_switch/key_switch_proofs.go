@@ -75,7 +75,7 @@ func KeySwitchProofCreation(K, Q kyber.Point, k kyber.Scalar, viB, ks2, rBNeg ky
 }
 
 // KeySwitchListProofCreation creates a list of key switch proofs (multiple ciphertexts)
-func KeySwitchListProofCreation(K, Q kyber.Point, k kyber.Scalar, ks2s, rBNegs []kyber.Point, vis []kyber.Scalar) PublishedKSListProof {
+func KeySwitchListProofCreation(K, Q kyber.Point, k kyber.Scalar, ks2s, rBNegs []kyber.Point, vis []kyber.Scalar) (PublishedKSListProof, error) {
 	viBs := make([]kyber.Point, len(vis))
 
 	var wg1 sync.WaitGroup
@@ -94,14 +94,19 @@ func KeySwitchListProofCreation(K, Q kyber.Point, k kyber.Scalar, ks2s, rBNegs [
 	plop := PublishedKSListProof{}
 	plop.List = make([]PublishedKSProof, len(viBs))
 
+	var err error
+	mutex := sync.Mutex{}
 	var wg2 sync.WaitGroup
 	for i := 0; i < len(viBs); i += libunlynx.VPARALLELIZE {
 		wg2.Add(1)
 		go func(i int, Q kyber.Point, k kyber.Scalar) {
 			for j := 0; j < libunlynx.VPARALLELIZE && (j+i < len(viBs)); j++ {
-				proofAux, err := KeySwitchProofCreation(K, Q, k, viBs[i+j], ks2s[i+j], rBNegs[i+j], vis[i+j])
-				if err != nil {
-					log.Error(err)
+				proofAux, tmpErr := KeySwitchProofCreation(K, Q, k, viBs[i+j], ks2s[i+j], rBNegs[i+j], vis[i+j])
+				if tmpErr != nil {
+					mutex.Lock()
+					err = tmpErr
+					mutex.Unlock()
+					return
 				}
 				plop.List[i+j] = proofAux
 			}
@@ -111,7 +116,11 @@ func KeySwitchListProofCreation(K, Q kyber.Point, k kyber.Scalar, ks2s, rBNegs [
 	}
 	wg2.Wait()
 
-	return plop
+	if err != nil {
+		return PublishedKSListProof{}, err
+	}
+
+	return plop, nil
 }
 
 // KeySwitchProofVerification verifies a key switch proof for one ciphertext
@@ -185,24 +194,35 @@ func (pksp *PublishedKSProof) FromBytes(pkspb PublishedKSProofBytes) error {
 }
 
 // ToBytes converts PublishedKSListProof to bytes
-func (pkslp *PublishedKSListProof) ToBytes() PublishedKSListProofBytes {
+func (pkslp *PublishedKSListProof) ToBytes() (PublishedKSListProofBytes, error) {
 	pkslpb := PublishedKSListProofBytes{}
 
 	prsB := make([]PublishedKSProofBytes, len(pkslp.List))
+
+	var err error
+	mutex := sync.Mutex{}
 	wg := libunlynx.StartParallelize(len(pkslp.List))
 	for i, pksp := range pkslp.List {
 		go func(index int, pksp PublishedKSProof) {
 			defer wg.Done()
-			data, err := pksp.ToBytes()
-			if err != nil {
-				log.Error(err)
+			data, tmpErr := pksp.ToBytes()
+			if tmpErr != nil {
+				mutex.Lock()
+				err = tmpErr
+				mutex.Unlock()
+				return
 			}
 			prsB[index] = data
 		}(i, pksp)
 	}
 	libunlynx.EndParallelize(wg)
+
+	if err != nil {
+		return PublishedKSListProofBytes{}, err
+	}
+
 	pkslpb.List = prsB
-	return pkslpb
+	return pkslpb, nil
 }
 
 // FromBytes converts bytes back to PublishedKSListProof

@@ -72,18 +72,23 @@ func AddRmProofCreation(cBef, cAft libunlynx.CipherText, K kyber.Point, k kyber.
 }
 
 // AddRmListProofCreation creates proof for add/rm server protocol for one ciphervector
-func AddRmListProofCreation(vBef, vAft libunlynx.CipherVector, K kyber.Point, k kyber.Scalar, toAdd bool) PublishedAddRmListProof {
+func AddRmListProofCreation(vBef, vAft libunlynx.CipherVector, K kyber.Point, k kyber.Scalar, toAdd bool) (PublishedAddRmListProof, error) {
 	result := PublishedAddRmListProof{}
 	result.List = make([]PublishedAddRmProof, len(vBef))
 
 	var wg sync.WaitGroup
+	var err error
+	mutex := sync.Mutex{}
 	for i := 0; i < len(vBef); i += libunlynx.VPARALLELIZE {
 		wg.Add(1)
 		go func(i int) {
 			for j := 0; j < libunlynx.VPARALLELIZE && (i+j) < len(vBef); j++ {
-				proofAux, err := AddRmProofCreation(vBef[i+j], vAft[i+j], K, k, toAdd)
-				if err != nil {
-					log.Error(err)
+				proofAux, tmpErr := AddRmProofCreation(vBef[i+j], vAft[i+j], K, k, toAdd)
+				if tmpErr != nil {
+					mutex.Lock()
+					err = tmpErr
+					mutex.Unlock()
+					return
 				}
 				result.List[i+j] = proofAux
 			}
@@ -92,10 +97,13 @@ func AddRmListProofCreation(vBef, vAft libunlynx.CipherVector, K kyber.Point, k 
 	}
 	wg.Wait()
 
+	if err != nil {
+		return PublishedAddRmListProof{}, err
+	}
+
 	result.Krm = K
 	result.ToAdd = toAdd
-
-	return result
+	return result, nil
 }
 
 // AddRmProofVerification verifies an add/rm proof

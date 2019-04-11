@@ -89,18 +89,23 @@ func DeterministicTagCrProofCreation(ctBef, ctAft libunlynx.CipherText, K kyber.
 }
 
 // DeterministicTagCrListProofCreation creates a list of deterministic tag proofs (multiple ciphertexts)
-func DeterministicTagCrListProofCreation(vBef, vAft libunlynx.CipherVector, K kyber.Point, k, s kyber.Scalar) PublishedDDTCreationListProof {
+func DeterministicTagCrListProofCreation(vBef, vAft libunlynx.CipherVector, K kyber.Point, k, s kyber.Scalar) (PublishedDDTCreationListProof, error) {
 	listProofs := PublishedDDTCreationListProof{}
 	listProofs.List = make([]PublishedDDTCreationProof, len(vBef))
 
+	var err error
+	mutex := sync.Mutex{}
 	var wg sync.WaitGroup
 	for i := 0; i < len(vBef); i += libunlynx.VPARALLELIZE {
 		wg.Add(1)
 		go func(i int) {
 			for j := 0; j < libunlynx.VPARALLELIZE && (j+i < len(vBef)); j++ {
-				proofAux, err := DeterministicTagCrProofCreation(vBef[i+j], vAft[i+j], K, k, s)
+				proofAux, tmpErr := DeterministicTagCrProofCreation(vBef[i+j], vAft[i+j], K, k, s)
 				if err != nil {
-					log.Error(err)
+					mutex.Lock()
+					err = tmpErr
+					mutex.Unlock()
+					return
 				}
 				listProofs.List[i+j] = proofAux
 			}
@@ -110,10 +115,14 @@ func DeterministicTagCrListProofCreation(vBef, vAft libunlynx.CipherVector, K ky
 	}
 	wg.Wait()
 
+	if err != nil {
+		return PublishedDDTCreationListProof{}, err
+	}
+
 	listProofs.K = K
 	listProofs.SB = libunlynx.SuiTe.Point().Mul(s, libunlynx.SuiTe.Point().Base())
 
-	return listProofs
+	return listProofs, nil
 }
 
 // DeterministicTagCrProofVerification verifies a deterministic tag proof for one ciphertext
@@ -189,20 +198,25 @@ func DeterministicTagAdditionProofCreation(c1 kyber.Point, s kyber.Scalar, c2 ky
 }
 
 // DeterministicTagAdditionListProofCreation creates proof for deterministic tagging addition on multiple kyber points
-func DeterministicTagAdditionListProofCreation(c1List []kyber.Point, sList []kyber.Scalar, c2List []kyber.Point, rList []kyber.Point) PublishedDDTAdditionListProof {
+func DeterministicTagAdditionListProofCreation(c1List []kyber.Point, sList []kyber.Scalar, c2List []kyber.Point, rList []kyber.Point) (PublishedDDTAdditionListProof, error) {
 	nbrProofsToCreate := len(c1List)
 
 	listProofs := PublishedDDTAdditionListProof{}
 	listProofs.List = make([]PublishedDDTAdditionProof, nbrProofsToCreate)
 
+	var err error
+	mutex := sync.Mutex{}
 	var wg sync.WaitGroup
 	for i := 0; i < nbrProofsToCreate; i += libunlynx.VPARALLELIZE {
 		wg.Add(1)
 		go func(i int, c1 kyber.Point, s kyber.Scalar, c2 kyber.Point, r kyber.Point) {
 			for j := 0; j < libunlynx.VPARALLELIZE && (j+i < nbrProofsToCreate); j++ {
-				proofAux, err := DeterministicTagAdditionProofCreation(c1, s, c2, r)
-				if err != nil {
-					log.Error(err)
+				proofAux, tmpErr := DeterministicTagAdditionProofCreation(c1, s, c2, r)
+				if tmpErr != nil {
+					mutex.Lock()
+					err = tmpErr
+					mutex.Unlock()
+					return
 				}
 				listProofs.List[i+j] = proofAux
 			}
@@ -212,7 +226,11 @@ func DeterministicTagAdditionListProofCreation(c1List []kyber.Point, sList []kyb
 	}
 	wg.Wait()
 
-	return listProofs
+	if err != nil {
+		return PublishedDDTAdditionListProof{}, err
+	}
+
+	return listProofs, nil
 }
 
 // DeterministicTagAdditionProofVerification verifies a deterministic tag addition proof

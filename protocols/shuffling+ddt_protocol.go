@@ -127,16 +127,25 @@ func (p *ShufflingPlusDDTProtocol) Start() error {
 	var cvLengthsByte []byte
 	var err error
 
-	message.Data, cvLengthsByte = (&ShufflingPlusDDTMessage{Data: shuffleTarget}).ToBytes()
-	message.ShuffKey, err = libunlynx.AbstractPointsToBytes([]kyber.Point{p.Tree().Roster.Aggregate})
-
+	message.Data, cvLengthsByte, err = (&ShufflingPlusDDTMessage{Data: shuffleTarget}).ToBytes()
 	if err != nil {
 		return err
 	}
 
-	p.sendToNext(&ShufflingPlusDDTBytesLength{CVLengths: cvLengthsByte})
-	p.sendToNext(&message)
+	message.ShuffKey, err = libunlynx.AbstractPointsToBytes([]kyber.Point{p.Tree().Roster.Aggregate})
+	if err != nil {
+		return err
+	}
 
+	err = p.sendToNext(&ShufflingPlusDDTBytesLength{CVLengths: cvLengthsByte})
+	if err != nil {
+		return err
+	}
+
+	err = p.sendToNext(&message)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -238,7 +247,11 @@ func (p *ShufflingPlusDDTProtocol) Dispatch() error {
 		sendData := libunlynx.StartTimer(p.Name() + "_ShufflingPlusDDT(SendData)")
 		message := ShufflingPlusDDTBytesMessage{}
 		var cvBytesLengths []byte
-		message.Data, cvBytesLengths = (&ShufflingPlusDDTMessage{Data: shuffledData}).ToBytes()
+		message.Data, cvBytesLengths, err = (&ShufflingPlusDDTMessage{Data: shuffledData}).ToBytes()
+		if err != nil {
+			return err
+		}
+
 		// we have to subtract the key p.Public to the shuffling key (we partially decrypt during tagging)
 		message.ShuffKey, err = libunlynx.AbstractPointsToBytes([]kyber.Point{sm.ShuffKey.Sub(sm.ShuffKey, p.Public())})
 		libunlynx.EndTimer(sendData)
@@ -270,7 +283,7 @@ func (p *ShufflingPlusDDTProtocol) sendToNext(msg interface{}) error {
 //______________________________________________________________________________________________________________________
 
 // ToBytes converts a ShufflingPlusDDTMessage to a byte array
-func (spddtm *ShufflingPlusDDTMessage) ToBytes() ([]byte, []byte) {
+func (spddtm *ShufflingPlusDDTMessage) ToBytes() ([]byte, []byte, error) {
 	return libunlynx.ArrayCipherVectorToBytes(spddtm.Data)
 }
 

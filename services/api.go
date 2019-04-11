@@ -7,6 +7,7 @@ import (
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
 	"go.dedis.ch/onet/v3/network"
+	"sync"
 )
 
 // API represents a client with the server to which he is connected and its public/private key pair.
@@ -72,12 +73,13 @@ func (c *API) SendSurveyResponseQuery(surveyID SurveyID, clearClientResponses []
 	log.Lvl1(c, " sends a result for survey ", surveyID)
 	var err error
 
-	s := EncryptDataToSurvey(c.String(), surveyID, clearClientResponses, groupKey, dataRepetitions, count)
+	s, err := EncryptDataToSurvey(c.String(), surveyID, clearClientResponses, groupKey, dataRepetitions, count)
+	if err != nil {
+		return err
+	}
 
 	resp := ServiceState{}
-	err = c.SendProtobuf(c.entryPoint, s, &resp)
-
-	return err
+	return c.SendProtobuf(c.entryPoint, s, &resp)
 }
 
 // SendSurveyResultsQuery to get the result from associated server and decrypt the response using its private key.
@@ -104,13 +106,16 @@ func (c *API) SendSurveyResultsQuery(surveyID SurveyID) (*[][]int64, *[][]int64,
 //______________________________________________________________________________________________________________________
 
 // EncryptDataToSurvey is used to encrypt client responses with the collective key
-func EncryptDataToSurvey(name string, surveyID SurveyID, dpClearResponses []libunlynx.DpClearResponse, groupKey kyber.Point, dataRepetitions int, count bool) *SurveyResponseQuery {
+func EncryptDataToSurvey(name string, surveyID SurveyID, dpClearResponses []libunlynx.DpClearResponse, groupKey kyber.Point, dataRepetitions int, count bool) (*SurveyResponseQuery, error) {
 	nbrResponses := len(dpClearResponses)
 
 	log.Lvl1(name, " responds with ", nbrResponses, " response(s)")
 
 	var dpResponses []libunlynx.DpResponseToSend
 	dpResponses = make([]libunlynx.DpResponseToSend, nbrResponses*dataRepetitions)
+
+	var err error
+	mutex := sync.Mutex{}
 
 	wg := libunlynx.StartParallelize(len(dpClearResponses))
 	round := libunlynx.StartTimer(name + "_ClientEncryption")
@@ -121,10 +126,13 @@ func EncryptDataToSurvey(name string, surveyID SurveyID, dpClearResponses []libu
 			// should be set to 1 if no repet
 			i = i * dataRepetitions
 			if i < len(dpResponses) {
-				var err error
-				dpResponses[i], err = libunlynx.EncryptDpClearResponse(v, groupKey, count)
-				if err != nil {
-					log.Error(err)
+				var tmpErr error
+				dpResponses[i], tmpErr = libunlynx.EncryptDpClearResponse(v, groupKey, count)
+				if tmpErr != nil {
+					mutex.Lock()
+					err = tmpErr
+					mutex.Unlock()
+					return
 				}
 
 				for j := 0; j < dataRepetitions && j+i < len(dpResponses); j++ {
@@ -141,7 +149,12 @@ func EncryptDataToSurvey(name string, surveyID SurveyID, dpClearResponses []libu
 	}
 	libunlynx.EndParallelize(wg)
 	libunlynx.EndTimer(round)
-	return &SurveyResponseQuery{SurveyID: surveyID, Responses: dpResponses}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &SurveyResponseQuery{SurveyID: surveyID, Responses: dpResponses}, nil
 }
 
 // String permits to have the string representation of a client.

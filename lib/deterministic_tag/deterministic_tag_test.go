@@ -36,8 +36,10 @@ func TestCipherVectorToDeterministicTag(t *testing.T) {
 	cv1 := *libunlynx.EncryptIntVector(K, target)
 	cv2 := *libunlynx.EncryptIntVector(K, target)
 
-	gk1, _ := libunlynxdetertag.CipherVectorToDeterministicTag(cv1, private[0], secretPrivate[0], K, false)
-	gk2, _ := libunlynxdetertag.CipherVectorToDeterministicTag(cv2, private[0], secretPrivate[0], K, false)
+	gk1, _, err := libunlynxdetertag.CipherVectorToDeterministicTag(cv1, private[0], secretPrivate[0], K, false)
+	assert.NoError(t, err)
+	gk2, _, err := libunlynxdetertag.CipherVectorToDeterministicTag(cv2, private[0], secretPrivate[0], K, false)
+	assert.NoError(t, err)
 
 	assert.Equal(t, gk1, gk2)
 }

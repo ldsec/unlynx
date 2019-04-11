@@ -178,19 +178,27 @@ func (s *Service) Process(msg *network.Envelope) {
 	if msg.MsgType.Equal(msgTypes.msgSurveyCreationQuery) {
 		tmp := (msg.Msg).(*SurveyCreationQuery)
 		_, err := s.HandleSurveyCreationQuery(tmp)
-		log.ErrFatal(err)
+		if err != nil {
+			log.Error(err)
+		}
 	} else if msg.MsgType.Equal(msgTypes.msgSurveyResultsQuery) {
 		tmp := (msg.Msg).(*SurveyResultsQuery)
 		_, err := s.HandleSurveyResultsQuery(tmp)
-		log.ErrFatal(err)
+		if err != nil {
+			log.Error(err)
+		}
 	} else if msg.MsgType.Equal(msgTypes.msgQueryBroadcastFinished) {
 		tmp := (msg.Msg).(*QueryBroadcastFinished)
 		_, err := s.HandleQueryBroadcastFinished(tmp)
-		log.ErrFatal(err)
+		if err != nil {
+			log.Error(err)
+		}
 	} else if msg.MsgType.Equal(msgTypes.msgDDTfinished) {
 		tmp := (msg.Msg).(*DDTfinished)
 		_, err := s.HandleDDTfinished(tmp)
-		log.ErrFatal(err)
+		if err != nil {
+			log.Error(err)
+		}
 	}
 }
 
@@ -236,10 +244,13 @@ func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.
 
 	// prepares the precomputation for shuffling
 	lineSize := int(len(recq.Sum)) + int(len(recq.Where)) + int(len(recq.GroupBy)) + 1 // + 1 is for the possible count attribute
-	precomputeShuffle := libunlynxshuffle.PrecomputationWritingForShuffling(recq.AppFlag, gobFile, s.ServerIdentity().String(), surveySecret, recq.Roster.Aggregate, lineSize)
+	precomputeShuffle, err := libunlynxshuffle.PrecomputationWritingForShuffling(recq.AppFlag, gobFile, s.ServerIdentity().String(), surveySecret, recq.Roster.Aggregate, lineSize)
+	if err != nil {
+		return nil, err
+	}
 
 	// survey instantiation
-	_, err := s.Survey.Put((string)(recq.SurveyID), Survey{
+	_, err = s.Survey.Put((string)(recq.SurveyID), Survey{
 		Store:             libunlynxstore.NewStore(),
 		Query:             *recq,
 		SurveySecretKey:   surveySecret,
@@ -260,7 +271,7 @@ func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.
 		// broadcasts the query
 		err := libunlynxtools.SendISMOthers(s.ServiceProcessor, &recq.Roster, recq)
 		if err != nil {
-			log.Error("broadcasting error ", err)
+			return nil, err
 		}
 		recq.IntraMessage = false
 	} else {
@@ -284,7 +295,10 @@ func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.
 			return nil, err
 		}
 
-		resp := EncryptDataToSurvey(s.ServerIdentity().String(), recq.SurveyID, testData[strconv.Itoa(index)], recq.Roster.Aggregate, 1, recq.Count)
+		resp, err := EncryptDataToSurvey(s.ServerIdentity().String(), recq.SurveyID, testData[strconv.Itoa(index)], recq.Roster.Aggregate, 1, recq.Count)
+		if err != nil {
+			return nil, err
+		}
 		err = s.PushData(resp, recq.Proofs)
 		if err != nil {
 			return nil, err
@@ -351,7 +365,6 @@ func (s *Service) HandleSurveyResultsQuery(resq *SurveyResultsQuery) (network.Me
 
 		err := libunlynxtools.SendISMOthers(s.ServiceProcessor, &survey.Query.Roster, resq)
 		if err != nil {
-			log.Error("broadcasting error ", err)
 			return nil, err
 		}
 		err = s.StartService(resq.SurveyID, true)
@@ -425,7 +438,10 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 
 		shuffle.Proofs = survey.Query.Proofs
 		shuffle.ProofFunc = func(shuffleTarget, shuffledData []libunlynx.CipherVector, collectiveKey kyber.Point, beta [][]kyber.Scalar, pi []int) *libunlynxshuffle.PublishedShufflingProof {
-			proof := libunlynxshuffle.ShuffleProofCreation(shuffleTarget, shuffledData, libunlynx.SuiTe.Point().Base(), collectiveKey, beta, pi)
+			proof, err := libunlynxshuffle.ShuffleProofCreation(shuffleTarget, shuffledData, libunlynx.SuiTe.Point().Base(), collectiveKey, beta, pi)
+			if err != nil {
+				log.Fatal(err)
+			}
 			return &proof
 		}
 		shuffle.Precomputed = survey.ShufflePrecompute
@@ -505,7 +521,10 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 		shuffle := pi.(*protocolsunlynx.ShufflingProtocol)
 		shuffle.Proofs = survey.Query.Proofs
 		shuffle.ProofFunc = func(shuffleTarget, shuffledData []libunlynx.CipherVector, collectiveKey kyber.Point, beta [][]kyber.Scalar, pi []int) *libunlynxshuffle.PublishedShufflingProof {
-			proof := libunlynxshuffle.ShuffleProofCreation(shuffleTarget, shuffledData, libunlynx.SuiTe.Point().Base(), collectiveKey, beta, pi)
+			proof, err := libunlynxshuffle.ShuffleProofCreation(shuffleTarget, shuffledData, libunlynx.SuiTe.Point().Base(), collectiveKey, beta, pi)
+			if err != nil {
+				log.Fatal(err)
+			}
 			return &proof
 		}
 		shuffle.Precomputed = nil
@@ -531,7 +550,10 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 		keySwitch := pi.(*protocolsunlynx.KeySwitchingProtocol)
 		keySwitch.Proofs = survey.Query.Proofs
 		keySwitch.ProofFunc = func(pubKey, targetPubKey kyber.Point, secretKey kyber.Scalar, ks2s, rBNegs []kyber.Point, vis []kyber.Scalar) *libunlynxkeyswitch.PublishedKSListProof {
-			proof := libunlynxkeyswitch.KeySwitchListProofCreation(pubKey, targetPubKey, secretKey, ks2s, rBNegs, vis)
+			proof, err := libunlynxkeyswitch.KeySwitchListProofCreation(pubKey, targetPubKey, secretKey, ks2s, rBNegs, vis)
+			if err != nil {
+				log.Fatal(err)
+			}
 			return &proof
 		}
 
@@ -584,10 +606,10 @@ func (s *Service) StartProtocol(name string, targetSurvey SurveyID) (onet.Protoc
 		return nil, err
 	}
 	go func() {
-		log.ErrFatal(pi.Dispatch())
+		pi.Dispatch()
 	}()
 	go func() {
-		log.ErrFatal(pi.Start())
+		pi.Start()
 	}()
 
 	return pi, err
@@ -640,7 +662,7 @@ func (s *Service) StartService(targetSurvey SurveyID, root bool) error {
 	aux := target.Query.Roster
 	err = libunlynxtools.SendISMOthers(s.ServiceProcessor, &aux, &DDTfinished{SurveyID: targetSurvey})
 	if err != nil {
-		log.Error("broadcasting error ", err)
+		return err
 	}
 
 	libunlynx.EndTimer(start)

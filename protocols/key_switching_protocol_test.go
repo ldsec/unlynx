@@ -52,7 +52,10 @@ func TestCTKS(t *testing.T) {
 	protocol.TargetPublicKey = &clientPublic
 	protocol.Proofs = true
 	protocol.ProofFunc = func(pubKey, targetPubKey kyber.Point, secretKey kyber.Scalar, ks2s, rBNegs []kyber.Point, vis []kyber.Scalar) *libunlynxkeyswitch.PublishedKSListProof {
-		proof := libunlynxkeyswitch.KeySwitchListProofCreation(pubKey, targetPubKey, secretKey, ks2s, rBNegs, vis)
+		proof, err := libunlynxkeyswitch.KeySwitchListProofCreation(pubKey, targetPubKey, secretKey, ks2s, rBNegs, vis)
+		if err != nil {
+			log.Fatal(err)
+		}
 		return &proof
 	}
 
@@ -87,7 +90,10 @@ func NewCTKSTest(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 	protocol := pi.(*protocolsunlynx.KeySwitchingProtocol)
 	protocol.Proofs = true
 	protocol.ProofFunc = func(pubKey, targetPubKey kyber.Point, secretKey kyber.Scalar, ks2s, rBNegs []kyber.Point, vis []kyber.Scalar) *libunlynxkeyswitch.PublishedKSListProof {
-		proof := libunlynxkeyswitch.KeySwitchListProofCreation(pubKey, targetPubKey, secretKey, ks2s, rBNegs, vis)
+		proof, err := libunlynxkeyswitch.KeySwitchListProofCreation(pubKey, targetPubKey, secretKey, ks2s, rBNegs, vis)
+		if err != nil {
+			log.Fatal(err)
+		}
 		return &proof
 	}
 

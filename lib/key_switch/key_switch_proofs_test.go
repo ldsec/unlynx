@@ -25,7 +25,8 @@ func TestKeySwitchingProof(t *testing.T) {
 	_, ks2s, rBNegs, vis := libunlynxkeyswitch.KeySwitchSequence(keysTarget.Public, rBs, keys.Private)
 
 	// verify a 'correct' list proof
-	pkslp := libunlynxkeyswitch.KeySwitchListProofCreation(keys.Public, keysTarget.Public, keys.Private, ks2s, rBNegs, vis)
+	pkslp, err := libunlynxkeyswitch.KeySwitchListProofCreation(keys.Public, keysTarget.Public, keys.Private, ks2s, rBNegs, vis)
+	assert.NoError(t, err)
 
 	verif := libunlynxkeyswitch.KeySwitchListProofVerification(pkslp, 1.0)
 

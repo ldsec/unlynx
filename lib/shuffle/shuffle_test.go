@@ -57,15 +57,18 @@ func TestPrecomputationWritingForShuffling(t *testing.T) {
 	lineSize := 10
 	secret := libunlynx.SuiTe.Scalar().Pick(random.New())
 
-	precompute := libunlynxshuffle.PrecomputationWritingForShuffling(false, "pre_compute_multiplications.gob", "test_server", secret, el.Aggregate, lineSize)
+	precompute, err := libunlynxshuffle.PrecomputationWritingForShuffling(false, "pre_compute_multiplications.gob", "test_server", secret, el.Aggregate, lineSize)
+	assert.NoError(t, err)
 	assert.Equal(t, len(precompute), lineSize)
 
 	// writes precomputation file
-	precompute = libunlynxshuffle.PrecomputationWritingForShuffling(true, "pre_compute_multiplications.gob", "test_server", secret, el.Aggregate, lineSize)
+	precompute, err = libunlynxshuffle.PrecomputationWritingForShuffling(true, "pre_compute_multiplications.gob", "test_server", secret, el.Aggregate, lineSize)
+	assert.NoError(t, err)
 	assert.Equal(t, len(precompute), lineSize)
 
 	// reads precomputation file
-	precompute = libunlynxshuffle.ReadPrecomputedFile("pre_compute_multiplications.gob")
+	precompute, err = libunlynxshuffle.ReadPrecomputedFile("pre_compute_multiplications.gob")
+	assert.NoError(t, err)
 	assert.Equal(t, len(precompute), lineSize)
 
 }

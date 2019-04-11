@@ -123,7 +123,7 @@ func main() {
 			Usage: "Start unlynx server",
 			Action: func(c *cli.Context) error {
 				if err := runServer(c); err != nil {
-					return errors.New("Error during runServer():" + err.Error())
+					return errors.New("error during runServer():" + err.Error())
 				}
 				return nil
 			},

@@ -66,7 +66,11 @@ func (p *AddRmServerProtocol) Start() error {
 	proofs := libunlynxaddrm.PublishedAddRmListProof{}
 	if p.Proofs {
 		ktopub := libunlynx.SuiTe.Point().Mul(p.KeyToRm, libunlynx.SuiTe.Point().Base())
-		proofs = libunlynxaddrm.AddRmListProofCreation(p.TargetOfTransformation, result, ktopub, p.KeyToRm, p.Add)
+		var err error
+		proofs, err = libunlynxaddrm.AddRmListProofCreation(p.TargetOfTransformation, result, ktopub, p.KeyToRm, p.Add)
+		if err != nil {
+			return err
+		}
 	}
 
 	libunlynx.EndTimer(roundProof)

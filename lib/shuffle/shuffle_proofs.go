@@ -43,8 +43,12 @@ type PublishedShufflingListProof struct {
 //______________________________________________________________________________________________________________________
 
 // ShuffleProofCreation creates a shuffle proof
-func ShuffleProofCreation(originalList, shuffledList []libunlynx.CipherVector, g, h kyber.Point, beta [][]kyber.Scalar, pi []int) PublishedShufflingProof {
-	e := CipherVectorComputeE(h, originalList[0])
+func ShuffleProofCreation(originalList, shuffledList []libunlynx.CipherVector, g, h kyber.Point, beta [][]kyber.Scalar, pi []int) (PublishedShufflingProof, error) {
+	e, err := CipherVectorComputeE(h, originalList[0])
+	if err != nil {
+		return PublishedShufflingProof{}, err
+	}
+
 	k := len(originalList)
 	// compress data for each line (each list) into one element
 	Xhat := make([]kyber.Point, k)
@@ -81,34 +85,56 @@ func ShuffleProofCreation(originalList, shuffledList []libunlynx.CipherVector, g
 	if err != nil {
 		panic("Shuffle proof failed: " + err.Error())
 	}
-	return PublishedShufflingProof{originalList, shuffledList, g, h, prf}
+	return PublishedShufflingProof{originalList, shuffledList, g, h, prf}, nil
 }
 
 // ShuffleListProofCreation generates a list of shuffle proofs
-func ShuffleListProofCreation(originalList, shuffledList [][]libunlynx.CipherVector, gList, hList []kyber.Point, betaList [][][]kyber.Scalar, piList [][]int) PublishedShufflingListProof {
+func ShuffleListProofCreation(originalList, shuffledList [][]libunlynx.CipherVector, gList, hList []kyber.Point, betaList [][][]kyber.Scalar, piList [][]int) (PublishedShufflingListProof, error) {
 	nbrProofsToCreate := len(originalList)
 
 	listProofs := PublishedShufflingListProof{}
 	listProofs.List = make([]PublishedShufflingProof, nbrProofsToCreate)
+
+	var err error
+	mutex := sync.Mutex{}
 
 	var wg sync.WaitGroup
 	for i := 0; i < nbrProofsToCreate; i += libunlynx.VPARALLELIZE {
 		wg.Add(1)
 		go func(i int, originalList, shuffledList [][]libunlynx.CipherVector, g, h []kyber.Point, beta [][][]kyber.Scalar, pi [][]int) {
 			for j := 0; j < libunlynx.VPARALLELIZE && (j+i < nbrProofsToCreate); j++ {
-				listProofs.List[i+j] = ShuffleProofCreation(originalList[i+j], shuffledList[i+j], g[i+j], h[i+j], beta[i+j], pi[i+j])
+				var tmpErr error
+				listProofs.List[i+j], tmpErr = ShuffleProofCreation(originalList[i+j], shuffledList[i+j], g[i+j], h[i+j], beta[i+j], pi[i+j])
+
+				if tmpErr != nil {
+					mutex.Lock()
+					err = tmpErr
+					mutex.Unlock()
+					return
+				}
+
 			}
 			defer wg.Done()
 		}(i, originalList, shuffledList, gList, hList, betaList, piList)
 	}
 	wg.Wait()
 
-	return listProofs
+	if err != nil {
+		return PublishedShufflingListProof{}, err
+	}
+
+	return listProofs, nil
 }
 
 // ShuffleProofVerification verifies a shuffle proof
 func ShuffleProofVerification(psp PublishedShufflingProof, seed kyber.Point) bool {
-	e := CipherVectorComputeE(seed, psp.OriginalList[0])
+	e, err := CipherVectorComputeE(seed, psp.OriginalList[0])
+	if err != nil {
+		log.Error(err)
+		log.Lvl1("-----------verify failed (with XhaBar)")
+		return false
+	}
+
 	var x, y, xbar, ybar []kyber.Point
 
 	wg := libunlynx.StartParallelize(2)
@@ -124,9 +150,9 @@ func ShuffleProofVerification(psp PublishedShufflingProof, seed kyber.Point) boo
 	libunlynx.EndParallelize(wg)
 
 	verifier := shuffleKyber.Verifier(libunlynx.SuiTe, psp.G, psp.H, x, y, xbar, ybar)
-	err := proof.HashVerify(libunlynx.SuiTe, "PairShuffle", verifier, psp.HashProof)
+	err = proof.HashVerify(libunlynx.SuiTe, "PairShuffle", verifier, psp.HashProof)
 	if err != nil {
-		log.Lvl1(err)
+		log.Error(err)
 		log.Lvl1("-----------verify failed (with XhaBar)")
 		return false
 	}
@@ -160,21 +186,26 @@ func ShuffleListProofVerification(pslp PublishedShufflingListProof, seed kyber.P
 }
 
 // CipherVectorComputeE computes all the e's for a ciphervector based on a seed h
-func CipherVectorComputeE(h kyber.Point, cv libunlynx.CipherVector) []kyber.Scalar {
+func CipherVectorComputeE(h kyber.Point, cv libunlynx.CipherVector) ([]kyber.Scalar, error) {
 	length := len(cv)
 	es := make([]kyber.Scalar, length)
 
 	seed, _ := h.MarshalBinary()
-	var wg sync.WaitGroup
 
+	var err error
+	mutex := sync.Mutex{}
+	var wg sync.WaitGroup
 	for i := 0; i < length; i = i + libunlynx.VPARALLELIZE {
 		wg.Add(1)
 		go func(i int, cv libunlynx.CipherVector) {
 			defer wg.Done()
 			for j := 0; j < libunlynx.VPARALLELIZE && (j+i < length); j++ {
-				e, err := computeE(i+j, cv, seed)
-				if err != nil {
-					log.Error(err)
+				e, tmpErr := computeE(i+j, cv, seed)
+				if tmpErr != nil {
+					mutex.Lock()
+					err = tmpErr
+					mutex.Unlock()
+					return
 				}
 				es[i+j] = e
 			}
@@ -184,7 +215,11 @@ func CipherVectorComputeE(h kyber.Point, cv libunlynx.CipherVector) []kyber.Scal
 	}
 	wg.Wait()
 
-	return es
+	if err != nil {
+		return nil, err
+	}
+
+	return es, nil
 }
 
 // computeE computes e used in a shuffle proof. Computation based on a public seed.
@@ -291,49 +326,63 @@ func compressBeta(beta [][]kyber.Scalar, e []kyber.Scalar) []kyber.Scalar {
 //______________________________________________________________________________________________________________________
 
 // ToBytes transforms PublishedShufflingProof to bytes
-func (psp *PublishedShufflingProof) ToBytes() PublishedShufflingProofBytes {
+func (psp *PublishedShufflingProof) ToBytes() (PublishedShufflingProofBytes, error) {
 	pspb := PublishedShufflingProofBytes{}
 
-	wg := libunlynx.StartParallelize(3)
-
 	// convert OriginalList
-	mutex1 := sync.Mutex{}
+	var err error
+	mutex := sync.Mutex{}
+
+	wg := libunlynx.StartParallelize(3)
 	go func(data []libunlynx.CipherVector) {
 		defer wg.Done()
-		tmp, tmpLength := libunlynx.ArrayCipherVectorToBytes(data)
+		tmp, tmpLength, tmpErr := libunlynx.ArrayCipherVectorToBytes(data)
+		if tmpErr != nil {
+			mutex.Lock()
+			err = tmpErr
+			mutex.Unlock()
+			return
+		}
 
-		mutex1.Lock()
 		pspb.OriginalList = &tmp
 		pspb.OriginalListLength = &tmpLength
-		mutex1.Unlock()
 	}(psp.OriginalList)
 
 	// convert ShuffledList
-	mutex2 := sync.Mutex{}
 	go func(data []libunlynx.CipherVector) {
 		defer wg.Done()
-		tmp, tmpLength := libunlynx.ArrayCipherVectorToBytes(data)
+		tmp, tmpLength, tmpErr := libunlynx.ArrayCipherVectorToBytes(data)
+		if tmpErr != nil {
+			mutex.Lock()
+			err = tmpErr
+			mutex.Unlock()
+			return
+		}
 
-		mutex2.Lock()
 		pspb.ShuffledList = &tmp
 		pspb.ShuffledListLength = &tmpLength
-		mutex2.Unlock()
 	}(psp.ShuffledList)
 
 	// convert 'the rest'
 	go func(G, H kyber.Point, HashProof []byte) {
 		defer wg.Done()
 
-		dataG, err := libunlynx.AbstractPointsToBytes([]kyber.Point{G})
-		if err != nil {
-			log.Error(err)
+		dataG, tmpErr := libunlynx.AbstractPointsToBytes([]kyber.Point{G})
+		if tmpErr != nil {
+			mutex.Lock()
+			err = tmpErr
+			mutex.Unlock()
+			return
 		}
 		tmpGBytes := dataG
 		pspb.G = &tmpGBytes
 
-		dataH, err := libunlynx.AbstractPointsToBytes([]kyber.Point{H})
-		if err != nil {
-			log.Error(err)
+		dataH, tmpErr := libunlynx.AbstractPointsToBytes([]kyber.Point{H})
+		if tmpErr != nil {
+			mutex.Lock()
+			err = tmpErr
+			mutex.Unlock()
+			return
 		}
 		tmpHBytes := dataH
 		pspb.H = &tmpHBytes
@@ -343,7 +392,11 @@ func (psp *PublishedShufflingProof) ToBytes() PublishedShufflingProofBytes {
 
 	libunlynx.EndParallelize(wg)
 
-	return pspb
+	if err != nil {
+		return PublishedShufflingProofBytes{}, err
+	}
+
+	return pspb, nil
 }
 
 // FromBytes transforms bytes back to PublishedShufflingProof

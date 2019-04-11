@@ -84,7 +84,10 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 		}
 
 		_, ks2s, rBNegs, vis := libunlynxkeyswitch.KeySwitchSequence(pubKeyNew, origEphemKeys, secKey)
-		keySwitchingProofs := libunlynxkeyswitch.KeySwitchListProofCreation(pubKey, pubKeyNew, secKey, ks2s, rBNegs, vis)
+		keySwitchingProofs, err := libunlynxkeyswitch.KeySwitchListProofCreation(pubKey, pubKeyNew, secKey, ks2s, rBNegs, vis)
+		if err != nil {
+			return err
+		}
 
 		// deterministic tagging (creation) ****************************************************************************
 		tab = make([]int64, sim.NbrGroupAttributes)
@@ -94,7 +97,10 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 		cipherVect = *libunlynx.EncryptIntVector(pubKey, tab)
 
 		tagSwitchedVect := libunlynxdetertag.DeterministicTagSequence(cipherVect, secKey, secKeyNew)
-		cps := libunlynxdetertag.DeterministicTagCrListProofCreation(cipherVect, tagSwitchedVect, pubKey, secKey, secKeyNew)
+		cps, err := libunlynxdetertag.DeterministicTagCrListProofCreation(cipherVect, tagSwitchedVect, pubKey, secKey, secKeyNew)
+		if err != nil {
+			return err
+		}
 		deterministicTaggingCrProofs := cps
 
 		// deterministic tagging (addition) ****************************************************************************
@@ -183,7 +189,10 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 		listCV, _ := protocolsunlynx.ProcessResponseToMatrixCipherText(responsesToShuffle)
 		clientResponsesShuffled, pi, beta := libunlynxshuffle.ShuffleSequence(listCV, libunlynx.SuiTe.Point().Base(), root.Roster().Aggregate, nil)
 		log.Lvl1("Starting shuffling proof creation")
-		shufflingProof := libunlynxshuffle.ShuffleProofCreation(listCV, clientResponsesShuffled, libunlynx.SuiTe.Point().Base(), root.Roster().Aggregate, beta, pi)
+		shufflingProof, err := libunlynxshuffle.ShuffleProofCreation(listCV, clientResponsesShuffled, libunlynx.SuiTe.Point().Base(), root.Roster().Aggregate, beta, pi)
+		if err != nil {
+			return err
+		}
 
 		shufflingProofs := libunlynxshuffle.PublishedShufflingListProof{}
 		shufflingProofs.List = make([]libunlynxshuffle.PublishedShufflingProof, sim.NbrServers*sim.NbrServers)

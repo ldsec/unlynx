@@ -3,6 +3,7 @@ package libunlynx
 import (
 	"encoding"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"math/big"
 	"strings"
@@ -614,10 +615,12 @@ func (c *CipherText) Serialize() (string, error) {
 func (c *CipherText) Deserialize(b64Encoded string) error {
 	decoded, err := base64.URLEncoding.DecodeString(b64Encoded)
 	if err != nil {
-		log.Error("Invalid CipherText (decoding failed).", err)
+		return errors.New("Invalid CipherText (decoding failed): " + err.Error())
+	}
+	err = (*c).FromBytes(decoded)
+	if err != nil {
 		return err
 	}
-	(*c).FromBytes(decoded)
 	return nil
 }
 
@@ -625,8 +628,7 @@ func (c *CipherText) Deserialize(b64Encoded string) error {
 func SerializeElement(el encoding.BinaryMarshaler) (string, error) {
 	bytes, err := el.MarshalBinary()
 	if err != nil {
-		log.Error("Error marshalling element.", err)
-		return "", err
+		return "", errors.New("Error marshalling element: " + err.Error())
 	}
 	return base64.URLEncoding.EncodeToString(bytes), nil
 }
@@ -645,15 +647,13 @@ func SerializeScalar(scalar encoding.BinaryMarshaler) (string, error) {
 func DeserializePoint(encodedPoint string) (kyber.Point, error) {
 	decoded, errD := base64.URLEncoding.DecodeString(encodedPoint)
 	if errD != nil {
-		log.Error("Error decoding point.", errD)
-		return nil, errD
+		return nil, errors.New("Error decoding point: " + errD.Error())
 	}
 
 	point := SuiTe.Point()
 	errM := point.UnmarshalBinary(decoded)
 	if errM != nil {
-		log.Error("Error unmarshalling point.", errM)
-		return nil, errM
+		return nil, errors.New("Error unmarshalling point: " + errM.Error())
 	}
 
 	return point, nil
@@ -663,15 +663,13 @@ func DeserializePoint(encodedPoint string) (kyber.Point, error) {
 func DeserializeScalar(encodedScalar string) (kyber.Scalar, error) {
 	decoded, errD := base64.URLEncoding.DecodeString(encodedScalar)
 	if errD != nil {
-		log.Error("Error decoding scalar.", errD)
-		return nil, errD
+		return nil, errors.New("Error decoding scalar: " + errD.Error())
 	}
 
 	scalar := SuiTe.Scalar()
 	errM := scalar.UnmarshalBinary(decoded)
 	if errM != nil {
-		log.Error("Error unmarshalling scalar.", errM)
-		return nil, errM
+		return nil, errors.New("Error unmarshalling scalar: " + errM.Error())
 	}
 
 	return scalar, nil
@@ -711,7 +709,7 @@ func FromBytesToAbstractPoints(target []byte) ([]kyber.Point, error) {
 }
 
 // ArrayCipherVectorToBytes converts an array of CipherVector to an array of bytes (plus an array of byte lengths)
-func ArrayCipherVectorToBytes(data []CipherVector) ([]byte, []byte) {
+func ArrayCipherVectorToBytes(data []CipherVector) ([]byte, []byte, error) {
 	length := len(data)
 
 	b := make([]byte, 0)
@@ -720,6 +718,7 @@ func ArrayCipherVectorToBytes(data []CipherVector) ([]byte, []byte) {
 
 	wg := StartParallelize(length)
 	var mutex sync.Mutex
+	var err error
 	for i := range data {
 		go func(i int) {
 			defer wg.Done()
@@ -727,19 +726,26 @@ func ArrayCipherVectorToBytes(data []CipherVector) ([]byte, []byte) {
 			mutex.Lock()
 			data := data[i]
 			mutex.Unlock()
-			var err error
-			bb[i], cvLengths[i], err = data.ToBytes()
-			if err != nil {
-				log.Error(err)
+			var tmpErr error
+			bb[i], cvLengths[i], tmpErr = data.ToBytes()
+			if tmpErr != nil {
+				mutex.Lock()
+				err = tmpErr
+				mutex.Unlock()
+				return
 			}
 		}(i)
 	}
 	EndParallelize(wg)
 
+	if err != nil {
+		return nil, nil, err
+	}
+
 	for _, v := range bb {
 		b = append(b, v...)
 	}
-	return b, libunlynxtools.UnsafeCastIntsToBytes(cvLengths)
+	return b, libunlynxtools.UnsafeCastIntsToBytes(cvLengths), nil
 }
 
 // FromBytesToArrayCipherVector converts bytes to an array of CipherVector

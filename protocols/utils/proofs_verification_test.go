@@ -41,7 +41,8 @@ func TestProofsVerification(t *testing.T) {
 	origEphemKeys := []kyber.Point{cipherOne.K, cipherOne.K}
 
 	_, ks2s, rBNegs, vis := libunlynxkeyswitch.KeySwitchSequence(pubKeyNew, origEphemKeys, secKey)
-	pskp := libunlynxkeyswitch.KeySwitchListProofCreation(pubKey, pubKeyNew, secKey, ks2s, rBNegs, vis)
+	pskp, err := libunlynxkeyswitch.KeySwitchListProofCreation(pubKey, pubKeyNew, secKey, ks2s, rBNegs, vis)
+	assert.NoError(t, err)
 	keySwitchingProofs := pskp
 
 	// deterministic tagging (creation) ********************************************************************************
@@ -50,7 +51,8 @@ func TestProofsVerification(t *testing.T) {
 
 	tagSwitchedVect := libunlynxdetertag.DeterministicTagSequence(cipherVect1, secKey, secKeyNew)
 
-	cps := libunlynxdetertag.DeterministicTagCrListProofCreation(cipherVect1, tagSwitchedVect, pubKey, secKey, secKeyNew)
+	cps, err := libunlynxdetertag.DeterministicTagCrListProofCreation(cipherVect1, tagSwitchedVect, pubKey, secKey, secKeyNew)
+	assert.NoError(t, err)
 	deterministicTaggingCrProofs := cps
 
 	// deterministic tagging (addition) ********************************************************************************
@@ -97,8 +99,10 @@ func TestProofsVerification(t *testing.T) {
 	cipherVectorToShuffle[2] = append(append(cipherVect2, cipherVect2...), cipherVect1...)
 	detResponsesCreationShuffled, pi, beta := libunlynxshuffle.ShuffleSequence(cipherVectorToShuffle, libunlynx.SuiTe.Point().Base(), protocol.Roster().Aggregate, nil)
 
-	prfShuffling1 := libunlynxshuffle.ShuffleProofCreation(cipherVectorToShuffle, detResponsesCreationShuffled, libunlynx.SuiTe.Point().Base(), protocol.Roster().Aggregate, beta, pi)
-	prfShuffling2 := libunlynxshuffle.ShuffleProofCreation(cipherVectorToShuffle, cipherVectorToShuffle, libunlynx.SuiTe.Point().Base(), pubKey, beta, pi)
+	prfShuffling1, err := libunlynxshuffle.ShuffleProofCreation(cipherVectorToShuffle, detResponsesCreationShuffled, libunlynx.SuiTe.Point().Base(), protocol.Roster().Aggregate, beta, pi)
+	assert.NoError(t, err)
+	prfShuffling2, err := libunlynxshuffle.ShuffleProofCreation(cipherVectorToShuffle, cipherVectorToShuffle, libunlynx.SuiTe.Point().Base(), pubKey, beta, pi)
+	assert.NoError(t, err)
 
 	shufflingProofs := libunlynxshuffle.PublishedShufflingListProof{}
 	shufflingProofs.List = append(shufflingProofs.List, prfShuffling1, prfShuffling2)

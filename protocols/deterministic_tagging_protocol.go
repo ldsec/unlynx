@@ -241,17 +241,25 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 
 // sendToNext sends the message msg to the next node in the circuit based on the next TreeNode in Tree.List() If not visited yet.
 // If the message already visited the next node, doesn't send and returns false. Otherwise, return true.
-func (p *DeterministicTaggingProtocol) sendToNext(msg interface{}) {
+func (p *DeterministicTaggingProtocol) sendToNext(msg interface{}) error {
 	err := p.SendTo(p.nextNodeInCircuit, msg)
 	if err != nil {
-		log.Lvl1("Had an error sending a message: ", err)
+		return err
 	}
+	return nil
 }
 
 // sendingDet sends DeterministicTaggingBytes messages
-func sendingDet(p DeterministicTaggingProtocol, detTarget DeterministicTaggingMessage) {
-	data := detTarget.ToBytes()
-	p.sendToNext(&DeterministicTaggingBytesMessage{Data: data})
+func sendingDet(p DeterministicTaggingProtocol, detTarget DeterministicTaggingMessage) error {
+	data, err := detTarget.ToBytes()
+	if err != nil {
+		return err
+	}
+	err = p.sendToNext(&DeterministicTaggingBytesMessage{Data: data})
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // TaggingDet performs one step in the distributed deterministic tagging process and creates corresponding proof
@@ -277,7 +285,7 @@ func CipherVectorToDeterministicTag(cipherVect libunlynx.CipherVector, privKey, 
 //______________________________________________________________________________________________________________________
 
 // ToBytes converts a DeterministicTaggingMessage to a byte array
-func (dtm *DeterministicTaggingMessage) ToBytes() []byte {
+func (dtm *DeterministicTaggingMessage) ToBytes() ([]byte, error) {
 
 	length := len((*dtm).Data)
 
@@ -285,20 +293,24 @@ func (dtm *DeterministicTaggingMessage) ToBytes() []byte {
 	bb := make([][]byte, length)
 
 	var mutexD sync.Mutex
+	var err error
 
 	var wg sync.WaitGroup
 	for i := 0; i < length; i += libunlynx.VPARALLELIZE {
 		wg.Add(1)
 		go func(i int) {
 			for j := 0; j < libunlynx.VPARALLELIZE && (i+j) < length; j++ {
-				var err error
+				var tmpErr error
 
 				mutexD.Lock()
 				data := (*dtm).Data[i+j]
 				mutexD.Unlock()
-				bb[i+j], err = data.ToBytes()
-				if err != nil {
-					log.Error(err)
+				bb[i+j], tmpErr = data.ToBytes()
+				if tmpErr != nil {
+					mutexD.Lock()
+					err = tmpErr
+					mutexD.Unlock()
+					return
 				}
 
 			}
@@ -307,10 +319,14 @@ func (dtm *DeterministicTaggingMessage) ToBytes() []byte {
 	}
 	wg.Wait()
 
+	if err != nil {
+		return nil, err
+	}
+
 	for _, v := range bb {
 		b = append(b, v...)
 	}
-	return b
+	return b, nil
 }
 
 // FromBytes converts a byte array to a DeterministicTaggingMessage. Note that you need to create the (empty) object beforehand.

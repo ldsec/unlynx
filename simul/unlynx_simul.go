@@ -153,9 +153,9 @@ func (sim *SimulationUnLynx) Run(config *onet.SimulationConfig) error {
 				server := el.List[i%nbrHosts]
 
 				client = servicesunlynx.NewUnLynxClient(server, strconv.Itoa(i+1))
-				if err := client.SendSurveyResponseQuery(*surveyID, dataCollection, el.Aggregate, sim.DataRepetitions, count); err != nil {
+				if tmpErr := client.SendSurveyResponseQuery(*surveyID, dataCollection, el.Aggregate, sim.DataRepetitions, count); tmpErr != nil {
 					mutex.Lock()
-					err = errors.New("Error while sending DP ("+client.String()+") responses:" + err.Error())
+					err = errors.New("Error while sending DP (" + client.String() + ") responses:" + err.Error())
 					log.Error(err)
 					mutex.Unlock()
 				}
