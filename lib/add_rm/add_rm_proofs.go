@@ -82,6 +82,7 @@ func AddRmListProofCreation(vBef, vAft libunlynx.CipherVector, K kyber.Point, k 
 	for i := 0; i < len(vBef); i += libunlynx.VPARALLELIZE {
 		wg.Add(1)
 		go func(i int) {
+			defer wg.Done()
 			for j := 0; j < libunlynx.VPARALLELIZE && (i+j) < len(vBef); j++ {
 				proofAux, tmpErr := AddRmProofCreation(vBef[i+j], vAft[i+j], K, k, toAdd)
 				if tmpErr != nil {
@@ -92,7 +93,6 @@ func AddRmListProofCreation(vBef, vAft libunlynx.CipherVector, K kyber.Point, k 
 				}
 				result.List[i+j] = proofAux
 			}
-			defer wg.Done()
 		}(i)
 	}
 	wg.Wait()
@@ -123,9 +123,7 @@ func AddRmProofVerification(cp PublishedAddRmProof, K kyber.Point, toAdd bool) b
 		log.Error("---------Verifier:", err.Error())
 		return false
 	}
-
-	log.LLvl1("Proof verified")
-
+	log.Lvl1("Proof verified")
 	return true
 }
 
@@ -138,10 +136,10 @@ func AddRmListProofVerification(parp PublishedAddRmListProof, percent float64) b
 	for i := 0; i < len(parp.List); i += libunlynx.VPARALLELIZE {
 		wg.Add(1)
 		go func(i int, krm kyber.Point, toadd bool) {
+			defer wg.Done()
 			for j := 0; j < libunlynx.VPARALLELIZE && (i+j) < len(parp.List); j++ {
 				results[i+j] = AddRmProofVerification(parp.List[i+j], krm, toadd)
 			}
-			defer wg.Done()
 		}(i, parp.Krm, parp.ToAdd)
 	}
 	wg.Wait()

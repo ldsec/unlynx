@@ -104,10 +104,10 @@ func changeEncryption(cipherTexts []libunlynx.CipherText, serverAddRmKey kyber.S
 	for i := 0; i < len(cipherTexts); i += libunlynx.VPARALLELIZE {
 		wg.Add(1)
 		go func(i int) {
+			defer wg.Done()
 			for j := 0; j < libunlynx.VPARALLELIZE && (i+j) < len(cipherTexts); j++ {
 				result[i+j] = changeEncryptionKeyCipherTexts(cipherTexts[i+j], serverAddRmKey, toAdd)
 			}
-			defer wg.Done()
 		}(i)
 	}
 	wg.Wait()

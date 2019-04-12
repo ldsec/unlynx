@@ -66,12 +66,12 @@ func KeySwitchProofCreation(K, Q kyber.Point, k kyber.Scalar, viB, ks2, rBNeg ky
 	pval := map[string]kyber.Point{"K": K, "viB": viB, "ks2": ks2, "rBNeg": rBNeg, "Q": Q}
 
 	prover := predicate.Prover(libunlynx.SuiTe, sval, pval, nil) // computes: commitment, challenge, response
-	Proof, err := proof.HashProve(libunlynx.SuiTe, "proofTest", prover)
+	proofKS, err := proof.HashProve(libunlynx.SuiTe, "proofTest", prover)
 	if err != nil {
-		return PublishedKSProof{}, errors.New("---------Prover:" + err.Error())
+		return PublishedKSProof{}, errors.New("---------Prover: " + err.Error())
 	}
 
-	return PublishedKSProof{Proof: Proof, K: K, ViB: viB, Ks2: ks2, RbNeg: rBNeg, Q: Q}, nil
+	return PublishedKSProof{Proof: proofKS, K: K, ViB: viB, Ks2: ks2, RbNeg: rBNeg, Q: Q}, nil
 }
 
 // KeySwitchListProofCreation creates a list of key switch proofs (multiple ciphertexts)
@@ -146,10 +146,10 @@ func KeySwitchListProofVerification(pkslp PublishedKSListProof, percent float64)
 	for i := 0; i < nbrProofsToVerify; i += libunlynx.VPARALLELIZE {
 		wg.Add(1)
 		go func(i int) {
+			defer wg.Done()
 			for j := 0; j < libunlynx.VPARALLELIZE && (i+j) < nbrProofsToVerify; j++ {
 				results[i+j] = KeySwitchProofVerification(pkslp.List[i+j])
 			}
-			defer wg.Done()
 		}(i)
 	}
 	wg.Wait()
@@ -226,17 +226,31 @@ func (pkslp *PublishedKSListProof) ToBytes() (PublishedKSListProofBytes, error) 
 }
 
 // FromBytes converts bytes back to PublishedKSListProof
-func (pkslp *PublishedKSListProof) FromBytes(pkslpb PublishedKSListProofBytes) {
+func (pkslp *PublishedKSListProof) FromBytes(pkslpb PublishedKSListProofBytes) error {
+	var err error
+	mutex := sync.Mutex{}
 	prs := make([]PublishedKSProof, len(pkslpb.List))
 	wg := libunlynx.StartParallelize(len(pkslpb.List))
 	for i, pkspb := range pkslpb.List {
 		go func(index int, pkspb PublishedKSProofBytes) {
 			defer wg.Done()
 			tmp := PublishedKSProof{}
-			tmp.FromBytes(pkspb)
+			tmpErr := tmp.FromBytes(pkspb)
+			if tmpErr != nil {
+				mutex.Lock()
+				err = tmpErr
+				mutex.Unlock()
+				return
+			}
 			prs[index] = tmp
 		}(i, pkspb)
 	}
 	libunlynx.EndParallelize(wg)
+
+	if err != nil {
+		return err
+	}
 	pkslp.List = prs
+
+	return nil
 }

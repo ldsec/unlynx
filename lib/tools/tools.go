@@ -77,7 +77,11 @@ func StringToInt64Array(s string) []int64 {
 	result := make([]int64, 0)
 	for _, elem := range container {
 		if elem != "" {
-			aux, _ := strconv.ParseInt(elem, 10, 64)
+			aux, err := strconv.ParseInt(elem, 10, 64)
+			if err != nil {
+				log.Error(err)
+				return make([]int64, 0)
+			}
 			result = append(result, aux)
 		}
 	}

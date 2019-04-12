@@ -27,7 +27,7 @@ func startQuery(el *onet.Roster, proofs bool, sum []string, count bool, whereQue
 
 	surveyID, err := client.SendSurveyCreationQuery(el, servicesunlynx.SurveyID(""), nil, nbrDPs, proofs, true, sum, count, whereQueryValues, predicate, groupBy)
 	if err != nil {
-		return errors.New("service did not start: " + err.Error())
+		return err
 	}
 
 	grp, aggr, err := client.SendSurveyResultsQuery(*surveyID)
@@ -58,18 +58,12 @@ func runUnLynx(c *cli.Context) {
 	groupBy := c.String("groupBy")
 
 	el, err := openGroupToml(tomlFileName)
-	if err != nil {
-		log.ErrFatal(err, "Could not open group toml.")
-		return
-	}
+	log.ErrFatal(err, "Could not open group toml.")
 
 	sumFinal, countFinal, whereFinal, predicateFinal, groupByFinal, err := parseQuery(el, sum, count, whereQueryValues, predicate, groupBy)
 
 	err = startQuery(el, proofs, sumFinal, countFinal, whereFinal, predicateFinal, groupByFinal)
-	if err != nil {
-		log.ErrFatal(err)
-		return
-	}
+	log.ErrFatal(err)
 }
 
 func openGroupToml(tomlFileName string) (*onet.Roster, error) {

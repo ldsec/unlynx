@@ -47,11 +47,11 @@ func AggregationListProofCreation(data []libunlynx.CipherVector, aggregationResu
 	for i := 0; i < len(data); i += libunlynx.VPARALLELIZE {
 		wg.Add(1)
 		go func(i int) {
+			defer wg.Done()
 			for j := 0; j < libunlynx.VPARALLELIZE && (i+j) < len(data); j++ {
 				pap := AggregationProofCreation(data[i+j], aggregationResults[i+j])
 				papList.List[i+j] = pap
 			}
-			defer wg.Done()
 		}(i)
 	}
 	wg.Wait()
@@ -74,10 +74,10 @@ func AggregationListProofVerification(palp PublishedAggregationListProof, percen
 	for i := 0; i < nbrProofsToVerify; i += libunlynx.VPARALLELIZE {
 		wg.Add(1)
 		go func(i int) {
+			defer wg.Done()
 			for j := 0; j < libunlynx.VPARALLELIZE && (i+j) < nbrProofsToVerify; j++ {
 				results[i+j] = AggregationProofVerification(palp.List[i+j])
 			}
-			defer wg.Done()
 		}(i)
 	}
 	wg.Wait()
@@ -112,9 +112,12 @@ func (pap *PublishedAggregationProof) ToBytes() (PublishedAggregationProofBytes,
 }
 
 // FromBytes converts back bytes to PublishedAggregationProof
-func (pap *PublishedAggregationProof) FromBytes(papb PublishedAggregationProofBytes) {
-	pap.AggregationResult.FromBytes(papb.AggregationResult)
+func (pap *PublishedAggregationProof) FromBytes(papb PublishedAggregationProofBytes) error {
+	if err := pap.AggregationResult.FromBytes(papb.AggregationResult); err != nil {
+		return err
+	}
 	pap.Data.FromBytes(papb.Data, int(papb.DataLen))
+	return nil
 }
 
 // ToBytes converts PublishedAggregationListProof to bytes
@@ -149,16 +152,30 @@ func (palp *PublishedAggregationListProof) ToBytes() (PublishedAggregationListPr
 }
 
 // FromBytes converts bytes back to PublishedAggregationListProof
-func (palp *PublishedAggregationListProof) FromBytes(palpb PublishedAggregationListProofBytes) {
+func (palp *PublishedAggregationListProof) FromBytes(palpb PublishedAggregationListProofBytes) error {
 	palp.List = make([]PublishedAggregationProof, len(palpb.List))
+
+	var err error
+	mutex := sync.Mutex{}
 	wg := libunlynx.StartParallelize(len(palpb.List))
 	for i, papb := range palpb.List {
 		go func(index int, papb PublishedAggregationProofBytes) {
 			defer wg.Done()
 			tmp := PublishedAggregationProof{}
-			tmp.FromBytes(papb)
+			tmpErr := tmp.FromBytes(papb)
+			if tmpErr != nil {
+				mutex.Lock()
+				err = tmpErr
+				mutex.Unlock()
+				return
+			}
 			palp.List[index] = tmp
 		}(i, papb)
 	}
 	libunlynx.EndParallelize(wg)
+
+	if err != nil {
+		return err
+	}
+	return nil
 }

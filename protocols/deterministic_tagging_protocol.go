@@ -299,6 +299,7 @@ func (dtm *DeterministicTaggingMessage) ToBytes() ([]byte, error) {
 	for i := 0; i < length; i += libunlynx.VPARALLELIZE {
 		wg.Add(1)
 		go func(i int) {
+			defer wg.Done()
 			for j := 0; j < libunlynx.VPARALLELIZE && (i+j) < length; j++ {
 				var tmpErr error
 
@@ -314,7 +315,6 @@ func (dtm *DeterministicTaggingMessage) ToBytes() ([]byte, error) {
 				}
 
 			}
-			defer wg.Done()
 		}(i)
 	}
 	wg.Wait()
@@ -339,12 +339,12 @@ func (dtm *DeterministicTaggingMessage) FromBytes(data []byte) {
 	for i := 0; i < len(data); i += elementSize * libunlynx.VPARALLELIZE {
 		wg.Add(1)
 		go func(i int) {
+			defer wg.Done()
 			for j := 0; j < elementSize*libunlynx.VPARALLELIZE && i+j < len(data); j += elementSize {
 				tmp := make([]byte, elementSize)
 				copy(tmp, data[i+j:i+j+elementSize])
 				(*dtm).Data[(i+j)/elementSize].FromBytes(tmp)
 			}
-			defer wg.Done()
 		}(i)
 	}
 	wg.Wait()

@@ -280,6 +280,11 @@ func (sm *ShufflingMessage) ToBytes() ([]byte, []byte, error) {
 }
 
 // FromBytes converts a byte array to a ShufflingMessage. Note that you need to create the (empty) object beforehand.
-func (sm *ShufflingMessage) FromBytes(data []byte, cvLengthsByte []byte) {
-	(*sm).Data = libunlynx.FromBytesToArrayCipherVector(data, cvLengthsByte)
+func (sm *ShufflingMessage) FromBytes(data []byte, cvLengthsByte []byte) error {
+	var err error
+	(*sm).Data, err = libunlynx.FromBytesToArrayCipherVector(data, cvLengthsByte)
+	if err != nil {
+		return err
+	}
+	return nil
 }

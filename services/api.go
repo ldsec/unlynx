@@ -122,6 +122,7 @@ func EncryptDataToSurvey(name string, surveyID SurveyID, dpClearResponses []libu
 
 	for i, v := range dpClearResponses {
 		go func(i int, v libunlynx.DpClearResponse) {
+			defer wg.Done()
 			// dataRepetitions is used to make the simulations faster by using the same response multiple times
 			// should be set to 1 if no repet
 			i = i * dataRepetitions
@@ -144,7 +145,6 @@ func EncryptDataToSurvey(name string, surveyID SurveyID, dpClearResponses []libu
 					dpResponses[i+j].AggregatingAttributesEnc = dpResponses[i].AggregatingAttributesEnc
 				}
 			}
-			defer wg.Done()
 		}(i, v)
 	}
 	libunlynx.EndParallelize(wg)

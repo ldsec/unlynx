@@ -37,7 +37,8 @@ func TestPublishedShufflingProof_ToBytes(t *testing.T) {
 	assert.NoError(t, err)
 
 	converted := libunlynxshuffle.PublishedShufflingProof{}
-	converted.FromBytes(pspb)
+	err = converted.FromBytes(pspb)
+	assert.NoError(t, err)
 
 	assert.Equal(t, tab, libunlynx.DecryptIntVector(keys.Private, &converted.OriginalList[0]))
 	assert.Equal(t, tab, libunlynx.DecryptIntVector(keys.Private, &converted.ShuffledList[0]))

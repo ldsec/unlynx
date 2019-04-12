@@ -24,13 +24,13 @@ func KeySwitchSequence(targetPubKey kyber.Point, rBs []kyber.Point, secretKey ky
 	for i := 0; i < len(rBs); i = i + libunlynx.VPARALLELIZE {
 		wg.Add(1)
 		go func(i int) {
+			defer wg.Done()
 			for j := 0; j < libunlynx.VPARALLELIZE && (j+i < len(rBs)); j++ {
 				var ct libunlynx.CipherText
 				ct, rBNegs[i+j], vis[i+j] = KeySwitch(targetPubKey, rBs[i+j], secretKey)
 				ks2s[i+j] = ct.C
 				(*cv)[i+j] = ct
 			}
-			defer wg.Done()
 		}(i)
 	}
 	wg.Wait()

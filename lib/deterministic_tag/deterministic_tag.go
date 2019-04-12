@@ -16,10 +16,10 @@ func DeterministicTagSequence(cv libunlynx.CipherVector, private, secretContrib 
 	for i := 0; i < len(cv); i = i + libunlynx.VPARALLELIZE {
 		wg.Add(1)
 		go func(i int) {
+			defer wg.Done()
 			for j := 0; j < libunlynx.VPARALLELIZE && (j+i < len(cv)); j++ {
 				(*cvNew)[i+j] = DeterministicTag(cv[i+j], private, secretContrib)
 			}
-			defer wg.Done()
 		}(i)
 
 	}

@@ -289,7 +289,12 @@ func (spddtm *ShufflingPlusDDTMessage) ToBytes() ([]byte, []byte, error) {
 
 // FromBytes converts a byte array to a ShufflingPlusDDTMessage. Note that you need to create the (empty) object beforehand.
 func (spddtm *ShufflingPlusDDTMessage) FromBytes(data []byte, shuffKey []byte, cvLengthsByte []byte) error {
-	(*spddtm).Data = libunlynx.FromBytesToArrayCipherVector(data, cvLengthsByte)
+	var err error
+	(*spddtm).Data, err = libunlynx.FromBytesToArrayCipherVector(data, cvLengthsByte)
+	if err != nil {
+		return err
+	}
+
 	dataP, err := libunlynx.FromBytesToAbstractPoints(shuffKey)
 	if err != nil {
 		return err

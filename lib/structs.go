@@ -251,7 +251,7 @@ func (cv *FilteredResponse) ToBytes() ([]byte, int, int, error) {
 }
 
 // FromBytes converts a byte array to a FilteredResponse. Note that you need to create the (empty) object beforehand.
-func (cv *FilteredResponse) FromBytes(data []byte, aabLength, pgaebLength int) {
+func (cv *FilteredResponse) FromBytes(data []byte, aabLength, pgaebLength int) error {
 	(*cv).AggregatingAttributes = make(CipherVector, aabLength)
 	(*cv).GroupByEnc = make(CipherVector, pgaebLength)
 
@@ -262,8 +262,15 @@ func (cv *FilteredResponse) FromBytes(data []byte, aabLength, pgaebLength int) {
 	aab := data[:aabByteLength]
 	pgaeb := data[aabByteLength : aabByteLength+pgaebByteLength]
 
-	(*cv).AggregatingAttributes.FromBytes(aab, aabLength)
-	(*cv).GroupByEnc.FromBytes(pgaeb, pgaebLength)
+	err := (*cv).AggregatingAttributes.FromBytes(aab, aabLength)
+	if err != nil {
+		return err
+	}
+	err = (*cv).GroupByEnc.FromBytes(pgaeb, pgaebLength)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // ToBytes converts a FilteredResponseDet to a byte array
@@ -282,7 +289,7 @@ func (crd *FilteredResponseDet) ToBytes() ([]byte, int, int, int, error) {
 }
 
 // FromBytes converts a byte array to a FilteredResponseDet. Note that you need to create the (empty) object beforehand.
-func (crd *FilteredResponseDet) FromBytes(data []byte, gacbLength, aabLength, dtbgbLength int) {
+func (crd *FilteredResponseDet) FromBytes(data []byte, gacbLength, aabLength, dtbgbLength int) error {
 	(*crd).Fr.AggregatingAttributes = make(CipherVector, aabLength)
 	(*crd).Fr.GroupByEnc = make(CipherVector, gacbLength)
 
@@ -295,8 +302,15 @@ func (crd *FilteredResponseDet) FromBytes(data []byte, gacbLength, aabLength, dt
 	dtbgb := data[gacbByteLength+aabByteLength : gacbByteLength+aabByteLength+dtbgbLength]
 
 	(*crd).DetTagGroupBy = GroupingKey(string(dtbgb))
-	(*crd).Fr.AggregatingAttributes.FromBytes(aab, aabLength)
-	(*crd).Fr.GroupByEnc.FromBytes(gacb, gacbLength)
+	err := (*crd).Fr.AggregatingAttributes.FromBytes(aab, aabLength)
+	if err != nil {
+		return err
+	}
+	err = (*crd).Fr.GroupByEnc.FromBytes(gacb, gacbLength)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // ToBytes converts a ProcessResponse to a byte array
@@ -330,7 +344,7 @@ func (cv *ProcessResponse) ToBytes() ([]byte, int, int, int, error) {
 }
 
 // FromBytes converts a byte array to a ProcessResponse. Note that you need to create the (empty) object beforehand.
-func (cv *ProcessResponse) FromBytes(data []byte, gacbLength, aabLength, pgaebLength int) {
+func (cv *ProcessResponse) FromBytes(data []byte, gacbLength, aabLength, pgaebLength int) error {
 	(*cv).AggregatingAttributes = make(CipherVector, aabLength)
 	(*cv).WhereEnc = make(CipherVector, pgaebLength)
 	(*cv).GroupByEnc = make(CipherVector, gacbLength)
@@ -344,9 +358,19 @@ func (cv *ProcessResponse) FromBytes(data []byte, gacbLength, aabLength, pgaebLe
 	aab := data[gacbByteLength : gacbByteLength+aabByteLength]
 	pgaeb := data[gacbByteLength+aabByteLength : gacbByteLength+aabByteLength+pgaebByteLength]
 
-	(*cv).GroupByEnc.FromBytes(gacb, gacbLength)
-	(*cv).AggregatingAttributes.FromBytes(aab, aabLength)
-	(*cv).WhereEnc.FromBytes(pgaeb, pgaebLength)
+	err := (*cv).GroupByEnc.FromBytes(gacb, gacbLength)
+	if err != nil {
+		return err
+	}
+	err = (*cv).AggregatingAttributes.FromBytes(aab, aabLength)
+	if err != nil {
+		return err
+	}
+	err = (*cv).WhereEnc.FromBytes(pgaeb, pgaebLength)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // ToBytes converts a ProcessResponseDet to a byte array
@@ -371,7 +395,7 @@ func (crd *ProcessResponseDet) ToBytes() ([]byte, int, int, int, int, int, error
 }
 
 // FromBytes converts a byte array to a ProcessResponseDet. Note that you need to create the (empty) object beforehand.
-func (crd *ProcessResponseDet) FromBytes(data []byte, gacbLength, aabLength, pgaebLength, dtbgbLength, dtbwLength int) {
+func (crd *ProcessResponseDet) FromBytes(data []byte, gacbLength, aabLength, pgaebLength, dtbgbLength, dtbwLength int) error {
 	(*crd).PR.AggregatingAttributes = make(CipherVector, aabLength)
 	(*crd).PR.WhereEnc = make(CipherVector, pgaebLength)
 	(*crd).PR.GroupByEnc = make(CipherVector, gacbLength)
@@ -392,17 +416,30 @@ func (crd *ProcessResponseDet) FromBytes(data []byte, gacbLength, aabLength, pga
 	for _, key := range strings.Split(string(dtbw), SEPARATOR) {
 		(*crd).DetTagWhere = append((*crd).DetTagWhere, GroupingKey(key))
 	}
-	(*crd).PR.AggregatingAttributes.FromBytes(aab, aabLength)
-	(*crd).PR.WhereEnc.FromBytes(pgaeb, pgaebLength)
-	(*crd).PR.GroupByEnc.FromBytes(gacb, gacbLength)
-
+	err := (*crd).PR.AggregatingAttributes.FromBytes(aab, aabLength)
+	if err != nil {
+		return err
+	}
+	err = (*crd).PR.WhereEnc.FromBytes(pgaeb, pgaebLength)
+	if err != nil {
+		return err
+	}
+	err = (*crd).PR.GroupByEnc.FromBytes(gacb, gacbLength)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // FromDpResponseToSend converts a DpResponseToSend to a DpResponse
-func (dr *DpResponse) FromDpResponseToSend(dprts DpResponseToSend) {
+func (dr *DpResponse) FromDpResponseToSend(dprts DpResponseToSend) error {
+	var err error
 	dr.GroupByClear = dprts.GroupByClear
 	if len(dprts.GroupByEnc) != 0 {
-		dr.GroupByEnc = MapBytesToMapCipherText(dprts.GroupByEnc)
+		dr.GroupByEnc, err = MapBytesToMapCipherText(dprts.GroupByEnc)
+		if err != nil {
+			return err
+		}
 	}
 
 	dr.WhereClear = dprts.WhereClear
@@ -410,7 +447,10 @@ func (dr *DpResponse) FromDpResponseToSend(dprts DpResponseToSend) {
 		dr.WhereEnc = make(map[string]CipherText)
 		for i, v := range dprts.WhereEnc {
 			ct := CipherText{}
-			ct.FromBytes(v)
+			err = ct.FromBytes(v)
+			if err != nil {
+				return err
+			}
 			dr.WhereEnc[i] = ct
 		}
 	}
@@ -419,23 +459,29 @@ func (dr *DpResponse) FromDpResponseToSend(dprts DpResponseToSend) {
 		dr.AggregatingAttributesEnc = make(map[string]CipherText)
 		for i, v := range dprts.AggregatingAttributesEnc {
 			ct := CipherText{}
-			ct.FromBytes(v)
+			err = ct.FromBytes(v)
+			if err != nil {
+				return err
+			}
 			dr.AggregatingAttributesEnc[i] = ct
 		}
 	}
+	return nil
 }
 
 // MapBytesToMapCipherText transform objects in a map from bytes to ciphertexts
-func MapBytesToMapCipherText(mapBytes map[string][]byte) map[string]CipherText {
+func MapBytesToMapCipherText(mapBytes map[string][]byte) (map[string]CipherText, error) {
 	result := make(map[string]CipherText)
 	if len(mapBytes) != 0 {
 		for i, v := range mapBytes {
 			ct := CipherText{}
-			ct.FromBytes(v)
+			err := ct.FromBytes(v)
+			if err != nil {
+				return nil, err
+			}
 			result[i] = ct
 		}
-		return result
+		return result, nil
 	}
-
-	return nil
+	return nil, nil
 }

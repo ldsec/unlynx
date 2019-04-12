@@ -36,25 +36,31 @@ func TestAllPossibleGroups(t *testing.T) {
 }
 
 func TestGenerateData(t *testing.T) {
-	testData, _ = dataunlynx.GenerateData(numDPs, numEntries, numEntriesFiltered, numGroupsClear, numGroupsEnc,
+	var err error
+	testData, err = dataunlynx.GenerateData(numDPs, numEntries, numEntriesFiltered, numGroupsClear, numGroupsEnc,
 		numWhereClear, numWhereEnc, numAggrClear, numAggrEnc, numType[:], true)
+	assert.NoError(t, err)
 }
 
 func TestWriteDataToFile(t *testing.T) {
-	_ = dataunlynx.WriteDataToFile(filename, testData)
+	err := dataunlynx.WriteDataToFile(filename, testData)
+	assert.NoError(t, err)
 }
 
 func TestReadDataFromFile(t *testing.T) {
-	_, _ = dataunlynx.ReadDataFromFile(filename)
+	_, err := dataunlynx.ReadDataFromFile(filename)
+	assert.NoError(t, err)
 }
 
 func TestCompareClearResponses(t *testing.T) {
-	data, _ := dataunlynx.ReadDataFromFile(filename)
+	data, err := dataunlynx.ReadDataFromFile(filename)
+	assert.NoError(t, err)
 	assert.Equal(t, testData, data, "Data should be the same")
 }
 
 func TestComputeExpectedResult(t *testing.T) {
-	data, _ := dataunlynx.ReadDataFromFile(filename)
+	data, err := dataunlynx.ReadDataFromFile(filename)
+	assert.NoError(t, err)
 	assert.Equal(t, dataunlynx.CompareClearResponses(dataunlynx.ComputeExpectedResult(testData, 1, false), dataunlynx.ComputeExpectedResult(data, 1, false)), true, "Result should be the same")
 	assert.Equal(t, dataunlynx.CompareClearResponses(dataunlynx.ComputeExpectedResult(testData, 1, true), dataunlynx.ComputeExpectedResult(data, 1, true)), true, "Result should be the same")
 }

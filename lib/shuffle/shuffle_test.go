@@ -94,14 +94,19 @@ func TestWriteToGobFile(t *testing.T) {
 	dataCipher = append(dataCipher, cipher)
 
 	// we need bytes (or any other serializable data) to be able to store in a gob file
-	encoded, _ := libunlynxshuffle.EncodeCipherVectorScalar(dataCipher)
-	libunlynxtools.WriteToGobFile(file, encoded)
+	encoded, err := libunlynxshuffle.EncodeCipherVectorScalar(dataCipher)
+	assert.NoError(t, err)
+	err = libunlynxtools.WriteToGobFile(file, encoded)
+	assert.NoError(t, err)
 }
 
 func TestReadFromGobFile(t *testing.T) {
 	var encoded []libunlynxshuffle.CipherVectorScalarBytes
-	libunlynxtools.ReadFromGobFile(file, &encoded)
+	err := libunlynxtools.ReadFromGobFile(file, &encoded)
+	assert.NoError(t, err)
 
-	_, _ = libunlynxshuffle.DecodeCipherVectorScalar(encoded)
-	os.Remove("pre_compute_multiplications.gob")
+	_, err = libunlynxshuffle.DecodeCipherVectorScalar(encoded)
+	assert.NoError(t, err)
+
+	_ = os.Remove("pre_compute_multiplications.gob")
 }

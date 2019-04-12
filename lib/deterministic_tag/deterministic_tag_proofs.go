@@ -82,7 +82,7 @@ func DeterministicTagCrProofCreation(ctBef, ctAft libunlynx.CipherText, K kyber.
 	prover := predicate.Prover(libunlynx.SuiTe, sval, pval, nil) // computes: commitment, challenge, response
 	Proof, err := proof.HashProve(libunlynx.SuiTe, "proofTest", prover)
 	if err != nil {
-		return PublishedDDTCreationProof{}, errors.New("---------Prover:" + err.Error())
+		return PublishedDDTCreationProof{}, errors.New("---------Prover: " + err.Error())
 	}
 
 	return PublishedDDTCreationProof{Proof: Proof, Ciminus11Si: ciminus11Si, CTbef: ctBef, CTaft: ctAft}, nil
@@ -99,6 +99,7 @@ func DeterministicTagCrListProofCreation(vBef, vAft libunlynx.CipherVector, K ky
 	for i := 0; i < len(vBef); i += libunlynx.VPARALLELIZE {
 		wg.Add(1)
 		go func(i int) {
+			defer wg.Done()
 			for j := 0; j < libunlynx.VPARALLELIZE && (j+i < len(vBef)); j++ {
 				proofAux, tmpErr := DeterministicTagCrProofCreation(vBef[i+j], vAft[i+j], K, k, s)
 				if err != nil {
@@ -109,7 +110,6 @@ func DeterministicTagCrListProofCreation(vBef, vAft libunlynx.CipherVector, K ky
 				}
 				listProofs.List[i+j] = proofAux
 			}
-			defer wg.Done()
 		}(i)
 
 	}
@@ -153,10 +153,10 @@ func DeterministicTagCrListProofVerification(pdclp PublishedDDTCreationListProof
 	for i := 0; i < nbrProofsToVerify; i += libunlynx.VPARALLELIZE {
 		wg.Add(1)
 		go func(i int, K, SB kyber.Point) {
+			defer wg.Done()
 			for j := 0; j < libunlynx.VPARALLELIZE && (i+j) < nbrProofsToVerify; j++ {
 				results[i+j] = DeterministicTagCrProofVerification(pdclp.List[i+j], K, SB)
 			}
-			defer wg.Done()
 		}(i, pdclp.K, pdclp.SB)
 	}
 	wg.Wait()
@@ -191,7 +191,7 @@ func DeterministicTagAdditionProofCreation(c1 kyber.Point, s kyber.Scalar, c2 ky
 	prover := predicate.Prover(libunlynx.SuiTe, sval, pval, nil) // computes: commitment, challenge, response
 	Proof, err := proof.HashProve(libunlynx.SuiTe, "proofTest", prover)
 	if err != nil {
-		return PublishedDDTAdditionProof{}, errors.New("---------Prover:" + err.Error())
+		return PublishedDDTAdditionProof{}, errors.New("---------Prover: " + err.Error())
 	}
 
 	return PublishedDDTAdditionProof{Proof: Proof, C1: c1, C2: c2, R: r}, nil
@@ -210,6 +210,7 @@ func DeterministicTagAdditionListProofCreation(c1List []kyber.Point, sList []kyb
 	for i := 0; i < nbrProofsToCreate; i += libunlynx.VPARALLELIZE {
 		wg.Add(1)
 		go func(i int, c1 kyber.Point, s kyber.Scalar, c2 kyber.Point, r kyber.Point) {
+			defer wg.Done()
 			for j := 0; j < libunlynx.VPARALLELIZE && (j+i < nbrProofsToCreate); j++ {
 				proofAux, tmpErr := DeterministicTagAdditionProofCreation(c1, s, c2, r)
 				if tmpErr != nil {
@@ -220,7 +221,6 @@ func DeterministicTagAdditionListProofCreation(c1List []kyber.Point, sList []kyb
 				}
 				listProofs.List[i+j] = proofAux
 			}
-			defer wg.Done()
 		}(i, c1List[i], sList[i], c2List[i], rList[i])
 
 	}
@@ -260,10 +260,10 @@ func DeterministicTagAdditionListProofVerification(pdalp PublishedDDTAdditionLis
 	for i := 0; i < nbrProofsToVerify; i += libunlynx.VPARALLELIZE {
 		wg.Add(1)
 		go func(i int) {
+			defer wg.Done()
 			for j := 0; j < libunlynx.VPARALLELIZE && (i+j) < nbrProofsToVerify; j++ {
 				results[i+j] = DeterministicTagAdditionProofVerification(pdalp.List[i+j])
 			}
-			defer wg.Done()
 		}(i)
 	}
 	wg.Wait()

@@ -206,10 +206,10 @@ func AddInClear(s []libunlynx.DpClearResponse) []libunlynx.DpClearResponse {
 			for i := 0; i < len(dataMap[key]); i = i + libunlynx.VPARALLELIZE {
 				wg.Add(1)
 				go func(i int) {
+					defer wg.Done()
 					for j := 0; j < libunlynx.VPARALLELIZE && (j+i < len(dataMap[key])); j++ {
 						dataMap[key][j+i] += cpy[j+i]
 					}
-					defer wg.Done()
 				}(i)
 			}
 			libunlynx.EndParallelize(wg)
@@ -308,6 +308,6 @@ func (s *Store) PullDeliverableResults(diffPri bool, noise libunlynx.CipherText)
 // DisplayResults shows results and is useful for debugging.
 func (s *Store) DisplayResults() {
 	for _, v := range s.DeliverableResults {
-		log.LLvl1("[ ", v.GroupByEnc, " ] : ", v.AggregatingAttributes, ")")
+		log.Lvl1("[ ", v.GroupByEnc, " ] : ", v.AggregatingAttributes, ")")
 	}
 }

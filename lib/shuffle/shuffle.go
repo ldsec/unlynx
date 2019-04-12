@@ -63,15 +63,15 @@ func shuffle(pi []int, i int, inputList, outputList []libunlynx.CipherVector, NQ
 	wg := libunlynx.StartParallelize(NQ)
 	for j := 0; j < NQ; j++ {
 		var b kyber.Scalar
-		var cipher libunlynx.CipherText
+		var tmpCipher libunlynx.CipherText
 		if len(precomputedPoints[0]) == 0 {
 			b = beta[index][j]
 		} else {
-			cipher = precomputedPoints[index][j]
+			tmpCipher = precomputedPoints[index][j]
 		}
 		go func(j int) {
 			defer wg.Done()
-			outputList[i][j] = rerandomize(inputList[index], b, b, cipher, g, h, j)
+			outputList[i][j] = rerandomize(inputList[index], b, b, tmpCipher, g, h, j)
 		}(j)
 	}
 	libunlynx.EndParallelize(wg)
@@ -130,7 +130,11 @@ func CreatePrecomputedRandomize(g, h kyber.Point, rand cipher.Stream, lineSize, 
 // PrecomputeForShuffling precomputes data to be used in the shuffling protocol (to make it faster) and saves it in a .gob file
 func PrecomputeForShuffling(serverName, gobFile string, surveySecret kyber.Scalar, collectiveKey kyber.Point, lineSize int) ([]CipherVectorScalar, error) {
 	log.Lvl1(serverName, " precomputes for shuffling")
-	scalarBytes, _ := surveySecret.MarshalBinary()
+	scalarBytes, err := surveySecret.MarshalBinary()
+	if err != nil {
+		return nil, err
+	}
+
 	precomputeShuffle := CreatePrecomputedRandomize(libunlynx.SuiTe.Point().Base(), collectiveKey, libunlynx.SuiTe.XOF(scalarBytes), lineSize*2, 10)
 
 	encoded, err := EncodeCipherVectorScalar(precomputeShuffle)
@@ -163,16 +167,15 @@ func PrecomputationWritingForShuffling(appFlag bool, gobFile, serverName string,
 			}
 
 			precomputeShuffle, err = DecodeCipherVectorScalar(encoded)
-
-			if len(precomputeShuffle[0].CipherV) < lineSize {
-
-			}
 			if err != nil {
 				return nil, err
 			}
 		}
 	} else {
-		scalarBytes, _ := surveySecret.MarshalBinary()
+		scalarBytes, err := surveySecret.MarshalBinary()
+		if err != nil {
+			return nil, err
+		}
 		precomputeShuffle = CreatePrecomputedRandomize(libunlynx.SuiTe.Point().Base(), collectiveKey, libunlynx.SuiTe.XOF(scalarBytes), lineSize*2, 10)
 	}
 	return precomputeShuffle, nil
@@ -180,17 +183,13 @@ func PrecomputationWritingForShuffling(appFlag bool, gobFile, serverName string,
 
 // ReadPrecomputedFile reads the precomputation data from a .gob file
 func ReadPrecomputedFile(fileName string) ([]CipherVectorScalar, error) {
-	var precomputeShuffle []CipherVectorScalar
 	if _, err := os.Stat(fileName); !os.IsNotExist(err) {
 		var encoded []CipherVectorScalarBytes
 		err := libunlynxtools.ReadFromGobFile(fileName, &encoded)
 		if err != nil {
 			return nil, err
 		}
-
-		precomputeShuffle, _ = DecodeCipherVectorScalar(encoded)
-	} else {
-		precomputeShuffle = nil
+		return DecodeCipherVectorScalar(encoded)
 	}
-	return precomputeShuffle, nil
+	return nil, nil
 }

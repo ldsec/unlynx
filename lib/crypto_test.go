@@ -1,15 +1,16 @@
 package libunlynx_test
 
 import (
-	"reflect"
-	"strings"
-	"testing"
-
 	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/util/key"
 	"go.dedis.ch/kyber/v3/util/random"
+	"go.dedis.ch/onet/v3/log"
+	"reflect"
+	"strings"
+	"testing"
+	"time"
 )
 
 // TestNullCipherText verifies encryption, decryption and behavior of null ciphertexts.
@@ -39,10 +40,22 @@ func TestEncryption(t *testing.T) {
 	keys := key.NewKeyPair(libunlynx.SuiTe)
 	_, pubKey := keys.Private, keys.Public
 
-	nbrEncryptions := 2
+	nbrEncryptions := 10
 	for i := 0; i < nbrEncryptions; i++ {
 		libunlynx.EncryptInt(pubKey, 0)
 	}
+}
+
+func TestEncryptIntVector(t *testing.T) {
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	_, pubKey := keys.Private, keys.Public
+
+	nbrEncryptions := 200
+	arr := make([]int64, nbrEncryptions)
+
+	a := time.Now()
+	libunlynx.EncryptIntVector(pubKey, arr)
+	log.LLvl1(time.Since(a))
 }
 
 // TestDecryptionConcurrent test the multiple encryptions/decryptions at the same time
@@ -52,15 +65,18 @@ func TestDecryptionConcurrent(t *testing.T) {
 	keys := key.NewKeyPair(libunlynx.SuiTe)
 	secKey, pubKey := keys.Private, keys.Public
 
-	libunlynx.StartParallelize(numThreads)
+	wg := libunlynx.StartParallelize(numThreads)
 
 	for i := 0; i < numThreads; i++ {
+		wg.Done()
 		go func() {
 			ct := libunlynx.EncryptInt(pubKey, 0)
 			val := libunlynx.DecryptInt(secKey, *ct)
 			assert.Equal(t, val, int64(0))
 		}()
 	}
+
+	libunlynx.EndParallelize(wg)
 }
 
 // TestDecryptionConcurrent test the multiple encryptions/decryptions at the same time
@@ -70,10 +86,12 @@ func TestDecryptionNegConcurrent(t *testing.T) {
 	keys := key.NewKeyPair(libunlynx.SuiTe)
 	secKey, pubKey := keys.Private, keys.Public
 
-	libunlynx.StartParallelize(numThreads)
+	wg := libunlynx.StartParallelize(numThreads)
 
 	for i := 0; i < numThreads; i++ {
 		go func() {
+			wg.Done()
+
 			ct := libunlynx.EncryptInt(pubKey, 3)
 			val := libunlynx.DecryptIntWithNeg(secKey, *ct)
 			assert.Equal(t, val, int64(3))
@@ -87,6 +105,7 @@ func TestDecryptionNegConcurrent(t *testing.T) {
 			assert.Equal(t, val, int64(-3))
 		}()
 	}
+	libunlynx.EndParallelize(wg)
 }
 
 // TestNullCipherText verifies encryption, decryption and behavior of null cipherVectors.

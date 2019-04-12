@@ -15,7 +15,6 @@ func TestInt64ArrayToString(t *testing.T) {
 
 	str := libunlynxtools.Int64ArrayToString(toTest)
 	retVal := libunlynxtools.StringToInt64Array(str)
-
 	assert.Equal(t, toTest, retVal)
 }
 

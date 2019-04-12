@@ -55,16 +55,18 @@ func TestAddInMap(t *testing.T) {
 }
 
 // A function that converts and decrypts a map[string][]byte -> map[string]Ciphertext ->  map[string]int64
-func decryptMapBytes(secKey kyber.Scalar, data map[string][]byte) map[string]int64 {
+func decryptMapBytes(secKey kyber.Scalar, data map[string][]byte) (map[string]int64, error) {
 	result := make(map[string]int64)
 
 	for k, v := range data {
 		ct := libunlynx.CipherText{}
-		ct.FromBytes(v)
-
+		err := ct.FromBytes(v)
+		if err != nil {
+			return nil, err
+		}
 		result[k] = libunlynx.DecryptInt(secKey, ct)
 	}
-	return result
+	return result, nil
 }
 
 // TestEncryptDpClearResponse tests the encryption of a DpClearResponse object
@@ -92,11 +94,17 @@ func TestEncryptDpClearResponse(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, ccr.GroupByClear, groupingClear)
-	assert.Equal(t, ccr.GroupByEnc, decryptMapBytes(secKey, cr.GroupByEnc))
+	mp, err := decryptMapBytes(secKey, cr.GroupByEnc)
+	assert.NoError(t, err)
+	assert.Equal(t, ccr.GroupByEnc, mp)
 	assert.Equal(t, ccr.WhereClear, whereClear)
-	assert.Equal(t, ccr.WhereEnc, decryptMapBytes(secKey, cr.WhereEnc))
+	mp, err = decryptMapBytes(secKey, cr.WhereEnc)
+	assert.NoError(t, err)
+	assert.Equal(t, ccr.WhereEnc, mp)
 	assert.Equal(t, ccr.AggregatingAttributesClear, aggrClear)
-	assert.Equal(t, ccr.AggregatingAttributesEnc, decryptMapBytes(secKey, cr.AggregatingAttributesEnc))
+	mp, err = decryptMapBytes(secKey, cr.AggregatingAttributesEnc)
+	assert.NoError(t, err)
+	assert.Equal(t, ccr.AggregatingAttributesEnc, mp)
 }
 
 // TestFilteredResponseConverter tests the FilteredResponse converter (to bytes). In the meantime we also test the Key and UnKey function ... That is the way to go :D
@@ -113,8 +121,8 @@ func TestFilteredResponseConverter(t *testing.T) {
 	assert.NoError(t, err)
 
 	newCr := libunlynx.FilteredResponse{}
-	newCr.FromBytes(crb, aabLength, acbLength)
-
+	err = newCr.FromBytes(crb, aabLength, acbLength)
+	assert.NoError(t, err)
 	assert.Equal(t, aggregating, libunlynx.DecryptIntVector(secKey, &newCr.AggregatingAttributes))
 	assert.Equal(t, grouping, libunlynx.DecryptIntVector(secKey, &newCr.GroupByEnc))
 }
@@ -133,8 +141,8 @@ func TestClientResponseDetConverter(t *testing.T) {
 	assert.NoError(t, err)
 
 	newCrd := libunlynx.FilteredResponseDet{}
-	newCrd.FromBytes(crb, acbLength, aabLength, dtbLength)
-
+	err = newCrd.FromBytes(crb, acbLength, aabLength, dtbLength)
+	assert.NoError(t, err)
 	assert.Equal(t, grouping, libunlynx.UnKey(newCrd.DetTagGroupBy))
 	assert.Equal(t, aggregating, libunlynx.DecryptIntVector(secKey, &newCrd.Fr.AggregatingAttributes))
 	assert.Equal(t, grouping, libunlynx.DecryptIntVector(secKey, &newCrd.Fr.GroupByEnc))
@@ -158,8 +166,8 @@ func TestProcessResponseConverter(t *testing.T) {
 	b, gacbLength, aabLength, pgaebLength, err := pr.ToBytes()
 	assert.NoError(t, err)
 	newPr := libunlynx.ProcessResponse{}
-	newPr.FromBytes(b, gacbLength, aabLength, pgaebLength)
-
+	err = newPr.FromBytes(b, gacbLength, aabLength, pgaebLength)
+	assert.NoError(t, err)
 	assert.Equal(t, whereEnc, libunlynx.DecryptIntVector(secKey, &newPr.WhereEnc))
 	assert.Equal(t, grouping, libunlynx.DecryptIntVector(secKey, &newPr.GroupByEnc))
 	assert.Equal(t, aggregating, libunlynx.DecryptIntVector(secKey, &newPr.AggregatingAttributes))
@@ -195,11 +203,10 @@ func TestProcessResponseDetConverter(t *testing.T) {
 		DetTagGroupBy: "",
 		DetTagWhere:   nil,
 	}
-	newPrDet.FromBytes(b, gacbLength, aabLength, pgaebLength, dtbgbLength, dtbwLength)
-
+	err = newPrDet.FromBytes(b, gacbLength, aabLength, pgaebLength, dtbgbLength, dtbwLength)
+	assert.NoError(t, err)
 	assert.Equal(t, prDet.DetTagGroupBy, newPrDet.DetTagGroupBy)
 	assert.Equal(t, prDet.DetTagWhere, newPrDet.DetTagWhere)
-	// We already tested the ProcessResponseConverter, no need to redo it
 }
 
 func TestDPResponseConverter(t *testing.T) {
@@ -238,7 +245,8 @@ func TestDPResponseConverter(t *testing.T) {
 		AggregatingAttributesEnc:   nil,
 	}
 
-	dpResponse.FromDpResponseToSend(dpResponseToSend)
+	err := dpResponse.FromDpResponseToSend(dpResponseToSend)
+	assert.NoError(t, err)
 
 	for i := 0; i < k; i++ {
 		assert.Equal(t, libunlynx.DecryptInt(secKey, dpResponse.GroupByEnc[strconv.Itoa(i)]), int64(i))
@@ -261,7 +269,8 @@ func TestMapBytesToMapCipherText(t *testing.T) {
 		bMap[strconv.Itoa(i)], err = libunlynx.EncryptInt(pubKey, int64(i)).ToBytes()
 		assert.NoError(t, err)
 	}
-	ctMap := libunlynx.MapBytesToMapCipherText(bMap)
+	ctMap, err := libunlynx.MapBytesToMapCipherText(bMap)
+	assert.NoError(t, err)
 	for i := 0; i < k; i++ {
 		assert.Equal(t, libunlynx.DecryptInt(secKey, ctMap[strconv.Itoa(i)]), int64(i))
 	}

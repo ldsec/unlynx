@@ -175,10 +175,10 @@ func EncryptIntVector(pubkey kyber.Point, intArray []int64) *CipherVector {
 	for i := 0; i < len(intArray); i = i + VPARALLELIZE {
 		wg.Add(1)
 		go func(i int) {
+			defer wg.Done()
 			for j := 0; j < VPARALLELIZE && (j+i < len(intArray)); j++ {
 				cv[j+i] = *EncryptInt(pubkey, intArray[j+i])
 			}
-			defer wg.Done()
 		}(i)
 
 	}
@@ -196,12 +196,12 @@ func EncryptIntVectorGetRs(pubkey kyber.Point, intArray []int64) (*CipherVector,
 	for i := 0; i < len(intArray); i = i + VPARALLELIZE {
 		wg.Add(1)
 		go func(i int) {
+			defer wg.Done()
 			for j := 0; j < VPARALLELIZE && (j+i < len(intArray)); j++ {
 				tmpCv, tmpR := EncryptIntGetR(pubkey, intArray[j+i])
 				cv[j+i] = *tmpCv
 				rs[j+i] = tmpR
 			}
-			defer wg.Done()
 		}(i)
 
 	}
@@ -218,10 +218,10 @@ func EncryptScalarVector(pubkey kyber.Point, intArray []kyber.Scalar) *CipherVec
 	for i := 0; i < len(intArray); i = i + VPARALLELIZE {
 		wg.Add(1)
 		go func(i int) {
+			defer wg.Done()
 			for j := 0; j < VPARALLELIZE && (j+i < len(intArray)); j++ {
 				cv[j+i] = *EncryptScalar(pubkey, intArray[j+i])
 			}
-			defer wg.Done()
 		}(i)
 
 	}
@@ -407,10 +407,10 @@ func (cv *CipherVector) Add(cv1, cv2 CipherVector) {
 	for i := 0; i < len(cv1); i = i + VPARALLELIZE {
 		wg.Add(1)
 		go func(i int) {
+			defer wg.Done()
 			for j := 0; j < VPARALLELIZE && (j+i < len(cv1)); j++ {
 				(*cv)[i+j].Add(cv1[i+j], cv2[i+j])
 			}
-			defer wg.Done()
 		}(i)
 
 	}
@@ -563,14 +563,17 @@ func (cv *CipherVector) ToBytes() ([]byte, int, error) {
 }
 
 // FromBytes converts a byte array to a CipherVector. Note that you need to create the (empty) object beforehand.
-func (cv *CipherVector) FromBytes(data []byte, length int) {
+func (cv *CipherVector) FromBytes(data []byte, length int) error {
 	*cv = make(CipherVector, length)
 	cipherLength := 2 * SuiTe.PointLen()
 	for i, pos := 0, 0; i < length*cipherLength; i, pos = i+cipherLength, pos+1 {
 		ct := CipherText{}
-		ct.FromBytes(data[i : i+cipherLength])
+		if err := ct.FromBytes(data[i : i+cipherLength]); err != nil {
+			return err
+		}
 		(*cv)[pos] = ct
 	}
+	return nil
 }
 
 // ToBytes converts a CipherText to a byte array
@@ -749,11 +752,13 @@ func ArrayCipherVectorToBytes(data []CipherVector) ([]byte, []byte, error) {
 }
 
 // FromBytesToArrayCipherVector converts bytes to an array of CipherVector
-func FromBytesToArrayCipherVector(data []byte, cvLengthsByte []byte) []CipherVector {
+func FromBytesToArrayCipherVector(data []byte, cvLengthsByte []byte) ([]CipherVector, error) {
 	cvLengths := libunlynxtools.UnsafeCastBytesToInts(cvLengthsByte)
 	dataConverted := make([]CipherVector, len(cvLengths))
 	elementSize := CipherTextByteSize()
 
+	var err error
+	mutex := sync.Mutex{}
 	wg := StartParallelize(len(cvLengths))
 
 	// iter over each value in the flatten data byte array
@@ -766,7 +771,13 @@ func FromBytesToArrayCipherVector(data []byte, cvLengthsByte []byte) []CipherVec
 
 		go func(v []byte, i int) {
 			defer wg.Done()
-			cv.FromBytes(v, cvLengths[i])
+			tmpErr := cv.FromBytes(v, cvLengths[i])
+			if tmpErr != nil {
+				mutex.Lock()
+				err = tmpErr
+				mutex.Unlock()
+				return
+			}
 			dataConverted[i] = cv
 		}(v, i)
 
@@ -775,7 +786,11 @@ func FromBytesToArrayCipherVector(data []byte, cvLengthsByte []byte) []CipherVec
 	}
 	EndParallelize(wg)
 
-	return dataConverted
+	if err != nil {
+		return nil, err
+	}
+
+	return dataConverted, nil
 }
 
 // CipherTextByteSize return the length of one CipherText element transform into []byte
