@@ -206,7 +206,7 @@ func Key(ga []int64) GroupingKey {
 }
 
 // UnKey permits to go from a tag  non-encrypted grouping attributes to grouping attributes
-func UnKey(gk GroupingKey) []int64 {
+func UnKey(gk GroupingKey) ([]int64, error) {
 	tab := make([]int64, 0)
 	count := 0
 	nbrString := make([]string, 1)
@@ -214,13 +214,16 @@ func UnKey(gk GroupingKey) []int64 {
 		if a != ',' {
 			nbrString[0] = string(a)
 		} else {
-			tmp, _ := strconv.Atoi(strings.Join(nbrString, ""))
+			tmp, err := strconv.Atoi(strings.Join(nbrString, ""))
+			if err != nil {
+				return nil, err
+			}
 			tab = append(tab, int64(tmp))
 			nbrString = make([]string, 1)
 			count++
 		}
 	}
-	return tab
+	return tab, nil
 }
 
 // Marshal

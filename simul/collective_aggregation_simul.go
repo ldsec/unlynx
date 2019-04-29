@@ -82,11 +82,11 @@ func (sim *CollectiveAggregationSimulation) Setup(dir string, hosts []string) (*
 
 // Node registers a CollectiveAggregationSimul (with access to the CollectiveAggregationSimulation object) for every node
 func (sim *CollectiveAggregationSimulation) Node(config *onet.SimulationConfig) error {
-	if pid, err := config.Server.ProtocolRegister("CollectiveAggregationSimul",
+	if _, err := config.Server.ProtocolRegister("CollectiveAggregationSimul",
 		func(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 			return NewAggregationProtocolSimul(tni, sim)
 		}); err != nil {
-		return errors.New("Error while registering <CollectiveAggregationSimul> with id (" + pid.String() + "):" + err.Error())
+		return errors.New("Error while registering <CollectiveAggregationSimul>:" + err.Error())
 	}
 
 	return sim.SimulationBFTree.Node(config)

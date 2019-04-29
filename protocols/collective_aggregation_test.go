@@ -68,8 +68,6 @@ func TestCollectiveAggregationGroup(t *testing.T) {
 		for k, v1 := range expectedGroups {
 			if v2, ok := encryptedResult.GroupedData[k]; ok {
 				assert.True(t, ok)
-				_ = v1
-				_ = v2
 				assert.True(t, reflect.DeepEqual(v1, libunlynx.DecryptIntVector(clientPrivate, &v2.GroupByEnc)))
 				delete(encryptedResult.GroupedData, k)
 			}

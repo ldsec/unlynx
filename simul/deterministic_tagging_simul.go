@@ -53,11 +53,11 @@ func (sim *DeterministicTaggingSimulation) Setup(dir string, hosts []string) (*o
 
 // Node registers a DeterministicTaggingSimul (with access to the DeterministicTaggingSimulation object) for every node
 func (sim *DeterministicTaggingSimulation) Node(config *onet.SimulationConfig) error {
-	if pid, err := config.Server.ProtocolRegister("DeterministicTaggingSimul",
+	if _, err := config.Server.ProtocolRegister("DeterministicTaggingSimul",
 		func(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 			return NewDeterministicTaggingSimul(tni, sim)
 		}); err != nil {
-		return errors.New("Error while registering <DeterministicTaggingSimul> with id (" + pid.String() + "):" + err.Error())
+		return errors.New("Error while registering <DeterministicTaggingSimul>:" + err.Error())
 	}
 
 	return sim.SimulationBFTree.Node(config)

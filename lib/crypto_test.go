@@ -174,10 +174,6 @@ func TestEqualDeterministCipherText(t *testing.T) {
 	pdcv1 := &dcv1
 	assert.True(t, pdcv1.Equal(&dcv2))
 	assert.False(t, pdcv1.Equal(nilp))
-
-	pdcv1 = nil
-	assert.False(t, pdcv1.Equal(&dcv2))
-	assert.True(t, pdcv1.Equal(nilp))
 }
 
 // TestAbstractPointsConverter tests the kyber points array converter (to bytes)
@@ -217,10 +213,12 @@ func TestCiphertextConverter(t *testing.T) {
 	target := int64(2)
 	ct := libunlynx.EncryptInt(pubKey, target)
 
-	ctb, _ := ct.ToBytes()
+	ctb, err := ct.ToBytes()
+	assert.NoError(t, err)
 
 	newCT := libunlynx.CipherText{}
-	_ = newCT.FromBytes(ctb)
+	err = newCT.FromBytes(ctb)
+	assert.NoError(t, err)
 
 	p := libunlynx.DecryptInt(secKey, newCT)
 
@@ -239,7 +237,8 @@ func TestCipherVectorConverter(t *testing.T) {
 	assert.NoError(t, err)
 
 	newCV := libunlynx.CipherVector{}
-	newCV.FromBytes(cvb, length)
+	err = newCV.FromBytes(cvb, length)
+	assert.NoError(t, err)
 
 	p := libunlynx.DecryptIntVector(secKey, &newCV)
 

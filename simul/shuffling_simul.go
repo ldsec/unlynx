@@ -52,11 +52,11 @@ func (sim *ShufflingSimulation) Setup(dir string, hosts []string) (*onet.Simulat
 
 // Node registers a ShufflingSimul (with access to the ShufflingSimulation object) for every node
 func (sim *ShufflingSimulation) Node(config *onet.SimulationConfig) error {
-	if pid, err := config.Server.ProtocolRegister("ShufflingSimul",
+	if _, err := config.Server.ProtocolRegister("ShufflingSimul",
 		func(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 			return NewShufflingSimul(tni, sim)
 		}); err != nil {
-		return errors.New("Error while registering <ShufflingSimul> with id (" + pid.String() + "):" + err.Error())
+		return errors.New("Error while registering <ShufflingSimul>:" + err.Error())
 	}
 
 	return sim.SimulationBFTree.Node(config)

@@ -150,7 +150,9 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 
 			cipherVectGr = *tmp
 			det1 := cipherVectGr
-			protocolsunlynx.TaggingDet(&det1, secKey, secKey, pubKey, false)
+			if err := protocolsunlynx.TaggingDet(&det1, secKey, secKey, pubKey, false); err != nil {
+				return err
+			}
 			deterministicGroupAttributes := make(libunlynx.DeterministCipherVector, len(det1))
 
 			for j, c := range det1 {

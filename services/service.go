@@ -132,8 +132,11 @@ type Service struct {
 
 func (s *Service) getSurvey(sid SurveyID) (Survey, error) {
 	surv, err := s.Survey.Get(string(sid))
-	if err != nil || surv == nil {
+	if err != nil {
 		return Survey{}, errors.New("Error" + err.Error() + "while getting surveyID" + string(sid))
+	}
+	if surv == nil {
+		return Survey{}, errors.New("Empty map entry while getting surveyID" + string(sid))
 	}
 	return surv.(Survey), nil
 }
@@ -211,7 +214,9 @@ func (s *Service) PushData(resp *SurveyResponseQuery, proofs bool) error {
 
 	for _, v := range resp.Responses {
 		dr := libunlynx.DpResponse{}
-		dr.FromDpResponseToSend(v)
+		if err := dr.FromDpResponseToSend(v); err != nil {
+			return err
+		}
 		survey.InsertDpResponse(dr, proofs, survey.Query.GroupBy, survey.Query.Sum, survey.Query.Where)
 	}
 	err = s.putSurvey(resp.SurveyID, survey)
@@ -352,10 +357,6 @@ func (s *Service) HandleSurveyResultsQuery(resq *SurveyResultsQuery) (network.Me
 
 	survey.Query.ClientPubKey = resq.ClientPublic
 	err = s.putSurvey(resq.SurveyID, survey)
-	if err != nil {
-		return nil, err
-	}
-
 	if err != nil {
 		return nil, err
 	}
@@ -605,12 +606,17 @@ func (s *Service) StartProtocol(name string, targetSurvey SurveyID) (onet.Protoc
 	if err != nil {
 		return nil, err
 	}
-	go func() {
-		pi.Dispatch()
-	}()
-	go func() {
-		pi.Start()
-	}()
+
+	go func(pname string) {
+		if tmpErr := pi.Dispatch(); tmpErr != nil {
+			log.Error("Error running Dispatch ->" + name + " :" + err.Error())
+		}
+	}(name)
+	go func(pname string) {
+		if tmpErr := pi.Start(); tmpErr != nil {
+			log.Error("Error running Start ->" + name + " :" + err.Error())
+		}
+	}(name)
 
 	return pi, err
 }

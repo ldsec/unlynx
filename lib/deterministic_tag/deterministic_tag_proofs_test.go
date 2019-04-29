@@ -21,7 +21,8 @@ func TestDeterministicTagProofCreation(t *testing.T) {
 
 	// test tagging at ciphertext level
 	cipherOneDetTagged := libunlynxdetertag.DeterministicTag(cipherOne, secKey, secretContrib)
-	dtp, _ := libunlynxdetertag.DeterministicTagCrProofCreation(cipherOne, cipherOneDetTagged, pubKey, secKey, secretContrib)
+	dtp, err := libunlynxdetertag.DeterministicTagCrProofCreation(cipherOne, cipherOneDetTagged, pubKey, secKey, secretContrib)
+	assert.NoError(t, err)
 	sb := libunlynx.SuiTe.Point().Mul(secretContrib, libunlynx.SuiTe.Point().Base())
 	assert.True(t, libunlynxdetertag.DeterministicTagCrProofVerification(dtp, pubKey, sb))
 

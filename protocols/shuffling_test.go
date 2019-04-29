@@ -35,7 +35,8 @@ func TestShuffling(t *testing.T) {
 		groupSec.Add(groupSec, priv[i])
 	}
 	for i := 0; i < nbrNodes; i++ {
-		privBytes, _ := priv[i].MarshalBinary()
+		privBytes, err := priv[i].MarshalBinary()
+		assert.NoError(t, err)
 		precomputes[i] = libunlynxshuffle.CreatePrecomputedRandomize(libunlynx.SuiTe.Point().Base(), groupPub, libunlynx.SuiTe.XOF(privBytes), 4, 10)
 	}
 	aggregateKey := groupPub
@@ -47,7 +48,8 @@ func TestShuffling(t *testing.T) {
 	_, _, tree := local.GenTree(nbrNodes, true)
 	defer local.CloseAll()
 
-	rootInstance, _ := local.CreateProtocol("ShufflingTest", tree)
+	rootInstance, err := local.CreateProtocol("ShufflingTest", tree)
+	assert.NoError(t, err)
 	protocol := rootInstance.(*protocolsunlynx.ShufflingProtocol)
 
 	//create data

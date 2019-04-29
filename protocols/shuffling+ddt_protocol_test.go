@@ -31,15 +31,18 @@ func TestShufflingPlusDDTProtocol(t *testing.T) {
 	shuffKey := tree.Roster.Aggregate.Clone()
 	for i := 1; i < len(tree.List()); i++ {
 		idx := tree.List()[i].RosterIndex
-		privBytes, _ := tree.Roster.List[idx].GetPrivate().MarshalBinary()
+		privBytes, err := tree.Roster.List[idx].GetPrivate().MarshalBinary()
+		assert.NoError(t, err)
 		precomputes[idx] = libunlynxshuffle.CreatePrecomputedRandomize(libunlynx.SuiTe.Point().Base(), shuffKey, libunlynx.SuiTe.XOF(privBytes), 4, 10)
 		shuffKey.Sub(shuffKey, tree.Roster.List[idx].Public)
 	}
 	idx := tree.List()[0].RosterIndex
-	privBytes, _ := tree.Roster.List[idx].GetPrivate().MarshalBinary()
+	privBytes, err := tree.Roster.List[idx].GetPrivate().MarshalBinary()
+	assert.NoError(t, err)
 	precomputes[0] = libunlynxshuffle.CreatePrecomputedRandomize(libunlynx.SuiTe.Point().Base(), shuffKey, libunlynx.SuiTe.XOF(privBytes), 4, 10)
 
-	rootInstance, _ := local.CreateProtocol("ShufflingPlusDDTTest", tree)
+	rootInstance, err := local.CreateProtocol("ShufflingPlusDDTTest", tree)
+	assert.NoError(t, err)
 	protocol := rootInstance.(*protocolsunlynx.ShufflingPlusDDTProtocol)
 
 	//create test data

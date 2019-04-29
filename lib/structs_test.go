@@ -143,7 +143,9 @@ func TestClientResponseDetConverter(t *testing.T) {
 	newCrd := libunlynx.FilteredResponseDet{}
 	err = newCrd.FromBytes(crb, acbLength, aabLength, dtbLength)
 	assert.NoError(t, err)
-	assert.Equal(t, grouping, libunlynx.UnKey(newCrd.DetTagGroupBy))
+	gkey, err := libunlynx.UnKey(newCrd.DetTagGroupBy)
+	assert.NoError(t, err)
+	assert.Equal(t, grouping, gkey)
 	assert.Equal(t, aggregating, libunlynx.DecryptIntVector(secKey, &newCrd.Fr.AggregatingAttributes))
 	assert.Equal(t, grouping, libunlynx.DecryptIntVector(secKey, &newCrd.Fr.GroupByEnc))
 }

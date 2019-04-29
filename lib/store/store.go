@@ -92,8 +92,7 @@ func (s *Store) InsertDpResponse(cr libunlynx.DpResponse, proofsB bool, groupBy,
 			s.DpResponsesAggr[GroupingKeyTuple{libunlynx.Key(clearGrp), libunlynx.Key(clearWhr)}] = mapValue
 
 			if proofsB {
-				publishedAggregationProof := libunlynx.PublishedSimpleAdditionProof{C1: value.AggregatingAttributes, C2: newResp.AggregatingAttributes, C1PlusC2: mapValue.AggregatingAttributes}
-				_ = publishedAggregationProof
+				_ = libunlynx.PublishedSimpleAdditionProof{C1: value.AggregatingAttributes, C2: newResp.AggregatingAttributes, C1PlusC2: mapValue.AggregatingAttributes}
 			}
 
 		} else {
