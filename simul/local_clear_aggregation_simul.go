@@ -2,8 +2,8 @@ package main
 
 import (
 	"github.com/BurntSushi/toml"
+	"github.com/lca1/unlynx/data"
 	"github.com/lca1/unlynx/protocols/utils"
-	"github.com/lca1/unlynx/services/default/data"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
 	"go.dedis.ch/onet/v3/simul/monitor"
@@ -69,16 +69,20 @@ func (sim *LocalClearAggregationSimulation) Run(config *onet.SimulationConfig) e
 			types[0] = int64(sim.NbrGroups)
 		}
 
-		testData := dataunlynx.GenerateData(1, int64(sim.NbrResponses), int64(sim.NbrResponses), int64(sim.NbrGroupAttributes), 0,
+		testData, err := dataunlynx.GenerateData(1, int64(sim.NbrResponses), int64(sim.NbrResponses), int64(sim.NbrGroupAttributes), 0,
 			int64(sim.NbrWhereAttributes), 0, int64(sim.NbrAggrAttributes), 0, types, true)
-
+		if err != nil {
+			return err
+		}
 		log.Lvl1("starting protocol with ", len(testData), " responses")
 
 		//protocol
 		root.ProtocolInstance().(*protocolsunlynxutils.LocalClearAggregationProtocol).TargetOfAggregation = testData["0"]
 
 		round := monitor.NewTimeMeasure("LocalClearAggregation(SIMULATION)")
-		root.Start()
+		if err := root.Start(); err != nil {
+			return err
+		}
 		results := <-root.ProtocolInstance().(*protocolsunlynxutils.LocalClearAggregationProtocol).FeedbackChannel
 		log.Lvl1("Number of aggregated lines (groups): ", len(results))
 

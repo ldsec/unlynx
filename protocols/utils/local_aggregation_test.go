@@ -1,16 +1,16 @@
 package protocolsunlynxutils_test
 
 import (
+	"testing"
+	"time"
+
 	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/lib/tools"
 	"github.com/lca1/unlynx/protocols"
 	"github.com/lca1/unlynx/protocols/utils"
 	"github.com/stretchr/testify/assert"
 	"go.dedis.ch/kyber/v3/util/random"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/network"
-	"testing"
-	"time"
 )
 
 func TestLocalAggregation(t *testing.T) {
@@ -34,22 +34,29 @@ func TestLocalAggregation(t *testing.T) {
 
 	// aggregation
 	detResponses := make([]libunlynx.FilteredResponseDet, 3)
-	detResponses[0] = libunlynx.FilteredResponseDet{Fr: libunlynx.FilteredResponse{GroupByEnc: cipherVect2, AggregatingAttributes: cipherVect}, DetTagGroupBy: protocolsunlynx.CipherVectorToDeterministicTag(cipherVect2, secKey, secKey, pubKey, true)}
-	detResponses[1] = libunlynx.FilteredResponseDet{Fr: libunlynx.FilteredResponse{GroupByEnc: cipherVect, AggregatingAttributes: cipherVect}, DetTagGroupBy: protocolsunlynx.CipherVectorToDeterministicTag(cipherVect, secKey, secKey, pubKey, true)}
-	detResponses[2] = libunlynx.FilteredResponseDet{Fr: libunlynx.FilteredResponse{GroupByEnc: cipherVect2, AggregatingAttributes: cipherVect}, DetTagGroupBy: protocolsunlynx.CipherVectorToDeterministicTag(cipherVect2, secKey, secKey, pubKey, true)}
+
+	dtgb, err := protocolsunlynx.CipherVectorToDeterministicTag(cipherVect2, secKey, secKey, pubKey, true)
+	detResponses[0] = libunlynx.FilteredResponseDet{Fr: libunlynx.FilteredResponse{GroupByEnc: cipherVect2, AggregatingAttributes: cipherVect}, DetTagGroupBy: dtgb}
+	dtgb, err = protocolsunlynx.CipherVectorToDeterministicTag(cipherVect, secKey, secKey, pubKey, true)
+	detResponses[1] = libunlynx.FilteredResponseDet{Fr: libunlynx.FilteredResponse{GroupByEnc: cipherVect, AggregatingAttributes: cipherVect}, DetTagGroupBy: dtgb}
+	dtgb, err = protocolsunlynx.CipherVectorToDeterministicTag(cipherVect2, secKey, secKey, pubKey, true)
+	detResponses[2] = libunlynx.FilteredResponseDet{Fr: libunlynx.FilteredResponse{GroupByEnc: cipherVect2, AggregatingAttributes: cipherVect}, DetTagGroupBy: dtgb}
 
 	comparisonMap := make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse)
 	for _, v := range detResponses {
-		libunlynxtools.AddInMap(comparisonMap, v.DetTagGroupBy, v.Fr)
+		libunlynx.AddInMap(comparisonMap, v.DetTagGroupBy, v.Fr)
 	}
 
 	protocol.TargetOfAggregation = detResponses
 	protocol.Proofs = true
 	feedback := protocol.FeedbackChannel
 
-	go protocol.Start()
+	go func() {
+		err := protocol.Start()
+		assert.NoError(t, err)
+	}()
 
-	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*5*2) * time.Millisecond
+	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*10) * time.Millisecond
 
 	select {
 	case results := <-feedback:

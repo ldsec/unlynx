@@ -1,16 +1,17 @@
 package protocolsunlynxutils_test
 
 import (
+	"testing"
+	"time"
+
+	"github.com/lca1/unlynx/data"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/store"
 	"github.com/lca1/unlynx/lib/tools"
 	"github.com/lca1/unlynx/protocols/utils"
-	"github.com/lca1/unlynx/services/default/data"
 	"github.com/stretchr/testify/assert"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/network"
-	"testing"
-	"time"
 )
 
 func TestLocalClearAggregation(t *testing.T) {
@@ -31,9 +32,12 @@ func TestLocalClearAggregation(t *testing.T) {
 	protocol.TargetOfAggregation = testData
 	feedback := protocol.FeedbackChannel
 
-	go protocol.Start()
+	go func() {
+		err := protocol.Start()
+		assert.NoError(t, err)
+	}()
 
-	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*5*2) * time.Millisecond
+	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*10) * time.Millisecond
 
 	select {
 	case results := <-feedback:

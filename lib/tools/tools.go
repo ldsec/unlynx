@@ -1,16 +1,16 @@
 package libunlynxtools
 
 import (
+	"encoding/binary"
 	"encoding/gob"
+	"errors"
 	"fmt"
-	"github.com/btcsuite/goleveldb/leveldb/errors"
-	"github.com/lca1/unlynx/lib"
-	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/onet/v3"
-	"go.dedis.ch/onet/v3/log"
 	"os"
 	"strconv"
 	"strings"
+
+	"go.dedis.ch/onet/v3"
+	"go.dedis.ch/onet/v3/log"
 )
 
 // SendISMOthers sends a message to all other services
@@ -32,14 +32,25 @@ func SendISMOthers(s *onet.ServiceProcessor, el *onet.Roster, msg interface{}) e
 	return err
 }
 
-// AddInMap permits to add a filtered response with its deterministic tag in a map
-func AddInMap(s map[libunlynx.GroupingKey]libunlynx.FilteredResponse, key libunlynx.GroupingKey, added libunlynx.FilteredResponse) {
-	if localResult, ok := s[key]; !ok {
-		s[key] = added
-	} else {
-		tmp := libunlynx.NewFilteredResponse(len(added.GroupByEnc), len(added.AggregatingAttributes))
-		s[key] = *tmp.Add(localResult, added)
+// UnsafeCastIntsToBytes casts a slice of ints to a slice of bytes
+func UnsafeCastIntsToBytes(ints []int) []byte {
+	bsFinal := make([]byte, 0)
+	for _, num := range ints {
+		buf := make([]byte, 4)
+		binary.BigEndian.PutUint32(buf, uint32(num))
+		bsFinal = append(bsFinal, buf...)
 	}
+	return bsFinal
+}
+
+// UnsafeCastBytesToInts casts a slice of bytes to a slice of ints
+func UnsafeCastBytesToInts(bytes []byte) []int {
+	intsFinal := make([]int, 0)
+	for i := 0; i < len(bytes); i += 4 {
+		x := binary.BigEndian.Uint32(bytes[i : i+4])
+		intsFinal = append(intsFinal, int(x))
+	}
+	return intsFinal
 }
 
 // Int64ArrayToString transforms an integer array into a string
@@ -66,7 +77,11 @@ func StringToInt64Array(s string) []int64 {
 	result := make([]int64, 0)
 	for _, elem := range container {
 		if elem != "" {
-			aux, _ := strconv.ParseInt(elem, 10, 64)
+			aux, err := strconv.ParseInt(elem, 10, 64)
+			if err != nil {
+				log.Error(err)
+				return make([]int64, 0)
+			}
 			result = append(result, aux)
 		}
 	}
@@ -94,136 +109,36 @@ func ConvertMapToData(data map[string]int64, first string, start int) []int64 {
 }
 
 // WriteToGobFile stores object (e.g. lib.Enc_CipherVectorScalar) in a gob file. Note that the object must contain serializable stuff, for example byte arrays.
-func WriteToGobFile(path string, object interface{}) {
+func WriteToGobFile(path string, object interface{}) error {
 	file, err := os.Create(path)
 	defer file.Close()
 
 	if err == nil {
 		encoder := gob.NewEncoder(file)
-		encoder.Encode(object)
+		if err := encoder.Encode(object); err != nil {
+			return err
+		}
 	} else {
-		log.Fatal("Could not write Gob file: ", err)
+		return errors.New("Could not write Gob file:" + err.Error())
 	}
+
+	return nil
 }
 
 // ReadFromGobFile reads data from gob file to the object
-func ReadFromGobFile(path string, object interface{}) {
+func ReadFromGobFile(path string, object interface{}) error {
 	file, err := os.Open(path)
 	defer file.Close()
 
 	if err == nil {
 		decoder := gob.NewDecoder(file)
 		err = decoder.Decode(object)
+		if err != nil {
+			return err
+		}
 	} else {
-		log.Fatal("Could not read Gob file: ", err)
-	}
-}
-
-// EncodeCipherVectorScalar converts the data inside lib.CipherVectorScalar to bytes and stores it in a new object to be saved in the gob file
-func EncodeCipherVectorScalar(cV []libunlynx.CipherVectorScalar) ([]libunlynx.CipherVectorScalarBytes, error) {
-	slice := make([]libunlynx.CipherVectorScalarBytes, 0)
-
-	for _, v := range cV {
-		eCV := libunlynx.CipherVectorScalarBytes{}
-
-		for _, el := range v.S {
-			scalar, err := el.MarshalBinary()
-
-			if err != nil {
-				return slice, err
-			}
-
-			eCV.S = append(eCV.S, scalar)
-		}
-
-		for _, el := range v.CipherV {
-			container := make([][]byte, 0)
-
-			c, err := el.C.MarshalBinary()
-
-			if err != nil {
-				return slice, err
-			}
-
-			k, err := el.K.MarshalBinary()
-
-			if err != nil {
-				return slice, err
-			}
-
-			container = append(container, k, c)
-
-			eCV.CipherV = append(eCV.CipherV, container)
-		}
-
-		slice = append(slice, eCV)
+		return errors.New("Could not read Gob file:" + err.Error())
 	}
 
-	return slice, nil
-}
-
-// DecodeCipherVectorScalar converts the byte data stored in the lib.Enc_CipherVectorScalar (which is read from the gob file) to a new lib.CipherVectorScalar
-func DecodeCipherVectorScalar(eCV []libunlynx.CipherVectorScalarBytes) ([]libunlynx.CipherVectorScalar, error) {
-	slice := make([]libunlynx.CipherVectorScalar, 0)
-
-	for _, v := range eCV {
-		cV := libunlynx.CipherVectorScalar{}
-
-		for _, el := range v.S {
-			s := libunlynx.SuiTe.Scalar()
-			if err := s.UnmarshalBinary(el); err != nil {
-				return slice, err
-			}
-
-			cV.S = append(cV.S, s)
-		}
-
-		for _, el := range v.CipherV {
-			k := libunlynx.SuiTe.Point()
-			if err := k.UnmarshalBinary(el[0]); err != nil {
-				return slice, err
-			}
-
-			c := libunlynx.SuiTe.Point()
-			if err := c.UnmarshalBinary(el[1]); err != nil {
-				return slice, err
-			}
-
-			cipher := libunlynx.CipherText{K: k, C: c}
-			cV.CipherV = append(cV.CipherV, cipher)
-
-		}
-
-		slice = append(slice, cV)
-	}
-
-	return slice, nil
-}
-
-// JoinAttributes joins clear and encrypted attributes into one encrypted container (CipherVector)
-func JoinAttributes(clear, enc map[string]int64, identifier string, encryptionKey kyber.Point) libunlynx.CipherVector {
-	clearContainer := ConvertMapToData(clear, identifier, 0)
-	encContainer := ConvertMapToData(enc, identifier, len(clear))
-
-	result := make(libunlynx.CipherVector, 0)
-
-	for i := 0; i < len(clearContainer); i++ {
-		result = append(result, *libunlynx.EncryptInt(encryptionKey, int64(clearContainer[i])))
-	}
-	for i := 0; i < len(encContainer); i++ {
-		result = append(result, *libunlynx.EncryptInt(encryptionKey, int64(encContainer[i])))
-	}
-
-	return result
-}
-
-// FromDpClearResponseToProcess converts a DpClearResponse struct to a ProcessResponse struct
-func FromDpClearResponseToProcess(dcr *libunlynx.DpClearResponse, encryptionKey kyber.Point) libunlynx.ProcessResponse {
-	result := libunlynx.ProcessResponse{}
-
-	result.AggregatingAttributes = JoinAttributes(dcr.AggregatingAttributesClear, dcr.AggregatingAttributesEnc, "s", encryptionKey)
-	result.WhereEnc = JoinAttributes(dcr.WhereClear, dcr.WhereEnc, "w", encryptionKey)
-	result.GroupByEnc = JoinAttributes(dcr.GroupByClear, dcr.GroupByEnc, "g", encryptionKey)
-
-	return result
+	return nil
 }

@@ -1,9 +1,12 @@
 package main
 
 import (
+	"errors"
 	"github.com/BurntSushi/toml"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/shuffle"
 	"github.com/lca1/unlynx/protocols"
+	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
 )
@@ -49,10 +52,12 @@ func (sim *ShufflingSimulation) Setup(dir string, hosts []string) (*onet.Simulat
 
 // Node registers a ShufflingSimul (with access to the ShufflingSimulation object) for every node
 func (sim *ShufflingSimulation) Node(config *onet.SimulationConfig) error {
-	config.Server.ProtocolRegister("ShufflingSimul",
+	if _, err := config.Server.ProtocolRegister("ShufflingSimul",
 		func(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 			return NewShufflingSimul(tni, sim)
-		})
+		}); err != nil {
+		return errors.New("Error while registering <ShufflingSimul>:" + err.Error())
+	}
 
 	return sim.SimulationBFTree.Node(config)
 }
@@ -72,8 +77,9 @@ func (sim *ShufflingSimulation) Run(config *onet.SimulationConfig) error {
 		//complete protocol time measurement
 		round := libunlynx.StartTimer("_Shuffling(SIMULATION)")
 
-		root.Start()
-
+		if err := root.Start(); err != nil {
+			return err
+		}
 		<-root.ProtocolInstance().(*protocolsunlynx.ShufflingProtocol).FeedbackChannel
 		libunlynx.EndTimer(round)
 	}
@@ -86,12 +92,20 @@ func NewShufflingSimul(tni *onet.TreeNodeInstance, sim *ShufflingSimulation) (on
 	protocol, err := protocolsunlynx.NewShufflingProtocol(tni)
 	pap := protocol.(*protocolsunlynx.ShufflingProtocol)
 	pap.Proofs = sim.Proofs
+	pap.ProofFunc = func(shuffleTarget, shuffledData []libunlynx.CipherVector, collectiveKey kyber.Point, beta [][]kyber.Scalar, pi []int) *libunlynxshuffle.PublishedShufflingProof {
+		proof, err := libunlynxshuffle.ShuffleProofCreation(shuffleTarget, shuffledData, libunlynx.SuiTe.Point().Base(), collectiveKey, beta, pi)
+		if err != nil {
+			log.Fatal(err)
+		}
+		return &proof
+	}
+
 	if sim.PreCompute {
 		b, err := tni.Private().MarshalBinary()
 		if err != nil {
 			panic("error unmarshiling scalar")
 		}
-		pap.Precomputed = libunlynx.CreatePrecomputedRandomize(libunlynx.SuiTe.Point().Base(), tni.Roster().Aggregate, libunlynx.SuiTe.XOF(b), int(sim.NbrGroupAttributes)+int(sim.NbrAggrAttributes), 10)
+		pap.Precomputed = libunlynxshuffle.CreatePrecomputedRandomize(libunlynx.SuiTe.Point().Base(), tni.Roster().Aggregate, libunlynx.SuiTe.XOF(b), int(sim.NbrGroupAttributes)+int(sim.NbrAggrAttributes), 10)
 	}
 	if tni.IsRoot() {
 		aggregateKey := pap.Roster().Aggregate
@@ -117,7 +131,7 @@ func NewShufflingSimul(tni *onet.TreeNodeInstance, sim *ShufflingSimulation) (on
 		}
 
 		targetToShuffle, _ := protocolsunlynx.ProcessResponseToMatrixCipherText(clientResponses)
-		pap.TargetOfShuffle = &targetToShuffle
+		pap.ShuffleTarget = &targetToShuffle
 	}
 
 	return pap, err

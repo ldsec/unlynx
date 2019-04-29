@@ -2,14 +2,13 @@
 package libunlynx
 
 import (
-	"crypto/cipher"
-	"go.dedis.ch/kyber/v3"
 	"strconv"
 	"strings"
-	"sync"
+
+	"go.dedis.ch/kyber/v3"
 )
 
-// Objects
+// Structs
 //______________________________________________________________________________________________________________________
 
 // SEPARATOR is a string used in the transformation of some struct in []byte
@@ -17,22 +16,6 @@ const SEPARATOR = "/-/"
 
 // GroupingKey is an ID corresponding to grouping attributes.
 type GroupingKey string
-
-// TempID unique ID used in related maps which is used when we split a map in two associated maps.
-type TempID uint64
-
-// CipherVectorScalar contains the elements forming precomputed values for shuffling, a CipherVector and the scalars
-// corresponding to each element
-type CipherVectorScalar struct {
-	CipherV CipherVector
-	S       []kyber.Scalar
-}
-
-// CipherVectorScalarBytes is a CipherVectorScalar in bytes
-type CipherVectorScalarBytes struct {
-	CipherV [][][]byte
-	S       [][]byte
-}
 
 // DpClearResponse represents a DP response when data is stored in clear at each server/hospital
 type DpClearResponse struct {
@@ -110,6 +93,105 @@ func NewFilteredResponse(grpEncSize, attrSize int) FilteredResponse {
 	return FilteredResponse{*NewCipherVector(grpEncSize), *NewCipherVector(attrSize)}
 }
 
+// Add permits to add to FilteredResponses
+func (cv *FilteredResponse) Add(cv1, cv2 FilteredResponse) *FilteredResponse {
+	cv.GroupByEnc = cv1.GroupByEnc
+	cv.AggregatingAttributes.Add(cv1.AggregatingAttributes, cv2.AggregatingAttributes)
+	return cv
+}
+
+// AddInMap permits to add a filtered response with its deterministic tag in a map
+func AddInMap(s map[GroupingKey]FilteredResponse, key GroupingKey, added FilteredResponse) {
+	if localResult, ok := s[key]; !ok {
+		s[key] = added
+	} else {
+		tmp := NewFilteredResponse(len(added.GroupByEnc), len(added.AggregatingAttributes))
+		s[key] = *tmp.Add(localResult, added)
+	}
+}
+
+// FormatAggregationProofs is used to format the data in a way that can be used to create aggregation proofs.
+//		Example:
+//			[
+//			GroupingKey = "a"
+//			Aggregating Attributes = [2, 3]
+//
+//			GroupingKey = "b"
+//			Aggregating Attributes = [4, 7]
+//
+//			GroupingKey = "a"
+//			Aggregating Attributes = [5, 1]
+//			]
+//
+//		----> return value
+//			[
+//			GroupingKey = "a"
+//			Data = [[2, 5], [3, 1]]
+//
+//			GroupingKey = "b"
+//			Data = [[4], [7]]
+//			]
+func (crd *FilteredResponseDet) FormatAggregationProofs(res map[GroupingKey][]CipherVector) {
+	if _, ok := res[crd.DetTagGroupBy]; ok {
+		for i, ct := range crd.Fr.AggregatingAttributes {
+			container := res[crd.DetTagGroupBy]
+			container[i] = append(container[i], ct)
+			res[crd.DetTagGroupBy] = container
+		}
+	} else { // if no elements are in the map yet
+		container := make([]CipherVector, len(crd.Fr.AggregatingAttributes))
+		for i, ct := range crd.Fr.AggregatingAttributes {
+			tmp := make(CipherVector, 0)
+			tmp = append(tmp, ct)
+			container[i] = tmp
+			res[crd.DetTagGroupBy] = container
+		}
+	}
+}
+
+// EncryptDpClearResponse encrypts a DP response
+func EncryptDpClearResponse(ccr DpClearResponse, encryptionKey kyber.Point, count bool) (DpResponseToSend, error) {
+	cr := DpResponseToSend{}
+	cr.GroupByClear = ccr.GroupByClear
+	cr.GroupByEnc = make(map[string][]byte, len(ccr.GroupByEnc))
+	for i, v := range ccr.GroupByEnc {
+		data, err := (*EncryptInt(encryptionKey, v)).ToBytes()
+		if err != nil {
+			return DpResponseToSend{}, err
+		}
+		cr.GroupByEnc[i] = data
+	}
+	//cr.GroupByEnc = *EncryptIntVector(encryptionKey, ccr.GroupByEnc)
+	cr.WhereClear = ccr.WhereClear
+	cr.WhereEnc = make(map[string][]byte, len(ccr.WhereEnc))
+	for i, v := range ccr.WhereEnc {
+		data, err := (*EncryptInt(encryptionKey, v)).ToBytes()
+		if err != nil {
+			return DpResponseToSend{}, err
+		}
+		cr.WhereEnc[i] = data
+	}
+	//cr.WhereEnc = *EncryptIntVector(encryptionKey, ccr.WhereEnc)
+	cr.AggregatingAttributesClear = ccr.AggregatingAttributesClear
+	cr.AggregatingAttributesEnc = make(map[string][]byte, len(ccr.AggregatingAttributesEnc))
+	for i, v := range ccr.AggregatingAttributesEnc {
+		data, err := (*EncryptInt(encryptionKey, v)).ToBytes()
+		if err != nil {
+			return DpResponseToSend{}, err
+		}
+		cr.AggregatingAttributesEnc[i] = data
+	}
+	if count {
+		data, err := (*EncryptInt(encryptionKey, int64(1))).ToBytes()
+		if err != nil {
+			return DpResponseToSend{}, err
+		}
+		cr.AggregatingAttributesEnc["count"] = data
+	}
+
+	return cr, nil
+}
+
 // GroupingKey
 //______________________________________________________________________________________________________________________
 
@@ -124,7 +206,7 @@ func Key(ga []int64) GroupingKey {
 }
 
 // UnKey permits to go from a tag  non-encrypted grouping attributes to grouping attributes
-func UnKey(gk GroupingKey) []int64 {
+func UnKey(gk GroupingKey) ([]int64, error) {
 	tab := make([]int64, 0)
 	count := 0
 	nbrString := make([]string, 1)
@@ -132,162 +214,47 @@ func UnKey(gk GroupingKey) []int64 {
 		if a != ',' {
 			nbrString[0] = string(a)
 		} else {
-			tmp, _ := strconv.Atoi(strings.Join(nbrString, ""))
+			tmp, err := strconv.Atoi(strings.Join(nbrString, ""))
+			if err != nil {
+				return nil, err
+			}
 			tab = append(tab, int64(tmp))
 			nbrString = make([]string, 1)
 			count++
 		}
 	}
-	return tab
+	return tab, nil
 }
 
-// ClientResponse
-//______________________________________________________________________________________________________________________
-
-// Add permits to add to FilteredResponses
-func (cv *FilteredResponse) Add(cv1, cv2 FilteredResponse) *FilteredResponse {
-	cv.GroupByEnc = cv1.GroupByEnc
-	cv.AggregatingAttributes.Add(cv1.AggregatingAttributes, cv2.AggregatingAttributes)
-	return cv
-}
-
-// CipherVectorTag computes all the e for a process response based on a seed h
-func (cv *CipherVector) CipherVectorTag(h kyber.Point) []kyber.Scalar {
-	length := len(*cv)
-	es := make([]kyber.Scalar, length)
-
-	seed, _ := h.MarshalBinary()
-	var wg sync.WaitGroup
-	if PARALLELIZE {
-		for i := 0; i < length; i = i + VPARALLELIZE {
-			wg.Add(1)
-			go func(i int) {
-				defer wg.Done()
-				for j := 0; j < VPARALLELIZE && (j+i < length); j++ {
-					es[i+j] = ComputeE(i+j, *cv, seed)
-				}
-
-			}(i)
-
-		}
-		wg.Wait()
-	} else {
-		for i := 0; i < length; i++ {
-			//+detAttrLen
-			es[i] = ComputeE(i, *cv, seed)
-		}
-
-	}
-	return es
-}
-
-// ComputeE computes e used in a shuffle proof. Computation based on a public seed.
-func ComputeE(index int, cv CipherVector, seed []byte) kyber.Scalar {
-	var dataC []byte
-	var dataK []byte
-
-	randomCipher := SuiTe.XOF(seed)
-
-	dataC, _ = cv[index].C.MarshalBinary()
-	dataK, _ = cv[index].K.MarshalBinary()
-
-	randomCipher.Write(dataC)
-	randomCipher.Write(dataK)
-
-	return SuiTe.Scalar().Pick(randomCipher)
-}
-
-// DpClearResponse
-//______________________________________________________________________________________________________________________
-
-// EncryptDpClearResponse encrypts a DP response
-func EncryptDpClearResponse(ccr DpClearResponse, encryptionKey kyber.Point, count bool) DpResponseToSend {
-	cr := DpResponseToSend{}
-	cr.GroupByClear = ccr.GroupByClear
-	cr.GroupByEnc = make(map[string][]byte, len(ccr.GroupByEnc))
-	for i, v := range ccr.GroupByEnc {
-		cr.GroupByEnc[i] = (*EncryptInt(encryptionKey, v)).ToBytes()
-	}
-	//cr.GroupByEnc = *EncryptIntVector(encryptionKey, ccr.GroupByEnc)
-	cr.WhereClear = ccr.WhereClear
-	cr.WhereEnc = make(map[string][]byte, len(ccr.WhereEnc))
-	for i, v := range ccr.WhereEnc {
-		cr.WhereEnc[i] = (*EncryptInt(encryptionKey, v)).ToBytes()
-	}
-	//cr.WhereEnc = *EncryptIntVector(encryptionKey, ccr.WhereEnc)
-	cr.AggregatingAttributesClear = ccr.AggregatingAttributesClear
-	cr.AggregatingAttributesEnc = make(map[string][]byte, len(ccr.AggregatingAttributesEnc))
-	for i, v := range ccr.AggregatingAttributesEnc {
-		cr.AggregatingAttributesEnc[i] = (*EncryptInt(encryptionKey, v)).ToBytes()
-	}
-	if count {
-		cr.AggregatingAttributesEnc["count"] = (*EncryptInt(encryptionKey, int64(1))).ToBytes()
-	}
-
-	return cr
-}
-
-// Other random stuff!! :P
-//______________________________________________________________________________________________________________________
-
-// CreatePrecomputedRandomize creates precomputed values for shuffling using public key and size parameters
-func CreatePrecomputedRandomize(g, h kyber.Point, rand cipher.Stream, lineSize, nbrLines int) []CipherVectorScalar {
-	result := make([]CipherVectorScalar, nbrLines)
-	wg := StartParallelize(len(result))
-	var mutex sync.Mutex
-	for i := range result {
-		result[i].CipherV = make(CipherVector, lineSize)
-		result[i].S = make([]kyber.Scalar, lineSize)
-		if PARALLELIZE {
-			go func(i int) {
-				defer (*wg).Done()
-
-				for w := range result[i].CipherV {
-					mutex.Lock()
-					tmp := SuiTe.Scalar().Pick(rand)
-					mutex.Unlock()
-
-					result[i].S[w] = tmp
-					result[i].CipherV[w].K = SuiTe.Point().Mul(tmp, g)
-					result[i].CipherV[w].C = SuiTe.Point().Mul(tmp, h)
-				}
-
-			}(i)
-		} else {
-			for w := range result[i].CipherV {
-				tmp := SuiTe.Scalar().Pick(rand)
-				result[i].S[w] = tmp
-				result[i].CipherV[w].K = SuiTe.Point().Mul(tmp, g)
-				result[i].CipherV[w].C = SuiTe.Point().Mul(tmp, h)
-			}
-		}
-	}
-	EndParallelize(wg)
-	return result
-}
-
-// Conversion
+// Marshal
 //______________________________________________________________________________________________________________________
 
 // ToBytes converts a Filtered to a byte array
-func (cv *FilteredResponse) ToBytes() ([]byte, int, int) {
+func (cv *FilteredResponse) ToBytes() ([]byte, int, int, error) {
 	b := make([]byte, 0)
 	pgaeb := make([]byte, 0)
 	pgaebLength := 0
 
-	aab, aabLength := (*cv).AggregatingAttributes.ToBytes()
+	aab, aabLength, err := (*cv).AggregatingAttributes.ToBytes()
+	if err != nil {
+		return nil, 0, 0, err
+	}
+
 	if (*cv).GroupByEnc != nil {
-		pgaeb, pgaebLength = (*cv).GroupByEnc.ToBytes()
+		pgaeb, pgaebLength, err = (*cv).GroupByEnc.ToBytes()
+		if err != nil {
+			return nil, 0, 0, err
+		}
 	}
 
 	b = append(b, aab...)
 	b = append(b, pgaeb...)
 
-	return b, pgaebLength, aabLength
+	return b, pgaebLength, aabLength, nil
 }
 
 // FromBytes converts a byte array to a FilteredResponse. Note that you need to create the (empty) object beforehand.
-func (cv *FilteredResponse) FromBytes(data []byte, aabLength, pgaebLength int) {
+func (cv *FilteredResponse) FromBytes(data []byte, aabLength, pgaebLength int) error {
 	(*cv).AggregatingAttributes = make(CipherVector, aabLength)
 	(*cv).GroupByEnc = make(CipherVector, pgaebLength)
 
@@ -298,24 +265,34 @@ func (cv *FilteredResponse) FromBytes(data []byte, aabLength, pgaebLength int) {
 	aab := data[:aabByteLength]
 	pgaeb := data[aabByteLength : aabByteLength+pgaebByteLength]
 
-	(*cv).AggregatingAttributes.FromBytes(aab, aabLength)
-	(*cv).GroupByEnc.FromBytes(pgaeb, pgaebLength)
+	err := (*cv).AggregatingAttributes.FromBytes(aab, aabLength)
+	if err != nil {
+		return err
+	}
+	err = (*cv).GroupByEnc.FromBytes(pgaeb, pgaebLength)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // ToBytes converts a FilteredResponseDet to a byte array
-func (crd *FilteredResponseDet) ToBytes() ([]byte, int, int, int) {
-	b, gacbLength, aabLength := (*crd).Fr.ToBytes()
+func (crd *FilteredResponseDet) ToBytes() ([]byte, int, int, int, error) {
+	b, gacbLength, aabLength, err := (*crd).Fr.ToBytes()
+	if err != nil {
+		return nil, 0, 0, 0, err
+	}
 
 	dtbgb := []byte((*crd).DetTagGroupBy)
 	dtbgbLength := len(dtbgb)
 
 	b = append(b, dtbgb...)
 
-	return b, gacbLength, aabLength, dtbgbLength
+	return b, gacbLength, aabLength, dtbgbLength, nil
 }
 
 // FromBytes converts a byte array to a FilteredResponseDet. Note that you need to create the (empty) object beforehand.
-func (crd *FilteredResponseDet) FromBytes(data []byte, gacbLength, aabLength, dtbgbLength int) {
+func (crd *FilteredResponseDet) FromBytes(data []byte, gacbLength, aabLength, dtbgbLength int) error {
 	(*crd).Fr.AggregatingAttributes = make(CipherVector, aabLength)
 	(*crd).Fr.GroupByEnc = make(CipherVector, gacbLength)
 
@@ -328,31 +305,49 @@ func (crd *FilteredResponseDet) FromBytes(data []byte, gacbLength, aabLength, dt
 	dtbgb := data[gacbByteLength+aabByteLength : gacbByteLength+aabByteLength+dtbgbLength]
 
 	(*crd).DetTagGroupBy = GroupingKey(string(dtbgb))
-	(*crd).Fr.AggregatingAttributes.FromBytes(aab, aabLength)
-	(*crd).Fr.GroupByEnc.FromBytes(gacb, gacbLength)
+	err := (*crd).Fr.AggregatingAttributes.FromBytes(aab, aabLength)
+	if err != nil {
+		return err
+	}
+	err = (*crd).Fr.GroupByEnc.FromBytes(gacb, gacbLength)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // ToBytes converts a ProcessResponse to a byte array
-func (cv *ProcessResponse) ToBytes() ([]byte, int, int, int) {
+func (cv *ProcessResponse) ToBytes() ([]byte, int, int, int, error) {
 	b := make([]byte, 0)
 	pgaeb := make([]byte, 0)
 	pgaebLength := 0
 
-	gacb, gacbLength := (*cv).GroupByEnc.ToBytes()
-	aab, aabLength := (*cv).AggregatingAttributes.ToBytes()
+	gacb, gacbLength, err := (*cv).GroupByEnc.ToBytes()
+	if err != nil {
+		return nil, 0, 0, 0, err
+	}
+
+	aab, aabLength, err := (*cv).AggregatingAttributes.ToBytes()
+	if err != nil {
+		return nil, 0, 0, 0, err
+	}
+
 	if (*cv).WhereEnc != nil {
-		pgaeb, pgaebLength = (*cv).WhereEnc.ToBytes()
+		pgaeb, pgaebLength, err = (*cv).WhereEnc.ToBytes()
+		if err != nil {
+			return nil, 0, 0, 0, err
+		}
 	}
 
 	b = append(b, gacb...)
 	b = append(b, aab...)
 	b = append(b, pgaeb...)
 
-	return b, gacbLength, aabLength, pgaebLength
+	return b, gacbLength, aabLength, pgaebLength, nil
 }
 
 // FromBytes converts a byte array to a ProcessResponse. Note that you need to create the (empty) object beforehand.
-func (cv *ProcessResponse) FromBytes(data []byte, gacbLength, aabLength, pgaebLength int) {
+func (cv *ProcessResponse) FromBytes(data []byte, gacbLength, aabLength, pgaebLength int) error {
 	(*cv).AggregatingAttributes = make(CipherVector, aabLength)
 	(*cv).WhereEnc = make(CipherVector, pgaebLength)
 	(*cv).GroupByEnc = make(CipherVector, gacbLength)
@@ -366,14 +361,27 @@ func (cv *ProcessResponse) FromBytes(data []byte, gacbLength, aabLength, pgaebLe
 	aab := data[gacbByteLength : gacbByteLength+aabByteLength]
 	pgaeb := data[gacbByteLength+aabByteLength : gacbByteLength+aabByteLength+pgaebByteLength]
 
-	(*cv).GroupByEnc.FromBytes(gacb, gacbLength)
-	(*cv).AggregatingAttributes.FromBytes(aab, aabLength)
-	(*cv).WhereEnc.FromBytes(pgaeb, pgaebLength)
+	err := (*cv).GroupByEnc.FromBytes(gacb, gacbLength)
+	if err != nil {
+		return err
+	}
+	err = (*cv).AggregatingAttributes.FromBytes(aab, aabLength)
+	if err != nil {
+		return err
+	}
+	err = (*cv).WhereEnc.FromBytes(pgaeb, pgaebLength)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // ToBytes converts a ProcessResponseDet to a byte array
-func (crd *ProcessResponseDet) ToBytes() ([]byte, int, int, int, int, int) {
-	b, gacbLength, aabLength, pgaebLength := (*crd).PR.ToBytes()
+func (crd *ProcessResponseDet) ToBytes() ([]byte, int, int, int, int, int, error) {
+	b, gacbLength, aabLength, pgaebLength, err := (*crd).PR.ToBytes()
+	if err != nil {
+		return nil, 0, 0, 0, 0, 0, err
+	}
 
 	dtbgb := []byte((*crd).DetTagGroupBy)
 	dtbgbLength := len(dtbgb)
@@ -386,11 +394,11 @@ func (crd *ProcessResponseDet) ToBytes() ([]byte, int, int, int, int, int) {
 
 	b = append(b, dtbgb...)
 	b = append(b, dtbw...)
-	return b, gacbLength, aabLength, pgaebLength, dtbgbLength, dtbwLength
+	return b, gacbLength, aabLength, pgaebLength, dtbgbLength, dtbwLength, nil
 }
 
 // FromBytes converts a byte array to a ProcessResponseDet. Note that you need to create the (empty) object beforehand.
-func (crd *ProcessResponseDet) FromBytes(data []byte, gacbLength, aabLength, pgaebLength, dtbgbLength, dtbwLength int) {
+func (crd *ProcessResponseDet) FromBytes(data []byte, gacbLength, aabLength, pgaebLength, dtbgbLength, dtbwLength int) error {
 	(*crd).PR.AggregatingAttributes = make(CipherVector, aabLength)
 	(*crd).PR.WhereEnc = make(CipherVector, pgaebLength)
 	(*crd).PR.GroupByEnc = make(CipherVector, gacbLength)
@@ -411,17 +419,30 @@ func (crd *ProcessResponseDet) FromBytes(data []byte, gacbLength, aabLength, pga
 	for _, key := range strings.Split(string(dtbw), SEPARATOR) {
 		(*crd).DetTagWhere = append((*crd).DetTagWhere, GroupingKey(key))
 	}
-	(*crd).PR.AggregatingAttributes.FromBytes(aab, aabLength)
-	(*crd).PR.WhereEnc.FromBytes(pgaeb, pgaebLength)
-	(*crd).PR.GroupByEnc.FromBytes(gacb, gacbLength)
-
+	err := (*crd).PR.AggregatingAttributes.FromBytes(aab, aabLength)
+	if err != nil {
+		return err
+	}
+	err = (*crd).PR.WhereEnc.FromBytes(pgaeb, pgaebLength)
+	if err != nil {
+		return err
+	}
+	err = (*crd).PR.GroupByEnc.FromBytes(gacb, gacbLength)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // FromDpResponseToSend converts a DpResponseToSend to a DpResponse
-func (dr *DpResponse) FromDpResponseToSend(dprts DpResponseToSend) {
+func (dr *DpResponse) FromDpResponseToSend(dprts DpResponseToSend) error {
+	var err error
 	dr.GroupByClear = dprts.GroupByClear
 	if len(dprts.GroupByEnc) != 0 {
-		dr.GroupByEnc = MapBytesToMapCipherText(dprts.GroupByEnc)
+		dr.GroupByEnc, err = MapBytesToMapCipherText(dprts.GroupByEnc)
+		if err != nil {
+			return err
+		}
 	}
 
 	dr.WhereClear = dprts.WhereClear
@@ -429,7 +450,10 @@ func (dr *DpResponse) FromDpResponseToSend(dprts DpResponseToSend) {
 		dr.WhereEnc = make(map[string]CipherText)
 		for i, v := range dprts.WhereEnc {
 			ct := CipherText{}
-			ct.FromBytes(v)
+			err = ct.FromBytes(v)
+			if err != nil {
+				return err
+			}
 			dr.WhereEnc[i] = ct
 		}
 	}
@@ -438,23 +462,29 @@ func (dr *DpResponse) FromDpResponseToSend(dprts DpResponseToSend) {
 		dr.AggregatingAttributesEnc = make(map[string]CipherText)
 		for i, v := range dprts.AggregatingAttributesEnc {
 			ct := CipherText{}
-			ct.FromBytes(v)
+			err = ct.FromBytes(v)
+			if err != nil {
+				return err
+			}
 			dr.AggregatingAttributesEnc[i] = ct
 		}
 	}
+	return nil
 }
 
 // MapBytesToMapCipherText transform objects in a map from bytes to ciphertexts
-func MapBytesToMapCipherText(mapBytes map[string][]byte) map[string]CipherText {
+func MapBytesToMapCipherText(mapBytes map[string][]byte) (map[string]CipherText, error) {
 	result := make(map[string]CipherText)
 	if len(mapBytes) != 0 {
 		for i, v := range mapBytes {
 			ct := CipherText{}
-			ct.FromBytes(v)
+			err := ct.FromBytes(v)
+			if err != nil {
+				return nil, err
+			}
 			result[i] = ct
 		}
-		return result
+		return result, nil
 	}
-
-	return nil
+	return nil, nil
 }

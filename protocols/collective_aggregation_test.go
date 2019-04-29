@@ -1,17 +1,17 @@
 package protocolsunlynx_test
 
 import (
-	"reflect"
-	"testing"
-	"time"
-
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/aggregation"
 	"github.com/lca1/unlynx/protocols"
 	"github.com/stretchr/testify/assert"
 	"go.dedis.ch/kyber/v3/util/random"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
 	"go.dedis.ch/onet/v3/network"
+	"reflect"
+	"testing"
+	"time"
 )
 
 var clientPrivate = libunlynx.SuiTe.Scalar().Pick(random.New())
@@ -27,19 +27,23 @@ func TestCollectiveAggregationGroup(t *testing.T) {
 	local := onet.NewLocalTest(libunlynx.SuiTe)
 
 	// You must register this protocol before creating the servers
-	onet.GlobalProtocolRegister("CollectiveAggregationTestGroup", NewCollectiveAggregationTestGroups)
+	_, err := onet.GlobalProtocolRegister("CollectiveAggregationTestGroup", NewCollectiveAggregationTestGroups)
+	assert.NoError(t, err, "Error registering <CollectiveAggregationTestGroup>")
+
 	_, _, tree := local.GenTree(10, true)
 	defer local.CloseAll()
 
 	p, err := local.CreateProtocol("CollectiveAggregationTestGroup", tree)
-	if err != nil {
-		t.Fatal("Couldn't start protocol:", err)
-	}
+	assert.NoError(t, err)
+
 	protocol := p.(*protocolsunlynx.CollectiveAggregationProtocol)
 
 	//run protocol
-	go protocol.Start()
-	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*5*2) * time.Millisecond
+	go func() {
+		err := protocol.Start()
+		assert.NoError(t, err)
+	}()
+	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*10) * time.Millisecond
 
 	feedback := protocol.FeedbackChannel
 
@@ -64,8 +68,6 @@ func TestCollectiveAggregationGroup(t *testing.T) {
 		for k, v1 := range expectedGroups {
 			if v2, ok := encryptedResult.GroupedData[k]; ok {
 				assert.True(t, ok)
-				_ = v1
-				_ = v2
 				assert.True(t, reflect.DeepEqual(v1, libunlynx.DecryptIntVector(clientPrivate, &v2.GroupByEnc)))
 				delete(encryptedResult.GroupedData, k)
 			}
@@ -110,19 +112,23 @@ func TestCollectiveAggregationSimple(t *testing.T) {
 	local := onet.NewLocalTest(libunlynx.SuiTe)
 
 	// You must register this protocol before creating the servers
-	onet.GlobalProtocolRegister("CollectiveAggregationTestSimple", NewCollectiveAggregationTestSimple)
+	_, err := onet.GlobalProtocolRegister("CollectiveAggregationTestSimple", NewCollectiveAggregationTestSimple)
+	assert.NoError(t, err, "Error registering <CollectiveAggregationTestSimple>:")
+
 	_, _, tree := local.GenTree(10, true)
 	defer local.CloseAll()
 
 	p, err := local.CreateProtocol("CollectiveAggregationTestSimple", tree)
-	if err != nil {
-		t.Fatal("Couldn't start protocol:", err)
-	}
+	assert.NoError(t, err)
+
 	protocol := p.(*protocolsunlynx.CollectiveAggregationProtocol)
 
 	//run protocol
-	go protocol.Start()
-	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*5*2) * time.Millisecond
+	go func() {
+		err := protocol.Start()
+		assert.NoError(t, err)
+	}()
+	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*10) * time.Millisecond
 
 	feedback := protocol.FeedbackChannel
 
@@ -168,6 +174,11 @@ func NewCollectiveAggregationTestSimple(tni *onet.TreeNodeInstance) (onet.Protoc
 
 	protocol.SimpleData = &simpleSlice
 	protocol.GroupedData = nil
+	protocol.Proofs = true
+	protocol.ProofFunc = func(data []libunlynx.CipherVector, res libunlynx.CipherVector) *libunlynxaggr.PublishedAggregationListProof {
+		proof := libunlynxaggr.AggregationListProofCreation(data, res)
+		return &proof
+	}
 
 	return protocol, err
 }

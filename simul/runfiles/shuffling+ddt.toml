@@ -1,0 +1,11 @@
+Simulation = "ShufflingPlusDDT"
+Servers = 3
+Bf = 2
+Suite = "Ed25519"
+Rounds = 1
+RunWait = "24h"
+Bandwidth = 100
+Delay = 20
+
+Hosts, NbrResponses, Proofs, PreCompute
+3, 20, true, true

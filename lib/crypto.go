@@ -3,13 +3,16 @@ package libunlynx
 import (
 	"encoding"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"math/big"
 	"strings"
 	"sync"
 
 	"github.com/fanliao/go-concurrentMap"
+	"github.com/lca1/unlynx/lib/tools"
 	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/util/key"
 	"go.dedis.ch/kyber/v3/util/random"
 	"go.dedis.ch/onet/v3/log"
 )
@@ -18,11 +21,17 @@ import (
 const MaxHomomorphicInt int64 = 100000
 
 // PointToInt creates a map between EC points and integers.
-//var PointToInt = make(map[string]int64, MaxHomomorphicInt)
 var PointToInt = concurrent.NewConcurrentMap()
 var currentGreatestM kyber.Point
 var currentGreatestInt int64
 var mutex = sync.Mutex{}
+
+// PublishedSimpleAdditionProof contains the two added ciphervectors and the resulting ciphervector
+type PublishedSimpleAdditionProof struct {
+	C1       CipherVector
+	C2       CipherVector
+	C1PlusC2 CipherVector
+}
 
 // CipherText is an ElGamal encrypted point.
 type CipherText struct {
@@ -49,10 +58,12 @@ func NewCipherText() *CipherText {
 }
 
 // NewCipherTextFromBase64 creates a ciphertext of null elements.
-func NewCipherTextFromBase64(b64Encoded string) *CipherText {
+func NewCipherTextFromBase64(b64Encoded string) (*CipherText, error) {
 	cipherText := &CipherText{K: SuiTe.Point().Null(), C: SuiTe.Point().Null()}
-	(*cipherText).Deserialize(b64Encoded)
-	return cipherText
+	if err := (*cipherText).Deserialize(b64Encoded); err != nil {
+		return nil, err
+	}
+	return cipherText, nil
 }
 
 // NewCipherVector creates a ciphervector of null elements.
@@ -79,23 +90,19 @@ func NewDeterministicCipherVector(length int) *DeterministCipherVector {
 	return &dcv
 }
 
-// Key Pairs (mostly used in tests)
+// Key Pairs
 //----------------------------------------------------------------------------------------------------------------------
 
-// GenKey permits to generate a public/private key pairs.
-func GenKey() (secKey kyber.Scalar, pubKey kyber.Point) {
-	secKey = SuiTe.Scalar().Pick(random.New())
-	pubKey = SuiTe.Point().Mul(secKey, SuiTe.Point().Base())
-	return
-}
-
-// GenKeys permits to generate ElGamal public/private key pairs.
+// GenKeys generates ElGamal public/private key pairs.
 func GenKeys(n int) (kyber.Point, []kyber.Scalar, []kyber.Point) {
 	priv := make([]kyber.Scalar, n)
 	pub := make([]kyber.Point, n)
+
 	group := SuiTe.Point().Null()
 	for i := 0; i < n; i++ {
-		priv[i], pub[i] = GenKey()
+		keys := key.NewKeyPair(SuiTe)
+		pub[i] = keys.Public
+		priv[i] = keys.Private
 		group.Add(group, pub[i])
 	}
 	return group, priv, pub
@@ -164,23 +171,19 @@ func EncryptScalar(pubkey kyber.Point, scalar kyber.Scalar) *CipherText {
 func EncryptIntVector(pubkey kyber.Point, intArray []int64) *CipherVector {
 	var wg sync.WaitGroup
 	cv := make(CipherVector, len(intArray))
-	if PARALLELIZE {
-		for i := 0; i < len(intArray); i = i + VPARALLELIZE {
-			wg.Add(1)
-			go func(i int) {
-				for j := 0; j < VPARALLELIZE && (j+i < len(intArray)); j++ {
-					cv[j+i] = *EncryptInt(pubkey, intArray[j+i])
-				}
-				defer wg.Done()
-			}(i)
 
-		}
-		wg.Wait()
-	} else {
-		for i, n := range intArray {
-			cv[i] = *EncryptInt(pubkey, n)
-		}
+	for i := 0; i < len(intArray); i = i + VPARALLELIZE {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			for j := 0; j < VPARALLELIZE && (j+i < len(intArray)); j++ {
+				cv[j+i] = *EncryptInt(pubkey, intArray[j+i])
+			}
+		}(i)
+
 	}
+	wg.Wait()
+
 	return &cv
 }
 
@@ -189,27 +192,20 @@ func EncryptIntVectorGetRs(pubkey kyber.Point, intArray []int64) (*CipherVector,
 	var wg sync.WaitGroup
 	cv := make(CipherVector, len(intArray))
 	rs := make([]kyber.Scalar, len(intArray))
-	if PARALLELIZE {
-		for i := 0; i < len(intArray); i = i + VPARALLELIZE {
-			wg.Add(1)
-			go func(i int) {
-				for j := 0; j < VPARALLELIZE && (j+i < len(intArray)); j++ {
-					tmpCv, tmpR := EncryptIntGetR(pubkey, intArray[j+i])
-					cv[j+i] = *tmpCv
-					rs[j+i] = tmpR
-				}
-				defer wg.Done()
-			}(i)
 
-		}
-		wg.Wait()
-	} else {
-		for i, n := range intArray {
-			tmpCv, tmpR := EncryptIntGetR(pubkey, n)
-			cv[i] = *tmpCv
-			rs[i] = tmpR
-		}
+	for i := 0; i < len(intArray); i = i + VPARALLELIZE {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			for j := 0; j < VPARALLELIZE && (j+i < len(intArray)); j++ {
+				tmpCv, tmpR := EncryptIntGetR(pubkey, intArray[j+i])
+				cv[j+i] = *tmpCv
+				rs[j+i] = tmpR
+			}
+		}(i)
+
 	}
+	wg.Wait()
 
 	return &cv, rs
 }
@@ -218,23 +214,18 @@ func EncryptIntVectorGetRs(pubkey kyber.Point, intArray []int64) (*CipherVector,
 func EncryptScalarVector(pubkey kyber.Point, intArray []kyber.Scalar) *CipherVector {
 	var wg sync.WaitGroup
 	cv := make(CipherVector, len(intArray))
-	if PARALLELIZE {
-		for i := 0; i < len(intArray); i = i + VPARALLELIZE {
-			wg.Add(1)
-			go func(i int) {
-				for j := 0; j < VPARALLELIZE && (j+i < len(intArray)); j++ {
-					cv[j+i] = *EncryptScalar(pubkey, intArray[j+i])
-				}
-				defer wg.Done()
-			}(i)
 
-		}
-		wg.Wait()
-	} else {
-		for i, n := range intArray {
-			cv[i] = *EncryptScalar(pubkey, n)
-		}
+	for i := 0; i < len(intArray); i = i + VPARALLELIZE {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			for j := 0; j < VPARALLELIZE && (j+i < len(intArray)); j++ {
+				cv[j+i] = *EncryptScalar(pubkey, intArray[j+i])
+			}
+		}(i)
+
 	}
+	wg.Wait()
 
 	return &cv
 }
@@ -257,13 +248,21 @@ func decryptPoint(prikey kyber.Scalar, c CipherText) kyber.Point {
 // DecryptInt decrypts an integer from an ElGamal cipher text where integer are encoded in the exponent.
 func DecryptInt(prikey kyber.Scalar, cipher CipherText) int64 {
 	M := decryptPoint(prikey, cipher)
-	return discreteLog(M, false)
+	v, err := discreteLog(M, false)
+	if err != nil {
+		return 0
+	}
+	return v
 }
 
 // DecryptIntWithNeg decrypts an integer from an ElGamal cipher text where integer are encoded in the exponent.
 func DecryptIntWithNeg(prikey kyber.Scalar, cipher CipherText) int64 {
 	M := decryptPoint(prikey, cipher)
-	return discreteLog(M, true)
+	v, err := discreteLog(M, true)
+	if err != nil {
+		return 0
+	}
+	return v
 }
 
 // DecryptIntVector decrypts a cipherVector.
@@ -304,7 +303,7 @@ func DecryptCheckZeroVector(prikey kyber.Scalar, cipherVector *CipherVector) []i
 }
 
 // Brute-Forces the discrete log for integer decoding.
-func discreteLog(P kyber.Point, checkNeg bool) int64 {
+func discreteLog(P kyber.Point, checkNeg bool) (int64, error) {
 	B := SuiTe.Point().Base()
 
 	//check if the point is already in the table
@@ -312,7 +311,7 @@ func discreteLog(P kyber.Point, checkNeg bool) int64 {
 	decrypted, ok := PointToInt.Get(P.String())
 	if ok == nil && decrypted != nil {
 		mutex.Unlock()
-		return decrypted.(int64)
+		return decrypted.(int64), nil
 	}
 
 	//otherwise, we complete/create the table while decrypting
@@ -336,11 +335,15 @@ func discreteLog(P kyber.Point, checkNeg bool) int64 {
 		start = false
 
 		guessInt = i
-		PointToInt.Put(guess.String(), guessInt)
+		if _, err := PointToInt.Put(guess.String(), guessInt); err != nil {
+			return -1, err
+		}
 		if checkNeg {
 			guessIntMinus = -guessInt
 			guessNeg = SuiTe.Point().Mul(SuiTe.Scalar().SetInt64(guessIntMinus), B)
-			PointToInt.Put(guessNeg.String(), guessIntMinus)
+			if _, err := PointToInt.Put(guessNeg.String(), guessIntMinus); err != nil {
+				return -1, err
+			}
 
 			if guessNeg.Equal(P) {
 				foundNeg = true
@@ -355,107 +358,23 @@ func discreteLog(P kyber.Point, checkNeg bool) int64 {
 	mutex.Unlock()
 
 	if !foundPos && !foundNeg {
-		log.LLvl1("out of bound encryption, bound is ", MaxHomomorphicInt)
-		return 0
+		log.Error("out of bound encryption, bound is ", MaxHomomorphicInt)
+		return 0, nil
 	}
 
 	if foundNeg {
-		return guessIntMinus
+		return guessIntMinus, nil
 	}
-	return guessInt
-
+	return guessInt, nil
 }
 
-// DeterministicTagging is a distributed deterministic Tagging switching, removes server contribution and multiplies
-func (c *CipherText) DeterministicTagging(gc *CipherText, private, secretContrib kyber.Scalar) {
-	c.K = SuiTe.Point().Mul(secretContrib, gc.K)
-
-	contrib := SuiTe.Point().Mul(private, gc.K)
-	c.C = SuiTe.Point().Sub(gc.C, contrib)
-	c.C = SuiTe.Point().Mul(secretContrib, c.C)
+// CreateDecryptionTable generated the lookup table for decryption of all the integers in [-limit, limit]
+func CreateDecryptionTable(limit int64, pubKey kyber.Point, secKey kyber.Scalar) {
+	dummy := EncryptInt(pubKey, int64(limit))
+	DecryptIntWithNeg(secKey, *dummy)
 }
 
-// DeterministicTagging performs one step in the distributed deterministic Tagging process on a vector
-// and stores the result in receiver.
-func (cv *CipherVector) DeterministicTagging(cipher *CipherVector, private, secretContrib kyber.Scalar) {
-	var wg sync.WaitGroup
-	if PARALLELIZE {
-		for i := 0; i < len(*cipher); i = i + VPARALLELIZE {
-			wg.Add(1)
-			go func(i int) {
-				for j := 0; j < VPARALLELIZE && (j+i < len(*cipher)); j++ {
-					(*cv)[i+j].DeterministicTagging(&(*cipher)[i+j], private, secretContrib)
-				}
-				defer wg.Done()
-			}(i)
-
-		}
-		wg.Wait()
-	} else {
-		for i, c := range *cipher {
-			(*cv)[i].DeterministicTagging(&c, private, secretContrib)
-		}
-	}
-}
-
-// TaggingDet performs one step in the distributed deterministic tagging process and creates corresponding proof
-func (cv *CipherVector) TaggingDet(privKey, secretContrib kyber.Scalar, pubKey kyber.Point, proofs bool) {
-	switchedVect := NewCipherVector(len(*cv))
-	switchedVect.DeterministicTagging(cv, privKey, secretContrib)
-
-	if proofs {
-		/*p1 := VectorDeterministicTagProofCreation(*cv, *switchedVect, secretContrib, privKey)
-		//proof publication
-		commitSecret := SuiTe.Point().Mul(secretContrib, SuiTe.Point().Base())
-		publishedProof := PublishedDeterministicTaggingProof{Dhp: p1, VectBefore: *cv, VectAfter: *switchedVect, K: pubKey, SB: commitSecret}
-		_ = publishedProof*/
-	}
-
-	*cv = *switchedVect
-}
-
-// ReplaceContribution computes the new CipherText with the old mask contribution replaced by new and save in receiver.
-func (c *CipherText) ReplaceContribution(cipher CipherText, old, new kyber.Point) {
-	c.C = SuiTe.Point().Sub(cipher.C, old)
-	c.C = SuiTe.Point().Add(c.C, new)
-}
-
-// KeySwitching performs one step in the Key switching process and stores result in receiver.
-func (c *CipherText) KeySwitching(cipher CipherText, originalEphemeralKey, newKey kyber.Point, private kyber.Scalar) kyber.Scalar {
-	r := SuiTe.Scalar().Pick(random.New())
-	oldContrib := SuiTe.Point().Mul(private, originalEphemeralKey)
-	newContrib := SuiTe.Point().Mul(r, newKey)
-	ephemContrib := SuiTe.Point().Mul(r, SuiTe.Point().Base())
-	c.ReplaceContribution(cipher, oldContrib, newContrib)
-	c.K = SuiTe.Point().Add(cipher.K, ephemContrib)
-	return r
-}
-
-// KeySwitching performs one step in the Key switching process on a vector and stores result in receiver.
-func (cv *CipherVector) KeySwitching(cipher CipherVector, originalEphemeralKeys []kyber.Point, newKey kyber.Point, private kyber.Scalar) []kyber.Scalar {
-	r := make([]kyber.Scalar, len(*cv))
-	var wg sync.WaitGroup
-	if PARALLELIZE {
-		for i := 0; i < len(cipher); i = i + VPARALLELIZE {
-			wg.Add(1)
-			go func(i int) {
-				for j := 0; j < VPARALLELIZE && (j+i < len(cipher)); j++ {
-					r[i+j] = (*cv)[i+j].KeySwitching(cipher[i+j], (originalEphemeralKeys)[i+j], newKey, private)
-				}
-				defer wg.Done()
-			}(i)
-
-		}
-		wg.Wait()
-	} else {
-		for i, c := range cipher {
-			r[i] = (*cv)[i].KeySwitching(c, (originalEphemeralKeys)[i], newKey, private)
-		}
-	}
-	return r
-}
-
-// Homomorphic operations
+// Homomorphic Operations
 //______________________________________________________________________________________________________________________
 
 // Add two ciphertexts and stores result in receiver.
@@ -470,53 +389,32 @@ func (c *CipherText) MulCipherTextbyScalar(cMul CipherText, a kyber.Scalar) {
 	c.K = SuiTe.Point().Mul(a, cMul.K)
 }
 
-// Add two ciphervectors and stores result in receiver.
-func (cv *CipherVector) Add(cv1, cv2 CipherVector) {
-	var wg sync.WaitGroup
-	if PARALLELIZE {
-		for i := 0; i < len(cv1); i = i + VPARALLELIZE {
-			wg.Add(1)
-			go func(i int) {
-				for j := 0; j < VPARALLELIZE && (j+i < len(cv1)); j++ {
-					(*cv)[i+j].Add(cv1[i+j], cv2[i+j])
-				}
-				defer wg.Done()
-			}(i)
-
-		}
-
-	} else {
-		for i := range cv1 {
-			(*cv)[i].Add(cv1[i], cv2[i])
-		}
-	}
-	if PARALLELIZE {
-		wg.Wait()
-	}
-}
-
-// Rerandomize rerandomizes an element in a ciphervector at position j, following the Neff SHuffling algorithm
-func (cv *CipherVector) Rerandomize(cv1 CipherVector, a, b kyber.Scalar, ciphert CipherText, g, h kyber.Point, j int) {
-	var tmp1, tmp2 kyber.Point
-
-	if ciphert.C == nil {
-		//no precomputed value
-		tmp1 = SuiTe.Point().Mul(a, g)
-		tmp2 = SuiTe.Point().Mul(b, h)
-	} else {
-		tmp1 = ciphert.K
-		tmp2 = ciphert.C
-	}
-
-	(*cv)[j].K = SuiTe.Point().Add(cv1[j].K, tmp1)
-	(*cv)[j].C = SuiTe.Point().Add(cv1[j].C, tmp2)
-
-}
-
 // Sub two ciphertexts and stores result in receiver.
 func (c *CipherText) Sub(c1, c2 CipherText) {
 	c.C = SuiTe.Point().Sub(c1.C, c2.C)
 	c.K = SuiTe.Point().Sub(c1.K, c2.K)
+}
+
+// Equal checks equality between ciphertexts.
+func (c *CipherText) Equal(c2 *CipherText) bool {
+	return c2.K.Equal(c.K) && c2.C.Equal(c.C)
+}
+
+// Add two ciphervectors and stores result in receiver.
+func (cv *CipherVector) Add(cv1, cv2 CipherVector) {
+	var wg sync.WaitGroup
+
+	for i := 0; i < len(cv1); i = i + VPARALLELIZE {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			for j := 0; j < VPARALLELIZE && (j+i < len(cv1)); j++ {
+				(*cv)[i+j].Add(cv1[i+j], cv2[i+j])
+			}
+		}(i)
+
+	}
+	wg.Wait()
 }
 
 // Sub two cipherVectors and stores result in receiver.
@@ -544,31 +442,25 @@ func (cv *CipherVector) Equal(cv2 *CipherVector) bool {
 	return true
 }
 
-// Equal checks equality between ciphertexts.
-func (c *CipherText) Equal(c2 *CipherText) bool {
-	return c2.K.Equal(c.K) && c2.C.Equal(c.C)
+// Acum adds all elements in a ciphervector
+func (cv *CipherVector) Acum() CipherText {
+	acum := (*cv)[0]
+	for i := 1; i < len(*cv); i++ {
+		acum.Add(acum, (*cv)[i])
+	}
+	return acum
 }
 
 // Representation
 //______________________________________________________________________________________________________________________
 
-// CipherVectorToDeterministicTag creates a tag (grouping key) from a cipher vector
-func CipherVectorToDeterministicTag(cipherVect CipherVector, privKey, secContrib kyber.Scalar, pubKey kyber.Point, proofs bool) GroupingKey {
-	cipherVect.TaggingDet(privKey, secContrib, pubKey, proofs)
-	deterministicGroupAttributes := make(DeterministCipherVector, len(cipherVect))
-	for j, c := range cipherVect {
-		deterministicGroupAttributes[j] = DeterministCipherText{Point: c.C}
-	}
-	return deterministicGroupAttributes.Key()
-}
-
 // Key is used in order to get a map-friendly representation of grouping attributes to be used as keys.
 func (dcv *DeterministCipherVector) Key() GroupingKey {
-	var key []string
+	var keyV []string
 	for _, a := range *dcv {
-		key = append(key, a.String())
+		keyV = append(keyV, a.String())
 	}
-	return GroupingKey(strings.Join(key, ""))
+	return GroupingKey(strings.Join(keyV, ""))
 }
 
 // Equal checks equality between deterministic ciphervector.
@@ -652,68 +544,86 @@ func RandomPermutation(k int) []int {
 	return pi
 }
 
-// Conversion
+// Marshal
 //______________________________________________________________________________________________________________________
 
 // ToBytes converts a CipherVector to a byte array
-func (cv *CipherVector) ToBytes() ([]byte, int) {
+func (cv *CipherVector) ToBytes() ([]byte, int, error) {
 	b := make([]byte, 0)
 
 	for _, el := range *cv {
-		b = append(b, el.ToBytes()...)
+		data, err := el.ToBytes()
+		if err != nil {
+			return nil, 0, err
+		}
+		b = append(b, data...)
 	}
 
-	return b, len(*cv)
+	return b, len(*cv), nil
 }
 
 // FromBytes converts a byte array to a CipherVector. Note that you need to create the (empty) object beforehand.
-func (cv *CipherVector) FromBytes(data []byte, length int) {
+func (cv *CipherVector) FromBytes(data []byte, length int) error {
 	*cv = make(CipherVector, length)
 	cipherLength := 2 * SuiTe.PointLen()
 	for i, pos := 0, 0; i < length*cipherLength; i, pos = i+cipherLength, pos+1 {
 		ct := CipherText{}
-		ct.FromBytes(data[i : i+cipherLength])
+		if err := ct.FromBytes(data[i : i+cipherLength]); err != nil {
+			return err
+		}
 		(*cv)[pos] = ct
 	}
+	return nil
 }
 
 // ToBytes converts a CipherText to a byte array
-func (c *CipherText) ToBytes() []byte {
+func (c *CipherText) ToBytes() ([]byte, error) {
 	k, errK := (*c).K.MarshalBinary()
 	if errK != nil {
-		log.Fatal(errK)
+		return nil, errK
 	}
 	cP, errC := (*c).C.MarshalBinary()
 	if errC != nil {
-		log.Fatal(errC)
+		return nil, errC
 	}
 	b := append(k, cP...)
 
-	return b
+	return b, nil
 }
 
 // FromBytes converts a byte array to a CipherText. Note that you need to create the (empty) object beforehand.
-func (c *CipherText) FromBytes(data []byte) {
+func (c *CipherText) FromBytes(data []byte) error {
 	(*c).K = SuiTe.Point()
 	(*c).C = SuiTe.Point()
 	pointLength := SuiTe.PointLen()
-	(*c).K.UnmarshalBinary(data[:pointLength])
-	(*c).C.UnmarshalBinary(data[pointLength:])
+	if err := (*c).K.UnmarshalBinary(data[:pointLength]); err != nil {
+		return err
+	}
+	if err := (*c).C.UnmarshalBinary(data[pointLength:]); err != nil {
+		return err
+	}
+	return nil
 }
 
 // Serialize encodes a CipherText in a base64 string
-func (c *CipherText) Serialize() string {
-	return base64.URLEncoding.EncodeToString((*c).ToBytes())
+func (c *CipherText) Serialize() (string, error) {
+	data, err := (*c).ToBytes()
+	if err != nil {
+		return "", err
+	}
+	return base64.URLEncoding.EncodeToString(data), nil
 }
 
 // Deserialize decodes a CipherText from a base64 string
 func (c *CipherText) Deserialize(b64Encoded string) error {
 	decoded, err := base64.URLEncoding.DecodeString(b64Encoded)
 	if err != nil {
-		log.Error("Invalid CipherText (decoding failed).", err)
+		return errors.New("Invalid CipherText (decoding failed): " + err.Error())
+	}
+	err = (*c).FromBytes(decoded)
+	if err != nil {
 		return err
 	}
-	(*c).FromBytes(decoded)
 	return nil
 }
 
@@ -721,8 +631,7 @@ func (c *CipherText) Deserialize(b64Encoded string) error {
 func SerializeElement(el encoding.BinaryMarshaler) (string, error) {
 	bytes, err := el.MarshalBinary()
 	if err != nil {
-		log.Error("Error marshalling element.", err)
-		return "", err
+		return "", errors.New("Error marshalling element: " + err.Error())
 	}
 	return base64.URLEncoding.EncodeToString(bytes), nil
 }
@@ -741,15 +650,13 @@ func SerializeScalar(scalar encoding.BinaryMarshaler) (string, error) {
 func DeserializePoint(encodedPoint string) (kyber.Point, error) {
 	decoded, errD := base64.URLEncoding.DecodeString(encodedPoint)
 	if errD != nil {
-		log.Error("Error decoding point.", errD)
-		return nil, errD
+		return nil, errors.New("Error decoding point: " + errD.Error())
 	}
 
 	point := SuiTe.Point()
 	errM := point.UnmarshalBinary(decoded)
 	if errM != nil {
-		log.Error("Error unmarshalling point.", errM)
-		return nil, errM
+		return nil, errors.New("Error unmarshalling point: " + errM.Error())
 	}
 
 	return point, nil
@@ -759,22 +666,20 @@ func DeserializePoint(encodedPoint string) (kyber.Point, error) {
 func DeserializeScalar(encodedScalar string) (kyber.Scalar, error) {
 	decoded, errD := base64.URLEncoding.DecodeString(encodedScalar)
 	if errD != nil {
-		log.Error("Error decoding scalar.", errD)
-		return nil, errD
+		return nil, errors.New("Error decoding scalar: " + errD.Error())
 	}
 
 	scalar := SuiTe.Scalar()
 	errM := scalar.UnmarshalBinary(decoded)
 	if errM != nil {
-		log.Error("Error unmarshalling scalar.", errM)
-		return nil, errM
+		return nil, errors.New("Error unmarshalling scalar: " + errM.Error())
 	}
 
 	return scalar, nil
 }
 
 // AbstractPointsToBytes converts an array of kyber.Point to a byte array
-func AbstractPointsToBytes(aps []kyber.Point) []byte {
+func AbstractPointsToBytes(aps []kyber.Point) ([]byte, error) {
 	var err error
 	var apsBytes []byte
 	response := make([]byte, 0)
@@ -782,28 +687,110 @@ func AbstractPointsToBytes(aps []kyber.Point) []byte {
 	for i := range aps {
 		apsBytes, err = aps[i].MarshalBinary()
 		if err != nil {
-			log.Fatal(err)
+			return nil, err
 		}
 
 		response = append(response, apsBytes...)
 	}
-	return response
+	return response, nil
 }
 
-// BytesToAbstractPoints converts a byte array to an array of kyber.Point
-func BytesToAbstractPoints(target []byte) []kyber.Point {
+// FromBytesToAbstractPoints converts a byte array to an array of kyber.Point
+func FromBytesToAbstractPoints(target []byte) ([]kyber.Point, error) {
 	var err error
 	aps := make([]kyber.Point, 0)
 	pointLength := SuiTe.PointLen()
 	for i := 0; i < len(target); i += pointLength {
 		ap := SuiTe.Point()
 		if err = ap.UnmarshalBinary(target[i : i+pointLength]); err != nil {
-			log.Fatal(err)
+			return nil, err
 		}
 
 		aps = append(aps, ap)
 	}
-	return aps
+	return aps, nil
+}
+
+// ArrayCipherVectorToBytes converts an array of CipherVector to an array of bytes (plus an array of byte lengths)
+func ArrayCipherVectorToBytes(data []CipherVector) ([]byte, []byte, error) {
+	length := len(data)
+
+	b := make([]byte, 0)
+	bb := make([][]byte, length)
+	cvLengths := make([]int, length)
+
+	wg := StartParallelize(length)
+	var mutex sync.Mutex
+	var err error
+	for i := range data {
+		go func(i int) {
+			defer wg.Done()
+
+			mutex.Lock()
+			data := data[i]
+			mutex.Unlock()
+			var tmpErr error
+			bb[i], cvLengths[i], tmpErr = data.ToBytes()
+			if tmpErr != nil {
+				mutex.Lock()
+				err = tmpErr
+				mutex.Unlock()
+				return
+			}
+		}(i)
+	}
+	EndParallelize(wg)
+
+	if err != nil {
+		return nil, nil, err
+	}
+
+	for _, v := range bb {
+		b = append(b, v...)
+	}
+	return b, libunlynxtools.UnsafeCastIntsToBytes(cvLengths), nil
+}
+
+// FromBytesToArrayCipherVector converts bytes to an array of CipherVector
+func FromBytesToArrayCipherVector(data []byte, cvLengthsByte []byte) ([]CipherVector, error) {
+	cvLengths := libunlynxtools.UnsafeCastBytesToInts(cvLengthsByte)
+	dataConverted := make([]CipherVector, len(cvLengths))
+	elementSize := CipherTextByteSize()
+
+	var err error
+	mutex := sync.Mutex{}
+	wg := StartParallelize(len(cvLengths))
+
+	// iter over each value in the flatten data byte array
+	bytePos := 0
+	for i := 0; i < len(cvLengths); i++ {
+		nextBytePos := bytePos + cvLengths[i]*elementSize
+
+		cv := make(CipherVector, cvLengths[i])
+		v := data[bytePos:nextBytePos]
+
+		go func(v []byte, i int) {
+			defer wg.Done()
+			tmpErr := cv.FromBytes(v, cvLengths[i])
+			if tmpErr != nil {
+				mutex.Lock()
+				err = tmpErr
+				mutex.Unlock()
+				return
+			}
+			dataConverted[i] = cv
+		}(v, i)
+
+		// advance pointer
+		bytePos = nextBytePos
+	}
+	EndParallelize(wg)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return dataConverted, nil
 }
 
 // CipherTextByteSize return the length of one CipherText element transform into []byte

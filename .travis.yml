@@ -6,11 +6,8 @@ go:
 env:
   - GO111MODULE=on
 
-install:
-  - go get -t ./...
-
 script:
-  - make test
+  - env GO111MODULE=on make test
 
 after_success:
   - $GOPATH/bin/goveralls -coverprofile=profile.cov -service=travis-ci

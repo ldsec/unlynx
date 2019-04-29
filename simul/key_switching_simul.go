@@ -3,7 +3,9 @@ package main
 import (
 	"github.com/BurntSushi/toml"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/key_switch"
 	"github.com/lca1/unlynx/protocols"
+	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/util/random"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
@@ -82,13 +84,22 @@ func (sim *KeySwitchingSimulation) Run(config *onet.SimulationConfig) error {
 		clientPublic := suite.Point().Mul(clientSecret, suite.Point().Base())
 
 		root.ProtocolInstance().(*protocolsunlynx.KeySwitchingProtocol).TargetPublicKey = &clientPublic
-		log.Lvl1("Number of respones to key switch ", len(responsesct))
+		log.Lvl1("Number of responses to key switch ", len(responsesct))
 		root.ProtocolInstance().(*protocolsunlynx.KeySwitchingProtocol).TargetOfSwitch = &responsesct
 		root.ProtocolInstance().(*protocolsunlynx.KeySwitchingProtocol).Proofs = sim.Proofs
+		root.ProtocolInstance().(*protocolsunlynx.KeySwitchingProtocol).ProofFunc = func(pubKey, targetPubKey kyber.Point, secretKey kyber.Scalar, ks2s, rBNegs []kyber.Point, vis []kyber.Scalar) *libunlynxkeyswitch.PublishedKSListProof {
+			proof, err := libunlynxkeyswitch.KeySwitchListProofCreation(pubKey, targetPubKey, secretKey, ks2s, rBNegs, vis)
+			if err != nil {
+				log.Fatal(err)
+			}
+			return &proof
+		}
 
 		round := libunlynx.StartTimer("_KeySwitching(SIMULATION)")
 
-		root.Start()
+		if err := root.Start(); err != nil {
+			return err
+		}
 		<-root.ProtocolInstance().(*protocolsunlynx.KeySwitchingProtocol).FeedbackChannel
 
 		libunlynx.EndTimer(round)

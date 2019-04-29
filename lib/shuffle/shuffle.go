@@ -1,89 +1,20 @@
 package libunlynxshuffle
 
 import (
+	"crypto/cipher"
+	"math/big"
+	"os"
+	"sync"
+
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/tools"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/util/random"
 	"go.dedis.ch/onet/v3/log"
-	"math/big"
-	"os"
 )
 
-// compressCipherVector (slice of ciphertexts) into one ciphertext
-func compressCipherVector(ciphervector libunlynx.CipherVector, e []kyber.Scalar) libunlynx.CipherText {
-	k := len(ciphervector)
-
-	// check that e and cipher vectors have the same size
-	if len(e) != k {
-		panic("e is not the right size!")
-	}
-
-	ciphertext := *libunlynx.NewCipherText()
-	for i := 0; i < k; i++ {
-		aux := libunlynx.NewCipherText()
-		aux.MulCipherTextbyScalar(ciphervector[i], e[i])
-		ciphertext.Add(ciphertext, *aux)
-	}
-	return ciphertext
-}
-
-// CompressListProcessResponse applies shuffling compression to a list of process responses
-func CompressListProcessResponse(processResponses []libunlynx.CipherVector, e []kyber.Scalar) ([]kyber.Point, []kyber.Point) {
-	xC := make([]kyber.Point, len(processResponses))
-	xK := make([]kyber.Point, len(processResponses))
-
-	wg := libunlynx.StartParallelize(len(processResponses))
-	for i, v := range processResponses {
-		if libunlynx.PARALLELIZE {
-			go func(i int, v libunlynx.CipherVector) {
-				tmp := compressCipherVector(v, e)
-				xK[i] = tmp.K
-				xC[i] = tmp.C
-				defer wg.Done()
-			}(i, v)
-		} else {
-			tmp := compressCipherVector(v, e)
-			xK[i] = tmp.K
-			xC[i] = tmp.C
-		}
-	}
-
-	libunlynx.EndParallelize(wg)
-	return xK, xC
-}
-
-// CompressBeta applies shuffling compression to a list of list of scalars (beta)
-func CompressBeta(beta [][]kyber.Scalar, e []kyber.Scalar) []kyber.Scalar {
-	k := len(beta)
-	NQ := len(beta[0])
-	betaCompressed := make([]kyber.Scalar, k)
-	wg := libunlynx.StartParallelize(k)
-	for i := 0; i < k; i++ {
-		betaCompressed[i] = libunlynx.SuiTe.Scalar().Zero()
-		if libunlynx.PARALLELIZE {
-			go func(i int) {
-				defer wg.Done()
-				for j := 0; j < NQ; j++ {
-					tmp := libunlynx.SuiTe.Scalar().Mul(beta[i][j], e[j])
-					betaCompressed[i] = libunlynx.SuiTe.Scalar().Add(betaCompressed[i], tmp)
-				}
-			}(i)
-		} else {
-			for j := 0; j < NQ; j++ {
-				tmp := libunlynx.SuiTe.Scalar().Mul(beta[i][j], e[j])
-				betaCompressed[i] = libunlynx.SuiTe.Scalar().Add(betaCompressed[i], tmp)
-			}
-		}
-
-	}
-	libunlynx.EndParallelize(wg)
-
-	return betaCompressed
-}
-
-// ShuffleSequence applies shuffling to a list of process responses
-func ShuffleSequence(inputList []libunlynx.CipherVector, g, h kyber.Point, precomputed []libunlynx.CipherVectorScalar) ([]libunlynx.CipherVector, []int, [][]kyber.Scalar) {
+// ShuffleSequence applies shuffling to a ciphervector
+func ShuffleSequence(inputList []libunlynx.CipherVector, g, h kyber.Point, precomputed []CipherVectorScalar) ([]libunlynx.CipherVector, []int, [][]kyber.Scalar) {
 	maxUint := ^uint(0)
 	maxInt := int(maxUint >> 1)
 
@@ -115,109 +46,150 @@ func ShuffleSequence(inputList []libunlynx.CipherVector, g, h kyber.Point, preco
 
 	wg := libunlynx.StartParallelize(k)
 	for i := 0; i < k; i++ {
-		if libunlynx.PARALLELIZE {
-			go func(outputList []libunlynx.CipherVector, i int) {
-				defer wg.Done()
-				processResponseShuffling(pi, i, inputList, outputList, NQ, beta, precomputedPoints, g, h)
-			}(outputList, i)
-		} else {
-			processResponseShuffling(pi, i, inputList, outputList, NQ, beta, precomputedPoints, g, h)
-		}
+		go func(outputList []libunlynx.CipherVector, i int) {
+			defer wg.Done()
+			shuffle(pi, i, inputList, outputList, NQ, beta, precomputedPoints, g, h)
+		}(outputList, i)
 	}
 	libunlynx.EndParallelize(wg)
 
 	return outputList, pi, beta
 }
 
-// ProcessResponseShuffling applies shuffling and rerandomization to a list of process responses
-func processResponseShuffling(pi []int, i int, inputList, outputList []libunlynx.CipherVector, NQ int, beta [][]kyber.Scalar, precomputedPoints []libunlynx.CipherVector, g, h kyber.Point) {
+// shuffle applies shuffling and rerandomization
+func shuffle(pi []int, i int, inputList, outputList []libunlynx.CipherVector, NQ int, beta [][]kyber.Scalar, precomputedPoints []libunlynx.CipherVector, g, h kyber.Point) {
 	index := pi[i]
 	outputList[i] = *libunlynx.NewCipherVector(NQ)
 	wg := libunlynx.StartParallelize(NQ)
 	for j := 0; j < NQ; j++ {
 		var b kyber.Scalar
-		var cipher libunlynx.CipherText
+		var tmpCipher libunlynx.CipherText
 		if len(precomputedPoints[0]) == 0 {
 			b = beta[index][j]
 		} else {
-			cipher = precomputedPoints[index][j]
+			tmpCipher = precomputedPoints[index][j]
 		}
-		if libunlynx.PARALLELIZE {
-			go func(j int) {
-				defer wg.Done()
-				outputList[i].Rerandomize(inputList[index], b, b, cipher, g, h, j)
-			}(j)
-		} else {
-			outputList[i].Rerandomize(inputList[index], b, b, cipher, g, h, j)
-		}
-
+		go func(j int) {
+			defer wg.Done()
+			outputList[i][j] = rerandomize(inputList[index], b, b, tmpCipher, g, h, j)
+		}(j)
 	}
 	libunlynx.EndParallelize(wg)
 }
 
-// CompressProcessResponseMultiple applies shuffling compression to 2 list of process responses corresponding to input and output of shuffling
-func CompressProcessResponseMultiple(inputList, outputList []libunlynx.CipherVector, i int, e []kyber.Scalar, Xhat, XhatBar, Yhat, YhatBar []kyber.Point) {
-	tmp := compressCipherVector(inputList[i], e)
-	Xhat[i] = tmp.K
-	Yhat[i] = tmp.C
-	tmpBar := compressCipherVector(outputList[i], e)
-	XhatBar[i] = tmpBar.K
-	YhatBar[i] = tmpBar.C
+// rerandomize rerandomizes an element in a ciphervector at position j, following the Neff Shuffling algorithm
+func rerandomize(cv libunlynx.CipherVector, a, b kyber.Scalar, cipher libunlynx.CipherText, g, h kyber.Point, j int) libunlynx.CipherText {
+	ct := libunlynx.NewCipherText()
+	var tmp1, tmp2 kyber.Point
+
+	if cipher.C == nil {
+		//no precomputed value
+		tmp1 = libunlynx.SuiTe.Point().Mul(a, g)
+		tmp2 = libunlynx.SuiTe.Point().Mul(b, h)
+	} else {
+		tmp1 = cipher.K
+		tmp2 = cipher.C
+	}
+
+	ct.K = libunlynx.SuiTe.Point().Add(cv[j].K, tmp1)
+	ct.C = libunlynx.SuiTe.Point().Add(cv[j].C, tmp2)
+	return *ct
+}
+
+// Precomputation
+//______________________________________________________________________________________________________________________
+
+// CreatePrecomputedRandomize creates precomputed values for shuffling using public key and size parameters
+func CreatePrecomputedRandomize(g, h kyber.Point, rand cipher.Stream, lineSize, nbrLines int) []CipherVectorScalar {
+	result := make([]CipherVectorScalar, nbrLines)
+	wg := libunlynx.StartParallelize(len(result))
+	var mutex sync.Mutex
+	for i := range result {
+		result[i].CipherV = make(libunlynx.CipherVector, lineSize)
+		result[i].S = make([]kyber.Scalar, lineSize)
+
+		go func(i int) {
+			defer (*wg).Done()
+
+			for w := range result[i].CipherV {
+				mutex.Lock()
+				tmp := libunlynx.SuiTe.Scalar().Pick(rand)
+				mutex.Unlock()
+
+				result[i].S[w] = tmp
+				result[i].CipherV[w].K = libunlynx.SuiTe.Point().Mul(tmp, g)
+				result[i].CipherV[w].C = libunlynx.SuiTe.Point().Mul(tmp, h)
+			}
+
+		}(i)
+	}
+	libunlynx.EndParallelize(wg)
+	return result
 }
 
 // PrecomputeForShuffling precomputes data to be used in the shuffling protocol (to make it faster) and saves it in a .gob file
-func PrecomputeForShuffling(serverName, gobFile string, surveySecret kyber.Scalar, collectiveKey kyber.Point, lineSize int) []libunlynx.CipherVectorScalar {
+func PrecomputeForShuffling(serverName, gobFile string, surveySecret kyber.Scalar, collectiveKey kyber.Point, lineSize int) ([]CipherVectorScalar, error) {
 	log.Lvl1(serverName, " precomputes for shuffling")
-	scalarBytes, _ := surveySecret.MarshalBinary()
-	precomputeShuffle := libunlynx.CreatePrecomputedRandomize(libunlynx.SuiTe.Point().Base(), collectiveKey, libunlynx.SuiTe.XOF(scalarBytes), lineSize*2, 10)
-
-	encoded, err := libunlynxtools.EncodeCipherVectorScalar(precomputeShuffle)
-
+	scalarBytes, err := surveySecret.MarshalBinary()
 	if err != nil {
-		log.Error("Error during marshaling")
+		return nil, err
 	}
-	libunlynxtools.WriteToGobFile(gobFile, encoded)
 
-	return precomputeShuffle
+	precomputeShuffle := CreatePrecomputedRandomize(libunlynx.SuiTe.Point().Base(), collectiveKey, libunlynx.SuiTe.XOF(scalarBytes), lineSize*2, 10)
+
+	encoded, err := EncodeCipherVectorScalar(precomputeShuffle)
+	if err != nil {
+		return nil, err
+	}
+	err = libunlynxtools.WriteToGobFile(gobFile, encoded)
+	if err != nil {
+		return nil, err
+	}
+
+	return precomputeShuffle, nil
 }
 
 // PrecomputationWritingForShuffling reads the precomputation data from  .gob file if it already exists or generates a new one
-func PrecomputationWritingForShuffling(appFlag bool, gobFile, serverName string, surveySecret kyber.Scalar, collectiveKey kyber.Point, lineSize int) []libunlynx.CipherVectorScalar {
+func PrecomputationWritingForShuffling(appFlag bool, gobFile, serverName string, surveySecret kyber.Scalar, collectiveKey kyber.Point, lineSize int) ([]CipherVectorScalar, error) {
 	log.Lvl1(serverName, " precomputes for shuffling")
-	var precomputeShuffle []libunlynx.CipherVectorScalar
+	var precomputeShuffle []CipherVectorScalar
 	if appFlag {
 		if _, err := os.Stat(gobFile); os.IsNotExist(err) {
-			precomputeShuffle = PrecomputeForShuffling(serverName, gobFile, surveySecret, collectiveKey, lineSize)
-		} else {
-			var encoded []libunlynx.CipherVectorScalarBytes
-			libunlynxtools.ReadFromGobFile(gobFile, &encoded)
-
-			precomputeShuffle, err = libunlynxtools.DecodeCipherVectorScalar(encoded)
-
-			if len(precomputeShuffle[0].CipherV) < lineSize {
-
-			}
+			precomputeShuffle, err = PrecomputeForShuffling(serverName, gobFile, surveySecret, collectiveKey, lineSize)
 			if err != nil {
-				log.Error("Error during unmarshaling")
+				return nil, err
+			}
+		} else {
+			var encoded []CipherVectorScalarBytes
+			err := libunlynxtools.ReadFromGobFile(gobFile, &encoded)
+			if err != nil {
+				return nil, err
+			}
+
+			precomputeShuffle, err = DecodeCipherVectorScalar(encoded)
+			if err != nil {
+				return nil, err
 			}
 		}
 	} else {
-		scalarBytes, _ := surveySecret.MarshalBinary()
-		precomputeShuffle = libunlynx.CreatePrecomputedRandomize(libunlynx.SuiTe.Point().Base(), collectiveKey, libunlynx.SuiTe.XOF(scalarBytes), lineSize*2, 10)
+		scalarBytes, err := surveySecret.MarshalBinary()
+		if err != nil {
+			return nil, err
+		}
+		precomputeShuffle = CreatePrecomputedRandomize(libunlynx.SuiTe.Point().Base(), collectiveKey, libunlynx.SuiTe.XOF(scalarBytes), lineSize*2, 10)
 	}
-	return precomputeShuffle
+	return precomputeShuffle, nil
 }
 
 // ReadPrecomputedFile reads the precomputation data from a .gob file
-func ReadPrecomputedFile(fileName string) []libunlynx.CipherVectorScalar {
-	var precomputeShuffle []libunlynx.CipherVectorScalar
+func ReadPrecomputedFile(fileName string) ([]CipherVectorScalar, error) {
 	if _, err := os.Stat(fileName); !os.IsNotExist(err) {
-		var encoded []libunlynx.CipherVectorScalarBytes
-		libunlynxtools.ReadFromGobFile(fileName, &encoded)
-
-		precomputeShuffle, _ = libunlynxtools.DecodeCipherVectorScalar(encoded)
-	} else {
-		precomputeShuffle = nil
+		var encoded []CipherVectorScalarBytes
+		err := libunlynxtools.ReadFromGobFile(fileName, &encoded)
+		if err != nil {
+			return nil, err
+		}
+		return DecodeCipherVectorScalar(encoded)
 	}
-	return precomputeShuffle
+	return nil, nil
 }

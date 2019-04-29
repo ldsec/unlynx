@@ -42,4 +42,7 @@
     It takes a lot of time! And if it does not work keep trying (sometimes it crashes suddenly).
 
 - Execute inside simul/ :
+    Important!
+    If you are using bn256 curve please add TAGS = “vartime” in your .toml file
+
     ./simul -platform deterlab [-debug 1] runfiles/unlynx.toml (the first time it prompts for the creation of a deter.toml)

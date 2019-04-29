@@ -4,9 +4,8 @@ package protocolsunlynx
 
 import (
 	"errors"
+
 	"github.com/lca1/unlynx/lib"
-	"reflect"
-	"unsafe"
 )
 
 // _____________________ COLLECTIVE_AGGREGATION PROTOCOL _____________________
@@ -158,24 +157,4 @@ func AdaptCipherTextArray(cipherTexts []libunlynx.CipherText) []libunlynx.Cipher
 		result[i][0] = v
 	}
 	return result
-}
-
-// cast using reflect []int <-> []byte
-// from http://stackoverflow.com/questions/17539001/converting-int32-to-byte-array-in-go
-
-// IntByteSize is the byte size of an int in memory
-const IntByteSize = int(unsafe.Sizeof(int(0)))
-
-// UnsafeCastIntsToBytes casts a slice of ints to a slice of bytes
-func UnsafeCastIntsToBytes(ints []int) []byte {
-	length := len(ints) * IntByteSize
-	hdr := reflect.SliceHeader{Data: uintptr(unsafe.Pointer(&ints[0])), Len: length, Cap: length}
-	return *(*[]byte)(unsafe.Pointer(&hdr))
-}
-
-// UnsafeCastBytesToInts casts a slice of bytes to a slice of ints
-func UnsafeCastBytesToInts(bytes []byte) []int {
-	length := len(bytes) / IntByteSize
-	hdr := reflect.SliceHeader{Data: uintptr(unsafe.Pointer(&bytes[0])), Len: length, Cap: length}
-	return *(*[]int)(unsafe.Pointer(&hdr))
 }

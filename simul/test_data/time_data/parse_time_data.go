@@ -1,10 +1,9 @@
-package timedata
+package timedataunlynx
 
 import (
 	"bufio"
 	"encoding/csv"
 	"fmt"
-	"go.dedis.ch/onet/v3/log"
 	"os"
 	"strings"
 )
@@ -22,20 +21,21 @@ func addSpaces(length int, final int) string {
 }
 
 // CreateCSVFile creates and saves a CSV file
-func CreateCSVFile(filename string) {
+func CreateCSVFile(filename string) error {
 	var fileHandle *os.File
 	var err error
 
 	fileHandle, err = os.Create(filename)
-
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
+
 	defer fileHandle.Close()
+	return nil
 }
 
 // ReadTomlSetup reads the .toml and parses the different properties (e.g. Hosts)
-func ReadTomlSetup(filename string, setupNbr int) map[string]string {
+func ReadTomlSetup(filename string, setupNbr int) (map[string]string, error) {
 	var parameters []string
 
 	setup := make(map[string]string)
@@ -43,7 +43,7 @@ func ReadTomlSetup(filename string, setupNbr int) map[string]string {
 	fileHandle, err := os.Open(filename)
 
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 	defer fileHandle.Close()
 
@@ -73,11 +73,11 @@ func ReadTomlSetup(filename string, setupNbr int) map[string]string {
 
 	}
 
-	return setup
+	return setup, nil
 }
 
 // WriteDataFromCSVFile gets the flags and the time values (parsed from the CSV file) and writes everything into a nice .txt file
-func WriteDataFromCSVFile(filename string, flags []string, testTimeData map[string][]string, pos int, setup map[string]string) {
+func WriteDataFromCSVFile(filename string, flags []string, testTimeData map[string][]string, pos int, setup map[string]string) error {
 
 	var fileHandle *os.File
 	var err error
@@ -85,7 +85,7 @@ func WriteDataFromCSVFile(filename string, flags []string, testTimeData map[stri
 	fileHandle, err = os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0600)
 
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	defer fileHandle.Close()
 
@@ -96,20 +96,20 @@ func WriteDataFromCSVFile(filename string, flags []string, testTimeData map[stri
 		"|-------------------------------------------------------------------------|\n\n\n")
 
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	for k, v := range setup {
 		_, err = fileHandle.WriteString(k + ":" + addSpaces(len(k), spacing) + v + "\n")
 
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 	}
 	_, err = fileHandle.WriteString("\n")
 
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	for _, value := range flags {
@@ -126,26 +126,25 @@ func WriteDataFromCSVFile(filename string, flags []string, testTimeData map[stri
 		}
 
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 	}
 
 	defer writer.Flush()
+	return nil
 }
 
 // ReadDataFromCSVFile reads data from the CSV file where the time values are stored and re-arranges everything in a key-value map
-func ReadDataFromCSVFile(filename string, flags []string) map[string][]string {
+func ReadDataFromCSVFile(filename string, flags []string) (map[string][]string, error) {
 	fileHandle, err := os.Open(filename)
 	if err != nil {
-		log.Fatal(err)
-		return nil
+		return nil, err
 	}
 	defer fileHandle.Close()
 
 	lines, err := csv.NewReader(fileHandle).ReadAll()
 	if err != nil {
-		log.Fatal(err)
-		return nil
+		return nil, err
 	}
 
 	result := make(map[string][]string)
@@ -177,7 +176,7 @@ func ReadDataFromCSVFile(filename string, flags []string) map[string][]string {
 		}
 	}
 
-	return result
+	return result, nil
 }
 
 // stringInSlice checks if a string is inside an array of strings

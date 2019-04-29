@@ -9,11 +9,10 @@ package protocolsunlynx
 
 import (
 	"errors"
-
 	"sync"
 
 	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/lib/proofs"
+	"github.com/lca1/unlynx/lib/aggregation"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
 	"go.dedis.ch/onet/v3/network"
@@ -30,7 +29,9 @@ func init() {
 	network.RegisterMessage(ChildAggregatedDataMessage{})
 	network.RegisterMessage(ChildAggregatedDataBytesMessage{})
 	network.RegisterMessage(CADBLengthMessage{})
-	onet.GlobalProtocolRegister(CollectiveAggregationProtocolName, NewCollectiveAggregationProtocol)
+	_, err := onet.GlobalProtocolRegister(CollectiveAggregationProtocolName, NewCollectiveAggregationProtocol)
+	log.ErrFatal(err, "Failed to register the <CollectiveAggregation> protocol:")
+
 }
 
 // Messages
@@ -58,8 +59,7 @@ type ChildAggregatedDataBytesMessage struct {
 type CADBLengthMessage struct {
 	GacbLength int
 	AabLength  int
-	//PgaebLength int
-	DtbLength int
+	DtbLength  int
 }
 
 // Structs
@@ -80,6 +80,9 @@ type cadmbLengthStruct struct {
 	CADBLengthMessage
 }
 
+// proofCollectiveAggregationFunction defines a function that does 'stuff' with the collective aggregation proofs
+type proofCollectiveAggregationFunction func([]libunlynx.CipherVector, libunlynx.CipherVector) *libunlynxaggr.PublishedAggregationListProof
+
 // Protocol
 //______________________________________________________________________________________________________________________
 
@@ -98,7 +101,11 @@ type CollectiveAggregationProtocol struct {
 	// Protocol state data
 	GroupedData *map[libunlynx.GroupingKey]libunlynx.FilteredResponse
 	SimpleData  *[]libunlynx.CipherText
-	Proofs      bool
+
+	// Proofs
+	Proofs    bool
+	ProofFunc proofCollectiveAggregationFunction // proof function for when we want to do something different with the proofs (e.g. insert in the blockchain)
+	MapPIs    map[string]onet.ProtocolInstance   // protocol instances to be able to call protocols inside protocols (e.g. proof_collection_protocol)
 }
 
 // NewCollectiveAggregationProtocol initializes the protocol instance.
@@ -128,23 +135,56 @@ func NewCollectiveAggregationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolIn
 // Start is called at the root to begin the execution of the protocol.
 func (p *CollectiveAggregationProtocol) Start() error {
 	log.Lvl1(p.ServerIdentity(), " started a Colective Aggregation Protocol")
-	p.SendToChildren(&DataReferenceMessage{})
+	if err := p.SendToChildren(&DataReferenceMessage{}); err != nil {
+		return errors.New("Error sending <DataReferenceMessage>:" + err.Error())
+	}
 	return nil
 }
 
 // Dispatch is called at each node and handle incoming messages.
 func (p *CollectiveAggregationProtocol) Dispatch() error {
 	defer p.Done()
-	p.checkData()
+	err := p.checkData()
+	if err != nil {
+		return err
+	}
 
 	// 1. Aggregation announcement phase
 	if !p.IsRoot() {
-		p.aggregationAnnouncementPhase()
+		err := p.aggregationAnnouncementPhase()
+		if err != nil {
+			return err
+		}
+	}
+
+	// 3. Proof generation (a) - before local aggregation
+	cvMap := make(map[libunlynx.GroupingKey][]libunlynx.CipherVector)
+	if p.Proofs {
+		if p.Proofs {
+			for k, v := range *p.GroupedData {
+				frd := libunlynx.FilteredResponseDet{DetTagGroupBy: k, Fr: v}
+				frd.FormatAggregationProofs(cvMap)
+			}
+		}
 	}
 
 	// 2. Ascending aggregation phase
-	aggregatedData := p.ascendingAggregationPhase()
+	aggregatedData, err := p.ascendingAggregationPhase(cvMap)
+	if err != nil {
+		return err
+	}
 	log.Lvl1(p.ServerIdentity(), " completed aggregation phase (", len(*aggregatedData), "group(s) )")
+
+	// 3. Proof generation (b) - after local aggregation
+	if p.Proofs {
+		data := make([]libunlynx.CipherVector, 0)
+		dataRes := make(libunlynx.CipherVector, 0)
+		for k, v := range cvMap {
+			data = append(data, v...)
+			dataRes = append(dataRes, (*aggregatedData)[k].AggregatingAttributes...)
+		}
+		p.ProofFunc(data, dataRes)
+	}
 
 	// 3. Result reporting
 	if p.IsRoot() {
@@ -154,19 +194,21 @@ func (p *CollectiveAggregationProtocol) Dispatch() error {
 }
 
 // Announce forwarding down the tree.
-func (p *CollectiveAggregationProtocol) aggregationAnnouncementPhase() {
+func (p *CollectiveAggregationProtocol) aggregationAnnouncementPhase() error {
 	dataReferenceMessage := <-p.DataReferenceChannel
 	if !p.IsLeaf() {
-		p.SendToChildren(&dataReferenceMessage.DataReferenceMessage)
+		if err := p.SendToChildren(&dataReferenceMessage.DataReferenceMessage); err != nil {
+			return errors.New("Error sending <DataReferenceMessage>:" + err.Error())
+		}
 	}
+	return nil
 }
 
 // Results pushing up the tree containing aggregation results.
-func (p *CollectiveAggregationProtocol) ascendingAggregationPhase() *map[libunlynx.GroupingKey]libunlynx.FilteredResponse {
+func (p *CollectiveAggregationProtocol) ascendingAggregationPhase(cvMap map[libunlynx.GroupingKey][]libunlynx.CipherVector) (*map[libunlynx.GroupingKey]libunlynx.FilteredResponse, error) {
 	roundTotComput := libunlynx.StartTimer(p.Name() + "_CollectiveAggregation(ascendingAggregation)")
 
 	if !p.IsLeaf() {
-
 		length := make([]cadmbLengthStruct, 0)
 		for _, v := range <-p.LengthNodeChannel {
 			length = append(length, v)
@@ -175,23 +217,23 @@ func (p *CollectiveAggregationProtocol) ascendingAggregationPhase() *map[libunly
 		for _, v := range <-p.ChildDataChannel {
 			datas = append(datas, v)
 		}
+
 		for i, v := range length {
 			childrenContribution := ChildAggregatedDataMessage{}
-			childrenContribution.FromBytes(datas[i].Data, v.GacbLength, v.AabLength, v.DtbLength)
-			c1 := make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse)
-			roundProofs := libunlynx.StartTimer(p.Name() + "_CollectiveAggregation(Proof-1stPart)")
-
-			if p.Proofs {
-				//need to save previous state
-				for i, v := range *p.GroupedData {
-					c1[i] = v
-				}
+			err := childrenContribution.FromBytes(datas[i].Data, v.GacbLength, v.AabLength, v.DtbLength)
+			if err != nil {
+				return nil, err
 			}
-			libunlynx.EndTimer(roundProofs)
+
 			roundComput := libunlynx.StartTimer(p.Name() + "_CollectiveAggregation(Aggregation)")
 
 			for _, aggr := range childrenContribution.ChildData {
 				localAggr, ok := (*p.GroupedData)[aggr.DetTagGroupBy]
+
+				if p.Proofs {
+					aggr.FormatAggregationProofs(cvMap)
+				}
+
 				if ok {
 					tmp := libunlynx.NewCipherVector(len(localAggr.AggregatingAttributes))
 					tmp.Add(localAggr.AggregatingAttributes, aggr.Fr.AggregatingAttributes)
@@ -202,15 +244,11 @@ func (p *CollectiveAggregationProtocol) ascendingAggregationPhase() *map[libunly
 				}
 				(*p.GroupedData)[aggr.DetTagGroupBy] = localAggr
 			}
-
 			libunlynx.EndTimer(roundComput)
-			roundProofs2 := libunlynx.StartTimer(p.Name() + "_CollectiveAggregation(Proof-2ndPart)")
-			if p.Proofs {
-				PublishedCollectiveAggregationProof := libunlynxproofs.CollectiveAggregationProofCreation(c1, childrenContribution.ChildData, *p.GroupedData)
-				//publication
-				_ = PublishedCollectiveAggregationProof
-			}
-			libunlynx.EndTimer(roundProofs2)
+
+			roundProofs := libunlynx.StartTimer(p.Name() + "_CollectiveAggregation(Proof-2ndPart)")
+
+			libunlynx.EndTimer(roundProofs)
 		}
 	}
 
@@ -228,29 +266,41 @@ func (p *CollectiveAggregationProtocol) ascendingAggregationPhase() *map[libunly
 		message := ChildAggregatedDataBytesMessage{}
 
 		var gacbLength, aabLength, dtbLength int
+		var err error
 
-		message.Data, gacbLength, aabLength, dtbLength = (&ChildAggregatedDataMessage{detAggrResponses}).ToBytes()
+		message.Data, gacbLength, aabLength, dtbLength, err = (&ChildAggregatedDataMessage{detAggrResponses}).ToBytes()
+		if err != nil {
+			return nil, err
+		}
+
 		childrenContribution := ChildAggregatedDataMessage{}
-		childrenContribution.FromBytes(message.Data, gacbLength, aabLength, dtbLength)
+		err = childrenContribution.FromBytes(message.Data, gacbLength, aabLength, dtbLength)
+		if err != nil {
+			return nil, err
+		}
 
-		p.SendToParent(&CADBLengthMessage{gacbLength, aabLength, dtbLength})
-		p.SendToParent(&message)
+		if err := p.SendToParent(&CADBLengthMessage{gacbLength, aabLength, dtbLength}); err != nil {
+			return nil, errors.New("Error sending <CADBLengthMessage>:" + err.Error())
+		}
+		if err := p.SendToParent(&message); err != nil {
+			return nil, errors.New("Error sending <ChildAggregatedDataMessage>:" + err.Error())
+		}
 	}
 
-	return p.GroupedData
+	return p.GroupedData, nil
 }
 
 // Setup and return the data needed in the aggregation to a usable format
-func (p *CollectiveAggregationProtocol) checkData() {
+func (p *CollectiveAggregationProtocol) checkData() error {
 	// If no data is passed to the collection protocol
 	if p.GroupedData == nil && p.SimpleData == nil {
-		log.Fatal("no data reference is provided")
+		return errors.New("no data reference is provided")
 		// If both data entry points are used
 	} else if p.GroupedData != nil && p.SimpleData != nil {
-		log.Fatal("two data references are given in the struct")
+		return errors.New("two data references are given in the struct")
 		// If we are using the GroupedData keep everything as is
 	} else if p.GroupedData != nil {
-		return
+		return nil
 		// If we are using the SimpleData struct we must convert it to a GroupedData struct
 	} else {
 		result := make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse)
@@ -264,6 +314,7 @@ func (p *CollectiveAggregationProtocol) checkData() {
 		}
 		p.GroupedData = &result
 		p.SimpleData = nil
+		return nil
 	}
 }
 
@@ -271,52 +322,57 @@ func (p *CollectiveAggregationProtocol) checkData() {
 //______________________________________________________________________________________________________________________
 
 // ToBytes converts a ChildAggregatedDataMessage to a byte array
-func (sm *ChildAggregatedDataMessage) ToBytes() ([]byte, int, int, int) {
+func (sm *ChildAggregatedDataMessage) ToBytes() ([]byte, int, int, int, error) {
 
 	b := make([]byte, 0)
 	bb := make([][]byte, len((*sm).ChildData))
 
 	var gacbLength int
 	var aabLength int
-	//var pgaebLength int
 	var dtbLength int
 
 	wg := libunlynx.StartParallelize(len((*sm).ChildData))
 	var mutexCD sync.Mutex
+	var err error
 	for i := range (*sm).ChildData {
-		if libunlynx.PARALLELIZE {
-			go func(i int) {
-				defer wg.Done()
+		go func(i int) {
+			defer wg.Done()
 
+			mutexCD.Lock()
+			data := (*sm).ChildData[i]
+			mutexCD.Unlock()
+
+			aux, gacbAux, aabAux, dtbAux, tmpErr := data.ToBytes()
+			if tmpErr != nil {
 				mutexCD.Lock()
-				data := (*sm).ChildData[i]
+				err = tmpErr
 				mutexCD.Unlock()
+				return
+			}
 
-				aux, gacbAux, aabAux, dtbAux := data.ToBytes()
+			mutexCD.Lock()
+			bb[i] = aux
+			gacbLength = gacbAux
+			aabLength = aabAux
+			dtbLength = dtbAux
+			mutexCD.Unlock()
 
-				mutexCD.Lock()
-				bb[i] = aux
-				gacbLength = gacbAux
-				aabLength = aabAux
-				dtbLength = dtbAux
-				mutexCD.Unlock()
-
-			}(i)
-		} else {
-			bb[i], gacbLength, aabLength, dtbLength = (*sm).ChildData[i].ToBytes()
-		}
-
+		}(i)
 	}
 	libunlynx.EndParallelize(wg)
+
+	if err != nil {
+		return nil, 0, 0, 0, err
+	}
 
 	for _, el := range bb {
 		b = append(b, el...)
 	}
-	return b, gacbLength, aabLength, dtbLength
+	return b, gacbLength, aabLength, dtbLength, nil
 }
 
 // FromBytes converts a byte array to a ChildAggregatedDataMessage. Note that you need to create the (empty) object beforehand.
-func (sm *ChildAggregatedDataMessage) FromBytes(data []byte, gacbLength, aabLength, dtbLength int) {
+func (sm *ChildAggregatedDataMessage) FromBytes(data []byte, gacbLength, aabLength, dtbLength int) error {
 	cipherTextSize := libunlynx.CipherTextByteSize()
 	elementLength := gacbLength*cipherTextSize + aabLength*cipherTextSize + dtbLength
 
@@ -325,19 +381,28 @@ func (sm *ChildAggregatedDataMessage) FromBytes(data []byte, gacbLength, aabLeng
 		nbrChildData = len(data) / elementLength
 
 		(*sm).ChildData = make([]libunlynx.FilteredResponseDet, nbrChildData)
+
+		var err error
+		mutex := sync.Mutex{}
 		wg := libunlynx.StartParallelize(nbrChildData)
 		for i := 0; i < nbrChildData; i++ {
 			v := data[i*elementLength : i*elementLength+elementLength]
-			if libunlynx.PARALLELIZE {
-				go func(v []byte, i int) {
-					defer wg.Done()
-					(*sm).ChildData[i].FromBytes(v, gacbLength, aabLength, dtbLength)
-				}(v, i)
-			} else {
-				(*sm).ChildData[i].FromBytes(v, gacbLength, aabLength, dtbLength)
-			}
-
+			go func(v []byte, i int) {
+				defer wg.Done()
+				tmpErr := (*sm).ChildData[i].FromBytes(v, gacbLength, aabLength, dtbLength)
+				if tmpErr != nil {
+					mutex.Lock()
+					err = tmpErr
+					mutex.Unlock()
+					return
+				}
+			}(v, i)
 		}
 		libunlynx.EndParallelize(wg)
+
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }

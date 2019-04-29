@@ -8,79 +8,86 @@ package protocolsunlynx
 
 import (
 	"errors"
-	"sync"
-	"time"
 
 	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/lib/proofs"
+	"github.com/lca1/unlynx/lib/key_switch"
+	"github.com/lca1/unlynx/lib/tools"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
 	"go.dedis.ch/onet/v3/network"
 )
 
-// KeySwitchingProtocolName is the registered name for the key switching protocol.
+// KeySwitchingProtocolName is the registered name for the collective aggregation protocol.
 const KeySwitchingProtocolName = "KeySwitching"
 
 func init() {
-	network.RegisterMessage(KeySwitchedCipherMessage{})
-	network.RegisterMessage(KeySwitchedCipherBytesMessage{})
-	//network.RegisterMessage(KSCBLengthMessage{})
-	onet.GlobalProtocolRegister(KeySwitchingProtocolName, NewKeySwitchingProtocol)
+	network.RegisterMessage(DownMessage{})
+	network.RegisterMessage(DownMessageBytes{})
+	network.RegisterMessage(UpMessage{})
+	network.RegisterMessage(UpBytesMessage{})
+	network.RegisterMessage(LengthMessage{})
+	_, err := onet.GlobalProtocolRegister(KeySwitchingProtocolName, NewKeySwitchingProtocol)
+	log.ErrFatal(err, "Failed to register the <KeySwitching> protocol:")
 }
 
 // Messages
 //______________________________________________________________________________________________________________________
 
-// OriginalEphemeralKeys represents the original ephemeral keys which are needed for the servers to be able to remove
-// their secret contribution
-type OriginalEphemeralKeys struct {
-	GroupOriginalKeys []kyber.Point
-	AttrOriginalKeys  []kyber.Point
+// DownMessage message sent down the tree containing all the rB (left part of ciphertexts)
+type DownMessage struct {
+	NewKey kyber.Point
+	Rbs    []kyber.Point
 }
 
-// DataAndOriginalEphemeralKeys contains data being switched and the original ephemeral key needed at each step
-type DataAndOriginalEphemeralKeys struct {
-	Response             libunlynx.CipherText
-	OriginalEphemeralKey kyber.Point
-}
-
-// KeySwitchedCipherMessage contains cipherVector under switching.
-type KeySwitchedCipherMessage struct {
-	DataKey []DataAndOriginalEphemeralKeys
-	NewKey  kyber.Point
-}
-
-// KeySwitchedCipherBytesMessage is the KeySwitchedCipherMessage in bytes.
-type KeySwitchedCipherBytesMessage struct {
-	LenB int
+// DownMessageBytes message sent down the tree containing all the rB (left part of ciphertexts) in bytes
+type DownMessageBytes struct {
 	Data []byte
 }
 
-// KSCBLengthMessage represents a message containing the lengths needed to read the KeySwitchedCipherBytesMessage
-//type KSCBLengthMessage struct {
-//	LenB int
-//}
+// UpMessage contains the ciphertext used by the servers to create their key switching contribution.
+type UpMessage struct {
+	ChildData []libunlynx.CipherText
+}
+
+// UpBytesMessage is UpMessage in bytes.
+type UpBytesMessage struct {
+	Data []byte
+}
+
+// LengthMessage is a message containing the length of a message in bytes
+type LengthMessage struct {
+	Length []byte
+}
 
 // Structs
 //______________________________________________________________________________________________________________________
 
-// keySwitchedCipherBytesStruct is the a key switching message structure in bytes
-type keySwitchedCipherBytesStruct struct {
+// DownBytesStruct struct used to send DownMessage(Bytes)
+type DownBytesStruct struct {
 	*onet.TreeNode
-	KeySwitchedCipherBytesMessage
+	DownMessageBytes
 }
 
-// kscbLengthStruct is the structure containing a lengths message
-//type kscbLengthStruct struct {
-//	*onet.TreeNode
-//	KSCBLengthMessage
-//}
+// UpBytesStruct struct used to send Up(Bytes)Message
+type UpBytesStruct struct {
+	*onet.TreeNode
+	UpBytesMessage
+}
+
+// LengthStruct struct used to send LengthMessage
+type LengthStruct struct {
+	*onet.TreeNode
+	LengthMessage
+}
+
+// proofKeySwitchFunction defines a function that does 'stuff' with the key switch proofs
+type proofKeySwitchFunction func(kyber.Point, kyber.Point, kyber.Scalar, []kyber.Point, []kyber.Point, []kyber.Scalar) *libunlynxkeyswitch.PublishedKSListProof
 
 // Protocol
 //______________________________________________________________________________________________________________________
 
-// KeySwitchingProtocol is a struct holding the state of a protocol instance.
+// KeySwitchingProtocol performs an aggregation of the data held by every node in the cothority.
 type KeySwitchingProtocol struct {
 	*onet.TreeNodeInstance
 
@@ -88,50 +95,51 @@ type KeySwitchingProtocol struct {
 	FeedbackChannel chan libunlynx.CipherVector
 
 	// Protocol communication channels
-	PreviousNodeInPathChannel chan keySwitchedCipherBytesStruct
-	//	LengthNodeChannel         chan kscbLengthStruct
+	DownChannel      chan DownBytesStruct
+	LengthChannel    chan []LengthStruct
+	ChildDataChannel chan []UpBytesStruct
 
-	ExecTime time.Duration
+	// Protocol root data
+	NodeContribution *libunlynx.CipherVector
 
 	// Protocol state data
-	nextNodeInCircuit *onet.TreeNode
-	TargetOfSwitch    *libunlynx.CipherVector
-	TargetPublicKey   *kyber.Point
-	Proofs            bool
+	TargetOfSwitch  *libunlynx.CipherVector
+	TargetPublicKey *kyber.Point
+
+	// Proofs
+	Proofs    bool
+	ProofFunc proofKeySwitchFunction           // proof function for when we want to do something different with the proofs (e.g. insert in the blockchain)
+	MapPIs    map[string]onet.ProtocolInstance // protocol instances to be able to call protocols inside protocols (e.g. proof_collection_protocol)
 }
 
-// NewKeySwitchingProtocol is constructor of Key Switching protocol instances.
+// NewKeySwitchingProtocol initializes the protocol instance.
 func NewKeySwitchingProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
-	ksp := &KeySwitchingProtocol{
+	pap := &KeySwitchingProtocol{
 		TreeNodeInstance: n,
 		FeedbackChannel:  make(chan libunlynx.CipherVector),
 	}
 
-	if err := ksp.RegisterChannel(&ksp.PreviousNodeInPathChannel); err != nil {
-		return nil, errors.New("couldn't register data reference channel: " + err.Error())
+	err := pap.RegisterChannel(&pap.DownChannel)
+	if err != nil {
+		return nil, errors.New("couldn't register down channel: " + err.Error())
 	}
 
-	/*if err := ksp.RegisterChannel(&ksp.LengthNodeChannel); err != nil {
-		return nil, errors.New("couldn't register data reference channel: " + err.Error())
-	}*/
-
-	var i int
-	var node *onet.TreeNode
-	var nodeList = n.Tree().List()
-	for i, node = range nodeList {
-		if n.TreeNode().Equal(node) {
-			ksp.nextNodeInCircuit = nodeList[(i+1)%len(nodeList)]
-			break
-		}
+	err = pap.RegisterChannel(&pap.ChildDataChannel)
+	if err != nil {
+		return nil, errors.New("couldn't register child-data channel: " + err.Error())
 	}
 
-	return ksp, nil
+	if err := pap.RegisterChannel(&pap.LengthChannel); err != nil {
+		return nil, errors.New("couldn't register length channel: " + err.Error())
+	}
+
+	return pap, nil
 }
 
-// Start is called at the root to start the execution of the key switching.
+// Start is called at the root to begin the execution of the protocol.
 func (p *KeySwitchingProtocol) Start() error {
 
-	startRound := libunlynx.StartTimer(p.Name() + "_KeySwitching(START)")
+	keySwitchingStart := libunlynx.StartTimer(p.Name() + "_KeySwitching(START)")
 
 	if p.TargetOfSwitch == nil {
 		return errors.New("no ciphertext given as key switching target")
@@ -141,229 +149,140 @@ func (p *KeySwitchingProtocol) Start() error {
 		return errors.New("no new public key to be switched on provided")
 	}
 
-	p.ExecTime = 0
-
-	log.Lvl1(p.ServerIdentity(), " started a Key Switching Protocol")
+	log.Lvl2("[KEY SWITCHING PROTOCOL] <Drynx> Server", p.ServerIdentity(), " started a Key Switching Protocol")
 
 	// Initializes the target ciphertext and extract the original ephemeral keys.
 	dataLength := len(*p.TargetOfSwitch)
-	initialTab := make([]DataAndOriginalEphemeralKeys, dataLength)
+	initialTab := make([]kyber.Point, dataLength+1)
 
-	if libunlynx.PARALLELIZE {
-		var wg sync.WaitGroup
-		for i := 0; i < len(*p.TargetOfSwitch); i += libunlynx.VPARALLELIZE {
-			wg.Add(1)
-			go func(i int) {
-				for j := 0; j < libunlynx.VPARALLELIZE && (j+i < len(*p.TargetOfSwitch)); j++ {
-					initialAttribute, originalEphemKey := getAttributesAndEphemKeys((*p.TargetOfSwitch)[i+j])
-					initialTab[i+j] = DataAndOriginalEphemeralKeys{Response: initialAttribute, OriginalEphemeralKey: originalEphemKey}
-				}
-				defer wg.Done()
-			}(i)
-		}
-		wg.Wait()
-	} else {
-		for k, v := range *p.TargetOfSwitch {
-			initialAttribute, originalEphemKey := getAttributesAndEphemKeys(v)
-			initialTab[k] = DataAndOriginalEphemeralKeys{Response: initialAttribute, OriginalEphemeralKey: originalEphemKey}
-		}
+	// put the target public key in first position
+	initialTab[0] = *p.TargetPublicKey
+	for i, v := range *p.TargetOfSwitch {
+		initialTab[i+1] = v.K
 	}
-	libunlynx.EndTimer(startRound)
-	sending(p, &KeySwitchedCipherMessage{initialTab, *p.TargetPublicKey})
+
+	// root does its key switching
+	switchedCiphers, ks2s, rBNegs, vis := libunlynxkeyswitch.KeySwitchSequence(*p.TargetPublicKey, initialTab[1:], p.Private())
+	if p.Proofs {
+		p.ProofFunc(p.Public(), *p.TargetPublicKey, p.Private(), ks2s, rBNegs, vis)
+	}
+	p.NodeContribution = &switchedCiphers
+
+	data, err := libunlynx.AbstractPointsToBytes(initialTab)
+	if err != nil {
+		return err
+	}
+
+	if err := p.SendToChildren(&DownMessageBytes{Data: data}); err != nil {
+		return errors.New("Root " + p.ServerIdentity().String() + " failed to broadcast DownMessageBytes: " + err.Error())
+	}
+
+	libunlynx.EndTimer(keySwitchingStart)
 
 	return nil
 }
 
-// getAttributesAndEphemKeys retrieves attributes and ephemeral keys in a CipherText to be key switched
-func getAttributesAndEphemKeys(ct libunlynx.CipherText) (libunlynx.CipherText, kyber.Point) {
-	initialAttribute := *libunlynx.NewCipherText()
-	initialAttribute.C = ct.C
-	originalEphemKey := ct.K
-	return initialAttribute, originalEphemKey
-}
-
-// Dispatch is called on each node. It waits for incoming messages and handles them.
+// Dispatch is called at each node and handle incoming messages.
 func (p *KeySwitchingProtocol) Dispatch() error {
 	defer p.Done()
 
-	message := <-p.PreviousNodeInPathChannel
-	keySwitchingTargetBytes := message.KeySwitchedCipherBytesMessage.Data
-	keySwitchingTarget := &KeySwitchedCipherMessage{}
-	(*keySwitchingTarget).FromBytes(keySwitchingTargetBytes, message.LenB)
-	round := libunlynx.StartTimer(p.Name() + "_KeySwitching(DISPATCH)")
-	startT := time.Now()
-
-	FilteredResponseKeySwitching(keySwitchingTarget, p.Private(), p.Proofs)
-
-	libunlynx.EndTimer(round)
-
-	// If the tree node is the root then protocol returns.
-	if p.IsRoot() {
-		log.Lvl1(p.ServerIdentity(), " completed key switching.")
-		result := make(libunlynx.CipherVector, len(keySwitchingTarget.DataKey))
-		for i, v := range keySwitchingTarget.DataKey {
-			result[i] = v.Response
+	// 1. Key switching announcement phase
+	if !p.IsRoot() {
+		targetPublicKey, rbs, err := p.announcementKSPhase()
+		if err != nil {
+			return err
 		}
-		p.ExecTime += time.Since(startT)
-		p.FeedbackChannel <- result
-	} else {
-		log.Lvl1(p.ServerIdentity(), " carried on key switching on ", len(keySwitchingTarget.DataKey), " .")
-		sending(p, keySwitchingTarget)
+
+		switchedCiphers, ks2s, rBNegs, vis := libunlynxkeyswitch.KeySwitchSequence(targetPublicKey, rbs, p.Private())
+		if p.Proofs {
+			p.ProofFunc(p.Public(), targetPublicKey, p.Private(), ks2s, rBNegs, vis)
+		}
+		p.NodeContribution = &switchedCiphers
 	}
 
+	// 2. Ascending key switching phase
+	_, err := p.ascendingKSPhase()
+	if err != nil {
+		return err
+	}
+
+	// 3. Response reporting
+	if p.IsRoot() {
+		ksCiphers := *libunlynx.NewCipherVector(len(*p.TargetOfSwitch))
+
+		wg := libunlynx.StartParallelize(len(*p.TargetOfSwitch))
+		for i, v := range *p.TargetOfSwitch {
+			go func(i int, v libunlynx.CipherText) {
+				defer wg.Done()
+				ksCiphers[i].K = (*p.NodeContribution)[i].K
+				ksCiphers[i].C = libunlynx.SuiTe.Point().Add((*p.NodeContribution)[i].C, v.C)
+			}(i, v)
+		}
+		libunlynx.EndParallelize(wg)
+		p.FeedbackChannel <- ksCiphers
+	}
 	return nil
 }
 
-// sendToNext sends the message msg to the next node in the circuit based on the next TreeNode in Tree.List() If not visited yet.
-// If the message already visited the next node, doesn't send and returns false. Otherwise, return true.
-func (p *KeySwitchingProtocol) sendToNext(msg interface{}) {
-	err := p.SendTo(p.nextNodeInCircuit, msg)
+// Announce forwarding down the tree.
+func (p *KeySwitchingProtocol) announcementKSPhase() (kyber.Point, []kyber.Point, error) {
+	dataReferenceMessage := <-p.DownChannel
+	if !p.IsLeaf() {
+		if err := p.SendToChildren(&dataReferenceMessage.DownMessageBytes); err != nil {
+			return nil, nil, errors.New("Node " + p.ServerIdentity().String() + " failed to broadcast DownMessageBytes: " + err.Error())
+		}
+	}
+	message, err := libunlynx.FromBytesToAbstractPoints(dataReferenceMessage.Data)
 	if err != nil {
-		log.Lvl1(p.Name(), " has an error sending a message: ", err)
+		return nil, nil, err
 	}
+
+	return message[0], message[1:], nil
 }
 
-// sending sends KeySwitchedCipherBytes messages
-func sending(p *KeySwitchingProtocol, kscm *KeySwitchedCipherMessage) {
-	data, lenB := kscm.ToBytes()
-	//p.sendToNext(&KSCBLengthMessage{LenB: lenB})
-	p.sendToNext(&KeySwitchedCipherBytesMessage{LenB: lenB, Data: data})
-}
+// Results pushing up the tree containing key switching results.
+func (p *KeySwitchingProtocol) ascendingKSPhase() (*libunlynx.CipherVector, error) {
 
-//FilteredResponseKeySwitching applies key switching on a ciphervector
-func FilteredResponseKeySwitching(keySwitchingTarget *KeySwitchedCipherMessage, secretContrib kyber.Scalar, proofsB bool) {
-	length := len(keySwitchingTarget.DataKey)
-	r := make([]kyber.Scalar, length)
-	originalEphemeralKeys := make([]kyber.Point, length)
-	newCv := make(libunlynx.CipherVector, length)
-	oldCv := make(libunlynx.CipherVector, length)
-	if libunlynx.PARALLELIZE {
-		var wg sync.WaitGroup
-		for i := 0; i < len(keySwitchingTarget.DataKey); i += libunlynx.VPARALLELIZE {
-			wg.Add(1)
-			go func(i int) {
-				for j := 0; j < libunlynx.VPARALLELIZE && (i+j) < len(keySwitchingTarget.DataKey); j++ {
-					tmp := libunlynx.NewCipherText()
-					oldCv[i+j] = keySwitchingTarget.DataKey[i+j].Response
-					r[i+j] = tmp.KeySwitching(keySwitchingTarget.DataKey[i+j].Response, keySwitchingTarget.DataKey[i+j].OriginalEphemeralKey,
-						keySwitchingTarget.NewKey, secretContrib)
-					keySwitchingTarget.DataKey[i+j].Response = *tmp
-					newCv[i+j] = *tmp
-					originalEphemeralKeys[i+j] = keySwitchingTarget.DataKey[i+j].OriginalEphemeralKey
-				}
-				defer wg.Done()
-			}(i)
+	keySwitchingAscendingAggregation := libunlynx.StartTimer(p.Name() + "_KeySwitching(ascendingAggregation)")
+
+	if !p.IsLeaf() {
+		length := make([]LengthStruct, 0)
+		for _, v := range <-p.LengthChannel {
+			length = append(length, v)
 		}
-		wg.Wait()
-	} else {
-		for i, v := range keySwitchingTarget.DataKey {
-			tmp := libunlynx.NewCipherText()
-			oldCv[i] = v.Response
-			r[i] = tmp.KeySwitching(keySwitchingTarget.DataKey[i].Response, v.OriginalEphemeralKey, keySwitchingTarget.NewKey, secretContrib)
-			keySwitchingTarget.DataKey[i].Response = *tmp
-			originalEphemeralKeys[i] = v.OriginalEphemeralKey
-			newCv[i] = *tmp
+
+		datas := make([]UpBytesStruct, 0)
+		for _, v := range <-p.ChildDataChannel {
+			datas = append(datas, v)
+		}
+		for i := range length { // len of length is number of children
+			cv := libunlynx.CipherVector{}
+			err := cv.FromBytes(datas[i].Data, libunlynxtools.UnsafeCastBytesToInts(length[i].Length)[0])
+			if err != nil {
+				return nil, err
+			}
+
+			sumCv := libunlynx.NewCipherVector(len(cv))
+			sumCv.Add(*p.NodeContribution, cv)
+			p.NodeContribution = sumCv
+
 		}
 	}
+	libunlynx.EndTimer(keySwitchingAscendingAggregation)
 
-	if proofsB {
-		proof := libunlynxproofs.VectorSwitchKeyProofCreation(oldCv, newCv, r, secretContrib, originalEphemeralKeys, keySwitchingTarget.NewKey)
-		pubKey := libunlynx.SuiTe.Point().Mul(secretContrib, libunlynx.SuiTe.Point().Base())
-		pub := libunlynxproofs.PublishedSwitchKeyProof{Skp: proof, VectBefore: oldCv, VectAfter: newCv, K: pubKey, Q: keySwitchingTarget.NewKey}
-		_ = pub
-	}
-}
-
-// Conversion
-//______________________________________________________________________________________________________________________
-
-// ToBytes converts a KeySwitchedCipherMessage to a byte array
-func (kscm *KeySwitchedCipherMessage) ToBytes() ([]byte, int) {
-	bb := make([][]byte, len(kscm.DataKey))
-
-	if libunlynx.PARALLELIZE {
-		var wg sync.WaitGroup
-		var mutexDK sync.Mutex
-		for i := 0; i < len(kscm.DataKey); i += libunlynx.VPARALLELIZE {
-			wg.Add(1)
-			go func(i int) {
-				for j := 0; j < libunlynx.VPARALLELIZE && (i+j) < len(kscm.DataKey); j++ {
-					mutexDK.Lock()
-					data := (*kscm).DataKey[i+j]
-					mutexDK.Unlock()
-
-					aux := data.ToBytes()
-
-					mutexDK.Lock()
-					bb[i+j] = aux
-					mutexDK.Unlock()
-				}
-				defer wg.Done()
-			}(i)
+	if !p.IsRoot() {
+		if err := p.SendToParent(&LengthMessage{Length: libunlynxtools.UnsafeCastIntsToBytes([]int{len(*p.NodeContribution)})}); err != nil {
+			return nil, errors.New("Node " + p.ServerIdentity().String() + " failed to broadcast LengthMessage ( " + err.Error() + " )")
 		}
-		wg.Wait()
-	} else {
-		for i, v := range (*kscm).DataKey {
-			bb[i] = v.ToBytes()
+		message, _, err := (*p.NodeContribution).ToBytes()
+		if err != nil {
+			return nil, err
+		}
+
+		if err := p.SendToParent(&UpBytesMessage{Data: message}); err != nil {
+			return nil, errors.New("Node " + p.ServerIdentity().String() + " failed to broadcast UpBytesMessage: " + err.Error())
 		}
 	}
-	nkb := libunlynx.AbstractPointsToBytes([]kyber.Point{(*kscm).NewKey})
 
-	b := make([]byte, 0)
-	for i := range bb {
-		b = append(b, bb[i]...)
-	}
-	return append(b, nkb...), len(b)
-}
-
-// FromBytes converts a byte array to a KeySwitchedCipherMessage. Note that you need to create the (empty) object beforehand.
-func (kscm *KeySwitchedCipherMessage) FromBytes(data []byte, lenb int) {
-	cipherTextSize := libunlynx.CipherTextByteSize()
-	elementSize := cipherTextSize + (cipherTextSize / 2)
-	nkb := data[lenb:]
-	(*kscm).NewKey = libunlynx.BytesToAbstractPoints(nkb)[0]
-	(*kscm).DataKey = make([]DataAndOriginalEphemeralKeys, lenb/elementSize)
-
-	if libunlynx.PARALLELIZE {
-		var wg sync.WaitGroup
-		for i := 0; i < lenb; i += elementSize * libunlynx.VPARALLELIZE {
-			wg.Add(1)
-			go func(i int) {
-				for j := 0; j < elementSize*libunlynx.VPARALLELIZE && (i+j < lenb); j += elementSize {
-					tmp := data[(i + j):(i + j + elementSize)]
-					(*kscm).DataKey[(i+j)/elementSize] = DataAndOriginalEphemeralKeys{}
-					(*kscm).DataKey[(i+j)/elementSize].FromBytes(tmp)
-				}
-				defer wg.Done()
-			}(i)
-		}
-		wg.Wait()
-	} else {
-		for i := 0; i < lenb; i += cipherTextSize {
-			tmp := data[i : i+cipherTextSize]
-			(*kscm).DataKey[i/cipherTextSize] = DataAndOriginalEphemeralKeys{}
-			(*kscm).DataKey[i/cipherTextSize].FromBytes(tmp)
-		}
-	}
-}
-
-// ToBytes converts a DataAndOriginalEphemeralKeys to a byte array
-func (daoek *DataAndOriginalEphemeralKeys) ToBytes() []byte {
-	b := make([]byte, 0)
-	bResponse := (*daoek).Response.ToBytes()
-	bEphKey, errBin := daoek.OriginalEphemeralKey.MarshalBinary()
-	if errBin != nil {
-		log.Fatal(errBin)
-	}
-	b = append(bResponse, bEphKey...)
-
-	return b
-}
-
-// FromBytes converts a byte array to a DataAndOriginalEphemeralKeys. Note that you need to create the (empty) object beforehand.
-func (daoek *DataAndOriginalEphemeralKeys) FromBytes(data []byte) {
-	cipherTextSize := libunlynx.CipherTextByteSize()
-	(*daoek).Response.FromBytes(data[:cipherTextSize])
-	(*daoek).OriginalEphemeralKey = libunlynx.SuiTe.Point()
-	(*daoek).OriginalEphemeralKey.UnmarshalBinary(data[cipherTextSize:])
+	return p.NodeContribution, nil
 }

@@ -1,8 +1,9 @@
 package libunlynx
 
 import (
-	"go.dedis.ch/onet/v3/simul/monitor"
 	"sync"
+
+	"go.dedis.ch/onet/v3/simul/monitor"
 )
 
 // Global Variables
@@ -10,9 +11,6 @@ import (
 
 // TIME is true if we use protocols with time measurements of computations.
 const TIME = false
-
-// PARALLELIZE is true if we use protocols with parallelization of computations.
-const PARALLELIZE = true
 
 // VPARALLELIZE allows to choose the level of parallelization in the vector computations
 const VPARALLELIZE = 100
@@ -39,15 +37,11 @@ func EndTimer(timer *monitor.TimeMeasure) {
 // StartParallelize starts parallelization by instanciating number of threads
 func StartParallelize(nbrWg int) *sync.WaitGroup {
 	var wg sync.WaitGroup
-	if PARALLELIZE {
-		wg.Add(nbrWg)
-	}
+	wg.Add(nbrWg)
 	return &wg
 }
 
 // EndParallelize waits for a number of threads to finish
 func EndParallelize(wg *sync.WaitGroup) {
-	if PARALLELIZE {
-		wg.Wait()
-	}
+	wg.Wait()
 }

@@ -1,11 +1,13 @@
 package appunlynx
 
 import (
+	"errors"
+	"os"
+
 	"github.com/lca1/unlynx/lib"
 	"go.dedis.ch/onet/v3/app"
 	"go.dedis.ch/onet/v3/log"
 	"gopkg.in/urfave/cli.v1"
-	"os"
 )
 
 const (
@@ -120,7 +122,9 @@ func main() {
 			Name:  "server",
 			Usage: "Start unlynx server",
 			Action: func(c *cli.Context) error {
-				runServer(c)
+				if err := runServer(c); err != nil {
+					return errors.New("error during runServer(): " + err.Error())
+				}
 				return nil
 			},
 			Flags: serverFlags,
@@ -131,10 +135,10 @@ func main() {
 					Usage:   "Setup server configuration (interactive)",
 					Action: func(c *cli.Context) error {
 						if c.String(optionConfig) != "" {
-							log.Fatal("[-] Configuration file option cannot be used for the 'setup' command")
+							return errors.New("[-] Configuration file option cannot be used for the 'setup' command")
 						}
 						if c.GlobalIsSet("debug") {
-							log.Fatal("[-] Debug option cannot be used for the 'setup' command")
+							return errors.New("[-] Debug option cannot be used for the 'setup' command")
 						}
 						app.InteractiveConfig(libunlynx.SuiTe, BinaryName)
 						return nil

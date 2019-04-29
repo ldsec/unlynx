@@ -1,6 +1,10 @@
 package protocolsunlynx_test
 
 import (
+	"reflect"
+	"testing"
+	"time"
+
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/protocols"
 	"github.com/stretchr/testify/assert"
@@ -8,30 +12,27 @@ import (
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
 	"go.dedis.ch/onet/v3/network"
-	"reflect"
-	"testing"
-	"time"
 )
 
 func TestDeterministicTagging(t *testing.T) {
 	local := onet.NewLocalTest(libunlynx.SuiTe)
 
 	// You must register this protocol before creating the servers
-	onet.GlobalProtocolRegister("DeterministicTaggingTest", NewDeterministicTaggingTest)
+	_, err := onet.GlobalProtocolRegister("DeterministicTaggingTest", NewDeterministicTaggingTest)
+	assert.NoError(t, err, "Error registering <DeterministicTaggingTest>")
+
 	_, entityList, tree := local.GenTree(5, true)
 
 	defer local.CloseAll()
 
 	rootInstance, err := local.CreateProtocol("DeterministicTaggingTest", tree)
-	if err != nil {
-		t.Fatal("Couldn't start protocol:", err)
-	}
+	assert.NoError(t, err)
 
 	protocol := rootInstance.(*protocolsunlynx.DeterministicTaggingProtocol)
 
 	aggregateKey := entityList.Aggregate
 
-	//create data for test
+	// create data for test
 	testCipherVect := make(libunlynx.CipherVector, 1)
 	expRes := []int64{1}
 	for i, p := range expRes {
@@ -63,9 +64,12 @@ func TestDeterministicTagging(t *testing.T) {
 	cta := protocolsunlynx.ProcessResponseToCipherVector(mapi)
 	protocol.TargetOfSwitch = &cta
 	feedback := protocol.FeedbackChannel
-	go protocol.Start()
+	go func() {
+		err := protocol.Start()
+		assert.NoError(t, err)
+	}()
 
-	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*5*2) * time.Millisecond
+	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*10) * time.Millisecond
 
 	select {
 	case encryptedResult := <-feedback:

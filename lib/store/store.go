@@ -1,11 +1,12 @@
 package libunlynxstore
 
 import (
+	"sync"
+
 	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/lib/proofs"
+	"github.com/lca1/unlynx/lib/aggregation"
 	"github.com/lca1/unlynx/lib/tools"
 	"go.dedis.ch/onet/v3/log"
-	"sync"
 )
 
 // Store contains all the elements of a survey, it consists of the data structure that each cothority has to
@@ -45,7 +46,7 @@ func NewStore() *Store {
 
 // proccessParameters converts the sum, where and group by data to a collection of CipherTexts (CipherVector)
 func proccessParameters(data []string, clear map[string]int64, encrypted map[string]libunlynx.CipherText, noEnc bool) ([]int64, libunlynx.CipherVector) {
-	containerClear := []int64{}
+	containerClear := make([]int64, 0)
 	containerEnc := libunlynx.CipherVector{}
 
 	for _, v := range data {
@@ -66,10 +67,10 @@ func proccessParameters(data []string, clear map[string]int64, encrypted map[str
 // InsertDpResponse handles the local storage of a new DP response in aggregation or grouping cases.
 func (s *Store) InsertDpResponse(cr libunlynx.DpResponse, proofsB bool, groupBy, sum []string, where []libunlynx.WhereQueryAttribute) {
 	newResp := libunlynx.ProcessResponse{}
-	clearGrp := []int64{}
-	clearWhr := []int64{}
+	clearGrp := make([]int64, 0)
+	clearWhr := make([]int64, 0)
 
-	noEnc := (cr.WhereEnc == nil && cr.GroupByEnc == nil)
+	noEnc := cr.WhereEnc == nil && cr.GroupByEnc == nil
 	clearGrp, newResp.GroupByEnc = proccessParameters(groupBy, cr.GroupByClear, cr.GroupByEnc, noEnc)
 
 	whereStrings := make([]string, len(where))
@@ -91,8 +92,7 @@ func (s *Store) InsertDpResponse(cr libunlynx.DpResponse, proofsB bool, groupBy,
 			s.DpResponsesAggr[GroupingKeyTuple{libunlynx.Key(clearGrp), libunlynx.Key(clearWhr)}] = mapValue
 
 			if proofsB {
-				publishedAggregationProof := libunlynxproofs.PublishedSimpleAdditionProof{C1: value.AggregatingAttributes, C2: newResp.AggregatingAttributes, C1PlusC2: mapValue.AggregatingAttributes}
-				_ = publishedAggregationProof
+				_ = libunlynx.PublishedSimpleAdditionProof{C1: value.AggregatingAttributes, C2: newResp.AggregatingAttributes, C1PlusC2: mapValue.AggregatingAttributes}
 			}
 
 		} else {
@@ -100,7 +100,6 @@ func (s *Store) InsertDpResponse(cr libunlynx.DpResponse, proofsB bool, groupBy,
 		}
 
 	}
-
 }
 
 // HasNextDpResponse permits to verify if there are new DP responses to be processed.
@@ -135,15 +134,21 @@ func (s *Store) PushDeterministicFilteredResponses(detFilteredResponses []libunl
 
 	round := libunlynx.StartTimer(serverName + "_ServerLocalAggregation")
 
+	cvMap := make(map[libunlynx.GroupingKey][]libunlynx.CipherVector)
 	for _, v := range detFilteredResponses {
 		s.Mutex.Lock()
-		libunlynxtools.AddInMap(s.LocAggregatedProcessResponse, v.DetTagGroupBy, v.Fr)
+		libunlynx.AddInMap(s.LocAggregatedProcessResponse, v.DetTagGroupBy, v.Fr)
 		s.Mutex.Unlock()
+
+		if proofsB {
+			v.FormatAggregationProofs(cvMap)
+		}
+
 	}
 	if proofsB {
-		PublishedAggregationProof := libunlynxproofs.AggregationProofCreation(detFilteredResponses, s.LocAggregatedProcessResponse)
-		//publication
-		_ = PublishedAggregationProof
+		for k, v := range cvMap {
+			libunlynxaggr.AggregationListProofCreation(v, s.LocAggregatedProcessResponse[k].AggregatingAttributes)
+		}
 	}
 
 	libunlynx.EndTimer(round)
@@ -162,9 +167,9 @@ func (s *Store) PullLocallyAggregatedResponses() map[libunlynx.GroupingKey]libun
 
 }
 
-func (s *Store) nextID() libunlynx.TempID {
+func (s *Store) nextID() uint64 {
 	s.lastID++
-	return libunlynx.TempID(s.lastID)
+	return uint64(s.lastID)
 }
 
 // AddInClear permits to add non-encrypted DP responses
@@ -197,21 +202,14 @@ func AddInClear(s []libunlynx.DpClearResponse) []libunlynx.DpClearResponse {
 		if _, ok := dataMap[key]; ok == false {
 			dataMap[key] = cpy
 		} else {
-			if libunlynx.PARALLELIZE {
-				for i := 0; i < len(dataMap[key]); i = i + libunlynx.VPARALLELIZE {
-					wg.Add(1)
-					go func(i int) {
-						for j := 0; j < libunlynx.VPARALLELIZE && (j+i < len(dataMap[key])); j++ {
-							dataMap[key][j+i] += cpy[j+i]
-						}
-						defer wg.Done()
-					}(i)
-				}
-			} else {
-				for i := range dataMap[key] {
-					dataMap[key][i] += cpy[i]
-				}
-
+			for i := 0; i < len(dataMap[key]); i = i + libunlynx.VPARALLELIZE {
+				wg.Add(1)
+				go func(i int) {
+					defer wg.Done()
+					for j := 0; j < libunlynx.VPARALLELIZE && (j+i < len(dataMap[key])); j++ {
+						dataMap[key][j+i] += cpy[j+i]
+					}
+				}(i)
 			}
 			libunlynx.EndParallelize(wg)
 		}
@@ -250,7 +248,7 @@ func AddInClear(s []libunlynx.DpClearResponse) []libunlynx.DpClearResponse {
 func (s *Store) PushCothorityAggregatedFilteredResponses(sNew map[libunlynx.GroupingKey]libunlynx.FilteredResponse) {
 	for key, value := range sNew {
 		s.Mutex.Lock()
-		libunlynxtools.AddInMap(s.GroupedDeterministicFilteredResponses, key, value)
+		libunlynx.AddInMap(s.GroupedDeterministicFilteredResponses, key, value)
 		s.Mutex.Unlock()
 	}
 }
@@ -309,6 +307,6 @@ func (s *Store) PullDeliverableResults(diffPri bool, noise libunlynx.CipherText)
 // DisplayResults shows results and is useful for debugging.
 func (s *Store) DisplayResults() {
 	for _, v := range s.DeliverableResults {
-		log.LLvl1("[ ", v.GroupByEnc, " ] : ", v.AggregatingAttributes, ")")
+		log.Lvl1("[ ", v.GroupByEnc, " ] : ", v.AggregatingAttributes, ")")
 	}
 }

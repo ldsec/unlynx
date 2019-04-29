@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/BurntSushi/toml"
 	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/protocols"
+	"github.com/lca1/unlynx/protocols/utils"
 	"go.dedis.ch/kyber/v3/util/random"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
@@ -60,7 +60,7 @@ func (sim *AddRmSimulation) Run(config *onet.SimulationConfig) error {
 			return err
 		}
 
-		root := rooti.(*protocolsunlynx.AddRmServerProtocol)
+		root := rooti.(*protocolsunlynxutils.AddRmServerProtocol)
 
 		secKey := libunlynx.SuiTe.Scalar().Pick(random.New())
 		newSecKey := libunlynx.SuiTe.Scalar().Pick(random.New())
@@ -73,15 +73,17 @@ func (sim *AddRmSimulation) Run(config *onet.SimulationConfig) error {
 
 		log.Lvl1("starting protocol with ", len(ct), " responses")
 
-		root.ProtocolInstance().(*protocolsunlynx.AddRmServerProtocol).TargetOfTransformation = ct
-		root.ProtocolInstance().(*protocolsunlynx.AddRmServerProtocol).Proofs = sim.Proofs
-		root.ProtocolInstance().(*protocolsunlynx.AddRmServerProtocol).Add = sim.Add
-		root.ProtocolInstance().(*protocolsunlynx.AddRmServerProtocol).KeyToRm = newSecKey
+		root.ProtocolInstance().(*protocolsunlynxutils.AddRmServerProtocol).TargetOfTransformation = ct
+		root.ProtocolInstance().(*protocolsunlynxutils.AddRmServerProtocol).Proofs = sim.Proofs
+		root.ProtocolInstance().(*protocolsunlynxutils.AddRmServerProtocol).Add = sim.Add
+		root.ProtocolInstance().(*protocolsunlynxutils.AddRmServerProtocol).KeyToRm = newSecKey
 
 		round := libunlynx.StartTimer("_LocalAddRm(Simulation")
 
-		root.Start()
-		results := <-root.ProtocolInstance().(*protocolsunlynx.AddRmServerProtocol).FeedbackChannel
+		if err := root.Start(); err != nil {
+			return err
+		}
+		results := <-root.ProtocolInstance().(*protocolsunlynxutils.AddRmServerProtocol).FeedbackChannel
 		log.Lvl1("Number of aggregated lines: ", len(results))
 
 		libunlynx.EndTimer(round)

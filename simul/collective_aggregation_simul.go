@@ -1,14 +1,16 @@
 package main
 
 import (
+	"errors"
 	"github.com/BurntSushi/toml"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/aggregation"
 	"github.com/lca1/unlynx/protocols"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
 )
 
-func createDataSet(numberGroups, numberAttributes, numberGroupAttr int) map[libunlynx.GroupingKey]libunlynx.FilteredResponse {
+func createDataSet(numberGroups, numberAttributes, numberGroupAttr int) (map[libunlynx.GroupingKey]libunlynx.FilteredResponse, error) {
 	var secContrib = libunlynx.SuiTe.Scalar().One()
 	var clientPrivate = libunlynx.SuiTe.Scalar().One() //one -> to have the same for each node
 	var clientPublic = libunlynx.SuiTe.Point().Mul(clientPrivate, libunlynx.SuiTe.Point().Base())
@@ -29,9 +31,13 @@ func createDataSet(numberGroups, numberAttributes, numberGroupAttr int) map[libu
 
 		cipherVect := *libunlynx.EncryptIntVector(clientPublic, tab)
 
-		testCVMap[protocolsunlynx.CipherVectorToDeterministicTag(*libunlynx.EncryptIntVector(clientPublic, []int64{int64(i)}), clientPrivate, secContrib, clientPublic, false)] = libunlynx.FilteredResponse{GroupByEnc: dummyGroups, AggregatingAttributes: cipherVect}
+		tag, err := protocolsunlynx.CipherVectorToDeterministicTag(*libunlynx.EncryptIntVector(clientPublic, []int64{int64(i)}), clientPrivate, secContrib, clientPublic, false)
+		if err != nil {
+			return nil, err
+		}
+		testCVMap[tag] = libunlynx.FilteredResponse{GroupByEnc: dummyGroups, AggregatingAttributes: cipherVect}
 	}
-	return testCVMap
+	return testCVMap, nil
 }
 
 func init() {
@@ -76,10 +82,12 @@ func (sim *CollectiveAggregationSimulation) Setup(dir string, hosts []string) (*
 
 // Node registers a CollectiveAggregationSimul (with access to the CollectiveAggregationSimulation object) for every node
 func (sim *CollectiveAggregationSimulation) Node(config *onet.SimulationConfig) error {
-	config.Server.ProtocolRegister("CollectiveAggregationSimul",
+	if _, err := config.Server.ProtocolRegister("CollectiveAggregationSimul",
 		func(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 			return NewAggregationProtocolSimul(tni, sim)
-		})
+		}); err != nil {
+		return errors.New("Error while registering <CollectiveAggregationSimul>:" + err.Error())
+	}
 
 	return sim.SimulationBFTree.Node(config)
 }
@@ -100,7 +108,9 @@ func (sim *CollectiveAggregationSimulation) Run(config *onet.SimulationConfig) e
 		round := libunlynx.StartTimer("CollectiveAggregation(SIMULATION)")
 
 		log.Lvl1("Start protocol")
-		root.Start()
+		if err := root.Start(); err != nil {
+			return err
+		}
 		<-root.ProtocolInstance().(*protocolsunlynx.CollectiveAggregationProtocol).FeedbackChannel
 
 		libunlynx.EndTimer(round)
@@ -112,10 +122,18 @@ func (sim *CollectiveAggregationSimulation) Run(config *onet.SimulationConfig) e
 // NewAggregationProtocolSimul is a simulation specific protocol instance constructor that injects test data.
 func NewAggregationProtocolSimul(tni *onet.TreeNodeInstance, sim *CollectiveAggregationSimulation) (onet.ProtocolInstance, error) {
 	protocol, err := protocolsunlynx.NewCollectiveAggregationProtocol(tni)
-	pap := protocol.(*protocolsunlynx.CollectiveAggregationProtocol)
+	collectiveAggr := protocol.(*protocolsunlynx.CollectiveAggregationProtocol)
 
-	data := createDataSet(sim.NbrGroups, sim.NbrAggrAttributes, sim.NbrGroupAttributes)
-	pap.GroupedData = &data
-	pap.Proofs = sim.Proofs
-	return pap, err
+	data, err := createDataSet(sim.NbrGroups, sim.NbrAggrAttributes, sim.NbrGroupAttributes)
+	if err != nil {
+		return nil, err
+	}
+	collectiveAggr.GroupedData = &data
+	collectiveAggr.Proofs = sim.Proofs
+	collectiveAggr.ProofFunc = func(data []libunlynx.CipherVector, res libunlynx.CipherVector) *libunlynxaggr.PublishedAggregationListProof {
+		proof := libunlynxaggr.AggregationListProofCreation(data, res)
+		return &proof
+	}
+
+	return collectiveAggr, err
 }

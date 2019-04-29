@@ -87,7 +87,9 @@ func (sim *LocalAggregationSimulation) Run(config *onet.SimulationConfig) error 
 			groupCipherVect = *tmp
 			cr := libunlynx.FilteredResponse{GroupByEnc: testCipherVect1, AggregatingAttributes: testCipherVect1}
 			det1 := groupCipherVect
-			protocolsunlynx.TaggingDet(&det1, secKey, newSecKey, pubKey, sim.Proofs)
+			if err := protocolsunlynx.TaggingDet(&det1, secKey, newSecKey, pubKey, sim.Proofs); err != nil {
+				return err
+			}
 
 			deterministicGroupAttributes := make(libunlynx.DeterministCipherVector, len(det1))
 			for j, c := range det1 {
@@ -108,7 +110,9 @@ func (sim *LocalAggregationSimulation) Run(config *onet.SimulationConfig) error 
 
 		round := libunlynx.StartTimer("_LocalAggregation(Simulation")
 
-		root.Start()
+		if err := root.Start(); err != nil {
+			return err
+		}
 		results := <-root.ProtocolInstance().(*protocolsunlynxutils.LocalAggregationProtocol).FeedbackChannel
 		log.Lvl1("Number of aggregated lines: ", len(results))
 
