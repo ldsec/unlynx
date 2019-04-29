@@ -20,9 +20,8 @@ func init() {
 	network.RegisterMessage(ShufflingPlusDDTMessage{})
 	network.RegisterMessage(ShufflingPlusDDTBytesMessage{})
 	network.RegisterMessage(ShufflingPlusDDTBytesLength{})
-	if _, err := onet.GlobalProtocolRegister(ShufflingPlusDDTProtocolName, NewShufflingPlusDDTProtocol); err != nil {
-		log.Fatal("Failed to register the <ShufflingPlusDDT> protocol: ", err)
-	}
+	_, err := onet.GlobalProtocolRegister(ShufflingPlusDDTProtocolName, NewShufflingPlusDDTProtocol)
+	log.ErrFatal(err, "Failed to register the <ShufflingPlusDDT> protocol:")
 }
 
 // Messages
@@ -158,7 +157,11 @@ func (p *ShufflingPlusDDTProtocol) Dispatch() error {
 
 	readData := libunlynx.StartTimer(p.Name() + "_ShufflingPlusDDT(ReadData)")
 	sm := ShufflingPlusDDTMessage{}
-	sm.FromBytes(tmp.Data, tmp.ShuffKey, shufflingPlusDDTBytesMessageLength.CVLengths)
+	err := sm.FromBytes(tmp.Data, tmp.ShuffKey, shufflingPlusDDTBytesMessageLength.CVLengths)
+	if err != nil {
+		return err
+	}
+
 	libunlynx.EndTimer(readData)
 
 	// STEP 1: Shuffling of the data
@@ -170,12 +173,16 @@ func (p *ShufflingPlusDDTProtocol) Dispatch() error {
 	libunlynx.EndTimer(step1)
 
 	if p.Proofs {
-		libunlynxshuffle.ShuffleProofCreation(sm.Data, shuffledData, libunlynx.SuiTe.Point().Base(), sm.ShuffKey, beta, pi)
+		if _, err := libunlynxshuffle.ShuffleProofCreation(sm.Data, shuffledData, libunlynx.SuiTe.Point().Base(), sm.ShuffKey, beta, pi); err != nil {
+			return err
+		}
 	}
 
 	// STEP 2: Addition of secret (first round of DDT, add value derivated from ephemeral secret to message)
 	step2 := libunlynx.StartTimer(p.Name() + "_ShufflingPlusDDT(Step2-DDTAddition)")
 	toAdd := libunlynx.SuiTe.Point().Mul(*p.SurveySecretKey, libunlynx.SuiTe.Point().Base()) //siB (basically)
+
+	mutex := sync.Mutex{}
 	wg := sync.WaitGroup{}
 	for i := 0; i < len(shuffledData); i += libunlynx.VPARALLELIZE {
 		wg.Add(1)
@@ -185,7 +192,13 @@ func (p *ShufflingPlusDDTProtocol) Dispatch() error {
 				for k := range shuffledData[i+j] {
 					tmp := libunlynx.SuiTe.Point().Add(shuffledData[i+j][k].C, toAdd)
 					if p.Proofs {
-						libunlynxdetertag.DeterministicTagAdditionProofCreation(shuffledData[i+j][k].C, *p.SurveySecretKey, toAdd, tmp)
+						_, tmpErr := libunlynxdetertag.DeterministicTagAdditionProofCreation(shuffledData[i+j][k].C, *p.SurveySecretKey, toAdd, tmp)
+						if tmpErr != nil {
+							mutex.Lock()
+							err = tmpErr
+							mutex.Unlock()
+							return
+						}
 					}
 					shuffledData[i+j][k].C = tmp
 				}
@@ -193,12 +206,17 @@ func (p *ShufflingPlusDDTProtocol) Dispatch() error {
 		}(i)
 	}
 	wg.Wait()
+
+	if err != nil {
+		return err
+	}
 	libunlynx.EndTimer(step2)
 
 	log.Lvl1(p.ServerIdentity(), " preparation round for deterministic tagging")
 
 	// STEP 3: Partial Decryption (second round of DDT, deterministic tag creation)
 	step3 := libunlynx.StartTimer(p.Name() + "_ShufflingPlusDDT(Step3-DDT)")
+	mutex = sync.Mutex{}
 	wg = sync.WaitGroup{}
 	for i := 0; i < len(shuffledData); i += libunlynx.VPARALLELIZE {
 		wg.Add(1)
@@ -208,7 +226,13 @@ func (p *ShufflingPlusDDTProtocol) Dispatch() error {
 				tmp := shuffledData[i+j]
 				switchedVect := libunlynxdetertag.DeterministicTagSequence(tmp, p.Private(), *p.SurveySecretKey)
 				if p.Proofs {
-					libunlynxdetertag.DeterministicTagCrListProofCreation(tmp, switchedVect, p.Public(), *p.SurveySecretKey, p.Private())
+					_, tmpErr := libunlynxdetertag.DeterministicTagCrListProofCreation(tmp, switchedVect, p.Public(), *p.SurveySecretKey, p.Private())
+					if tmpErr != nil {
+						mutex.Lock()
+						err = tmpErr
+						mutex.Unlock()
+						return
+					}
 				}
 				copy(shuffledData[i+j], switchedVect)
 			}

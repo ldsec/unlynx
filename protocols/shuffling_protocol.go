@@ -190,7 +190,9 @@ func (p *ShufflingProtocol) Dispatch() error {
 
 	tmp := <-p.PreviousNodeInPathChannel
 	sm := ShufflingMessage{}
-	sm.FromBytes(tmp.Data, shufflingBytesMessageLength.CVLengths)
+	if err := sm.FromBytes(tmp.Data, shufflingBytesMessageLength.CVLengths); err != nil {
+		return err
+	}
 	shuffleTarget := sm.Data
 
 	timer := time.Now()

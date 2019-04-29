@@ -27,9 +27,8 @@ func init() {
 	network.RegisterMessage(UpMessage{})
 	network.RegisterMessage(UpBytesMessage{})
 	network.RegisterMessage(LengthMessage{})
-	if _, err := onet.GlobalProtocolRegister(KeySwitchingProtocolName, NewKeySwitchingProtocol); err != nil {
-		log.Fatal("Failed to register the <KeySwitching> protocol: ", err)
-	}
+	_, err := onet.GlobalProtocolRegister(KeySwitchingProtocolName, NewKeySwitchingProtocol)
+	log.ErrFatal(err, "Failed to register the <KeySwitching> protocol:")
 }
 
 // Messages
@@ -202,7 +201,10 @@ func (p *KeySwitchingProtocol) Dispatch() error {
 	}
 
 	// 2. Ascending key switching phase
-	p.ascendingKSPhase()
+	_, err := p.ascendingKSPhase()
+	if err != nil {
+		return err
+	}
 
 	// 3. Response reporting
 	if p.IsRoot() {
@@ -255,14 +257,17 @@ func (p *KeySwitchingProtocol) ascendingKSPhase() (*libunlynx.CipherVector, erro
 		}
 		for i := range length { // len of length is number of children
 			cv := libunlynx.CipherVector{}
-			cv.FromBytes(datas[i].Data, libunlynxtools.UnsafeCastBytesToInts(length[i].Length)[0])
+			err := cv.FromBytes(datas[i].Data, libunlynxtools.UnsafeCastBytesToInts(length[i].Length)[0])
+			if err != nil {
+				return nil, err
+			}
+
 			sumCv := libunlynx.NewCipherVector(len(cv))
 			sumCv.Add(*p.NodeContribution, cv)
 			p.NodeContribution = sumCv
 
 		}
 	}
-
 	libunlynx.EndTimer(keySwitchingAscendingAggregation)
 
 	if !p.IsRoot() {

@@ -13,9 +13,8 @@ import (
 const LocalClearAggregationProtocolName = "LocalClearAggregation"
 
 func init() {
-	if _, err := onet.GlobalProtocolRegister(LocalClearAggregationProtocolName, NewLocalClearAggregationProtocol); err != nil {
-		log.Fatal("Failed to register the <LocalClearAggregation> protocol: ", err)
-	}
+	_, err := onet.GlobalProtocolRegister(LocalClearAggregationProtocolName, NewLocalClearAggregationProtocol)
+	log.ErrFatal(err, "Failed to register the <LocalClearAggregation> protocol:")
 }
 
 // Protocol

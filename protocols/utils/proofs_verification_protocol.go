@@ -18,9 +18,9 @@ import (
 const ProofsVerificationProtocolName = "ProofsVerification"
 
 func init() {
-	if _, err := onet.GlobalProtocolRegister(ProofsVerificationProtocolName, NewProofsVerificationProtocol); err != nil {
-		log.Fatal("Failed to register the <ProofsVerification> protocol: ", err)
-	}
+	_, err := onet.GlobalProtocolRegister(ProofsVerificationProtocolName, NewProofsVerificationProtocol)
+	log.ErrFatal(err, "Failed to register the <ProofsVerification> protocol:")
+
 }
 
 // Protocol

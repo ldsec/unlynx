@@ -10,7 +10,7 @@ import (
 	"go.dedis.ch/onet/v3/log"
 )
 
-func createDataSet(numberGroups, numberAttributes, numberGroupAttr int) map[libunlynx.GroupingKey]libunlynx.FilteredResponse {
+func createDataSet(numberGroups, numberAttributes, numberGroupAttr int) (map[libunlynx.GroupingKey]libunlynx.FilteredResponse, error) {
 	var secContrib = libunlynx.SuiTe.Scalar().One()
 	var clientPrivate = libunlynx.SuiTe.Scalar().One() //one -> to have the same for each node
 	var clientPublic = libunlynx.SuiTe.Point().Mul(clientPrivate, libunlynx.SuiTe.Point().Base())
@@ -31,9 +31,13 @@ func createDataSet(numberGroups, numberAttributes, numberGroupAttr int) map[libu
 
 		cipherVect := *libunlynx.EncryptIntVector(clientPublic, tab)
 
-		testCVMap[protocolsunlynx.CipherVectorToDeterministicTag(*libunlynx.EncryptIntVector(clientPublic, []int64{int64(i)}), clientPrivate, secContrib, clientPublic, false)] = libunlynx.FilteredResponse{GroupByEnc: dummyGroups, AggregatingAttributes: cipherVect}
+		tag, err := protocolsunlynx.CipherVectorToDeterministicTag(*libunlynx.EncryptIntVector(clientPublic, []int64{int64(i)}), clientPrivate, secContrib, clientPublic, false)
+		if err != nil {
+			return nil, err
+		}
+		testCVMap[tag] = libunlynx.FilteredResponse{GroupByEnc: dummyGroups, AggregatingAttributes: cipherVect}
 	}
-	return testCVMap
+	return testCVMap, nil
 }
 
 func init() {
@@ -120,7 +124,10 @@ func NewAggregationProtocolSimul(tni *onet.TreeNodeInstance, sim *CollectiveAggr
 	protocol, err := protocolsunlynx.NewCollectiveAggregationProtocol(tni)
 	collectiveAggr := protocol.(*protocolsunlynx.CollectiveAggregationProtocol)
 
-	data := createDataSet(sim.NbrGroups, sim.NbrAggrAttributes, sim.NbrGroupAttributes)
+	data, err := createDataSet(sim.NbrGroups, sim.NbrAggrAttributes, sim.NbrGroupAttributes)
+	if err != nil {
+		return nil, err
+	}
 	collectiveAggr.GroupedData = &data
 	collectiveAggr.Proofs = sim.Proofs
 	collectiveAggr.ProofFunc = func(data []libunlynx.CipherVector, res libunlynx.CipherVector) *libunlynxaggr.PublishedAggregationListProof {

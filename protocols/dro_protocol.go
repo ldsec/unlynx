@@ -9,7 +9,6 @@ import (
 const DROProtocolName = "DRO"
 
 func init() {
-	if _, err := onet.GlobalProtocolRegister(DROProtocolName, func(tn *onet.TreeNodeInstance) (onet.ProtocolInstance, error) { return nil, nil }); err != nil {
-		log.Fatal("Failed to register the <DRO> protocol: ", err)
-	}
+	_, err := onet.GlobalProtocolRegister(DROProtocolName, func(tn *onet.TreeNodeInstance) (onet.ProtocolInstance, error) { return nil, nil })
+	log.ErrFatal(err, "Failed to register the <DRO> protocol:")
 }

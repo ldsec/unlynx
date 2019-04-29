@@ -57,14 +57,25 @@ func ShuffleProofCreation(originalList, shuffledList []libunlynx.CipherVector, g
 	XhatBar := make([]kyber.Point, k)
 	YhatBar := make([]kyber.Point, k)
 
+	mutex := sync.Mutex{}
 	wg1 := libunlynx.StartParallelize(k)
 	for i := 0; i < k; i++ {
 		go func(inputList, outputList []libunlynx.CipherVector, i int) {
 			defer (*wg1).Done()
-			compressCipherVectorMultiple(inputList, outputList, i, e, Xhat, XhatBar, Yhat, YhatBar)
+			tmpErr := compressCipherVectorMultiple(inputList, outputList, i, e, Xhat, XhatBar, Yhat, YhatBar)
+			if tmpErr != nil {
+				mutex.Lock()
+				err = tmpErr
+				mutex.Unlock()
+				return
+			}
 		}(originalList, shuffledList, i)
 	}
 	libunlynx.EndParallelize(wg1)
+
+	if err != nil {
+		return PublishedShufflingProof{}, err
+	}
 
 	betaCompressed := compressBeta(beta, e)
 

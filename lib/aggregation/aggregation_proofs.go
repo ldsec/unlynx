@@ -116,7 +116,10 @@ func (pap *PublishedAggregationProof) FromBytes(papb PublishedAggregationProofBy
 	if err := pap.AggregationResult.FromBytes(papb.AggregationResult); err != nil {
 		return err
 	}
-	pap.Data.FromBytes(papb.Data, int(papb.DataLen))
+	err := pap.Data.FromBytes(papb.Data, int(papb.DataLen))
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

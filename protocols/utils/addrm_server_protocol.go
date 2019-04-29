@@ -18,9 +18,9 @@ import (
 const AddRmServerProtocolName = "AddRmServer"
 
 func init() {
-	if _, err := onet.GlobalProtocolRegister(AddRmServerProtocolName, NewAddRmProtocol); err != nil {
-		log.Fatal("Failed to register the <AddRmServer> protocol: ", err)
-	}
+	_, err := onet.GlobalProtocolRegister(AddRmServerProtocolName, NewAddRmProtocol)
+	log.ErrFatal(err, "Failed to register the <AddRmServer> protocol:")
+
 }
 
 // Protocol
