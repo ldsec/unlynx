@@ -93,7 +93,7 @@ func NewDeterministicCipherVector(length int) *DeterministCipherVector {
 // Key Pairs
 //----------------------------------------------------------------------------------------------------------------------
 
-// GenKeys generates ElGamal public/private key pairs.
+// GenKey generate an ElGamal public/private key pair.
 func GenKey() (kyber.Scalar, kyber.Point) {
 	keys := key.NewKeyPair(SuiTe)
 	return keys.Private, keys.Public
@@ -106,9 +106,7 @@ func GenKeys(n int) (kyber.Point, []kyber.Scalar, []kyber.Point) {
 
 	group := SuiTe.Point().Null()
 	for i := 0; i < n; i++ {
-		keys := key.NewKeyPair(SuiTe)
-		pub[i] = keys.Public
-		priv[i] = keys.Private
+		priv[i], pub[i] = GenKey()
 		group.Add(group, pub[i])
 	}
 	return group, priv, pub

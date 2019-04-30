@@ -4,7 +4,6 @@ import (
 	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
 	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/util/key"
 	"go.dedis.ch/kyber/v3/util/random"
 	"go.dedis.ch/onet/v3/log"
 	"reflect"
@@ -15,8 +14,7 @@ import (
 
 // TestNullCipherText verifies encryption, decryption and behavior of null ciphertexts.
 func TestNullCipherText(t *testing.T) {
-	keys := key.NewKeyPair(libunlynx.SuiTe)
-	secKey, pubKey := keys.Private, keys.Public
+	secKey, pubKey := libunlynx.GenKey()
 
 	nullEnc := libunlynx.EncryptInt(pubKey, 0)
 	nullDec := libunlynx.DecryptInt(secKey, *nullEnc)
@@ -37,8 +35,7 @@ func TestNullCipherText(t *testing.T) {
 
 // TestEncryption tests a relatively high number of encryptions.
 func TestEncryption(t *testing.T) {
-	keys := key.NewKeyPair(libunlynx.SuiTe)
-	_, pubKey := keys.Private, keys.Public
+	_, pubKey := libunlynx.GenKey()
 
 	nbrEncryptions := 10
 	for i := 0; i < nbrEncryptions; i++ {
@@ -47,8 +44,7 @@ func TestEncryption(t *testing.T) {
 }
 
 func TestEncryptIntVector(t *testing.T) {
-	keys := key.NewKeyPair(libunlynx.SuiTe)
-	_, pubKey := keys.Private, keys.Public
+	_, pubKey := libunlynx.GenKey()
 
 	nbrEncryptions := 200
 	arr := make([]int64, nbrEncryptions)
@@ -61,9 +57,7 @@ func TestEncryptIntVector(t *testing.T) {
 // TestDecryptionConcurrent test the multiple encryptions/decryptions at the same time
 func TestDecryptionConcurrent(t *testing.T) {
 	numThreads := 5
-
-	keys := key.NewKeyPair(libunlynx.SuiTe)
-	secKey, pubKey := keys.Private, keys.Public
+	secKey, pubKey := libunlynx.GenKey()
 
 	wg := libunlynx.StartParallelize(numThreads)
 
@@ -82,9 +76,7 @@ func TestDecryptionConcurrent(t *testing.T) {
 // TestDecryptionConcurrent test the multiple encryptions/decryptions at the same time
 func TestDecryptionNegConcurrent(t *testing.T) {
 	numThreads := 5
-
-	keys := key.NewKeyPair(libunlynx.SuiTe)
-	secKey, pubKey := keys.Private, keys.Public
+	secKey, pubKey := libunlynx.GenKey()
 
 	wg := libunlynx.StartParallelize(numThreads)
 
@@ -110,8 +102,7 @@ func TestDecryptionNegConcurrent(t *testing.T) {
 
 // TestNullCipherText verifies encryption, decryption and behavior of null cipherVectors.
 func TestNullCipherVector(t *testing.T) {
-	keys := key.NewKeyPair(libunlynx.SuiTe)
-	secKey, pubKey := keys.Private, keys.Public
+	secKey, pubKey := libunlynx.GenKey()
 
 	nullVectEnc := *libunlynx.NullCipherVector(10, pubKey)
 	nullVectDec := libunlynx.DecryptIntVector(secKey, &nullVectEnc)
@@ -132,8 +123,7 @@ func TestNullCipherVector(t *testing.T) {
 
 // TestHomomorphicOpp tests homomorphic addition.
 func TestHomomorphicOpp(t *testing.T) {
-	keys := key.NewKeyPair(libunlynx.SuiTe)
-	secKey, pubKey := keys.Private, keys.Public
+	secKey, pubKey := libunlynx.GenKey()
 
 	cv1 := libunlynx.EncryptIntVector(pubKey, []int64{0, 1, 2, 3, 100})
 	cv2 := libunlynx.EncryptIntVector(pubKey, []int64{0, 0, 1, 3, 3})
@@ -207,8 +197,7 @@ func TestAbstractPointsConverter(t *testing.T) {
 
 // TestCiphertextConverter tests the Ciphertext converter (to bytes)
 func TestCiphertextConverter(t *testing.T) {
-	keys := key.NewKeyPair(libunlynx.SuiTe)
-	secKey, pubKey := keys.Private, keys.Public
+	secKey, pubKey := libunlynx.GenKey()
 
 	target := int64(2)
 	ct := libunlynx.EncryptInt(pubKey, target)
@@ -227,8 +216,7 @@ func TestCiphertextConverter(t *testing.T) {
 
 // TestCipherVectorConverter tests the CipherVector converter (to bytes)
 func TestCipherVectorConverter(t *testing.T) {
-	keys := key.NewKeyPair(libunlynx.SuiTe)
-	secKey, pubKey := keys.Private, keys.Public
+	secKey, pubKey := libunlynx.GenKey()
 
 	target := []int64{0, 1, 3, 103, 103}
 	cv := libunlynx.EncryptIntVector(pubKey, target)
@@ -261,8 +249,7 @@ func TestIntArrayToCipherVector(t *testing.T) {
 }
 
 func TestB64Serialization(t *testing.T) {
-	keys := key.NewKeyPair(libunlynx.SuiTe)
-	secKey, pubKey := keys.Private, keys.Public
+	secKey, pubKey := libunlynx.GenKey()
 
 	target := []int64{0, 1, 3, 103, 103}
 	cv := libunlynx.EncryptIntVector(pubKey, target)
@@ -291,8 +278,7 @@ func TestB64Serialization(t *testing.T) {
 }
 
 func TestEncryptScalar(t *testing.T) {
-	keys := key.NewKeyPair(libunlynx.SuiTe)
-	secKey, pubKey := keys.Private, keys.Public
+	secKey, pubKey := libunlynx.GenKey()
 
 	target := int64(5)
 	scal := libunlynx.SuiTe.Scalar().SetInt64(target)
@@ -302,8 +288,7 @@ func TestEncryptScalar(t *testing.T) {
 }
 
 func TestEncryptScalarVector(t *testing.T) {
-	keys := key.NewKeyPair(libunlynx.SuiTe)
-	secKey, pubKey := keys.Private, keys.Public
+	secKey, pubKey := libunlynx.GenKey()
 
 	target := []int64{0, 1, 3, 103, 103}
 	targetScal := make([]kyber.Scalar, len(target))
@@ -319,8 +304,7 @@ func TestEncryptScalarVector(t *testing.T) {
 }
 
 func TestDecryptIntVectorWithNeg(t *testing.T) {
-	keys := key.NewKeyPair(libunlynx.SuiTe)
-	secKey, pubKey := keys.Private, keys.Public
+	secKey, pubKey := libunlynx.GenKey()
 
 	target := []int64{0, -1, -3, -103, -103}
 	cv := libunlynx.EncryptIntVector(pubKey, target)
@@ -332,8 +316,7 @@ func TestDecryptIntVectorWithNeg(t *testing.T) {
 }
 
 func TestDecryptCheckZero(t *testing.T) {
-	keys := key.NewKeyPair(libunlynx.SuiTe)
-	secKey, pubKey := keys.Private, keys.Public
+	secKey, pubKey := libunlynx.GenKey()
 
 	ctZero := *libunlynx.EncryptInt(pubKey, int64(0))
 	assert.Equal(t, libunlynx.DecryptCheckZero(secKey, ctZero), int64(0))
@@ -343,8 +326,7 @@ func TestDecryptCheckZero(t *testing.T) {
 }
 
 func TestDecryptCheckZeroVector(t *testing.T) {
-	keys := key.NewKeyPair(libunlynx.SuiTe)
-	secKey, pubKey := keys.Private, keys.Public
+	secKey, pubKey := libunlynx.GenKey()
 
 	target := []int64{0, 1, 5, 0, 3}
 
@@ -359,8 +341,7 @@ func TestDecryptCheckZeroVector(t *testing.T) {
 }
 
 func TestNewDeterministicCipherText(t *testing.T) {
-	keys := key.NewKeyPair(libunlynx.SuiTe)
-	secKey, _ := keys.Private, keys.Public
+	secKey, _ := libunlynx.GenKey()
 
 	dt1 := libunlynx.NewDeterministicCipherText()
 	dt2 := libunlynx.NewDeterministicCipherText()
@@ -373,8 +354,7 @@ func TestNewDeterministicCipherText(t *testing.T) {
 }
 
 func TestNewDeterministicCipherVector(t *testing.T) {
-	keys := key.NewKeyPair(libunlynx.SuiTe)
-	secKey, _ := keys.Private, keys.Public
+	secKey, _ := libunlynx.GenKey()
 
 	k := 5
 	dtv1 := *libunlynx.NewDeterministicCipherVector(k)
@@ -395,8 +375,7 @@ func TestNewDeterministicCipherVector(t *testing.T) {
 }
 
 func TestDeterministicCipherTextKey(t *testing.T) {
-	keys := key.NewKeyPair(libunlynx.SuiTe)
-	_, pubKey := keys.Private, keys.Public
+	_, pubKey := libunlynx.GenKey()
 
 	k := 5
 	target := []int64{0, 1, 3, 103, 103}
@@ -411,8 +390,7 @@ func TestDeterministicCipherTextKey(t *testing.T) {
 }
 
 func TestSerializePoint(t *testing.T) {
-	keys := key.NewKeyPair(libunlynx.SuiTe)
-	secKey, pubKey := keys.Private, keys.Public
+	secKey, pubKey := libunlynx.GenKey()
 
 	target := int64(1)
 	ct := *libunlynx.EncryptInt(pubKey, target)

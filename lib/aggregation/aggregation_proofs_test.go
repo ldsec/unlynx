@@ -7,12 +7,10 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/lca1/unlynx/lib"
-	"go.dedis.ch/kyber/v3/util/key"
 )
 
 func TestAggregationProof(t *testing.T) {
-	keys := key.NewKeyPair(libunlynx.SuiTe)
-	pubKey, _ := keys.Public, keys.Private
+	_, pubKey := libunlynx.GenKey()
 
 	tab1 := []int64{1, 2, 3, 6}
 	testCV1 := *libunlynx.EncryptIntVector(pubKey, tab1)

@@ -15,7 +15,6 @@ import (
 // TesKeySwitchingProof test the creation and verification of key switching proofs
 func TestKeySwitchingProof(t *testing.T) {
 	keysTarget := key.NewKeyPair(libunlynx.SuiTe)
-
 	keys := key.NewKeyPair(libunlynx.SuiTe)
 
 	ct1 := libunlynx.EncryptInt(keys.Public, int64(1))
