@@ -11,7 +11,8 @@ import (
 
 func TestDeterministicTagProofCreation(t *testing.T) {
 	secKey, pubKey := libunlynx.GenKey()
-	secretContrib, pubKeyNew := libunlynx.GenKey()
+	_, pubKeyNew := libunlynx.GenKey()
+	secretContrib, _ := libunlynx.GenKey()
 
 	cipherOne := *libunlynx.EncryptInt(pubKey, 10)
 
