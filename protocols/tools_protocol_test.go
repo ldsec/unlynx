@@ -7,14 +7,12 @@ import (
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/protocols"
 	"github.com/stretchr/testify/assert"
-	"go.dedis.ch/kyber/v3/util/key"
 )
 
 // Create test for the further tools used in protocols and services to ensure shortly if a modification change the behaviour
 
 func TestRetrieveSimpleDataFromMap(t *testing.T) {
-	keys := key.NewKeyPair(libunlynx.SuiTe)
-	secKey, pubKey := keys.Private, keys.Public
+	secKey, pubKey := libunlynx.GenKey()
 
 	k := 5
 	mapToTest := make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse)
@@ -33,8 +31,7 @@ func TestRetrieveSimpleDataFromMap(t *testing.T) {
 }
 
 func TestProcessResponseToCipherVector(t *testing.T) {
-	keys := key.NewKeyPair(libunlynx.SuiTe)
-	_, pubKey := keys.Private, keys.Public
+	_, pubKey := libunlynx.GenKey()
 
 	testCipherVect := make(libunlynx.CipherVector, 1)
 	expRes := []int64{1}
@@ -77,8 +74,7 @@ func TestProcessResponseToCipherVector(t *testing.T) {
 }
 
 func TestProcessResponseToMatrixCipherText(t *testing.T) {
-	keys := key.NewKeyPair(libunlynx.SuiTe)
-	_, pubKey := keys.Private, keys.Public
+	_, pubKey := libunlynx.GenKey()
 
 	testCipherVect := make(libunlynx.CipherVector, 1)
 	expRes := []int64{1}
@@ -115,8 +111,7 @@ func TestProcessResponseToMatrixCipherText(t *testing.T) {
 }
 
 func TestAdaptCipherTextArray(t *testing.T) {
-	keys := key.NewKeyPair(libunlynx.SuiTe)
-	_, pubKey := keys.Private, keys.Public
+	_, pubKey := libunlynx.GenKey()
 
 	k := 5
 	cv := make(libunlynx.CipherVector, k)

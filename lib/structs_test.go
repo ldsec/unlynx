@@ -8,7 +8,6 @@ import (
 	"github.com/lca1/unlynx/lib/tools"
 	"github.com/stretchr/testify/assert"
 	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/util/key"
 )
 
 // TestAddClientResponse tests the addition of two client response objects
@@ -18,8 +17,7 @@ func TestAddClientResponse(t *testing.T) {
 
 	sum := []int64{0, 2, 4, 6, 8}
 
-	keys := key.NewKeyPair(libunlynx.SuiTe)
-	secKey, pubKey := keys.Private, keys.Public
+	secKey, pubKey := libunlynx.GenKey()
 
 	cr1 := libunlynx.FilteredResponse{GroupByEnc: *libunlynx.EncryptIntVector(pubKey, grouping), AggregatingAttributes: *libunlynx.EncryptIntVector(pubKey, aggregating)}
 	cr2 := libunlynx.FilteredResponse{GroupByEnc: *libunlynx.EncryptIntVector(pubKey, grouping), AggregatingAttributes: *libunlynx.EncryptIntVector(pubKey, aggregating)}
@@ -34,8 +32,7 @@ func TestAddClientResponse(t *testing.T) {
 }
 
 func TestAddInMap(t *testing.T) {
-	keys := key.NewKeyPair(libunlynx.SuiTe)
-	_, pubKey := keys.Private, keys.Public
+	_, pubKey := libunlynx.GenKey()
 	gkey := libunlynx.GroupingKey("test")
 
 	cv := make(libunlynx.CipherVector, 5)
@@ -71,8 +68,7 @@ func decryptMapBytes(secKey kyber.Scalar, data map[string][]byte) (map[string]in
 
 // TestEncryptDpClearResponse tests the encryption of a DpClearResponse object
 func TestEncryptDpClearResponse(t *testing.T) {
-	keys := key.NewKeyPair(libunlynx.SuiTe)
-	secKey, pubKey := keys.Private, keys.Public
+	secKey, pubKey := libunlynx.GenKey()
 
 	groupingClear := libunlynxtools.ConvertDataToMap([]int64{2}, "g", 0)
 	groupingEnc := libunlynxtools.ConvertDataToMap([]int64{1}, "g", len(groupingClear))
@@ -112,8 +108,7 @@ func TestFilteredResponseConverter(t *testing.T) {
 	grouping := []int64{1}
 	aggregating := []int64{0, 1, 3, 103, 103}
 
-	keys := key.NewKeyPair(libunlynx.SuiTe)
-	secKey, pubKey := keys.Private, keys.Public
+	secKey, pubKey := libunlynx.GenKey()
 
 	cr := libunlynx.FilteredResponse{GroupByEnc: *libunlynx.EncryptIntVector(pubKey, grouping), AggregatingAttributes: *libunlynx.EncryptIntVector(pubKey, aggregating)}
 
@@ -129,8 +124,7 @@ func TestFilteredResponseConverter(t *testing.T) {
 
 // TestFilteredResponseDetConverter tests the FilteredResponseDet converter (to bytes). In the meantime we also test the Key and UnKey function ... That is the way to go :D
 func TestClientResponseDetConverter(t *testing.T) {
-	keys := key.NewKeyPair(libunlynx.SuiTe)
-	secKey, pubKey := keys.Private, keys.Public
+	secKey, pubKey := libunlynx.GenKey()
 
 	grouping := []int64{1}
 	aggregating := []int64{0, 1, 3, 103, 103}
@@ -156,8 +150,7 @@ func TestProcessResponseConverter(t *testing.T) {
 	grouping := []int64{1}
 	aggregating := []int64{0, 1, 3, 103, 103}
 
-	keys := key.NewKeyPair(libunlynx.SuiTe)
-	secKey, pubKey := keys.Private, keys.Public
+	secKey, pubKey := libunlynx.GenKey()
 
 	pr := libunlynx.ProcessResponse{
 		WhereEnc:              *libunlynx.EncryptIntVector(pubKey, whereEnc),
@@ -180,8 +173,7 @@ func TestProcessResponseDetConverter(t *testing.T) {
 	grouping := []int64{1}
 	aggregating := []int64{0, 1, 3, 103, 103}
 
-	keys := key.NewKeyPair(libunlynx.SuiTe)
-	_, pubKey := keys.Private, keys.Public
+	_, pubKey := libunlynx.GenKey()
 
 	pr := libunlynx.ProcessResponse{
 		WhereEnc:              *libunlynx.EncryptIntVector(pubKey, whereEnc),
@@ -212,8 +204,7 @@ func TestProcessResponseDetConverter(t *testing.T) {
 }
 
 func TestDPResponseConverter(t *testing.T) {
-	keys := key.NewKeyPair(libunlynx.SuiTe)
-	secKey, pubKey := keys.Private, keys.Public
+	secKey, pubKey := libunlynx.GenKey()
 
 	k := 5
 	dpResponseToSend := libunlynx.DpResponseToSend{
@@ -261,8 +252,7 @@ func TestDPResponseConverter(t *testing.T) {
 }
 
 func TestMapBytesToMapCipherText(t *testing.T) {
-	keys := key.NewKeyPair(libunlynx.SuiTe)
-	secKey, pubKey := keys.Private, keys.Public
+	secKey, pubKey := libunlynx.GenKey()
 
 	k := 5
 	bMap := make(map[string][]byte)

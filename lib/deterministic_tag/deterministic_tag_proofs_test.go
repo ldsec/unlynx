@@ -7,15 +7,12 @@ import (
 	"github.com/lca1/unlynx/lib/deterministic_tag"
 	"github.com/stretchr/testify/assert"
 	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/util/key"
 )
 
 func TestDeterministicTagProofCreation(t *testing.T) {
-	keys := key.NewKeyPair(libunlynx.SuiTe)
-	pubKey, secKey := keys.Public, keys.Private
-	pubKeyNew := key.NewKeyPair(libunlynx.SuiTe).Public
-
-	secretContrib := key.NewKeyPair(libunlynx.SuiTe).Private
+	secKey, pubKey := libunlynx.GenKey()
+	_, pubKeyNew := libunlynx.GenKey()
+	secretContrib, _ := libunlynx.GenKey()
 
 	cipherOne := *libunlynx.EncryptInt(pubKey, 10)
 
@@ -72,10 +69,8 @@ func TestDeterministicTagProofCreation(t *testing.T) {
 }
 
 func TestDeterministicTaggingAdditionProof(t *testing.T) {
-	keys := key.NewKeyPair(libunlynx.SuiTe)
-	pubKey, secKey := keys.Public, keys.Private
-
-	secretContrib := key.NewKeyPair(libunlynx.SuiTe).Private
+	secKey, pubKey := libunlynx.GenKey()
+	secretContrib, _ := libunlynx.GenKey()
 
 	cipherOne := *libunlynx.EncryptInt(pubKey, 10)
 	toAdd := libunlynx.SuiTe.Point().Mul(secKey, libunlynx.SuiTe.Point().Base())
