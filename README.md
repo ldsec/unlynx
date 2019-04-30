@@ -7,26 +7,15 @@ UnLynx is developed by lca1 (Laboratory for Communications and Applications in E
 ## Documentation
 
 * The UnLynx library does an intensive use of [Overlay-network (ONet) library](https://github.com/dedis/onet) and of the [Advanced Crypto (kyber) library](https://github.com/dedis/kyber).
-* For more information regarding the underlying architecture please refer to the stable version of ONet `github.bom/dedis/onet`
+* For more information regarding the underlying architecture please refer to the stable version of ONet `go.dedis.ch/onet/v3`
 * To check the code organisation, have a look at [Layout](https://github.com/lca1/unlynx/wiki/Layout)
 * For more information on how to run our protocols, services, simulations and apps, go to [Running UnLynx](https://github.com/lca1/unlynx/wiki/Running-UnLynx)
-
-## Getting Started
-
-To use the code of this repository you need to:
-
-- Install [Golang](https://golang.org/doc/install)
-- [Recommended] Install [IntelliJ IDEA](https://www.jetbrains.com/idea/) and the GO plugin
-- Set [`$GOPATH`](https://golang.org/doc/code.html#GOPATH) to point to your workspace directory
-- Add `$GOPATH/bin` to `$PATH`
-- Git clone this repository to $GOPATH/src `git clone https://github.com/lca1/unlynx.git` or...
-- go get repository: `go get github.com/lca1/unlynx`
 
 ## Version
 
 We have a development and a stable version. The `master`-branch in `github.com/lca1/unlynx` is the development version that works but can have incompatible changes.
 
-Use one of the latest tags `v1.2b-alpha` that are stable and have no incompatible changes.
+Use one of the latest tags `v1.3.0` that are stable and have no incompatible changes.
 
 ## License
 
