@@ -113,7 +113,7 @@ type KeySwitchingProtocol struct {
 	MapPIs    map[string]onet.ProtocolInstance // protocol instances to be able to call protocols inside protocols (e.g. proof_collection_protocol)
 
 	// Test (only use in order to test the protocol)
-	ExecTime      time.Duration
+	ExecTime time.Duration
 }
 
 // NewKeySwitchingProtocol initializes the protocol instance.
