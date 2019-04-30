@@ -8,6 +8,7 @@ package protocolsunlynx
 
 import (
 	"errors"
+	"time"
 
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/key_switch"
@@ -110,6 +111,9 @@ type KeySwitchingProtocol struct {
 	Proofs    bool
 	ProofFunc proofKeySwitchFunction           // proof function for when we want to do something different with the proofs (e.g. insert in the blockchain)
 	MapPIs    map[string]onet.ProtocolInstance // protocol instances to be able to call protocols inside protocols (e.g. proof_collection_protocol)
+
+	// Test (only use in order to test the protocol)
+	ExecTime      time.Duration
 }
 
 // NewKeySwitchingProtocol initializes the protocol instance.
