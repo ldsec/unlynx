@@ -114,7 +114,7 @@ func GenKeys(n int) (kyber.Point, []kyber.Scalar, []kyber.Point) {
 
 // SplitScalar splits a given scalar into multiple n+1 scalars
 func SplitScalar(rootScalar kyber.Scalar, nbrSplits int) []kyber.Scalar {
-	allScalars := make([]kyber.Scalar, 0)
+	allScalars := make([]kyber.Scalar, nbrSplits)
 	for i := 0; i < nbrSplits; i++ {
 		newScalar := RandomScalarSlice(1)[0]
 		rootScalar = rootScalar.Sub(rootScalar, newScalar)
