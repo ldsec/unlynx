@@ -33,6 +33,17 @@ func TestNullCipherText(t *testing.T) {
 
 }
 
+func TestSplitScalar(t *testing.T){
+	secKey, pubKey := libunlynx.GenKey()
+
+	scalars := libunlynx.SplitScalar(secKey, 8)
+	aggregate := libunlynx.SuiTe.Point().Mul(scalars[0], nil)
+	for i:=1; i<len(scalars); i++ {
+		aggregate = aggregate.Add(aggregate, libunlynx.SuiTe.Point().Mul(scalars[i], nil))
+	}
+	assert.Equal(t, pubKey.String(), aggregate.String())
+}
+
 // TestEncryption tests a relatively high number of encryptions.
 func TestEncryption(t *testing.T) {
 	_, pubKey := libunlynx.GenKey()
