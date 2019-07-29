@@ -116,7 +116,7 @@ func GenKeys(n int) (kyber.Point, []kyber.Scalar, []kyber.Point) {
 func SplitScalar(rootScalar kyber.Scalar, nbrSplits int) []kyber.Scalar {
 	allScalars := make([]kyber.Scalar, nbrSplits)
 	for i := 0; i < nbrSplits; i++ {
-		newScalar := RandomScalarSlice(1)[0]
+		allScalars[i] := RandomScalarSlice(1)[0]
 		rootScalar = rootScalar.Sub(rootScalar, newScalar)
 		allScalars = append(allScalars, newScalar)
 	}
