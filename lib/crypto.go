@@ -117,7 +117,7 @@ func SplitScalar(rootScalar kyber.Scalar, nbrSplits int) []kyber.Scalar {
 	allScalars := make([]kyber.Scalar, nbrSplits)
 	for i := 0; i < nbrSplits; i++ {
 		allScalars[i] := RandomScalarSlice(1)[0]
-		rootScalar = rootScalar.Sub(rootScalar, newScalar)
+		rootScalar = rootScalar.Sub(rootScalar, allScalars[i])
 		allScalars = append(allScalars, newScalar)
 	}
 	allScalars = append(allScalars, rootScalar)
