@@ -3,9 +3,9 @@ package main
 import (
 	"errors"
 	"github.com/BurntSushi/toml"
-	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/lib/aggregation"
-	"github.com/lca1/unlynx/protocols"
+	"github.com/ldsec/unlynx/lib"
+	"github.com/ldsec/unlynx/lib/aggregation"
+	"github.com/ldsec/unlynx/protocols"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
 )
@@ -44,7 +44,7 @@ func init() {
 	onet.SimulationRegister("CollectiveAggregation", NewCollectiveAggregationSimulation)
 }
 
-// CollectiveAggregationSimulation holds the state of a simulation.
+// CollectiveAggregationSimulation hogithub.com/ldsec/ the state of a simulation.
 type CollectiveAggregationSimulation struct {
 	onet.SimulationBFTree
 

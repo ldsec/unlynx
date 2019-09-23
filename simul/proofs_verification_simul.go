@@ -3,13 +3,13 @@ package main
 import (
 	"errors"
 	"github.com/BurntSushi/toml"
-	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/lib/aggregation"
-	"github.com/lca1/unlynx/lib/deterministic_tag"
-	"github.com/lca1/unlynx/lib/key_switch"
-	"github.com/lca1/unlynx/lib/shuffle"
-	"github.com/lca1/unlynx/protocols"
-	"github.com/lca1/unlynx/protocols/utils"
+	"github.com/ldsec/unlynx/lib"
+	"github.com/ldsec/unlynx/lib/aggregation"
+	"github.com/ldsec/unlynx/lib/deterministic_tag"
+	"github.com/ldsec/unlynx/lib/key_switch"
+	"github.com/ldsec/unlynx/lib/shuffle"
+	"github.com/ldsec/unlynx/protocols"
+	"github.com/ldsec/unlynx/protocols/utils"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/util/random"
 	"go.dedis.ch/onet/v3"
@@ -20,7 +20,7 @@ func init() {
 	onet.SimulationRegister("ProofsVerification", NewProofsVerificationSimulation)
 }
 
-// ProofsVerificationSimulation holds the state of a simulation.
+// ProofsVerificationSimulation hogithub.com/ldsec/ the state of a simulation.
 type ProofsVerificationSimulation struct {
 	onet.SimulationBFTree
 	NbrServers         int

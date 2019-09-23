@@ -3,9 +3,9 @@ package libunlynxaddrm_test
 import (
 	"testing"
 
-	"github.com/lca1/unlynx/lib/add_rm"
+	"github.com/ldsec/unlynx/lib/add_rm"
 
-	"github.com/lca1/unlynx/lib"
+	"github.com/ldsec/unlynx/lib"
 	"github.com/stretchr/testify/assert"
 	"go.dedis.ch/kyber/v3/util/random"
 )

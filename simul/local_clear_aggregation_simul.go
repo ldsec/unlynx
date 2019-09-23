@@ -2,8 +2,8 @@ package main
 
 import (
 	"github.com/BurntSushi/toml"
-	"github.com/lca1/unlynx/data"
-	"github.com/lca1/unlynx/protocols/utils"
+	"github.com/ldsec/unlynx/data"
+	"github.com/ldsec/unlynx/protocols/utils"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
 	"go.dedis.ch/onet/v3/simul/monitor"

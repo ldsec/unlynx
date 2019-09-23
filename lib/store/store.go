@@ -3,9 +3,9 @@ package libunlynxstore
 import (
 	"sync"
 
-	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/lib/aggregation"
-	"github.com/lca1/unlynx/lib/tools"
+	"github.com/ldsec/unlynx/lib"
+	"github.com/ldsec/unlynx/lib/aggregation"
+	"github.com/ldsec/unlynx/lib/tools"
 	"go.dedis.ch/onet/v3/log"
 )
 

@@ -1,10 +1,9 @@
 package timedataunlynx_test
 
 import (
+	timedataunlynx "github.com/ldsec/unlynx/simul/test_data/time_data"
 	"github.com/stretchr/testify/assert"
 	"testing"
-
-	"github.com/lca1/unlynx/simul/test_data/time_data"
 )
 
 const filenameRead = "../shuffling+ddt.csv"

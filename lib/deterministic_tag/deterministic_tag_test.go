@@ -3,9 +3,9 @@ package libunlynxdetertag_test
 import (
 	"testing"
 
-	"github.com/lca1/unlynx/lib/deterministic_tag"
+	"github.com/ldsec/unlynx/lib/deterministic_tag"
 
-	"github.com/lca1/unlynx/lib"
+	"github.com/ldsec/unlynx/lib"
 	"github.com/stretchr/testify/assert"
 )
 

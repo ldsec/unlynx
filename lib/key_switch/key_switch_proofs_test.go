@@ -6,10 +6,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.dedis.ch/kyber/v3"
 
-	"github.com/lca1/unlynx/lib/key_switch"
+	"github.com/ldsec/unlynx/lib/key_switch"
 	"go.dedis.ch/kyber/v3/util/key"
 
-	"github.com/lca1/unlynx/lib"
+	"github.com/ldsec/unlynx/lib"
 )
 
 // TesKeySwitchingProof test the creation and verification of key switching proofs

@@ -3,13 +3,13 @@ package libunlynxshuffle_test
 import (
 	"testing"
 
-	"github.com/lca1/unlynx/lib/tools"
+	"github.com/ldsec/unlynx/lib/tools"
 	"go.dedis.ch/kyber/v3"
 
 	"go.dedis.ch/kyber/v3/util/key"
 
-	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/lib/shuffle"
+	"github.com/ldsec/unlynx/lib"
+	"github.com/ldsec/unlynx/lib/shuffle"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -5,13 +5,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lca1/unlynx/lib/key_switch"
-	"github.com/lca1/unlynx/protocols"
+	"github.com/ldsec/unlynx/lib/key_switch"
+	"github.com/ldsec/unlynx/protocols"
 	"go.dedis.ch/kyber/v3"
 
 	"reflect"
 
-	"github.com/lca1/unlynx/lib"
+	"github.com/ldsec/unlynx/lib"
 	"go.dedis.ch/kyber/v3/util/random"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"

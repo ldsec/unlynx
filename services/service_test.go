@@ -1,8 +1,8 @@
 package servicesunlynx_test
 
 import (
-	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/services"
+	"github.com/ldsec/unlynx/lib"
+	"github.com/ldsec/unlynx/services"
 	"github.com/stretchr/testify/assert"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
