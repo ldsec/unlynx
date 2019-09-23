@@ -2,9 +2,9 @@ package main
 
 import (
 	"github.com/BurntSushi/toml"
-	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/lib/key_switch"
-	"github.com/lca1/unlynx/protocols"
+	"github.com/ldsec/unlynx/lib"
+	"github.com/ldsec/unlynx/lib/key_switch"
+	"github.com/ldsec/unlynx/protocols"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/util/random"
 	"go.dedis.ch/onet/v3"
@@ -16,7 +16,7 @@ func init() {
 
 }
 
-// KeySwitchingSimulation holds the state of a simulation.
+// KeySwitchingSimulation hogithub.com/ldsec/ the state of a simulation.
 type KeySwitchingSimulation struct {
 	onet.SimulationBFTree
 

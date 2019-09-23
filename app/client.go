@@ -7,12 +7,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/services"
+	"github.com/ldsec/unlynx/lib"
+	"github.com/ldsec/unlynx/services"
+	"github.com/urfave/cli"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/app"
 	"go.dedis.ch/onet/v3/log"
-	"gopkg.in/urfave/cli.v1"
 )
 
 // BEGIN CLIENT: QUERIER ----------

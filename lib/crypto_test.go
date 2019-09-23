@@ -1,7 +1,7 @@
 package libunlynx_test
 
 import (
-	"github.com/lca1/unlynx/lib"
+	"github.com/ldsec/unlynx/lib"
 	"github.com/stretchr/testify/assert"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/util/random"
@@ -57,7 +57,7 @@ func TestEncryption(t *testing.T) {
 func TestEncryptIntVector(t *testing.T) {
 	_, pubKey := libunlynx.GenKey()
 
-	nbrEncryptions := 200
+	nbrEncryptions := 10
 	arr := make([]int64, nbrEncryptions)
 
 	a := time.Now()

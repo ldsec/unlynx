@@ -5,7 +5,7 @@ package protocolsunlynx
 import (
 	"errors"
 
-	"github.com/lca1/unlynx/lib"
+	"github.com/ldsec/unlynx/lib"
 )
 
 // _____________________ COLLECTIVE_AGGREGATION PROTOCOL _____________________

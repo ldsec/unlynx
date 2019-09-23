@@ -1,4 +1,4 @@
-module github.com/lca1/unlynx
+module github.com/ldsec/unlynx
 
 require (
 	github.com/BurntSushi/toml v0.3.1
@@ -7,7 +7,9 @@ require (
 	github.com/r0fls/gostats v0.0.0-20180711082619-e793b1fda35c
 	github.com/satori/go.uuid v1.2.0
 	github.com/stretchr/testify v1.3.0
-	go.dedis.ch/kyber/v3 v3.0.0
-	go.dedis.ch/onet/v3 v3.0.0
-	gopkg.in/urfave/cli.v1 v1.20.0
+	github.com/urfave/cli v1.22.1
+	go.dedis.ch/kyber/v3 v3.0.5
+	go.dedis.ch/onet/v3 v3.0.24
 )
+
+//replace go.dedis.ch/onet/v3 => ../../../go.dedis.ch/onet

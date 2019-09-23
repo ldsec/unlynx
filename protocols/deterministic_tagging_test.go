@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/protocols"
+	"github.com/ldsec/unlynx/lib"
+	"github.com/ldsec/unlynx/protocols"
 	"github.com/stretchr/testify/assert"
 	"go.dedis.ch/kyber/v3/util/random"
 	"go.dedis.ch/onet/v3"

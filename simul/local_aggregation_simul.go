@@ -2,9 +2,9 @@ package main
 
 import (
 	"github.com/BurntSushi/toml"
-	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/protocols"
-	"github.com/lca1/unlynx/protocols/utils"
+	"github.com/ldsec/unlynx/lib"
+	"github.com/ldsec/unlynx/protocols"
+	"github.com/ldsec/unlynx/protocols/utils"
 	"go.dedis.ch/kyber/v3/util/random"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
@@ -15,7 +15,7 @@ func init() {
 
 }
 
-// LocalAggregationSimulation holds the state of a simulation.
+// LocalAggregationSimulation hogithub.com/ldsec/ the state of a simulation.
 type LocalAggregationSimulation struct {
 	onet.SimulationBFTree
 

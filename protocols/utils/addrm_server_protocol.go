@@ -7,8 +7,8 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/lib/add_rm"
+	"github.com/ldsec/unlynx/lib"
+	"github.com/ldsec/unlynx/lib/add_rm"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"

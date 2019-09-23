@@ -3,7 +3,7 @@ package libunlynxdiffprivacy_test
 import (
 	"testing"
 
-	. "github.com/lca1/unlynx/lib/differential_privacy"
+	. "github.com/ldsec/unlynx/lib/differential_privacy"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -1,7 +1,7 @@
 package libunlynxtools_test
 
 import (
-	"github.com/lca1/unlynx/lib/tools"
+	"github.com/ldsec/unlynx/lib/tools"
 	"testing"
 
 	"github.com/stretchr/testify/assert"

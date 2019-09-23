@@ -3,10 +3,10 @@ package libunlynxaggr_test
 import (
 	"testing"
 
-	"github.com/lca1/unlynx/lib/aggregation"
+	"github.com/ldsec/unlynx/lib/aggregation"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/lca1/unlynx/lib"
+	"github.com/ldsec/unlynx/lib"
 )
 
 func TestAggregationProof(t *testing.T) {

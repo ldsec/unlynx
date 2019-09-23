@@ -10,9 +10,9 @@ import (
 	"errors"
 	"time"
 
-	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/lib/key_switch"
-	"github.com/lca1/unlynx/lib/tools"
+	"github.com/ldsec/unlynx/lib"
+	"github.com/ldsec/unlynx/lib/key_switch"
+	"github.com/ldsec/unlynx/lib/tools"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"

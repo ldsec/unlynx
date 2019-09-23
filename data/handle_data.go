@@ -11,9 +11,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/lib/store"
-	"github.com/lca1/unlynx/lib/tools"
+	"github.com/ldsec/unlynx/lib"
+	"github.com/ldsec/unlynx/lib/store"
+	"github.com/ldsec/unlynx/lib/tools"
 )
 
 // FillInt64Slice fills a slice with the same value v

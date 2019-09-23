@@ -5,11 +5,11 @@
 package protocolsunlynxutils
 
 import (
-	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/lib/aggregation"
-	"github.com/lca1/unlynx/lib/deterministic_tag"
-	"github.com/lca1/unlynx/lib/key_switch"
-	"github.com/lca1/unlynx/lib/shuffle"
+	"github.com/ldsec/unlynx/lib"
+	"github.com/ldsec/unlynx/lib/aggregation"
+	"github.com/ldsec/unlynx/lib/deterministic_tag"
+	"github.com/ldsec/unlynx/lib/key_switch"
+	"github.com/ldsec/unlynx/lib/shuffle"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
 )

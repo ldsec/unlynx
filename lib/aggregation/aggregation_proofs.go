@@ -4,7 +4,7 @@ import (
 	"math"
 	"sync"
 
-	"github.com/lca1/unlynx/lib"
+	"github.com/ldsec/unlynx/lib"
 )
 
 // PublishedAggregationProof contains all the information for one aggregation proof
