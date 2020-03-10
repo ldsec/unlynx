@@ -160,11 +160,9 @@ func (p *CollectiveAggregationProtocol) Dispatch() error {
 	// 3. Proof generation (a) - before local aggregation
 	cvMap := make(map[libunlynx.GroupingKey][]libunlynx.CipherVector)
 	if p.Proofs {
-		if p.Proofs {
-			for k, v := range *p.GroupedData {
-				frd := libunlynx.FilteredResponseDet{DetTagGroupBy: k, Fr: v}
-				frd.FormatAggregationProofs(cvMap)
-			}
+		for k, v := range *p.GroupedData {
+			frd := libunlynx.FilteredResponseDet{DetTagGroupBy: k, Fr: v}
+			frd.FormatAggregationProofs(cvMap)
 		}
 	}
 
