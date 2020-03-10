@@ -1,5 +1,7 @@
 module github.com/ldsec/unlynx
 
+go 1.14
+
 require (
 	github.com/BurntSushi/toml v0.3.1
 	github.com/Knetic/govaluate v3.0.0+incompatible

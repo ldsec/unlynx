@@ -91,6 +91,8 @@ type ShufflingProtocol struct {
 	CollectiveKey kyber.Point
 	ExecTimeStart time.Duration
 	ExecTime      time.Duration
+
+	Timeout time.Duration
 }
 
 // NewShufflingProtocol constructs neff shuffle protocol instances.
@@ -116,6 +118,10 @@ func NewShufflingProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, erro
 			break
 		}
 	}
+
+	// default timeout
+	dsp.Timeout = 10 * time.Minute
+
 	return dsp, nil
 }
 
@@ -186,9 +192,22 @@ func (p *ShufflingProtocol) Start() error {
 func (p *ShufflingProtocol) Dispatch() error {
 	defer p.Done()
 
-	shufflingBytesMessageLength := <-p.LengthNodeChannel
+	var shufflingBytesMessageLength shufflingBytesLengthStruct
+	select {
+	case shufflingBytesMessageLength = <-p.LengthNodeChannel:
+		break
+	case <-time.After(p.Timeout):
+		return errors.New(p.ServerIdentity().String() + "didn't get the <shufflingBytesMessageLength> on time.")
+	}
 
-	tmp := <-p.PreviousNodeInPathChannel
+	var tmp shufflingBytesStruct
+	select {
+	case tmp = <-p.PreviousNodeInPathChannel:
+		break
+	case <-time.After(p.Timeout):
+		return errors.New(p.ServerIdentity().String() + "didn't get the <tmp> on time.")
+	}
+
 	sm := ShufflingMessage{}
 	if err := sm.FromBytes(tmp.Data, shufflingBytesMessageLength.CVLengths); err != nil {
 		return err

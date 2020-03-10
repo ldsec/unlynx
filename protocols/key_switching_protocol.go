@@ -114,6 +114,8 @@ type KeySwitchingProtocol struct {
 
 	// Test (only use in order to test the protocol)
 	ExecTime time.Duration
+
+	Timeout time.Duration
 }
 
 // NewKeySwitchingProtocol initializes the protocol instance.
@@ -136,6 +138,9 @@ func NewKeySwitchingProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, e
 	if err := pap.RegisterChannel(&pap.LengthChannel); err != nil {
 		return nil, errors.New("couldn't register length channel: " + err.Error())
 	}
+
+	// default timeout
+	pap.Timeout = 10 * time.Minute
 
 	return pap, nil
 }
@@ -230,7 +235,14 @@ func (p *KeySwitchingProtocol) Dispatch() error {
 
 // Announce forwarding down the tree.
 func (p *KeySwitchingProtocol) announcementKSPhase() (kyber.Point, []kyber.Point, error) {
-	dataReferenceMessage := <-p.DownChannel
+	var dataReferenceMessage DownBytesStruct
+	select {
+	case dataReferenceMessage = <-p.DownChannel:
+		break
+	case <-time.After(p.Timeout):
+		return nil, nil, errors.New(p.ServerIdentity().String() + "didn't get the <dataReferenceMessage> on time.")
+	}
+
 	if !p.IsLeaf() {
 		if err := p.SendToChildren(&dataReferenceMessage.DownMessageBytes); err != nil {
 			return nil, nil, errors.New("Node " + p.ServerIdentity().String() + " failed to broadcast DownMessageBytes: " + err.Error())

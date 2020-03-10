@@ -91,6 +91,8 @@ type DeterministicTaggingProtocol struct {
 	Proofs            bool
 
 	ExecTime time.Duration
+
+	Timeout time.Duration
 }
 
 // NewDeterministicTaggingProtocol constructs tagging switching protocol instances.
@@ -116,6 +118,9 @@ func NewDeterministicTaggingProtocol(n *onet.TreeNodeInstance) (onet.ProtocolIns
 			break
 		}
 	}
+
+	// default timeout
+	dsp.Timeout = 10 * time.Minute
 
 	return dsp, nil
 }
@@ -156,7 +161,14 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 	defer p.Done()
 
 	//************ ----- first round, add value derivated from ephemeral secret to message ---- ********************
-	deterministicTaggingTargetBytesBef := <-p.PreviousNodeInPathChannel
+	var deterministicTaggingTargetBytesBef deterministicTaggingBytesStruct
+	select {
+	case deterministicTaggingTargetBytesBef = <-p.PreviousNodeInPathChannel:
+		break
+	case <-time.After(p.Timeout):
+		return errors.New(p.ServerIdentity().String() + "didn't get the <deterministicTaggingTargetBytesBef> (first round) on time.")
+	}
+
 	deterministicTaggingTargetBef := DeterministicTaggingMessage{Data: make([]libunlynx.CipherText, 0)}
 	err := deterministicTaggingTargetBef.FromBytes(deterministicTaggingTargetBytesBef.Data)
 	if err != nil {
@@ -203,7 +215,14 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 	}
 
 	//************ ----- second round, deterministic tag creation  ---- ********************
-	deterministicTaggingTargetBytes := <-p.PreviousNodeInPathChannel
+	var deterministicTaggingTargetBytes deterministicTaggingBytesStruct
+	select {
+	case deterministicTaggingTargetBytes = <-p.PreviousNodeInPathChannel:
+		break
+	case <-time.After(p.Timeout):
+		return errors.New(p.ServerIdentity().String() + "didn't get the <deterministicTaggingTargetBytes> (second round) on time.")
+	}
+
 	deterministicTaggingTarget := DeterministicTaggingMessage{Data: make([]libunlynx.CipherText, 0)}
 	err = deterministicTaggingTarget.FromBytes(deterministicTaggingTargetBytes.Data)
 	if err != nil {
