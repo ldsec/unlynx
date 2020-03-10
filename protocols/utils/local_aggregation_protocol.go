@@ -3,10 +3,12 @@
 package protocolsunlynxutils
 
 import (
+	"errors"
 	"github.com/ldsec/unlynx/lib"
 	"github.com/ldsec/unlynx/lib/aggregation"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
+	"time"
 )
 
 // LocalAggregationProtocolName is the registered name for the local aggregation protocol.
@@ -33,6 +35,8 @@ type LocalAggregationProtocol struct {
 	// Protocol state data
 	TargetOfAggregation []libunlynx.FilteredResponseDet
 	Proofs              bool
+
+	Timeout 	time.Duration
 }
 
 // NewLocalAggregationProtocol is constructor of Local Aggregation protocol instances.
@@ -41,6 +45,9 @@ func NewLocalAggregationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstanc
 		TreeNodeInstance: n,
 		FeedbackChannel:  make(chan map[libunlynx.GroupingKey]libunlynx.FilteredResponse),
 	}
+
+	// default timeout
+	pvp.Timeout = 10 * time.Minute
 
 	return pvp, nil
 }
@@ -83,7 +90,14 @@ func (p *LocalAggregationProtocol) Start() error {
 func (p *LocalAggregationProtocol) Dispatch() error {
 	defer p.Done()
 
-	aux := <-finalResultAggr
-	p.FeedbackChannel <- aux
+	var finalResultMessage map[libunlynx.GroupingKey]libunlynx.FilteredResponse
+	select {
+	case finalResultMessage = <-finalResultAggr:
+		break
+	case <-time.After(p.Timeout):
+		return errors.New(p.ServerIdentity().String() + "didn't get the <finalResultMessage> on time.")
+	}
+
+	p.FeedbackChannel <- finalResultMessage
 	return nil
 }

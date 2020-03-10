@@ -3,10 +3,12 @@
 package protocolsunlynxutils
 
 import (
+	"errors"
 	"github.com/ldsec/unlynx/lib"
 	"github.com/ldsec/unlynx/lib/store"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
+	"time"
 )
 
 // LocalClearAggregationProtocolName is the registered name for the local cleartext aggregation protocol.
@@ -29,6 +31,8 @@ type LocalClearAggregationProtocol struct {
 
 	// Protocol state data
 	TargetOfAggregation []libunlynx.DpClearResponse
+
+	Timeout time.Duration
 }
 
 // NewLocalClearAggregationProtocol is constructor of Proofs Verification protocol instances.
@@ -37,6 +41,9 @@ func NewLocalClearAggregationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolIn
 		TreeNodeInstance: n,
 		FeedbackChannel:  make(chan []libunlynx.DpClearResponse),
 	}
+
+	// default timeout
+	pvp.Timeout = 10 * time.Minute
 
 	return pvp, nil
 }
@@ -57,7 +64,14 @@ func (p *LocalClearAggregationProtocol) Start() error {
 func (p *LocalClearAggregationProtocol) Dispatch() error {
 	defer p.Done()
 
-	aux := <-finalResultClearAggr
-	p.FeedbackChannel <- aux
+	var finalResultMessage []libunlynx.DpClearResponse
+	select {
+	case finalResultMessage = <-finalResultClearAggr:
+		break
+	case <-time.After(p.Timeout):
+		return errors.New(p.ServerIdentity().String() + "didn't get the <finalResultMessage> on time.")
+	}
+
+	p.FeedbackChannel <- finalResultMessage
 	return nil
 }

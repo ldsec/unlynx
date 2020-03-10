@@ -5,6 +5,7 @@
 package protocolsunlynxutils
 
 import (
+	"errors"
 	"github.com/ldsec/unlynx/lib"
 	"github.com/ldsec/unlynx/lib/aggregation"
 	"github.com/ldsec/unlynx/lib/deterministic_tag"
@@ -12,6 +13,7 @@ import (
 	"github.com/ldsec/unlynx/lib/shuffle"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
+	"time"
 )
 
 // ProofsVerificationProtocolName is the registered name for the proof verification protocol.
@@ -45,6 +47,8 @@ type ProofsVerificationProtocol struct {
 
 	// Protocol state data
 	TargetOfVerification ProofsToVerify
+
+	Timeout time.Duration
 }
 
 // NewProofsVerificationProtocol is constructor of Proofs Verification protocol instances.
@@ -53,6 +57,9 @@ func NewProofsVerificationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInsta
 		TreeNodeInstance: n,
 		FeedbackChannel:  make(chan []bool),
 	}
+
+	// default timeout
+	pvp.Timeout = 10 * time.Minute
 
 	return pvp, nil
 }
@@ -107,7 +114,14 @@ func (p *ProofsVerificationProtocol) Start() error {
 func (p *ProofsVerificationProtocol) Dispatch() error {
 	defer p.Done()
 
-	aux := <-finalResult
-	p.FeedbackChannel <- aux
+	var finalResultMessage []bool
+	select {
+	case finalResultMessage = <-finalResult:
+		break
+	case <-time.After(p.Timeout):
+		return errors.New(p.ServerIdentity().String() + "didn't get the <finalResultMessage> on time.")
+	}
+
+	p.FeedbackChannel <- finalResultMessage
 	return nil
 }
