@@ -3,6 +3,7 @@ package servicesunlynx
 import (
 	"errors"
 	"strconv"
+	"time"
 
 	"github.com/Knetic/govaluate"
 	"github.com/fanliao/go-concurrentMap"
@@ -88,7 +89,13 @@ func init() {
 	network.RegisterMessage(&SurveyResponseQuery{})
 	network.RegisterMessage(&ServiceState{})
 	network.RegisterMessage(&ServiceResult{})
+
+	// Default timeout just for all tests to work
+	TimeoutService = 20 * time.Minute
 }
+
+// TimeoutService is the communication idle timeout
+var TimeoutService time.Duration
 
 // QueryBroadcastFinished is used to ensure that all servers have received the query/survey
 type QueryBroadcastFinished struct {
@@ -127,6 +134,8 @@ type ServiceResult struct {
 type Service struct {
 	*onet.ServiceProcessor
 
+	Timeout time.Duration
+
 	Survey *concurrent.ConcurrentMap
 }
 
@@ -149,6 +158,7 @@ func (s *Service) putSurvey(sid SurveyID, surv Survey) error {
 // NewService constructor which registers the needed messages.
 func NewService(c *onet.Context) (onet.Service, error) {
 	newUnLynxInstance := &Service{
+		Timeout:          TimeoutService,
 		ServiceProcessor: onet.NewServiceProcessor(c),
 		Survey:           concurrent.NewConcurrentMap(),
 	}
@@ -728,7 +738,14 @@ func (s *Service) ShufflingPhase(targetSurvey SurveyID) error {
 	if err != nil {
 		return err
 	}
-	tmpShufflingResult := <-pi.(*protocolsunlynx.ShufflingProtocol).FeedbackChannel
+
+	var tmpShufflingResult []libunlynx.CipherVector
+	select {
+	case tmpShufflingResult = <-pi.(*protocolsunlynx.ShufflingProtocol).FeedbackChannel:
+		break
+	case <-time.After(s.Timeout):
+		return errors.New(s.ServerIdentity().String() + "didn't get the <tmpShufflingResult> on time.")
+	}
 
 	survey, err = s.getSurvey(targetSurvey)
 	if err != nil {
@@ -758,7 +775,13 @@ func (s *Service) TaggingPhase(targetSurvey SurveyID) error {
 		return err
 	}
 
-	tmpDeterministicTaggingResult := <-pi.(*protocolsunlynx.DeterministicTaggingProtocol).FeedbackChannel
+	var tmpDeterministicTaggingResult []libunlynx.DeterministCipherText
+	select {
+	case tmpDeterministicTaggingResult = <-pi.(*protocolsunlynx.DeterministicTaggingProtocol).FeedbackChannel:
+		break
+	case <-time.After(s.Timeout):
+		return errors.New(s.ServerIdentity().String() + "didn't get the <tmpDeterministicTaggingResult> on time.")
+	}
 
 	survey, err = s.getSurvey(targetSurvey)
 	if err != nil {
@@ -791,7 +814,14 @@ func (s *Service) AggregationPhase(targetSurvey SurveyID) error {
 	if err != nil {
 		return err
 	}
-	cothorityAggregatedData := <-pi.(*protocolsunlynx.CollectiveAggregationProtocol).FeedbackChannel
+
+	var cothorityAggregatedData protocolsunlynx.CothorityAggregatedData
+	select {
+	case cothorityAggregatedData = <-pi.(*protocolsunlynx.CollectiveAggregationProtocol).FeedbackChannel:
+		break
+	case <-time.After(s.Timeout):
+		return errors.New(s.ServerIdentity().String() + "didn't get the <cothorityAggregatedData> on time.")
+	}
 
 	survey, err := s.getSurvey(targetSurvey)
 	if err != nil {
@@ -815,7 +845,14 @@ func (s *Service) DROPhase(targetSurvey SurveyID) error {
 		return err
 	}
 
-	tmpShufflingResult := <-pi.(*protocolsunlynx.ShufflingProtocol).FeedbackChannel
+	var tmpShufflingResult []libunlynx.CipherVector
+	select {
+	case tmpShufflingResult = <-pi.(*protocolsunlynx.ShufflingProtocol).FeedbackChannel:
+		break
+	case <-time.After(s.Timeout):
+		return errors.New(s.ServerIdentity().String() + "didn't get the <tmpShufflingResult> on time.")
+	}
+
 	shufflingResult := protocolsunlynx.MatrixCipherTextToProcessResponse(tmpShufflingResult, survey.Lengths)
 
 	survey.Noise = shufflingResult[0].AggregatingAttributes[0]
@@ -835,7 +872,14 @@ func (s *Service) KeySwitchingPhase(targetSurvey SurveyID) error {
 		return err
 	}
 
-	tmpKeySwitchedAggregatedResponses := <-pi.(*protocolsunlynx.KeySwitchingProtocol).FeedbackChannel
+	var tmpKeySwitchedAggregatedResponses libunlynx.CipherVector
+	select {
+	case tmpKeySwitchedAggregatedResponses = <-pi.(*protocolsunlynx.KeySwitchingProtocol).FeedbackChannel:
+		break
+	case <-time.After(s.Timeout):
+		return errors.New(s.ServerIdentity().String() + "didn't get the <tmpKeySwitchedAggregatedResponses> on time.")
+	}
+
 	keySwitchedAggregatedResponses := protocolsunlynx.CipherVectorToFilteredResponse(tmpKeySwitchedAggregatedResponses, survey.Lengths)
 
 	survey.PushQuerierKeyEncryptedResponses(keySwitchedAggregatedResponses)

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"github.com/BurntSushi/toml"
 	"github.com/ldsec/unlynx/lib"
 	"github.com/ldsec/unlynx/protocols"
@@ -8,6 +9,7 @@ import (
 	"go.dedis.ch/kyber/v3/util/random"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
+	"time"
 )
 
 func init() {
@@ -54,6 +56,8 @@ func (sim *LocalAggregationSimulation) Setup(dir string, hosts []string) (*onet.
 
 // Run starts the simulation.
 func (sim *LocalAggregationSimulation) Run(config *onet.SimulationConfig) error {
+	timeout := 10 * time.Minute
+
 	for round := 0; round < sim.Rounds; round++ {
 		log.Lvl1("Starting round", round)
 		rooti, err := config.Overlay.CreateProtocol("LocalAggregation", config.Tree, onet.NilServiceID)
@@ -113,11 +117,14 @@ func (sim *LocalAggregationSimulation) Run(config *onet.SimulationConfig) error 
 		if err := root.Start(); err != nil {
 			return err
 		}
-		results := <-root.ProtocolInstance().(*protocolsunlynxutils.LocalAggregationProtocol).FeedbackChannel
-		log.Lvl1("Number of aggregated lines: ", len(results))
 
-		libunlynx.EndTimer(round)
-
+		select {
+		case results := <-root.ProtocolInstance().(*protocolsunlynxutils.LocalAggregationProtocol).FeedbackChannel:
+			log.Lvl1("Number of aggregated lines: ", len(results))
+			libunlynx.EndTimer(round)
+		case <-time.After(timeout):
+			return errors.New("simulation didn't finish in time")
+		}
 	}
 
 	return nil

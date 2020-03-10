@@ -14,6 +14,7 @@ import (
 	"go.dedis.ch/kyber/v3/util/random"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
+	"time"
 )
 
 func init() {
@@ -55,6 +56,7 @@ func (sim *ProofsVerificationSimulation) Setup(dir string, hosts []string) (*one
 
 // Run starts the simulation.
 func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) error {
+	timeout := 10 * time.Minute
 
 	for round := 0; round < sim.Rounds; round++ {
 		log.Lvl1("Starting round", round)
@@ -231,23 +233,27 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 		if err := root.Start(); err != nil {
 			return err
 		}
-		results := <-root.ProtocolInstance().(*protocolsunlynxutils.ProofsVerificationProtocol).FeedbackChannel
-		libunlynx.EndTimer(round)
+		select {
+		case results := <-root.ProtocolInstance().(*protocolsunlynxutils.ProofsVerificationProtocol).FeedbackChannel:
+			libunlynx.EndTimer(round)
 
-		log.Lvl1(len(results), " proofs verified")
+			log.Lvl1(len(results), " proofs verified")
 
-		if results[0] == false {
-			return errors.New("key switching proofs failed")
-		} else if results[1] == false {
-			return errors.New("deterministic tagging (creation) proofs failed")
-		} else if results[2] == false {
-			return errors.New("deterministic tagging (addition) proofs failed")
-		} else if results[3] == false {
-			return errors.New("local aggregation proofs failed")
-		} else if results[4] == false {
-			return errors.New("shuffling proofs failed")
-		} else if results[5] == false {
-			return errors.New("collective aggregation proofs failed")
+			if results[0] == false {
+				return errors.New("key switching proofs failed")
+			} else if results[1] == false {
+				return errors.New("deterministic tagging (creation) proofs failed")
+			} else if results[2] == false {
+				return errors.New("deterministic tagging (addition) proofs failed")
+			} else if results[3] == false {
+				return errors.New("local aggregation proofs failed")
+			} else if results[4] == false {
+				return errors.New("shuffling proofs failed")
+			} else if results[5] == false {
+				return errors.New("collective aggregation proofs failed")
+			}
+		case <-time.After(timeout):
+			return errors.New("simulation didn't finish in time")
 		}
 	}
 	return nil

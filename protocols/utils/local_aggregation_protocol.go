@@ -36,7 +36,7 @@ type LocalAggregationProtocol struct {
 	TargetOfAggregation []libunlynx.FilteredResponseDet
 	Proofs              bool
 
-	Timeout 	time.Duration
+	Timeout time.Duration
 }
 
 // NewLocalAggregationProtocol is constructor of Local Aggregation protocol instances.

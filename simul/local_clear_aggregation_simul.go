@@ -1,12 +1,14 @@
 package main
 
 import (
+	"errors"
 	"github.com/BurntSushi/toml"
 	"github.com/ldsec/unlynx/data"
 	"github.com/ldsec/unlynx/protocols/utils"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
 	"go.dedis.ch/onet/v3/simul/monitor"
+	"time"
 )
 
 func init() {
@@ -54,6 +56,8 @@ func (sim *LocalClearAggregationSimulation) Setup(dir string, hosts []string) (*
 
 // Run starts the simulation.
 func (sim *LocalClearAggregationSimulation) Run(config *onet.SimulationConfig) error {
+	timeout := 10 * time.Minute
+
 	for round := 0; round < sim.Rounds; round++ {
 		log.Lvl1("Starting round", round)
 		rooti, err := config.Overlay.CreateProtocol("LocalClearAggregation", config.Tree, onet.NilServiceID)
@@ -83,16 +87,20 @@ func (sim *LocalClearAggregationSimulation) Run(config *onet.SimulationConfig) e
 		if err := root.Start(); err != nil {
 			return err
 		}
-		results := <-root.ProtocolInstance().(*protocolsunlynxutils.LocalClearAggregationProtocol).FeedbackChannel
-		log.Lvl1("Number of aggregated lines (groups): ", len(results))
 
-		// Test Simulation
-		if dataunlynx.CompareClearResponses(dataunlynx.ComputeExpectedResult(testData, 1, false), results) {
-			log.Lvl1("Result is right! :)")
-		} else {
-			log.Lvl1("Result is wrong! :(")
+		select {
+		case results := <-root.ProtocolInstance().(*protocolsunlynxutils.LocalClearAggregationProtocol).FeedbackChannel:
+			log.Lvl1("Number of aggregated lines (groups): ", len(results))
+			// Test Simulation
+			if dataunlynx.CompareClearResponses(dataunlynx.ComputeExpectedResult(testData, 1, false), results) {
+				log.Lvl1("Result is right! :)")
+			} else {
+				log.Lvl1("Result is wrong! :(")
+			}
+			round.Record()
+		case <-time.After(timeout):
+			return errors.New("simulation didn't finish in time")
 		}
-		round.Record()
 	}
 
 	return nil

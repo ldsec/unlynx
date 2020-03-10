@@ -202,7 +202,7 @@ func (p *CollectiveAggregationProtocol) Dispatch() error {
 // Announce forwarding down the tree.
 func (p *CollectiveAggregationProtocol) aggregationAnnouncementPhase() error {
 	select {
-	case dataReferenceMessage := <-p.DataReferenceChannel :
+	case dataReferenceMessage := <-p.DataReferenceChannel:
 		if !p.IsLeaf() {
 			if err := p.SendToChildren(&dataReferenceMessage.DataReferenceMessage); err != nil {
 				return errors.New("Error sending <DataReferenceMessage>:" + err.Error())
