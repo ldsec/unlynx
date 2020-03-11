@@ -2,7 +2,6 @@ package servicesunlynx
 
 import (
 	"errors"
-	"golang.org/x/xerrors"
 	"strconv"
 	"time"
 
@@ -417,9 +416,7 @@ func (s *Service) HandleQueryBroadcastFinished(recq *QueryBroadcastFinished) (ne
 
 // NewProtocol creates a protocol instance executed by all nodes
 func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfig) (onet.ProtocolInstance, error) {
-	if err := tn.SetConfig(conf); err != nil {
-		return nil, xerrors.Errorf("couldn't set config: %+v", err)
-	}
+	tn.SetConfig(conf)
 
 	var pi onet.ProtocolInstance
 	target := SurveyID(string(conf.Data))

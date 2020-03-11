@@ -14,7 +14,7 @@ func init() {
 	if err == nil {
 		TIMEOUT = tmp
 	} else {
-		log.Warn("Couldn't parse MEDCO_TIMEOUT")
+		log.Warn("Couldn't parse MEDCO_TIMEOUT, using default value: ", TIMEOUT.String())
 	}
 }
 
