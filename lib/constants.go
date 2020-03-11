@@ -1,11 +1,19 @@
 package libunlynx
 
 import (
+	"os"
 	"sync"
 	"time"
 
 	"go.dedis.ch/onet/v3/simul/monitor"
 )
+
+func init() {
+	tmp, err := time.ParseDuration(os.Getenv("MEDCO_TIMEOUT"))
+	if err != nil {
+		TIMEOUT = tmp
+	}
+}
 
 // Global Variables
 //______________________________________________________________________________________________________________________

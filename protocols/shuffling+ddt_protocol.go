@@ -154,22 +154,17 @@ func (p *ShufflingPlusDDTProtocol) Start() error {
 func (p *ShufflingPlusDDTProtocol) Dispatch() error {
 	defer p.Done()
 
-	timeout, err := time.ParseDuration(os.Getenv("MEDCO_TIMEOUT"))
-	if err != nil {
-		timeout = libunlynx.TIMEOUT
-	}
-
 	var shufflingPlusDDTBytesMessageLength shufflingPlusDDTBytesLengthStruct
 	select {
 	case shufflingPlusDDTBytesMessageLength = <-p.LengthNodeChannel:
-	case <-time.After(timeout):
+	case <-time.After(libunlynx.TIMEOUT):
 		return errors.New(p.ServerIdentity().String() + "didn't get the <shufflingPlusDDTBytesMessageLength> on time.")
 	}
 
 	var tmp shufflingPlusDDTBytesStruct
 	select {
 	case tmp = <-p.PreviousNodeInPathChannel:
-	case <-time.After(timeout):
+	case <-time.After(libunlynx.TIMEOUT):
 		return errors.New(p.ServerIdentity().String() + "didn't get the <tmp> on time.")
 	}
 

@@ -5,7 +5,6 @@ package protocolsunlynxutils
 
 import (
 	"errors"
-	"os"
 	"sync"
 	"time"
 
@@ -94,15 +93,10 @@ func (p *AddRmServerProtocol) Start() error {
 func (p *AddRmServerProtocol) Dispatch() error {
 	defer p.Done()
 
-	timeout, err := time.ParseDuration(os.Getenv("MEDCO_TIMEOUT"))
-	if err != nil {
-		timeout = libunlynx.TIMEOUT
-	}
-
 	var finalResultMessage []libunlynx.CipherText
 	select {
 	case finalResultMessage = <-finalResultAddrm:
-	case <-time.After(timeout):
+	case <-time.After(libunlynx.TIMEOUT):
 		return errors.New(p.ServerIdentity().String() + "didn't get the <finalResultMessage> on time.")
 	}
 

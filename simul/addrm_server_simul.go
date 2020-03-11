@@ -53,8 +53,6 @@ func (sim *AddRmSimulation) Setup(dir string, hosts []string) (*onet.SimulationC
 
 // Run starts the simulation.
 func (sim *AddRmSimulation) Run(config *onet.SimulationConfig) error {
-	timeout := 10 * time.Minute
-
 	for round := 0; round < sim.Rounds; round++ {
 		log.Lvl1("Starting round", round)
 
@@ -92,7 +90,7 @@ func (sim *AddRmSimulation) Run(config *onet.SimulationConfig) error {
 		case results := <-root.ProtocolInstance().(*protocolsunlynxutils.AddRmServerProtocol).FeedbackChannel:
 			log.Lvl1("Number of aggregated lines: ", len(results))
 			libunlynx.EndTimer(round)
-		case <-time.After(timeout):
+		case <-time.After(libunlynx.TIMEOUT):
 			return errors.New("simulation didn't finish in time")
 		}
 	}

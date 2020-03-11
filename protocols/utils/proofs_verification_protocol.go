@@ -13,7 +13,6 @@ import (
 	"github.com/ldsec/unlynx/lib/shuffle"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
-	"os"
 	"time"
 )
 
@@ -110,15 +109,10 @@ func (p *ProofsVerificationProtocol) Start() error {
 func (p *ProofsVerificationProtocol) Dispatch() error {
 	defer p.Done()
 
-	timeout, err := time.ParseDuration(os.Getenv("MEDCO_TIMEOUT"))
-	if err != nil {
-		timeout = libunlynx.TIMEOUT
-	}
-
 	var finalResultMessage []bool
 	select {
 	case finalResultMessage = <-finalResult:
-	case <-time.After(timeout):
+	case <-time.After(libunlynx.TIMEOUT):
 		return errors.New(p.ServerIdentity().String() + "didn't get the <finalResultMessage> on time.")
 	}
 

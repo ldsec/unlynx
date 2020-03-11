@@ -8,7 +8,6 @@ import (
 	"github.com/ldsec/unlynx/lib/aggregation"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
-	"os"
 	"time"
 )
 
@@ -85,15 +84,10 @@ func (p *LocalAggregationProtocol) Start() error {
 func (p *LocalAggregationProtocol) Dispatch() error {
 	defer p.Done()
 
-	timeout, err := time.ParseDuration(os.Getenv("MEDCO_TIMEOUT"))
-	if err != nil {
-		timeout = libunlynx.TIMEOUT
-	}
-
 	var finalResultMessage map[libunlynx.GroupingKey]libunlynx.FilteredResponse
 	select {
 	case finalResultMessage = <-finalResultAggr:
-	case <-time.After(timeout):
+	case <-time.After(libunlynx.TIMEOUT):
 		return errors.New(p.ServerIdentity().String() + "didn't get the <finalResultMessage> on time.")
 	}
 

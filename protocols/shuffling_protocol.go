@@ -5,7 +5,6 @@ package protocolsunlynx
 
 import (
 	"errors"
-	"os"
 	"time"
 
 	"github.com/ldsec/unlynx/lib"
@@ -188,22 +187,17 @@ func (p *ShufflingProtocol) Start() error {
 func (p *ShufflingProtocol) Dispatch() error {
 	defer p.Done()
 
-	timeout, err := time.ParseDuration(os.Getenv("MEDCO_TIMEOUT"))
-	if err != nil {
-		timeout = libunlynx.TIMEOUT
-	}
-
 	var shufflingBytesMessageLength shufflingBytesLengthStruct
 	select {
 	case shufflingBytesMessageLength = <-p.LengthNodeChannel:
-	case <-time.After(timeout):
+	case <-time.After(libunlynx.TIMEOUT):
 		return errors.New(p.ServerIdentity().String() + "didn't get the <shufflingBytesMessageLength> on time.")
 	}
 
 	var tmp shufflingBytesStruct
 	select {
 	case tmp = <-p.PreviousNodeInPathChannel:
-	case <-time.After(timeout):
+	case <-time.After(libunlynx.TIMEOUT):
 		return errors.New(p.ServerIdentity().String() + "didn't get the <tmp> on time.")
 	}
 

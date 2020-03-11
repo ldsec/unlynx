@@ -8,7 +8,6 @@ package protocolsunlynx
 
 import (
 	"errors"
-	"os"
 	"time"
 
 	"github.com/ldsec/unlynx/lib"
@@ -231,15 +230,10 @@ func (p *KeySwitchingProtocol) Dispatch() error {
 
 // Announce forwarding down the tree.
 func (p *KeySwitchingProtocol) announcementKSPhase() (kyber.Point, []kyber.Point, error) {
-	timeout, err := time.ParseDuration(os.Getenv("MEDCO_TIMEOUT"))
-	if err != nil {
-		timeout = libunlynx.TIMEOUT
-	}
-
 	var dataReferenceMessage DownBytesStruct
 	select {
 	case dataReferenceMessage = <-p.DownChannel:
-	case <-time.After(timeout):
+	case <-time.After(libunlynx.TIMEOUT):
 		return nil, nil, errors.New(p.ServerIdentity().String() + "didn't get the <dataReferenceMessage> on time.")
 	}
 

@@ -9,7 +9,6 @@ package protocolsunlynx
 
 import (
 	"errors"
-	"os"
 	"sync"
 	"time"
 
@@ -197,11 +196,6 @@ func (p *CollectiveAggregationProtocol) Dispatch() error {
 
 // Announce forwarding down the tree.
 func (p *CollectiveAggregationProtocol) aggregationAnnouncementPhase() error {
-	timeout, err := time.ParseDuration(os.Getenv("MEDCO_TIMEOUT"))
-	if err != nil {
-		timeout = libunlynx.TIMEOUT
-	}
-
 	select {
 	case dataReferenceMessage := <-p.DataReferenceChannel:
 		if !p.IsLeaf() {
@@ -209,7 +203,7 @@ func (p *CollectiveAggregationProtocol) aggregationAnnouncementPhase() error {
 				return errors.New("Error sending <DataReferenceMessage>:" + err.Error())
 			}
 		}
-	case <-time.After(timeout):
+	case <-time.After(libunlynx.TIMEOUT):
 		return errors.New(p.ServerIdentity().String() + "didn't get the <dataReferenceMessage> on time.")
 	}
 	return nil

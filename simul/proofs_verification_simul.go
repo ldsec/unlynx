@@ -56,8 +56,6 @@ func (sim *ProofsVerificationSimulation) Setup(dir string, hosts []string) (*one
 
 // Run starts the simulation.
 func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) error {
-	timeout := 10 * time.Minute
-
 	for round := 0; round < sim.Rounds; round++ {
 		log.Lvl1("Starting round", round)
 		rooti, err := config.Overlay.CreateProtocol("ProofsVerification", config.Tree, onet.NilServiceID)
@@ -252,7 +250,7 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 			} else if results[5] == false {
 				return errors.New("collective aggregation proofs failed")
 			}
-		case <-time.After(timeout):
+		case <-time.After(libunlynx.TIMEOUT):
 			return errors.New("simulation didn't finish in time")
 		}
 	}

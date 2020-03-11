@@ -56,8 +56,6 @@ func (sim *LocalAggregationSimulation) Setup(dir string, hosts []string) (*onet.
 
 // Run starts the simulation.
 func (sim *LocalAggregationSimulation) Run(config *onet.SimulationConfig) error {
-	timeout := 10 * time.Minute
-
 	for round := 0; round < sim.Rounds; round++ {
 		log.Lvl1("Starting round", round)
 		rooti, err := config.Overlay.CreateProtocol("LocalAggregation", config.Tree, onet.NilServiceID)
@@ -122,7 +120,7 @@ func (sim *LocalAggregationSimulation) Run(config *onet.SimulationConfig) error 
 		case results := <-root.ProtocolInstance().(*protocolsunlynxutils.LocalAggregationProtocol).FeedbackChannel:
 			log.Lvl1("Number of aggregated lines: ", len(results))
 			libunlynx.EndTimer(round)
-		case <-time.After(timeout):
+		case <-time.After(libunlynx.TIMEOUT):
 			return errors.New("simulation didn't finish in time")
 		}
 	}

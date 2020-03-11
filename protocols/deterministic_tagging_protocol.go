@@ -8,7 +8,6 @@ package protocolsunlynx
 
 import (
 	"errors"
-	"os"
 	"sync"
 	"time"
 
@@ -155,21 +154,16 @@ func (p *DeterministicTaggingProtocol) Start() error {
 func (p *DeterministicTaggingProtocol) Dispatch() error {
 	defer p.Done()
 
-	timeout, err := time.ParseDuration(os.Getenv("MEDCO_TIMEOUT"))
-	if err != nil {
-		timeout = libunlynx.TIMEOUT
-	}
-
 	//************ ----- first round, add value derivated from ephemeral secret to message ---- ********************
 	var deterministicTaggingTargetBytesBef deterministicTaggingBytesStruct
 	select {
 	case deterministicTaggingTargetBytesBef = <-p.PreviousNodeInPathChannel:
-	case <-time.After(timeout):
+	case <-time.After(libunlynx.TIMEOUT):
 		return errors.New(p.ServerIdentity().String() + "didn't get the <deterministicTaggingTargetBytesBef> (first round) on time.")
 	}
 
 	deterministicTaggingTargetBef := DeterministicTaggingMessage{Data: make([]libunlynx.CipherText, 0)}
-	err = deterministicTaggingTargetBef.FromBytes(deterministicTaggingTargetBytesBef.Data)
+	err := deterministicTaggingTargetBef.FromBytes(deterministicTaggingTargetBytesBef.Data)
 	if err != nil {
 		return err
 	}
@@ -217,7 +211,7 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 	var deterministicTaggingTargetBytes deterministicTaggingBytesStruct
 	select {
 	case deterministicTaggingTargetBytes = <-p.PreviousNodeInPathChannel:
-	case <-time.After(timeout):
+	case <-time.After(libunlynx.TIMEOUT):
 		return errors.New(p.ServerIdentity().String() + "didn't get the <deterministicTaggingTargetBytes> (second round) on time.")
 	}
 
