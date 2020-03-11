@@ -204,7 +204,7 @@ func (p *CollectiveAggregationProtocol) aggregationAnnouncementPhase() error {
 			}
 		}
 	case <-time.After(libunlynx.TIMEOUT):
-		return errors.New(p.ServerIdentity().String() + "didn't get the <dataReferenceMessage> on time.")
+		return errors.New(p.ServerIdentity().String() + " didn't get the <dataReferenceMessage> on time.")
 	}
 	return nil
 }

@@ -2,7 +2,6 @@ package protocolsunlynx
 
 import (
 	"errors"
-	"os"
 	"sync"
 	"time"
 
@@ -158,19 +157,19 @@ func (p *ShufflingPlusDDTProtocol) Dispatch() error {
 	select {
 	case shufflingPlusDDTBytesMessageLength = <-p.LengthNodeChannel:
 	case <-time.After(libunlynx.TIMEOUT):
-		return errors.New(p.ServerIdentity().String() + "didn't get the <shufflingPlusDDTBytesMessageLength> on time.")
+		return errors.New(p.ServerIdentity().String() + " didn't get the <shufflingPlusDDTBytesMessageLength> on time.")
 	}
 
 	var tmp shufflingPlusDDTBytesStruct
 	select {
 	case tmp = <-p.PreviousNodeInPathChannel:
 	case <-time.After(libunlynx.TIMEOUT):
-		return errors.New(p.ServerIdentity().String() + "didn't get the <tmp> on time.")
+		return errors.New(p.ServerIdentity().String() + " didn't get the <tmp> on time.")
 	}
 
 	readData := libunlynx.StartTimer(p.Name() + "_ShufflingPlusDDT(ReadData)")
 	sm := ShufflingPlusDDTMessage{}
-	err = sm.FromBytes(tmp.Data, tmp.ShuffKey, shufflingPlusDDTBytesMessageLength.CVLengths)
+	err := sm.FromBytes(tmp.Data, tmp.ShuffKey, shufflingPlusDDTBytesMessageLength.CVLengths)
 	if err != nil {
 		return err
 	}

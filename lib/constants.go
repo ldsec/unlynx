@@ -10,7 +10,7 @@ import (
 
 func init() {
 	tmp, err := time.ParseDuration(os.Getenv("MEDCO_TIMEOUT"))
-	if err != nil {
+	if err == nil {
 		TIMEOUT = tmp
 	}
 }

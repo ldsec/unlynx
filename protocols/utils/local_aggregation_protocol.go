@@ -88,7 +88,7 @@ func (p *LocalAggregationProtocol) Dispatch() error {
 	select {
 	case finalResultMessage = <-finalResultAggr:
 	case <-time.After(libunlynx.TIMEOUT):
-		return errors.New(p.ServerIdentity().String() + "didn't get the <finalResultMessage> on time.")
+		return errors.New(p.ServerIdentity().String() + " didn't get the <finalResultMessage> on time.")
 	}
 
 	p.FeedbackChannel <- finalResultMessage

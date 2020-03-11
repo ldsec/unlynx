@@ -234,7 +234,7 @@ func (p *KeySwitchingProtocol) announcementKSPhase() (kyber.Point, []kyber.Point
 	select {
 	case dataReferenceMessage = <-p.DownChannel:
 	case <-time.After(libunlynx.TIMEOUT):
-		return nil, nil, errors.New(p.ServerIdentity().String() + "didn't get the <dataReferenceMessage> on time.")
+		return nil, nil, errors.New(p.ServerIdentity().String() + " didn't get the <dataReferenceMessage> on time.")
 	}
 
 	if !p.IsLeaf() {

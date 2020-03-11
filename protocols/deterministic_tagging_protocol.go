@@ -159,7 +159,7 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 	select {
 	case deterministicTaggingTargetBytesBef = <-p.PreviousNodeInPathChannel:
 	case <-time.After(libunlynx.TIMEOUT):
-		return errors.New(p.ServerIdentity().String() + "didn't get the <deterministicTaggingTargetBytesBef> (first round) on time.")
+		return errors.New(p.ServerIdentity().String() + " didn't get the <deterministicTaggingTargetBytesBef> (first round) on time.")
 	}
 
 	deterministicTaggingTargetBef := DeterministicTaggingMessage{Data: make([]libunlynx.CipherText, 0)}
@@ -212,7 +212,7 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 	select {
 	case deterministicTaggingTargetBytes = <-p.PreviousNodeInPathChannel:
 	case <-time.After(libunlynx.TIMEOUT):
-		return errors.New(p.ServerIdentity().String() + "didn't get the <deterministicTaggingTargetBytes> (second round) on time.")
+		return errors.New(p.ServerIdentity().String() + " didn't get the <deterministicTaggingTargetBytes> (second round) on time.")
 	}
 
 	deterministicTaggingTarget := DeterministicTaggingMessage{Data: make([]libunlynx.CipherText, 0)}

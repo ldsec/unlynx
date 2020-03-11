@@ -2,6 +2,7 @@ package servicesunlynx
 
 import (
 	"errors"
+	"golang.org/x/xerrors"
 	"strconv"
 	"time"
 
@@ -416,13 +417,11 @@ func (s *Service) HandleQueryBroadcastFinished(recq *QueryBroadcastFinished) (ne
 
 // NewProtocol creates a protocol instance executed by all nodes
 func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfig) (onet.ProtocolInstance, error) {
-	err := tn.SetConfig(conf)
-	if err != nil {
-		return nil, err
+	if err := tn.SetConfig(conf); err != nil {
+		return nil, xerrors.Errorf("couldn't set config: %+v", err)
 	}
 
 	var pi onet.ProtocolInstance
-
 	target := SurveyID(string(conf.Data))
 	survey, err := s.getSurvey(SurveyID(conf.Data))
 	if err != nil {
@@ -580,7 +579,6 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 	default:
 		return nil, errors.New("Service attempts to start an unknown protocol: " + tn.ProtocolName() + ".")
 	}
-
 	return pi, nil
 }
 
@@ -733,7 +731,7 @@ func (s *Service) ShufflingPhase(targetSurvey SurveyID) error {
 	select {
 	case tmpShufflingResult = <-pi.(*protocolsunlynx.ShufflingProtocol).FeedbackChannel:
 	case <-time.After(libunlynx.TIMEOUT):
-		return errors.New(s.ServerIdentity().String() + "didn't get the <tmpShufflingResult> on time.")
+		return errors.New(s.ServerIdentity().String() + " didn't get the <tmpShufflingResult> on time.")
 	}
 
 	survey, err = s.getSurvey(targetSurvey)
@@ -768,7 +766,7 @@ func (s *Service) TaggingPhase(targetSurvey SurveyID) error {
 	select {
 	case tmpDeterministicTaggingResult = <-pi.(*protocolsunlynx.DeterministicTaggingProtocol).FeedbackChannel:
 	case <-time.After(libunlynx.TIMEOUT):
-		return errors.New(s.ServerIdentity().String() + "didn't get the <tmpDeterministicTaggingResult> on time.")
+		return errors.New(s.ServerIdentity().String() + " didn't get the <tmpDeterministicTaggingResult> on time.")
 	}
 
 	survey, err = s.getSurvey(targetSurvey)
@@ -807,7 +805,7 @@ func (s *Service) AggregationPhase(targetSurvey SurveyID) error {
 	select {
 	case cothorityAggregatedData = <-pi.(*protocolsunlynx.CollectiveAggregationProtocol).FeedbackChannel:
 	case <-time.After(libunlynx.TIMEOUT):
-		return errors.New(s.ServerIdentity().String() + "didn't get the <cothorityAggregatedData> on time.")
+		return errors.New(s.ServerIdentity().String() + " didn't get the <cothorityAggregatedData> on time.")
 	}
 
 	survey, err := s.getSurvey(targetSurvey)
@@ -836,7 +834,7 @@ func (s *Service) DROPhase(targetSurvey SurveyID) error {
 	select {
 	case tmpShufflingResult = <-pi.(*protocolsunlynx.ShufflingProtocol).FeedbackChannel:
 	case <-time.After(libunlynx.TIMEOUT):
-		return errors.New(s.ServerIdentity().String() + "didn't get the <tmpShufflingResult> on time.")
+		return errors.New(s.ServerIdentity().String() + " didn't get the <tmpShufflingResult> on time.")
 	}
 
 	shufflingResult := protocolsunlynx.MatrixCipherTextToProcessResponse(tmpShufflingResult, survey.Lengths)
@@ -862,7 +860,7 @@ func (s *Service) KeySwitchingPhase(targetSurvey SurveyID) error {
 	select {
 	case tmpKeySwitchedAggregatedResponses = <-pi.(*protocolsunlynx.KeySwitchingProtocol).FeedbackChannel:
 	case <-time.After(libunlynx.TIMEOUT):
-		return errors.New(s.ServerIdentity().String() + "didn't get the <tmpKeySwitchedAggregatedResponses> on time.")
+		return errors.New(s.ServerIdentity().String() + " didn't get the <tmpKeySwitchedAggregatedResponses> on time.")
 	}
 
 	keySwitchedAggregatedResponses := protocolsunlynx.CipherVectorToFilteredResponse(tmpKeySwitchedAggregatedResponses, survey.Lengths)

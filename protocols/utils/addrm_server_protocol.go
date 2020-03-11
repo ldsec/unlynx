@@ -97,7 +97,7 @@ func (p *AddRmServerProtocol) Dispatch() error {
 	select {
 	case finalResultMessage = <-finalResultAddrm:
 	case <-time.After(libunlynx.TIMEOUT):
-		return errors.New(p.ServerIdentity().String() + "didn't get the <finalResultMessage> on time.")
+		return errors.New(p.ServerIdentity().String() + " didn't get the <finalResultMessage> on time.")
 	}
 
 	p.FeedbackChannel <- finalResultMessage
