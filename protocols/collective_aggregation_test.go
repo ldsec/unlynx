@@ -62,7 +62,6 @@ func TestCollectiveAggregationGroup(t *testing.T) {
 		resultData := make(map[libunlynx.GroupingKey][]int64)
 		for k, v := range encryptedResult.GroupedData {
 			resultData[k] = libunlynx.DecryptIntVector(clientPrivate, &v.AggregatingAttributes)
-
 			log.Lvl1(k, resultData[k])
 		}
 		for k, v1 := range expectedGroups {

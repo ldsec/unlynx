@@ -238,7 +238,6 @@ func (p *KeySwitchingProtocol) announcementKSPhase() (kyber.Point, []kyber.Point
 	var dataReferenceMessage DownBytesStruct
 	select {
 	case dataReferenceMessage = <-p.DownChannel:
-		break
 	case <-time.After(p.Timeout):
 		return nil, nil, errors.New(p.ServerIdentity().String() + "didn't get the <dataReferenceMessage> on time.")
 	}

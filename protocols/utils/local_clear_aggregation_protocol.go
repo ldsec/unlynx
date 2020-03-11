@@ -67,7 +67,6 @@ func (p *LocalClearAggregationProtocol) Dispatch() error {
 	var finalResultMessage []libunlynx.DpClearResponse
 	select {
 	case finalResultMessage = <-finalResultClearAggr:
-		break
 	case <-time.After(p.Timeout):
 		return errors.New(p.ServerIdentity().String() + "didn't get the <finalResultMessage> on time.")
 	}

@@ -742,7 +742,6 @@ func (s *Service) ShufflingPhase(targetSurvey SurveyID) error {
 	var tmpShufflingResult []libunlynx.CipherVector
 	select {
 	case tmpShufflingResult = <-pi.(*protocolsunlynx.ShufflingProtocol).FeedbackChannel:
-		break
 	case <-time.After(s.Timeout):
 		return errors.New(s.ServerIdentity().String() + "didn't get the <tmpShufflingResult> on time.")
 	}
@@ -778,7 +777,6 @@ func (s *Service) TaggingPhase(targetSurvey SurveyID) error {
 	var tmpDeterministicTaggingResult []libunlynx.DeterministCipherText
 	select {
 	case tmpDeterministicTaggingResult = <-pi.(*protocolsunlynx.DeterministicTaggingProtocol).FeedbackChannel:
-		break
 	case <-time.After(s.Timeout):
 		return errors.New(s.ServerIdentity().String() + "didn't get the <tmpDeterministicTaggingResult> on time.")
 	}
@@ -818,7 +816,6 @@ func (s *Service) AggregationPhase(targetSurvey SurveyID) error {
 	var cothorityAggregatedData protocolsunlynx.CothorityAggregatedData
 	select {
 	case cothorityAggregatedData = <-pi.(*protocolsunlynx.CollectiveAggregationProtocol).FeedbackChannel:
-		break
 	case <-time.After(s.Timeout):
 		return errors.New(s.ServerIdentity().String() + "didn't get the <cothorityAggregatedData> on time.")
 	}
@@ -848,7 +845,6 @@ func (s *Service) DROPhase(targetSurvey SurveyID) error {
 	var tmpShufflingResult []libunlynx.CipherVector
 	select {
 	case tmpShufflingResult = <-pi.(*protocolsunlynx.ShufflingProtocol).FeedbackChannel:
-		break
 	case <-time.After(s.Timeout):
 		return errors.New(s.ServerIdentity().String() + "didn't get the <tmpShufflingResult> on time.")
 	}
@@ -875,7 +871,6 @@ func (s *Service) KeySwitchingPhase(targetSurvey SurveyID) error {
 	var tmpKeySwitchedAggregatedResponses libunlynx.CipherVector
 	select {
 	case tmpKeySwitchedAggregatedResponses = <-pi.(*protocolsunlynx.KeySwitchingProtocol).FeedbackChannel:
-		break
 	case <-time.After(s.Timeout):
 		return errors.New(s.ServerIdentity().String() + "didn't get the <tmpKeySwitchedAggregatedResponses> on time.")
 	}

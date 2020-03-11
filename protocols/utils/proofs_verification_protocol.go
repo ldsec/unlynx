@@ -117,7 +117,6 @@ func (p *ProofsVerificationProtocol) Dispatch() error {
 	var finalResultMessage []bool
 	select {
 	case finalResultMessage = <-finalResult:
-		break
 	case <-time.After(p.Timeout):
 		return errors.New(p.ServerIdentity().String() + "didn't get the <finalResultMessage> on time.")
 	}

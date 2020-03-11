@@ -162,7 +162,6 @@ func (p *ShufflingPlusDDTProtocol) Dispatch() error {
 	var shufflingPlusDDTBytesMessageLength shufflingPlusDDTBytesLengthStruct
 	select {
 	case shufflingPlusDDTBytesMessageLength = <-p.LengthNodeChannel:
-		break
 	case <-time.After(p.Timeout):
 		return errors.New(p.ServerIdentity().String() + "didn't get the <shufflingPlusDDTBytesMessageLength> on time.")
 	}
@@ -170,7 +169,6 @@ func (p *ShufflingPlusDDTProtocol) Dispatch() error {
 	var tmp shufflingPlusDDTBytesStruct
 	select {
 	case tmp = <-p.PreviousNodeInPathChannel:
-		break
 	case <-time.After(p.Timeout):
 		return errors.New(p.ServerIdentity().String() + "didn't get the <tmp> on time.")
 	}

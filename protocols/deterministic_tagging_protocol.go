@@ -164,7 +164,6 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 	var deterministicTaggingTargetBytesBef deterministicTaggingBytesStruct
 	select {
 	case deterministicTaggingTargetBytesBef = <-p.PreviousNodeInPathChannel:
-		break
 	case <-time.After(p.Timeout):
 		return errors.New(p.ServerIdentity().String() + "didn't get the <deterministicTaggingTargetBytesBef> (first round) on time.")
 	}
@@ -218,7 +217,6 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 	var deterministicTaggingTargetBytes deterministicTaggingBytesStruct
 	select {
 	case deterministicTaggingTargetBytes = <-p.PreviousNodeInPathChannel:
-		break
 	case <-time.After(p.Timeout):
 		return errors.New(p.ServerIdentity().String() + "didn't get the <deterministicTaggingTargetBytes> (second round) on time.")
 	}

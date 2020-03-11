@@ -101,7 +101,6 @@ func (p *AddRmServerProtocol) Dispatch() error {
 	var finalResultMessage []libunlynx.CipherText
 	select {
 	case finalResultMessage = <-finalResultAddrm:
-		break
 	case <-time.After(p.Timeout):
 		return errors.New(p.ServerIdentity().String() + "didn't get the <finalResultMessage> on time.")
 	}

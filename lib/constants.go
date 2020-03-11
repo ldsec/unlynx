@@ -20,11 +20,10 @@ const DIFFPRI = false
 
 // StartTimer starts measurement of time
 func StartTimer(name string) *monitor.TimeMeasure {
-	var timer *monitor.TimeMeasure
 	if TIME {
-		timer = monitor.NewTimeMeasure(name)
+		return monitor.NewTimeMeasure(name)
 	}
-	return timer
+	return nil
 }
 
 // EndTimer finishes measurement of time

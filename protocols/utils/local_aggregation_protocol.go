@@ -93,7 +93,6 @@ func (p *LocalAggregationProtocol) Dispatch() error {
 	var finalResultMessage map[libunlynx.GroupingKey]libunlynx.FilteredResponse
 	select {
 	case finalResultMessage = <-finalResultAggr:
-		break
 	case <-time.After(p.Timeout):
 		return errors.New(p.ServerIdentity().String() + "didn't get the <finalResultMessage> on time.")
 	}
