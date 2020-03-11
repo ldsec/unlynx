@@ -136,7 +136,9 @@ func NewCollectiveAggregationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolIn
 // Start is called at the root to begin the execution of the protocol.
 func (p *CollectiveAggregationProtocol) Start() error {
 	log.Lvl1(p.ServerIdentity(), " started a Colective Aggregation Protocol")
-	p.SendToChildren(&DataReferenceMessage{})
+	if err := p.SendToChildren(&DataReferenceMessage{}); err != nil {
+		return fmt.Errorf("error sending <DataReferenceMessage>: %v", err)
+	}
 	return nil
 }
 
@@ -196,8 +198,8 @@ func (p *CollectiveAggregationProtocol) Dispatch() error {
 func (p *CollectiveAggregationProtocol) aggregationAnnouncementPhase() error {
 	select {
 	case dataReferenceMessage := <-p.DataReferenceChannel:
-		if !p.IsLeaf() {
-			p.SendToChildren(&dataReferenceMessage.DataReferenceMessage)
+		if err := p.SendToChildren(&dataReferenceMessage.DataReferenceMessage); err != nil {
+			return fmt.Errorf("error sending <DataReferenceMessage>: %v", err)
 		}
 	case <-time.After(libunlynx.TIMEOUT):
 		return fmt.Errorf(p.ServerIdentity().String() + " didn't get the <dataReferenceMessage> on time")

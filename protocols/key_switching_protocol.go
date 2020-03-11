@@ -237,10 +237,8 @@ func (p *KeySwitchingProtocol) announcementKSPhase() (kyber.Point, []kyber.Point
 		return nil, nil, fmt.Errorf(p.ServerIdentity().String() + " didn't get the <dataReferenceMessage> on time")
 	}
 
-	if !p.IsLeaf() {
-		if err := p.SendToChildren(&dataReferenceMessage.DownMessageBytes); err != nil {
-			return nil, nil, fmt.Errorf("Node "+p.ServerIdentity().String()+" failed to broadcast DownMessageBytes: %v", err)
-		}
+	if err := p.SendToChildren(&dataReferenceMessage.DownMessageBytes); err != nil {
+		return nil, nil, fmt.Errorf("Node "+p.ServerIdentity().String()+" failed to broadcast DownMessageBytes: %v", err)
 	}
 	message, err := libunlynx.FromBytesToAbstractPoints(dataReferenceMessage.Data)
 	if err != nil {
