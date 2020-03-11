@@ -3,7 +3,7 @@
 package protocolsunlynx
 
 import (
-	"errors"
+	"fmt"
 
 	"github.com/ldsec/unlynx/lib"
 )
@@ -13,7 +13,7 @@ import (
 // RetrieveSimpleDataFromMap extract the data from a map into an array
 func RetrieveSimpleDataFromMap(groupedData map[libunlynx.GroupingKey]libunlynx.FilteredResponse) ([]libunlynx.CipherText, error) {
 	if len(groupedData) != 1 {
-		return nil, errors.New("the map given in arguments is empty or have more than one key")
+		return nil, fmt.Errorf("the map given in arguments is empty or have more than one key")
 	}
 
 	filteredResp, present := groupedData[EMPTYKEY]
@@ -25,7 +25,7 @@ func RetrieveSimpleDataFromMap(groupedData map[libunlynx.GroupingKey]libunlynx.F
 		return result, nil
 	}
 
-	return nil, errors.New("the map element doesn't have key with value EMPTYKEY")
+	return nil, fmt.Errorf("the map element doesn't have key with value EMPTYKEY")
 }
 
 // _____________________ DETERMINISTIC_TAGGING PROTOCOL _____________________

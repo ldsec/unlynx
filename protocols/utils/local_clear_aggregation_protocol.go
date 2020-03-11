@@ -3,7 +3,7 @@
 package protocolsunlynxutils
 
 import (
-	"errors"
+	"fmt"
 	"github.com/ldsec/unlynx/lib"
 	"github.com/ldsec/unlynx/lib/store"
 	"go.dedis.ch/onet/v3"
@@ -62,7 +62,7 @@ func (p *LocalClearAggregationProtocol) Dispatch() error {
 	select {
 	case finalResultMessage = <-finalResultClearAggr:
 	case <-time.After(libunlynx.TIMEOUT):
-		return errors.New(p.ServerIdentity().String() + " didn't get the <finalResultMessage> on time.")
+		return fmt.Errorf(p.ServerIdentity().String() + " didn't get the <finalResultMessage> on time")
 	}
 
 	p.FeedbackChannel <- finalResultMessage

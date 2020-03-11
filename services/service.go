@@ -1,7 +1,7 @@
 package servicesunlynx
 
 import (
-	"errors"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -133,10 +133,10 @@ type Service struct {
 func (s *Service) getSurvey(sid SurveyID) (Survey, error) {
 	surv, err := s.Survey.Get(string(sid))
 	if err != nil {
-		return Survey{}, errors.New("Error" + err.Error() + "while getting surveyID" + string(sid))
+		return Survey{}, fmt.Errorf("error while getting surveyID "+string(sid)+": %v", err)
 	}
 	if surv == nil {
-		return Survey{}, errors.New("Empty map entry while getting surveyID" + string(sid))
+		return Survey{}, fmt.Errorf("empty map entry while getting surveyID " + string(sid))
 	}
 	return surv.(Survey), nil
 }
@@ -154,19 +154,19 @@ func NewService(c *onet.Context) (onet.Service, error) {
 	}
 	var cerr error
 	if cerr = newUnLynxInstance.RegisterHandler(newUnLynxInstance.HandleSurveyCreationQuery); cerr != nil {
-		return nil, errors.New("Wrong Handler." + cerr.Error())
+		return nil, fmt.Errorf("wrong Handler: %v", cerr)
 	}
 	if cerr = newUnLynxInstance.RegisterHandler(newUnLynxInstance.HandleSurveyResponseQuery); cerr != nil {
-		return nil, errors.New("Wrong Handler." + cerr.Error())
+		return nil, fmt.Errorf("wrong Handler: %v", cerr)
 	}
 	if cerr = newUnLynxInstance.RegisterHandler(newUnLynxInstance.HandleSurveyResultsQuery); cerr != nil {
-		return nil, errors.New("Wrong Handler." + cerr.Error())
+		return nil, fmt.Errorf("wrong Handler: %v", cerr)
 	}
 	if cerr = newUnLynxInstance.RegisterHandler(newUnLynxInstance.HandleDDTfinished); cerr != nil {
-		return nil, errors.New("Wrong Handler." + cerr.Error())
+		return nil, fmt.Errorf("wrong Handler: %v", cerr)
 	}
 	if cerr = newUnLynxInstance.RegisterHandler(newUnLynxInstance.HandleQueryBroadcastFinished); cerr != nil {
-		return nil, errors.New("Wrong Handler." + cerr.Error())
+		return nil, fmt.Errorf("wrong Handler: %v", cerr)
 	}
 
 	c.RegisterProcessor(newUnLynxInstance, msgTypes.msgSurveyCreationQuery)
@@ -574,7 +574,7 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 			}
 		}
 	default:
-		return nil, errors.New("Service attempts to start an unknown protocol: " + tn.ProtocolName() + ".")
+		return nil, fmt.Errorf("service attempts to start an unknown protocol: " + tn.ProtocolName())
 	}
 	return pi, nil
 }
@@ -594,7 +594,7 @@ func (s *Service) StartProtocol(name string, targetSurvey SurveyID) (onet.Protoc
 
 	pi, err := s.NewProtocol(tn, &conf)
 	if err != nil {
-		return nil, errors.New("Error running " + name + " :" + err.Error())
+		return nil, fmt.Errorf("error running "+name+" : %v", err)
 	}
 
 	err = s.RegisterProtocolInstance(pi)
@@ -647,7 +647,7 @@ func (s *Service) StartService(targetSurvey SurveyID, root bool) error {
 
 	err = s.ShufflingPhase(survey.Query.SurveyID)
 	if err != nil {
-		return errors.New("Error in the Shuffling Phase: " + err.Error())
+		return fmt.Errorf("error in the Shuffling Phase: %v", err)
 	}
 
 	libunlynx.EndTimer(start)
@@ -656,7 +656,7 @@ func (s *Service) StartService(targetSurvey SurveyID, root bool) error {
 
 	err = s.TaggingPhase(target.Query.SurveyID)
 	if err != nil {
-		return errors.New("Error in the Tagging Phase: " + err.Error())
+		return fmt.Errorf("error in the Tagging Phase: %v", err)
 	}
 
 	// broadcasts the query to unlock waiting channel
@@ -674,7 +674,7 @@ func (s *Service) StartService(targetSurvey SurveyID, root bool) error {
 
 		err = s.AggregationPhase(target.Query.SurveyID)
 		if err != nil {
-			return errors.New("Error in the Aggregation Phase: " + err.Error())
+			return fmt.Errorf("error in the Aggregation Phase: %v", err)
 		}
 
 		libunlynx.EndTimer(start)
@@ -686,7 +686,7 @@ func (s *Service) StartService(targetSurvey SurveyID, root bool) error {
 
 		err := s.DROPhase(target.Query.SurveyID)
 		if err != nil {
-			return errors.New("Error in the DRO Phase: " + err.Error())
+			return fmt.Errorf("error in the DRO Phase: %v", err)
 		}
 
 		libunlynx.EndTimer(start)
@@ -698,7 +698,7 @@ func (s *Service) StartService(targetSurvey SurveyID, root bool) error {
 
 		err := s.KeySwitchingPhase(target.Query.SurveyID)
 		if err != nil {
-			return errors.New("Error in the Key Switching Phase: " + err.Error())
+			return fmt.Errorf("error in the Key Switching Phase: %v", err)
 		}
 
 		libunlynx.EndTimer(start)
@@ -728,7 +728,7 @@ func (s *Service) ShufflingPhase(targetSurvey SurveyID) error {
 	select {
 	case tmpShufflingResult = <-pi.(*protocolsunlynx.ShufflingProtocol).FeedbackChannel:
 	case <-time.After(libunlynx.TIMEOUT):
-		return errors.New(s.ServerIdentity().String() + " didn't get the <tmpShufflingResult> on time.")
+		return fmt.Errorf(s.ServerIdentity().String() + " didn't get the <tmpShufflingResult> on time")
 	}
 
 	survey, err = s.getSurvey(targetSurvey)
@@ -763,7 +763,7 @@ func (s *Service) TaggingPhase(targetSurvey SurveyID) error {
 	select {
 	case tmpDeterministicTaggingResult = <-pi.(*protocolsunlynx.DeterministicTaggingProtocol).FeedbackChannel:
 	case <-time.After(libunlynx.TIMEOUT):
-		return errors.New(s.ServerIdentity().String() + " didn't get the <tmpDeterministicTaggingResult> on time.")
+		return fmt.Errorf(s.ServerIdentity().String() + " didn't get the <tmpDeterministicTaggingResult> on time")
 	}
 
 	survey, err = s.getSurvey(targetSurvey)
@@ -802,7 +802,7 @@ func (s *Service) AggregationPhase(targetSurvey SurveyID) error {
 	select {
 	case cothorityAggregatedData = <-pi.(*protocolsunlynx.CollectiveAggregationProtocol).FeedbackChannel:
 	case <-time.After(libunlynx.TIMEOUT):
-		return errors.New(s.ServerIdentity().String() + " didn't get the <cothorityAggregatedData> on time.")
+		return fmt.Errorf(s.ServerIdentity().String() + " didn't get the <cothorityAggregatedData> on time")
 	}
 
 	survey, err := s.getSurvey(targetSurvey)
@@ -831,7 +831,7 @@ func (s *Service) DROPhase(targetSurvey SurveyID) error {
 	select {
 	case tmpShufflingResult = <-pi.(*protocolsunlynx.ShufflingProtocol).FeedbackChannel:
 	case <-time.After(libunlynx.TIMEOUT):
-		return errors.New(s.ServerIdentity().String() + " didn't get the <tmpShufflingResult> on time.")
+		return fmt.Errorf(s.ServerIdentity().String() + " didn't get the <tmpShufflingResult> on time")
 	}
 
 	shufflingResult := protocolsunlynx.MatrixCipherTextToProcessResponse(tmpShufflingResult, survey.Lengths)
@@ -857,7 +857,7 @@ func (s *Service) KeySwitchingPhase(targetSurvey SurveyID) error {
 	select {
 	case tmpKeySwitchedAggregatedResponses = <-pi.(*protocolsunlynx.KeySwitchingProtocol).FeedbackChannel:
 	case <-time.After(libunlynx.TIMEOUT):
-		return errors.New(s.ServerIdentity().String() + " didn't get the <tmpKeySwitchedAggregatedResponses> on time.")
+		return fmt.Errorf(s.ServerIdentity().String() + " didn't get the <tmpKeySwitchedAggregatedResponses> on time")
 	}
 
 	keySwitchedAggregatedResponses := protocolsunlynx.CipherVectorToFilteredResponse(tmpKeySwitchedAggregatedResponses, survey.Lengths)

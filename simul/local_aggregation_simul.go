@@ -1,7 +1,7 @@
 package main
 
 import (
-	"errors"
+	"fmt"
 	"github.com/BurntSushi/toml"
 	"github.com/ldsec/unlynx/lib"
 	"github.com/ldsec/unlynx/protocols"
@@ -121,7 +121,7 @@ func (sim *LocalAggregationSimulation) Run(config *onet.SimulationConfig) error 
 			log.Lvl1("Number of aggregated lines: ", len(results))
 			libunlynx.EndTimer(round)
 		case <-time.After(libunlynx.TIMEOUT):
-			return errors.New("simulation didn't finish in time")
+			return fmt.Errorf("simulation didn't finish in time")
 		}
 	}
 

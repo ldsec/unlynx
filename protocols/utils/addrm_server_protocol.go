@@ -4,7 +4,7 @@
 package protocolsunlynxutils
 
 import (
-	"errors"
+	"fmt"
 	"sync"
 	"time"
 
@@ -79,7 +79,7 @@ func (p *AddRmServerProtocol) Start() error {
 	roundProof = libunlynx.StartTimer(p.Name() + "_AddRmServer(PROOFSVerif)")
 
 	if p.Proofs && len(proofs.List) == 0 {
-		return errors.New("something went wrong during the creation of the add/rm proofs")
+		return fmt.Errorf("something went wrong during the creation of the add/rm proofs")
 	}
 	libunlynxaddrm.AddRmListProofVerification(proofs, 1.0)
 
@@ -97,7 +97,7 @@ func (p *AddRmServerProtocol) Dispatch() error {
 	select {
 	case finalResultMessage = <-finalResultAddrm:
 	case <-time.After(libunlynx.TIMEOUT):
-		return errors.New(p.ServerIdentity().String() + " didn't get the <finalResultMessage> on time.")
+		return fmt.Errorf(p.ServerIdentity().String() + " didn't get the <finalResultMessage> on time")
 	}
 
 	p.FeedbackChannel <- finalResultMessage

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"errors"
+	"fmt"
 	"github.com/BurntSushi/toml"
 	"github.com/ldsec/unlynx/lib"
 	"github.com/ldsec/unlynx/lib/aggregation"
@@ -238,20 +238,20 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 			log.Lvl1(len(results), " proofs verified")
 
 			if results[0] == false {
-				return errors.New("key switching proofs failed")
+				return fmt.Errorf("key switching proofs failed")
 			} else if results[1] == false {
-				return errors.New("deterministic tagging (creation) proofs failed")
+				return fmt.Errorf("deterministic tagging (creation) proofs failed")
 			} else if results[2] == false {
-				return errors.New("deterministic tagging (addition) proofs failed")
+				return fmt.Errorf("deterministic tagging (addition) proofs failed")
 			} else if results[3] == false {
-				return errors.New("local aggregation proofs failed")
+				return fmt.Errorf("local aggregation proofs failed")
 			} else if results[4] == false {
-				return errors.New("shuffling proofs failed")
+				return fmt.Errorf("shuffling proofs failed")
 			} else if results[5] == false {
-				return errors.New("collective aggregation proofs failed")
+				return fmt.Errorf("collective aggregation proofs failed")
 			}
 		case <-time.After(libunlynx.TIMEOUT):
-			return errors.New("simulation didn't finish in time")
+			return fmt.Errorf("simulation didn't finish in time")
 		}
 	}
 	return nil

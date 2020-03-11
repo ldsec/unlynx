@@ -4,7 +4,7 @@
 package protocolsunlynx
 
 import (
-	"errors"
+	"fmt"
 	"time"
 
 	"github.com/ldsec/unlynx/lib"
@@ -101,11 +101,11 @@ func NewShufflingProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, erro
 	}
 
 	if err := dsp.RegisterChannel(&dsp.PreviousNodeInPathChannel); err != nil {
-		return nil, errors.New("couldn't register data reference channel: " + err.Error())
+		return nil, fmt.Errorf("couldn't register data reference channel: %v", err)
 	}
 
 	if err := dsp.RegisterChannel(&dsp.LengthNodeChannel); err != nil {
-		return nil, errors.New("couldn't register data reference channel: " + err.Error())
+		return nil, fmt.Errorf("couldn't register data reference channel: %v", err)
 	}
 
 	// choose next node in circuit
@@ -126,7 +126,7 @@ func (p *ShufflingProtocol) Start() error {
 	shufflingStart := libunlynx.StartTimer(p.Name() + "_Shuffling(START)")
 
 	if p.ShuffleTarget == nil {
-		return errors.New("no map given as shuffling target")
+		return fmt.Errorf("no map given as shuffling target")
 	}
 
 	p.ExecTimeStart = 0
@@ -191,14 +191,14 @@ func (p *ShufflingProtocol) Dispatch() error {
 	select {
 	case shufflingBytesMessageLength = <-p.LengthNodeChannel:
 	case <-time.After(libunlynx.TIMEOUT):
-		return errors.New(p.ServerIdentity().String() + " didn't get the <shufflingBytesMessageLength> on time.")
+		return fmt.Errorf(p.ServerIdentity().String() + " didn't get the <shufflingBytesMessageLength> on time")
 	}
 
 	var tmp shufflingBytesStruct
 	select {
 	case tmp = <-p.PreviousNodeInPathChannel:
 	case <-time.After(libunlynx.TIMEOUT):
-		return errors.New(p.ServerIdentity().String() + " didn't get the <tmp> on time.")
+		return fmt.Errorf(p.ServerIdentity().String() + " didn't get the <tmp> on time")
 	}
 
 	sm := ShufflingMessage{}

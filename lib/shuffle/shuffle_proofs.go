@@ -1,7 +1,7 @@
 package libunlynxshuffle
 
 import (
-	"errors"
+	"fmt"
 	"math"
 	"sync"
 
@@ -84,7 +84,7 @@ func ShuffleProofCreation(originalList, shuffledList []libunlynx.CipherVector, g
 	// do k-shuffle of ElGamal on the (Xhat,Yhat) and check it
 	k = len(Xhat)
 	if k != len(Yhat) {
-		return PublishedShufflingProof{}, errors.New("X,Y vectors have inconsistent lengths")
+		return PublishedShufflingProof{}, fmt.Errorf("X,Y vectors have inconsistent lengths")
 	}
 	ps := shuffleKyber.PairShuffle{}
 	ps.Init(libunlynx.SuiTe, k)
@@ -95,7 +95,7 @@ func ShuffleProofCreation(originalList, shuffledList []libunlynx.CipherVector, g
 
 	prf, err := proof.HashProve(libunlynx.SuiTe, "PairShuffle", prover)
 	if err != nil {
-		return PublishedShufflingProof{}, errors.New("Shuffle proof failed: " + err.Error())
+		return PublishedShufflingProof{}, fmt.Errorf("shuffle proof failed: %v", err)
 	}
 	return PublishedShufflingProof{originalList, shuffledList, g, h, prf}, nil
 }
@@ -293,7 +293,7 @@ func compressCipherVector(ciphervector libunlynx.CipherVector, e []kyber.Scalar)
 
 	// check that e and cipher vectors have the same size
 	if len(e) != k {
-		return libunlynx.CipherText{}, errors.New("e is not the right size")
+		return libunlynx.CipherText{}, fmt.Errorf("e is not the right size")
 	}
 
 	ciphertext := *libunlynx.NewCipherText()

@@ -3,7 +3,6 @@ package libunlynxtools
 import (
 	"encoding/binary"
 	"encoding/gob"
-	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -27,7 +26,7 @@ func SendISMOthers(s *onet.ServiceProcessor, el *onet.Roster, msg interface{}) e
 	}
 	var err error
 	if len(errStrs) > 0 {
-		err = errors.New(strings.Join(errStrs, "\n"))
+		err = fmt.Errorf(strings.Join(errStrs, "\n"))
 	}
 	return err
 }
@@ -119,7 +118,7 @@ func WriteToGobFile(path string, object interface{}) error {
 			return err
 		}
 	} else {
-		return errors.New("Could not write Gob file:" + err.Error())
+		return fmt.Errorf("could not write Gob file: %v", err)
 	}
 
 	return nil
@@ -137,7 +136,7 @@ func ReadFromGobFile(path string, object interface{}) error {
 			return err
 		}
 	} else {
-		return errors.New("Could not read Gob file:" + err.Error())
+		return fmt.Errorf("could not read Gob file: %v", err)
 	}
 
 	return nil

@@ -1,7 +1,7 @@
 package protocolsunlynx
 
 import (
-	"errors"
+	"fmt"
 	"sync"
 	"time"
 
@@ -92,11 +92,11 @@ func NewShufflingPlusDDTProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstanc
 	}
 
 	if err := pi.RegisterChannel(&pi.PreviousNodeInPathChannel); err != nil {
-		return nil, errors.New("couldn't register data reference channel: " + err.Error())
+		return nil, fmt.Errorf("couldn't register data reference channel: %v", err)
 	}
 
 	if err := pi.RegisterChannel(&pi.LengthNodeChannel); err != nil {
-		return nil, errors.New("couldn't register data reference channel: " + err.Error())
+		return nil, fmt.Errorf("couldn't register data reference channel: %v", err)
 	}
 
 	// choose next node in circuit
@@ -114,7 +114,7 @@ func NewShufflingPlusDDTProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstanc
 func (p *ShufflingPlusDDTProtocol) Start() error {
 
 	if p.TargetData == nil {
-		return errors.New("no data is given")
+		return fmt.Errorf("no data is given")
 	}
 	nbrSqCVs := len(*p.TargetData)
 	log.Lvl1("["+p.Name()+"]", " started a Shuffling+DDT Protocol (", nbrSqCVs, " responses)")
@@ -157,14 +157,14 @@ func (p *ShufflingPlusDDTProtocol) Dispatch() error {
 	select {
 	case shufflingPlusDDTBytesMessageLength = <-p.LengthNodeChannel:
 	case <-time.After(libunlynx.TIMEOUT):
-		return errors.New(p.ServerIdentity().String() + " didn't get the <shufflingPlusDDTBytesMessageLength> on time.")
+		return fmt.Errorf(p.ServerIdentity().String() + " didn't get the <shufflingPlusDDTBytesMessageLength> on time")
 	}
 
 	var tmp shufflingPlusDDTBytesStruct
 	select {
 	case tmp = <-p.PreviousNodeInPathChannel:
 	case <-time.After(libunlynx.TIMEOUT):
-		return errors.New(p.ServerIdentity().String() + " didn't get the <tmp> on time.")
+		return fmt.Errorf(p.ServerIdentity().String() + " didn't get the <tmp> on time")
 	}
 
 	readData := libunlynx.StartTimer(p.Name() + "_ShufflingPlusDDT(ReadData)")

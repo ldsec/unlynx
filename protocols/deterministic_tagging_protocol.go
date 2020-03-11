@@ -7,7 +7,7 @@
 package protocolsunlynx
 
 import (
-	"errors"
+	"fmt"
 	"sync"
 	"time"
 
@@ -101,10 +101,10 @@ func NewDeterministicTaggingProtocol(n *onet.TreeNodeInstance) (onet.ProtocolIns
 	}
 
 	if err := dsp.RegisterChannel(&dsp.PreviousNodeInPathChannel); err != nil {
-		return nil, errors.New("couldn't register data reference channel: " + err.Error())
+		return nil, fmt.Errorf("couldn't register data reference channel: %v", err)
 	}
 	if err := dsp.RegisterChannel(&dsp.LengthNodeChannel); err != nil {
-		return nil, errors.New("couldn't register data reference channel: " + err.Error())
+		return nil, fmt.Errorf("couldn't register data reference channel: %v", err)
 	}
 
 	var i int
@@ -125,10 +125,10 @@ func (p *DeterministicTaggingProtocol) Start() error {
 	roundTotalStart := libunlynx.StartTimer(p.Name() + "_DetTagging(START)")
 
 	if p.TargetOfSwitch == nil {
-		return errors.New("no data on which to do a deterministic tagging")
+		return fmt.Errorf("no data on which to do a deterministic tagging")
 	}
 	if p.SurveySecretKey == nil {
-		return errors.New("no survey secret key given")
+		return fmt.Errorf("no survey secret key given")
 	}
 
 	p.ExecTime = 0
@@ -159,7 +159,7 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 	select {
 	case deterministicTaggingTargetBytesBef = <-p.PreviousNodeInPathChannel:
 	case <-time.After(libunlynx.TIMEOUT):
-		return errors.New(p.ServerIdentity().String() + " didn't get the <deterministicTaggingTargetBytesBef> (first round) on time.")
+		return fmt.Errorf(p.ServerIdentity().String() + " didn't get the <deterministicTaggingTargetBytesBef> (first round) on time")
 	}
 
 	deterministicTaggingTargetBef := DeterministicTaggingMessage{Data: make([]libunlynx.CipherText, 0)}
@@ -212,7 +212,7 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 	select {
 	case deterministicTaggingTargetBytes = <-p.PreviousNodeInPathChannel:
 	case <-time.After(libunlynx.TIMEOUT):
-		return errors.New(p.ServerIdentity().String() + " didn't get the <deterministicTaggingTargetBytes> (second round) on time.")
+		return fmt.Errorf(p.ServerIdentity().String() + " didn't get the <deterministicTaggingTargetBytes> (second round) on time")
 	}
 
 	deterministicTaggingTarget := DeterministicTaggingMessage{Data: make([]libunlynx.CipherText, 0)}

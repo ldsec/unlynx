@@ -5,7 +5,7 @@
 package protocolsunlynxutils
 
 import (
-	"errors"
+	"fmt"
 	"github.com/ldsec/unlynx/lib"
 	"github.com/ldsec/unlynx/lib/aggregation"
 	"github.com/ldsec/unlynx/lib/deterministic_tag"
@@ -113,7 +113,7 @@ func (p *ProofsVerificationProtocol) Dispatch() error {
 	select {
 	case finalResultMessage = <-finalResult:
 	case <-time.After(libunlynx.TIMEOUT):
-		return errors.New(p.ServerIdentity().String() + " didn't get the <finalResultMessage> on time.")
+		return fmt.Errorf(p.ServerIdentity().String() + " didn't get the <finalResultMessage> on time")
 	}
 
 	p.FeedbackChannel <- finalResultMessage

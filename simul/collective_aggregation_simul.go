@@ -1,7 +1,7 @@
 package main
 
 import (
-	"errors"
+	"fmt"
 	"github.com/BurntSushi/toml"
 	"github.com/ldsec/unlynx/lib"
 	"github.com/ldsec/unlynx/lib/aggregation"
@@ -86,7 +86,7 @@ func (sim *CollectiveAggregationSimulation) Node(config *onet.SimulationConfig) 
 		func(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 			return NewAggregationProtocolSimul(tni, sim)
 		}); err != nil {
-		return errors.New("Error while registering <CollectiveAggregationSimul>:" + err.Error())
+		return fmt.Errorf("error while registering <CollectiveAggregationSimul>: %v", err)
 	}
 
 	return sim.SimulationBFTree.Node(config)
