@@ -1,6 +1,7 @@
 package libunlynx
 
 import (
+	"go.dedis.ch/onet/v3/log"
 	"os"
 	"sync"
 	"time"
@@ -12,6 +13,8 @@ func init() {
 	tmp, err := time.ParseDuration(os.Getenv("MEDCO_TIMEOUT"))
 	if err == nil {
 		TIMEOUT = tmp
+	} else {
+		log.Warn("Couldn't parse MEDCO_TIMEOUT")
 	}
 }
 
