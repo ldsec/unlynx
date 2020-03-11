@@ -9,6 +9,7 @@ package protocolsunlynx
 
 import (
 	"errors"
+	"os"
 	"sync"
 	"time"
 
@@ -107,8 +108,6 @@ type CollectiveAggregationProtocol struct {
 	Proofs    bool
 	ProofFunc proofCollectiveAggregationFunction // proof function for when we want to do something different with the proofs (e.g. insert in the blockchain)
 	MapPIs    map[string]onet.ProtocolInstance   // protocol instances to be able to call protocols inside protocols (e.g. proof_collection_protocol)
-
-	Timeout time.Duration
 }
 
 // NewCollectiveAggregationProtocol initializes the protocol instance.
@@ -131,9 +130,6 @@ func NewCollectiveAggregationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolIn
 	if err := pap.RegisterChannel(&pap.LengthNodeChannel); err != nil {
 		return nil, errors.New("couldn't register data reference channel: " + err.Error())
 	}
-
-	// default timeout
-	pap.Timeout = 10 * time.Minute
 
 	return pap, nil
 }
@@ -201,6 +197,11 @@ func (p *CollectiveAggregationProtocol) Dispatch() error {
 
 // Announce forwarding down the tree.
 func (p *CollectiveAggregationProtocol) aggregationAnnouncementPhase() error {
+	timeout, err := time.ParseDuration(os.Getenv("MEDCO_TIMEOUT"))
+	if err != nil {
+		timeout = libunlynx.TIMEOUT
+	}
+
 	select {
 	case dataReferenceMessage := <-p.DataReferenceChannel:
 		if !p.IsLeaf() {
@@ -208,7 +209,7 @@ func (p *CollectiveAggregationProtocol) aggregationAnnouncementPhase() error {
 				return errors.New("Error sending <DataReferenceMessage>:" + err.Error())
 			}
 		}
-	case <-time.After(p.Timeout):
+	case <-time.After(timeout):
 		return errors.New(p.ServerIdentity().String() + "didn't get the <dataReferenceMessage> on time.")
 	}
 	return nil

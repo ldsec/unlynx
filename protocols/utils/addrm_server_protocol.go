@@ -5,6 +5,7 @@ package protocolsunlynxutils
 
 import (
 	"errors"
+	"os"
 	"sync"
 	"time"
 
@@ -39,8 +40,6 @@ type AddRmServerProtocol struct {
 	KeyToRm                kyber.Scalar
 	Proofs                 bool
 	Add                    bool
-
-	Timeout time.Duration
 }
 
 // NewAddRmProtocol is constructor of add/rm protocol instances.
@@ -49,9 +48,6 @@ func NewAddRmProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 		TreeNodeInstance: n,
 		FeedbackChannel:  make(chan []libunlynx.CipherText),
 	}
-
-	// default timeout
-	pvp.Timeout = 10 * time.Minute
 
 	return pvp, nil
 }
@@ -98,10 +94,15 @@ func (p *AddRmServerProtocol) Start() error {
 func (p *AddRmServerProtocol) Dispatch() error {
 	defer p.Done()
 
+	timeout, err := time.ParseDuration(os.Getenv("MEDCO_TIMEOUT"))
+	if err != nil {
+		timeout = libunlynx.TIMEOUT
+	}
+
 	var finalResultMessage []libunlynx.CipherText
 	select {
 	case finalResultMessage = <-finalResultAddrm:
-	case <-time.After(p.Timeout):
+	case <-time.After(timeout):
 		return errors.New(p.ServerIdentity().String() + "didn't get the <finalResultMessage> on time.")
 	}
 

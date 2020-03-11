@@ -5,6 +5,7 @@ package protocolsunlynx
 
 import (
 	"errors"
+	"os"
 	"time"
 
 	"github.com/ldsec/unlynx/lib"
@@ -91,8 +92,6 @@ type ShufflingProtocol struct {
 	CollectiveKey kyber.Point
 	ExecTimeStart time.Duration
 	ExecTime      time.Duration
-
-	Timeout time.Duration
 }
 
 // NewShufflingProtocol constructs neff shuffle protocol instances.
@@ -118,9 +117,6 @@ func NewShufflingProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, erro
 			break
 		}
 	}
-
-	// default timeout
-	dsp.Timeout = 10 * time.Minute
 
 	return dsp, nil
 }
@@ -192,17 +188,22 @@ func (p *ShufflingProtocol) Start() error {
 func (p *ShufflingProtocol) Dispatch() error {
 	defer p.Done()
 
+	timeout, err := time.ParseDuration(os.Getenv("MEDCO_TIMEOUT"))
+	if err != nil {
+		timeout = libunlynx.TIMEOUT
+	}
+
 	var shufflingBytesMessageLength shufflingBytesLengthStruct
 	select {
 	case shufflingBytesMessageLength = <-p.LengthNodeChannel:
-	case <-time.After(p.Timeout):
+	case <-time.After(timeout):
 		return errors.New(p.ServerIdentity().String() + "didn't get the <shufflingBytesMessageLength> on time.")
 	}
 
 	var tmp shufflingBytesStruct
 	select {
 	case tmp = <-p.PreviousNodeInPathChannel:
-	case <-time.After(p.Timeout):
+	case <-time.After(timeout):
 		return errors.New(p.ServerIdentity().String() + "didn't get the <tmp> on time.")
 	}
 

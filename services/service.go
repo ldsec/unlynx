@@ -2,6 +2,7 @@ package servicesunlynx
 
 import (
 	"errors"
+	"os"
 	"strconv"
 	"time"
 
@@ -89,13 +90,7 @@ func init() {
 	network.RegisterMessage(&SurveyResponseQuery{})
 	network.RegisterMessage(&ServiceState{})
 	network.RegisterMessage(&ServiceResult{})
-
-	// Default timeout just for all tests to work
-	TimeoutService = 20 * time.Minute
 }
-
-// TimeoutService is the communication idle timeout
-var TimeoutService time.Duration
 
 // QueryBroadcastFinished is used to ensure that all servers have received the query/survey
 type QueryBroadcastFinished struct {
@@ -133,9 +128,6 @@ type ServiceResult struct {
 // Service defines a service in unlynx with a survey.
 type Service struct {
 	*onet.ServiceProcessor
-
-	Timeout time.Duration
-
 	Survey *concurrent.ConcurrentMap
 }
 
@@ -158,7 +150,6 @@ func (s *Service) putSurvey(sid SurveyID, surv Survey) error {
 // NewService constructor which registers the needed messages.
 func NewService(c *onet.Context) (onet.Service, error) {
 	newUnLynxInstance := &Service{
-		Timeout:          TimeoutService,
 		ServiceProcessor: onet.NewServiceProcessor(c),
 		Survey:           concurrent.NewConcurrentMap(),
 	}
@@ -724,6 +715,11 @@ func (s *Service) StartService(targetSurvey SurveyID, root bool) error {
 
 // ShufflingPhase performs the shuffling of the ClientResponses
 func (s *Service) ShufflingPhase(targetSurvey SurveyID) error {
+	timeout, err := time.ParseDuration(os.Getenv("MEDCO_TIMEOUT"))
+	if err != nil {
+		timeout = libunlynx.TIMEOUT
+	}
+
 	survey, err := s.getSurvey(targetSurvey)
 	if err != nil {
 		return err
@@ -742,7 +738,7 @@ func (s *Service) ShufflingPhase(targetSurvey SurveyID) error {
 	var tmpShufflingResult []libunlynx.CipherVector
 	select {
 	case tmpShufflingResult = <-pi.(*protocolsunlynx.ShufflingProtocol).FeedbackChannel:
-	case <-time.After(s.Timeout):
+	case <-time.After(timeout):
 		return errors.New(s.ServerIdentity().String() + "didn't get the <tmpShufflingResult> on time.")
 	}
 
@@ -759,6 +755,11 @@ func (s *Service) ShufflingPhase(targetSurvey SurveyID) error {
 
 // TaggingPhase performs the private grouping on the currently collected data.
 func (s *Service) TaggingPhase(targetSurvey SurveyID) error {
+	timeout, err := time.ParseDuration(os.Getenv("MEDCO_TIMEOUT"))
+	if err != nil {
+		timeout = libunlynx.TIMEOUT
+	}
+
 	survey, err := s.getSurvey(targetSurvey)
 	if err != nil {
 		return err
@@ -777,7 +778,7 @@ func (s *Service) TaggingPhase(targetSurvey SurveyID) error {
 	var tmpDeterministicTaggingResult []libunlynx.DeterministCipherText
 	select {
 	case tmpDeterministicTaggingResult = <-pi.(*protocolsunlynx.DeterministicTaggingProtocol).FeedbackChannel:
-	case <-time.After(s.Timeout):
+	case <-time.After(timeout):
 		return errors.New(s.ServerIdentity().String() + "didn't get the <tmpDeterministicTaggingResult> on time.")
 	}
 
@@ -808,6 +809,11 @@ func (s *Service) TaggingPhase(targetSurvey SurveyID) error {
 
 // AggregationPhase performs the per-group aggregation on the currently grouped data.
 func (s *Service) AggregationPhase(targetSurvey SurveyID) error {
+	timeout, err := time.ParseDuration(os.Getenv("MEDCO_TIMEOUT"))
+	if err != nil {
+		timeout = libunlynx.TIMEOUT
+	}
+
 	pi, err := s.StartProtocol(protocolsunlynx.CollectiveAggregationProtocolName, targetSurvey)
 	if err != nil {
 		return err
@@ -816,7 +822,7 @@ func (s *Service) AggregationPhase(targetSurvey SurveyID) error {
 	var cothorityAggregatedData protocolsunlynx.CothorityAggregatedData
 	select {
 	case cothorityAggregatedData = <-pi.(*protocolsunlynx.CollectiveAggregationProtocol).FeedbackChannel:
-	case <-time.After(s.Timeout):
+	case <-time.After(timeout):
 		return errors.New(s.ServerIdentity().String() + "didn't get the <cothorityAggregatedData> on time.")
 	}
 
@@ -832,6 +838,11 @@ func (s *Service) AggregationPhase(targetSurvey SurveyID) error {
 
 // DROPhase shuffles the list of noise values.
 func (s *Service) DROPhase(targetSurvey SurveyID) error {
+	timeout, err := time.ParseDuration(os.Getenv("MEDCO_TIMEOUT"))
+	if err != nil {
+		timeout = libunlynx.TIMEOUT
+	}
+
 	pi, err := s.StartProtocol(protocolsunlynx.DROProtocolName, targetSurvey)
 	if err != nil {
 		return err
@@ -845,7 +856,7 @@ func (s *Service) DROPhase(targetSurvey SurveyID) error {
 	var tmpShufflingResult []libunlynx.CipherVector
 	select {
 	case tmpShufflingResult = <-pi.(*protocolsunlynx.ShufflingProtocol).FeedbackChannel:
-	case <-time.After(s.Timeout):
+	case <-time.After(timeout):
 		return errors.New(s.ServerIdentity().String() + "didn't get the <tmpShufflingResult> on time.")
 	}
 
@@ -858,6 +869,11 @@ func (s *Service) DROPhase(targetSurvey SurveyID) error {
 
 // KeySwitchingPhase performs the switch to the querier's key on the currently aggregated data.
 func (s *Service) KeySwitchingPhase(targetSurvey SurveyID) error {
+	timeout, err := time.ParseDuration(os.Getenv("MEDCO_TIMEOUT"))
+	if err != nil {
+		timeout = libunlynx.TIMEOUT
+	}
+
 	pi, err := s.StartProtocol(protocolsunlynx.KeySwitchingProtocolName, targetSurvey)
 	if err != nil {
 		return err
@@ -871,7 +887,7 @@ func (s *Service) KeySwitchingPhase(targetSurvey SurveyID) error {
 	var tmpKeySwitchedAggregatedResponses libunlynx.CipherVector
 	select {
 	case tmpKeySwitchedAggregatedResponses = <-pi.(*protocolsunlynx.KeySwitchingProtocol).FeedbackChannel:
-	case <-time.After(s.Timeout):
+	case <-time.After(timeout):
 		return errors.New(s.ServerIdentity().String() + "didn't get the <tmpKeySwitchedAggregatedResponses> on time.")
 	}
 

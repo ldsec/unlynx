@@ -8,6 +8,7 @@ import (
 	"github.com/ldsec/unlynx/lib/aggregation"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
+	"os"
 	"time"
 )
 
@@ -35,8 +36,6 @@ type LocalAggregationProtocol struct {
 	// Protocol state data
 	TargetOfAggregation []libunlynx.FilteredResponseDet
 	Proofs              bool
-
-	Timeout time.Duration
 }
 
 // NewLocalAggregationProtocol is constructor of Local Aggregation protocol instances.
@@ -45,10 +44,6 @@ func NewLocalAggregationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstanc
 		TreeNodeInstance: n,
 		FeedbackChannel:  make(chan map[libunlynx.GroupingKey]libunlynx.FilteredResponse),
 	}
-
-	// default timeout
-	pvp.Timeout = 10 * time.Minute
-
 	return pvp, nil
 }
 
@@ -90,10 +85,15 @@ func (p *LocalAggregationProtocol) Start() error {
 func (p *LocalAggregationProtocol) Dispatch() error {
 	defer p.Done()
 
+	timeout, err := time.ParseDuration(os.Getenv("MEDCO_TIMEOUT"))
+	if err != nil {
+		timeout = libunlynx.TIMEOUT
+	}
+
 	var finalResultMessage map[libunlynx.GroupingKey]libunlynx.FilteredResponse
 	select {
 	case finalResultMessage = <-finalResultAggr:
-	case <-time.After(p.Timeout):
+	case <-time.After(timeout):
 		return errors.New(p.ServerIdentity().String() + "didn't get the <finalResultMessage> on time.")
 	}
 

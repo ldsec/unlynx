@@ -8,6 +8,7 @@ import (
 	"github.com/ldsec/unlynx/lib/store"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
+	"os"
 	"time"
 )
 
@@ -31,8 +32,6 @@ type LocalClearAggregationProtocol struct {
 
 	// Protocol state data
 	TargetOfAggregation []libunlynx.DpClearResponse
-
-	Timeout time.Duration
 }
 
 // NewLocalClearAggregationProtocol is constructor of Proofs Verification protocol instances.
@@ -41,10 +40,6 @@ func NewLocalClearAggregationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolIn
 		TreeNodeInstance: n,
 		FeedbackChannel:  make(chan []libunlynx.DpClearResponse),
 	}
-
-	// default timeout
-	pvp.Timeout = 10 * time.Minute
-
 	return pvp, nil
 }
 
@@ -64,10 +59,15 @@ func (p *LocalClearAggregationProtocol) Start() error {
 func (p *LocalClearAggregationProtocol) Dispatch() error {
 	defer p.Done()
 
+	timeout, err := time.ParseDuration(os.Getenv("MEDCO_TIMEOUT"))
+	if err != nil {
+		timeout = libunlynx.TIMEOUT
+	}
+
 	var finalResultMessage []libunlynx.DpClearResponse
 	select {
 	case finalResultMessage = <-finalResultClearAggr:
-	case <-time.After(p.Timeout):
+	case <-time.After(timeout):
 		return errors.New(p.ServerIdentity().String() + "didn't get the <finalResultMessage> on time.")
 	}
 

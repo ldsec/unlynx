@@ -8,6 +8,7 @@ package protocolsunlynx
 
 import (
 	"errors"
+	"os"
 	"time"
 
 	"github.com/ldsec/unlynx/lib"
@@ -114,8 +115,6 @@ type KeySwitchingProtocol struct {
 
 	// Test (only use in order to test the protocol)
 	ExecTime time.Duration
-
-	Timeout time.Duration
 }
 
 // NewKeySwitchingProtocol initializes the protocol instance.
@@ -138,9 +137,6 @@ func NewKeySwitchingProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, e
 	if err := pap.RegisterChannel(&pap.LengthChannel); err != nil {
 		return nil, errors.New("couldn't register length channel: " + err.Error())
 	}
-
-	// default timeout
-	pap.Timeout = 10 * time.Minute
 
 	return pap, nil
 }
@@ -235,10 +231,15 @@ func (p *KeySwitchingProtocol) Dispatch() error {
 
 // Announce forwarding down the tree.
 func (p *KeySwitchingProtocol) announcementKSPhase() (kyber.Point, []kyber.Point, error) {
+	timeout, err := time.ParseDuration(os.Getenv("MEDCO_TIMEOUT"))
+	if err != nil {
+		timeout = libunlynx.TIMEOUT
+	}
+
 	var dataReferenceMessage DownBytesStruct
 	select {
 	case dataReferenceMessage = <-p.DownChannel:
-	case <-time.After(p.Timeout):
+	case <-time.After(timeout):
 		return nil, nil, errors.New(p.ServerIdentity().String() + "didn't get the <dataReferenceMessage> on time.")
 	}
 

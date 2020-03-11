@@ -2,6 +2,7 @@ package protocolsunlynx
 
 import (
 	"errors"
+	"os"
 	"sync"
 	"time"
 
@@ -82,8 +83,6 @@ type ShufflingPlusDDTProtocol struct {
 
 	// Proofs
 	Proofs bool
-
-	Timeout time.Duration
 }
 
 // NewShufflingPlusDDTProtocol constructs neff shuffle + ddt protocol instance.
@@ -109,10 +108,6 @@ func NewShufflingPlusDDTProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstanc
 			break
 		}
 	}
-
-	// default timeout
-	pi.Timeout = 10 * time.Minute
-
 	return pi, nil
 }
 
@@ -159,23 +154,28 @@ func (p *ShufflingPlusDDTProtocol) Start() error {
 func (p *ShufflingPlusDDTProtocol) Dispatch() error {
 	defer p.Done()
 
+	timeout, err := time.ParseDuration(os.Getenv("MEDCO_TIMEOUT"))
+	if err != nil {
+		timeout = libunlynx.TIMEOUT
+	}
+
 	var shufflingPlusDDTBytesMessageLength shufflingPlusDDTBytesLengthStruct
 	select {
 	case shufflingPlusDDTBytesMessageLength = <-p.LengthNodeChannel:
-	case <-time.After(p.Timeout):
+	case <-time.After(timeout):
 		return errors.New(p.ServerIdentity().String() + "didn't get the <shufflingPlusDDTBytesMessageLength> on time.")
 	}
 
 	var tmp shufflingPlusDDTBytesStruct
 	select {
 	case tmp = <-p.PreviousNodeInPathChannel:
-	case <-time.After(p.Timeout):
+	case <-time.After(timeout):
 		return errors.New(p.ServerIdentity().String() + "didn't get the <tmp> on time.")
 	}
 
 	readData := libunlynx.StartTimer(p.Name() + "_ShufflingPlusDDT(ReadData)")
 	sm := ShufflingPlusDDTMessage{}
-	err := sm.FromBytes(tmp.Data, tmp.ShuffKey, shufflingPlusDDTBytesMessageLength.CVLengths)
+	err = sm.FromBytes(tmp.Data, tmp.ShuffKey, shufflingPlusDDTBytesMessageLength.CVLengths)
 	if err != nil {
 		return err
 	}

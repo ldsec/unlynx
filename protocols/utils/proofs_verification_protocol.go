@@ -13,6 +13,7 @@ import (
 	"github.com/ldsec/unlynx/lib/shuffle"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
+	"os"
 	"time"
 )
 
@@ -47,8 +48,6 @@ type ProofsVerificationProtocol struct {
 
 	// Protocol state data
 	TargetOfVerification ProofsToVerify
-
-	Timeout time.Duration
 }
 
 // NewProofsVerificationProtocol is constructor of Proofs Verification protocol instances.
@@ -57,9 +56,6 @@ func NewProofsVerificationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInsta
 		TreeNodeInstance: n,
 		FeedbackChannel:  make(chan []bool),
 	}
-
-	// default timeout
-	pvp.Timeout = 10 * time.Minute
 
 	return pvp, nil
 }
@@ -114,10 +110,15 @@ func (p *ProofsVerificationProtocol) Start() error {
 func (p *ProofsVerificationProtocol) Dispatch() error {
 	defer p.Done()
 
+	timeout, err := time.ParseDuration(os.Getenv("MEDCO_TIMEOUT"))
+	if err != nil {
+		timeout = libunlynx.TIMEOUT
+	}
+
 	var finalResultMessage []bool
 	select {
 	case finalResultMessage = <-finalResult:
-	case <-time.After(p.Timeout):
+	case <-time.After(timeout):
 		return errors.New(p.ServerIdentity().String() + "didn't get the <finalResultMessage> on time.")
 	}
 
