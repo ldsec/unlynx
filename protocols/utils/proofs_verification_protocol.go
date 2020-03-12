@@ -112,7 +112,7 @@ func (p *ProofsVerificationProtocol) Dispatch() error {
 	var finalResultMessage []bool
 	select {
 	case finalResultMessage = <-finalResult:
-	case <-time.After(libunlynx.DefaultTimeout):
+	case <-time.After(libunlynx.TIMEOUT):
 		return fmt.Errorf(p.ServerIdentity().String() + " didn't get the <finalResultMessage> on time")
 	}
 

@@ -727,7 +727,7 @@ func (s *Service) ShufflingPhase(targetSurvey SurveyID) error {
 	var tmpShufflingResult []libunlynx.CipherVector
 	select {
 	case tmpShufflingResult = <-pi.(*protocolsunlynx.ShufflingProtocol).FeedbackChannel:
-	case <-time.After(libunlynx.DefaultTimeout):
+	case <-time.After(libunlynx.TIMEOUT):
 		return fmt.Errorf(s.ServerIdentity().String() + " didn't get the <tmpShufflingResult> on time")
 	}
 
@@ -762,7 +762,7 @@ func (s *Service) TaggingPhase(targetSurvey SurveyID) error {
 	var tmpDeterministicTaggingResult []libunlynx.DeterministCipherText
 	select {
 	case tmpDeterministicTaggingResult = <-pi.(*protocolsunlynx.DeterministicTaggingProtocol).FeedbackChannel:
-	case <-time.After(libunlynx.DefaultTimeout):
+	case <-time.After(libunlynx.TIMEOUT):
 		return fmt.Errorf(s.ServerIdentity().String() + " didn't get the <tmpDeterministicTaggingResult> on time")
 	}
 
@@ -801,7 +801,7 @@ func (s *Service) AggregationPhase(targetSurvey SurveyID) error {
 	var cothorityAggregatedData protocolsunlynx.CothorityAggregatedData
 	select {
 	case cothorityAggregatedData = <-pi.(*protocolsunlynx.CollectiveAggregationProtocol).FeedbackChannel:
-	case <-time.After(libunlynx.DefaultTimeout):
+	case <-time.After(libunlynx.TIMEOUT):
 		return fmt.Errorf(s.ServerIdentity().String() + " didn't get the <cothorityAggregatedData> on time")
 	}
 
@@ -830,7 +830,7 @@ func (s *Service) DROPhase(targetSurvey SurveyID) error {
 	var tmpShufflingResult []libunlynx.CipherVector
 	select {
 	case tmpShufflingResult = <-pi.(*protocolsunlynx.ShufflingProtocol).FeedbackChannel:
-	case <-time.After(libunlynx.DefaultTimeout):
+	case <-time.After(libunlynx.TIMEOUT):
 		return fmt.Errorf(s.ServerIdentity().String() + " didn't get the <tmpShufflingResult> on time")
 	}
 
@@ -856,7 +856,7 @@ func (s *Service) KeySwitchingPhase(targetSurvey SurveyID) error {
 	var tmpKeySwitchedAggregatedResponses libunlynx.CipherVector
 	select {
 	case tmpKeySwitchedAggregatedResponses = <-pi.(*protocolsunlynx.KeySwitchingProtocol).FeedbackChannel:
-	case <-time.After(libunlynx.DefaultTimeout):
+	case <-time.After(libunlynx.TIMEOUT):
 		return fmt.Errorf(s.ServerIdentity().String() + " didn't get the <tmpKeySwitchedAggregatedResponses> on time")
 	}
 

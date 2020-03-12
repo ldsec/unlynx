@@ -201,7 +201,7 @@ func (p *CollectiveAggregationProtocol) aggregationAnnouncementPhase() error {
 		if err := p.SendToChildren(&dataReferenceMessage.DataReferenceMessage); err != nil {
 			return fmt.Errorf("error sending <DataReferenceMessage>: %v", err)
 		}
-	case <-time.After(libunlynx.DefaultTimeout):
+	case <-time.After(libunlynx.TIMEOUT):
 		return fmt.Errorf(p.ServerIdentity().String() + " didn't get the <dataReferenceMessage> on time")
 	}
 	return nil

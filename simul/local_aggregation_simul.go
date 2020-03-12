@@ -120,7 +120,7 @@ func (sim *LocalAggregationSimulation) Run(config *onet.SimulationConfig) error 
 		case results := <-root.ProtocolInstance().(*protocolsunlynxutils.LocalAggregationProtocol).FeedbackChannel:
 			log.Lvl1("Number of aggregated lines: ", len(results))
 			libunlynx.EndTimer(round)
-		case <-time.After(libunlynx.DefaultTimeout):
+		case <-time.After(libunlynx.TIMEOUT):
 			return fmt.Errorf("simulation didn't finish in time")
 		}
 	}

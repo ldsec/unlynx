@@ -12,9 +12,9 @@ import (
 func init() {
 	tmp, err := time.ParseDuration(os.Getenv("MEDCO_TIMEOUT"))
 	if err == nil {
-		DefaultTimeout = tmp
+		TIMEOUT = tmp
 	} else {
-		log.Warn("Couldn't parse MEDCO_TIMEOUT, using default value: ", DefaultTimeout.String())
+		log.Warn("Couldn't parse MEDCO_TIMEOUT, using default value: ", TIMEOUT.String())
 	}
 }
 
@@ -30,8 +30,8 @@ const VPARALLELIZE = 100
 // DIFFPRI enables the DRO protocol (Distributed Results Obfuscation)
 const DIFFPRI = false
 
-// DefaultTimeout ddefines the default channel timeout
-var DefaultTimeout = 10 * time.Minute
+// TIMEOUT ddefines the default channel timeout
+var TIMEOUT = 10 * time.Minute
 
 // StartTimer starts measurement of time
 func StartTimer(name string) *monitor.TimeMeasure {
