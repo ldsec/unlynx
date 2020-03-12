@@ -179,26 +179,26 @@ func NewService(c *onet.Context) (onet.Service, error) {
 // Process implements the processor interface and is used to recognize messages broadcasted between servers
 func (s *Service) Process(msg *network.Envelope) {
 	if msg.MsgType.Equal(msgTypes.msgSurveyCreationQuery) {
-		tmp := (msg.Msg).(*SurveyCreationQuery)
-		_, err := s.HandleSurveyCreationQuery(tmp)
+		msgSurveyCreationQuery := (msg.Msg).(*SurveyCreationQuery)
+		_, err := s.HandleSurveyCreationQuery(msgSurveyCreationQuery)
 		if err != nil {
 			log.Error(err)
 		}
 	} else if msg.MsgType.Equal(msgTypes.msgSurveyResultsQuery) {
-		tmp := (msg.Msg).(*SurveyResultsQuery)
-		_, err := s.HandleSurveyResultsQuery(tmp)
+		msgSurveyResultsQuery := (msg.Msg).(*SurveyResultsQuery)
+		_, err := s.HandleSurveyResultsQuery(msgSurveyResultsQuery)
 		if err != nil {
 			log.Error(err)
 		}
 	} else if msg.MsgType.Equal(msgTypes.msgQueryBroadcastFinished) {
-		tmp := (msg.Msg).(*QueryBroadcastFinished)
-		_, err := s.HandleQueryBroadcastFinished(tmp)
+		msgQueryBroadcastFinished := (msg.Msg).(*QueryBroadcastFinished)
+		_, err := s.HandleQueryBroadcastFinished(msgQueryBroadcastFinished)
 		if err != nil {
 			log.Error(err)
 		}
 	} else if msg.MsgType.Equal(msgTypes.msgDDTfinished) {
-		tmp := (msg.Msg).(*DDTfinished)
-		_, err := s.HandleDDTfinished(tmp)
+		msgDDTfinished := (msg.Msg).(*DDTfinished)
+		_, err := s.HandleDDTfinished(msgDDTfinished)
 		if err != nil {
 			log.Error(err)
 		}
@@ -469,18 +469,18 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 
 			var queryWhereToTag []libunlynx.ProcessResponse
 			for _, v := range survey.Query.Where {
-				tmp := libunlynx.CipherVector{v.Value}
-				queryWhereToTag = append(queryWhereToTag, libunlynx.ProcessResponse{WhereEnc: tmp, GroupByEnc: nil, AggregatingAttributes: nil})
+				cv := libunlynx.CipherVector{v.Value}
+				queryWhereToTag = append(queryWhereToTag, libunlynx.ProcessResponse{WhereEnc: cv, GroupByEnc: nil, AggregatingAttributes: nil})
 			}
 			shuffledClientResponses = append(queryWhereToTag, shuffledClientResponses...)
-			tmpDeterministicTOS := protocolsunlynx.ProcessResponseToCipherVector(shuffledClientResponses)
+			deterministicTOS := protocolsunlynx.ProcessResponseToCipherVector(shuffledClientResponses)
 			survey.TargetOfSwitch = shuffledClientResponses
 			err = s.putSurvey(target, survey)
 			if err != nil {
 				return nil, err
 			}
 
-			hashCreation.TargetOfSwitch = &tmpDeterministicTOS
+			hashCreation.TargetOfSwitch = &deterministicTOS
 		}
 
 	case protocolsunlynx.CollectiveAggregationProtocolName:
@@ -562,11 +562,11 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 			} else {
 				coaggr = survey.PullCothorityAggregatedFilteredResponses(false, libunlynx.CipherText{})
 			}
-			var tmpKeySwitchingCV libunlynx.CipherVector
-			tmpKeySwitchingCV, survey.Lengths = protocolsunlynx.FilteredResponseToCipherVector(coaggr)
-			keySwitch.TargetOfSwitch = &tmpKeySwitchingCV
-			tmp := survey.Query.ClientPubKey
-			keySwitch.TargetPublicKey = &tmp
+			var cv libunlynx.CipherVector
+			cv, survey.Lengths = protocolsunlynx.FilteredResponseToCipherVector(coaggr)
+			keySwitch.TargetOfSwitch = &cv
+			cpk := survey.Query.ClientPubKey
+			keySwitch.TargetPublicKey = &cpk
 
 			err = s.putSurvey(target, survey)
 			if err != nil {
@@ -581,11 +581,11 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 
 // StartProtocol starts a specific protocol (Pipeline, Shuffling, etc.)
 func (s *Service) StartProtocol(name string, targetSurvey SurveyID) (onet.ProtocolInstance, error) {
-	tmp, err := s.getSurvey(targetSurvey)
+	survey, err := s.getSurvey(targetSurvey)
 	if err != nil {
 		return nil, err
 	}
-	tree := tmp.Query.Roster.GenerateNaryTreeWithRoot(2, s.ServerIdentity())
+	tree := survey.Query.Roster.GenerateNaryTreeWithRoot(2, s.ServerIdentity())
 
 	var tn *onet.TreeNodeInstance
 	tn = s.NewTreeNodeInstance(tree, tree.Root, name)
@@ -798,11 +798,11 @@ func (s *Service) AggregationPhase(targetSurvey SurveyID) error {
 		return err
 	}
 
-	var cothorityAggregatedData protocolsunlynx.CothorityAggregatedData
+	var tmpAggreagtionResult protocolsunlynx.CothorityAggregatedData
 	select {
-	case cothorityAggregatedData = <-pi.(*protocolsunlynx.CollectiveAggregationProtocol).FeedbackChannel:
+	case tmpAggreagtionResult = <-pi.(*protocolsunlynx.CollectiveAggregationProtocol).FeedbackChannel:
 	case <-time.After(libunlynx.TIMEOUT):
-		return fmt.Errorf(s.ServerIdentity().String() + " didn't get the <cothorityAggregatedData> on time")
+		return fmt.Errorf(s.ServerIdentity().String() + " didn't get the <tmpAggreagtionResult> on time")
 	}
 
 	survey, err := s.getSurvey(targetSurvey)
@@ -810,7 +810,7 @@ func (s *Service) AggregationPhase(targetSurvey SurveyID) error {
 		return err
 	}
 
-	survey.PushCothorityAggregatedFilteredResponses(cothorityAggregatedData.GroupedData)
+	survey.PushCothorityAggregatedFilteredResponses(tmpAggreagtionResult.GroupedData)
 	err = s.putSurvey(targetSurvey, survey)
 	return err
 }
@@ -853,14 +853,14 @@ func (s *Service) KeySwitchingPhase(targetSurvey SurveyID) error {
 		return err
 	}
 
-	var tmpKeySwitchedAggregatedResponses libunlynx.CipherVector
+	var tmpKeySwitchingResult libunlynx.CipherVector
 	select {
-	case tmpKeySwitchedAggregatedResponses = <-pi.(*protocolsunlynx.KeySwitchingProtocol).FeedbackChannel:
+	case tmpKeySwitchingResult = <-pi.(*protocolsunlynx.KeySwitchingProtocol).FeedbackChannel:
 	case <-time.After(libunlynx.TIMEOUT):
-		return fmt.Errorf(s.ServerIdentity().String() + " didn't get the <tmpKeySwitchedAggregatedResponses> on time")
+		return fmt.Errorf(s.ServerIdentity().String() + " didn't get the <tmpKeySwitchingResult> on time")
 	}
 
-	keySwitchedAggregatedResponses := protocolsunlynx.CipherVectorToFilteredResponse(tmpKeySwitchedAggregatedResponses, survey.Lengths)
+	keySwitchedAggregatedResponses := protocolsunlynx.CipherVectorToFilteredResponse(tmpKeySwitchingResult, survey.Lengths)
 
 	survey.PushQuerierKeyEncryptedResponses(keySwitchedAggregatedResponses)
 	err = s.putSurvey(targetSurvey, survey)

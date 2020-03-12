@@ -125,17 +125,17 @@ func parseQuery(el *onet.Roster, sum string, count bool, where, predicate, group
 	where = strings.Replace(where, " ", "", -1)
 	where = strings.Replace(where, "{", "", -1)
 	where = strings.Replace(where, "}", "", -1)
-	tmp := strings.Split(where, ",")
+	whereTokens := strings.Split(where, ",")
 
 	whereFinal := make([]libunlynx.WhereQueryAttribute, 0)
 
 	var variable string
-	for i := range tmp {
+	for i := range whereTokens {
 		// if is a variable (w1, w2...)
 		if i%2 == 0 {
-			variable = tmp[i]
+			variable = whereTokens[i]
 		} else { // if it is a value
-			value, err := strconv.Atoi(tmp[i])
+			value, err := strconv.Atoi(whereTokens[i])
 			if err != nil {
 				return nil, false, nil, "", nil, err
 			}

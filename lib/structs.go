@@ -105,8 +105,8 @@ func AddInMap(s map[GroupingKey]FilteredResponse, key GroupingKey, added Filtere
 	if localResult, ok := s[key]; !ok {
 		s[key] = added
 	} else {
-		tmp := NewFilteredResponse(len(added.GroupByEnc), len(added.AggregatingAttributes))
-		s[key] = *tmp.Add(localResult, added)
+		nfr := NewFilteredResponse(len(added.GroupByEnc), len(added.AggregatingAttributes))
+		s[key] = *nfr.Add(localResult, added)
 	}
 }
 
@@ -141,9 +141,9 @@ func (crd *FilteredResponseDet) FormatAggregationProofs(res map[GroupingKey][]Ci
 	} else { // if no elements are in the map yet
 		container := make([]CipherVector, len(crd.Fr.AggregatingAttributes))
 		for i, ct := range crd.Fr.AggregatingAttributes {
-			tmp := make(CipherVector, 0)
-			tmp = append(tmp, ct)
-			container[i] = tmp
+			cv := make(CipherVector, 0)
+			cv = append(cv, ct)
+			container[i] = cv
 			res[crd.DetTagGroupBy] = container
 		}
 	}
@@ -205,7 +205,7 @@ func Key(ga []int64) GroupingKey {
 	return GroupingKey(strings.Join(key, ""))
 }
 
-// UnKey permits to go from a tag  non-encrypted grouping attributes to grouping attributes
+// UnKey permits to go from a tag non-encrypted grouping attributes to grouping attributes
 func UnKey(gk GroupingKey) ([]int64, error) {
 	tab := make([]int64, 0)
 	count := 0
@@ -214,11 +214,11 @@ func UnKey(gk GroupingKey) ([]int64, error) {
 		if a != ',' {
 			nbrString[0] = string(a)
 		} else {
-			tmp, err := strconv.Atoi(strings.Join(nbrString, ""))
+			key, err := strconv.Atoi(strings.Join(nbrString, ""))
 			if err != nil {
 				return nil, err
 			}
-			tab = append(tab, int64(tmp))
+			tab = append(tab, int64(key))
 			nbrString = make([]string, 1)
 			count++
 		}

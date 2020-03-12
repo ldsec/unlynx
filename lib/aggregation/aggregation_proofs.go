@@ -164,15 +164,15 @@ func (palp *PublishedAggregationListProof) FromBytes(palpb PublishedAggregationL
 	for i, papb := range palpb.List {
 		go func(index int, papb PublishedAggregationProofBytes) {
 			defer wg.Done()
-			tmp := PublishedAggregationProof{}
-			tmpErr := tmp.FromBytes(papb)
+			pap := PublishedAggregationProof{}
+			tmpErr := pap.FromBytes(papb)
 			if tmpErr != nil {
 				mutex.Lock()
 				err = tmpErr
 				mutex.Unlock()
 				return
 			}
-			palp.List[index] = tmp
+			palp.List[index] = pap
 		}(i, papb)
 	}
 	libunlynx.EndParallelize(wg)

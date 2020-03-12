@@ -160,16 +160,16 @@ func (p *ShufflingPlusDDTProtocol) Dispatch() error {
 		return fmt.Errorf(p.ServerIdentity().String() + " didn't get the <shufflingPlusDDTBytesMessageLength> on time")
 	}
 
-	var tmp shufflingPlusDDTBytesStruct
+	var spDDTbs shufflingPlusDDTBytesStruct
 	select {
-	case tmp = <-p.PreviousNodeInPathChannel:
+	case spDDTbs = <-p.PreviousNodeInPathChannel:
 	case <-time.After(libunlynx.TIMEOUT):
-		return fmt.Errorf(p.ServerIdentity().String() + " didn't get the <tmp> on time")
+		return fmt.Errorf(p.ServerIdentity().String() + " didn't get the <spDDTbs> on time")
 	}
 
 	readData := libunlynx.StartTimer(p.Name() + "_ShufflingPlusDDT(ReadData)")
 	sm := ShufflingPlusDDTMessage{}
-	err := sm.FromBytes(tmp.Data, tmp.ShuffKey, shufflingPlusDDTBytesMessageLength.CVLengths)
+	err := sm.FromBytes(spDDTbs.Data, spDDTbs.ShuffKey, shufflingPlusDDTBytesMessageLength.CVLengths)
 	if err != nil {
 		return err
 	}
@@ -202,9 +202,9 @@ func (p *ShufflingPlusDDTProtocol) Dispatch() error {
 			defer wg.Done()
 			for j := 0; j < libunlynx.VPARALLELIZE && (i+j) < len(shuffledData); j++ {
 				for k := range shuffledData[i+j] {
-					tmp := libunlynx.SuiTe.Point().Add(shuffledData[i+j][k].C, toAdd)
+					r := libunlynx.SuiTe.Point().Add(shuffledData[i+j][k].C, toAdd)
 					if p.Proofs {
-						_, tmpErr := libunlynxdetertag.DeterministicTagAdditionProofCreation(shuffledData[i+j][k].C, *p.SurveySecretKey, toAdd, tmp)
+						_, tmpErr := libunlynxdetertag.DeterministicTagAdditionProofCreation(shuffledData[i+j][k].C, *p.SurveySecretKey, toAdd, r)
 						if tmpErr != nil {
 							mutex.Lock()
 							err = tmpErr
@@ -212,7 +212,7 @@ func (p *ShufflingPlusDDTProtocol) Dispatch() error {
 							return
 						}
 					}
-					shuffledData[i+j][k].C = tmp
+					shuffledData[i+j][k].C = r
 				}
 			}
 		}(i)
@@ -235,10 +235,10 @@ func (p *ShufflingPlusDDTProtocol) Dispatch() error {
 		go func(i int) {
 			defer wg.Done()
 			for j := 0; j < libunlynx.VPARALLELIZE && (i+j) < len(shuffledData); j++ {
-				tmp := shuffledData[i+j]
-				switchedVect := libunlynxdetertag.DeterministicTagSequence(tmp, p.Private(), *p.SurveySecretKey)
+				vBef := shuffledData[i+j]
+				vAft := libunlynxdetertag.DeterministicTagSequence(vBef, p.Private(), *p.SurveySecretKey)
 				if p.Proofs {
-					_, tmpErr := libunlynxdetertag.DeterministicTagCrListProofCreation(tmp, switchedVect, p.Public(), *p.SurveySecretKey, p.Private())
+					_, tmpErr := libunlynxdetertag.DeterministicTagCrListProofCreation(vBef, vAft, p.Public(), *p.SurveySecretKey, p.Private())
 					if tmpErr != nil {
 						mutex.Lock()
 						err = tmpErr
@@ -246,7 +246,7 @@ func (p *ShufflingPlusDDTProtocol) Dispatch() error {
 						return
 					}
 				}
-				copy(shuffledData[i+j], switchedVect)
+				copy(shuffledData[i+j], vAft)
 			}
 		}(i)
 	}

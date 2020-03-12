@@ -63,15 +63,15 @@ func shuffle(pi []int, i int, inputList, outputList []libunlynx.CipherVector, NQ
 	wg := libunlynx.StartParallelize(NQ)
 	for j := 0; j < NQ; j++ {
 		var b kyber.Scalar
-		var tmpCipher libunlynx.CipherText
+		var ct libunlynx.CipherText
 		if len(precomputedPoints[0]) == 0 {
 			b = beta[index][j]
 		} else {
-			tmpCipher = precomputedPoints[index][j]
+			ct = precomputedPoints[index][j]
 		}
 		go func(j int) {
 			defer wg.Done()
-			outputList[i][j] = rerandomize(inputList[index], b, b, tmpCipher, g, h, j)
+			outputList[i][j] = rerandomize(inputList[index], b, b, ct, g, h, j)
 		}(j)
 	}
 	libunlynx.EndParallelize(wg)
@@ -80,19 +80,19 @@ func shuffle(pi []int, i int, inputList, outputList []libunlynx.CipherVector, NQ
 // rerandomize rerandomizes an element in a ciphervector at position j, following the Neff Shuffling algorithm
 func rerandomize(cv libunlynx.CipherVector, a, b kyber.Scalar, cipher libunlynx.CipherText, g, h kyber.Point, j int) libunlynx.CipherText {
 	ct := libunlynx.NewCipherText()
-	var tmp1, tmp2 kyber.Point
+	var point1, point2 kyber.Point
 
 	if cipher.C == nil {
 		//no precomputed value
-		tmp1 = libunlynx.SuiTe.Point().Mul(a, g)
-		tmp2 = libunlynx.SuiTe.Point().Mul(b, h)
+		point1 = libunlynx.SuiTe.Point().Mul(a, g)
+		point2 = libunlynx.SuiTe.Point().Mul(b, h)
 	} else {
-		tmp1 = cipher.K
-		tmp2 = cipher.C
+		point1 = cipher.K
+		point2 = cipher.C
 	}
 
-	ct.K = libunlynx.SuiTe.Point().Add(cv[j].K, tmp1)
-	ct.C = libunlynx.SuiTe.Point().Add(cv[j].C, tmp2)
+	ct.K = libunlynx.SuiTe.Point().Add(cv[j].K, point1)
+	ct.C = libunlynx.SuiTe.Point().Add(cv[j].C, point2)
 	return *ct
 }
 
@@ -113,12 +113,12 @@ func CreatePrecomputedRandomize(g, h kyber.Point, rand cipher.Stream, lineSize, 
 
 			for w := range result[i].CipherV {
 				mutex.Lock()
-				tmp := libunlynx.SuiTe.Scalar().Pick(rand)
+				scalar := libunlynx.SuiTe.Scalar().Pick(rand)
 				mutex.Unlock()
 
-				result[i].S[w] = tmp
-				result[i].CipherV[w].K = libunlynx.SuiTe.Point().Mul(tmp, g)
-				result[i].CipherV[w].C = libunlynx.SuiTe.Point().Mul(tmp, h)
+				result[i].S[w] = scalar
+				result[i].CipherV[w].K = libunlynx.SuiTe.Point().Mul(scalar, g)
+				result[i].CipherV[w].C = libunlynx.SuiTe.Point().Mul(scalar, h)
 			}
 
 		}(i)

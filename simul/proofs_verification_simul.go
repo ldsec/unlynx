@@ -115,8 +115,8 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 
 		toAdd := libunlynx.SuiTe.Point().Mul(secKeyNew, libunlynx.SuiTe.Point().Base())
 		for i := range cipherVect {
-			tmp := libunlynx.SuiTe.Point().Add(cipherVect[i].C, toAdd)
-			prf, err := libunlynxdetertag.DeterministicTagAdditionProofCreation(cipherVect[i].C, secKeyNew, toAdd, tmp)
+			r := libunlynx.SuiTe.Point().Add(cipherVect[i].C, toAdd)
+			prf, err := libunlynxdetertag.DeterministicTagAdditionProofCreation(cipherVect[i].C, secKeyNew, toAdd, r)
 			if err != nil {
 				return err
 			}
@@ -145,10 +145,10 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 
 		detResponses := make([]libunlynx.FilteredResponseDet, 0)
 		for i := 0; i < sim.NbrGroups; i++ {
-			tmp := libunlynx.NewCipherVector(sim.NbrGroupAttributes)
-			tmp.Add(cipherVectGr, cipherVectGr)
+			cv := libunlynx.NewCipherVector(sim.NbrGroupAttributes)
+			cv.Add(cipherVectGr, cipherVectGr)
 
-			cipherVectGr = *tmp
+			cipherVectGr = *cv
 			det1 := cipherVectGr
 			if err := protocolsunlynx.TaggingDet(&det1, secKey, secKey, pubKey, false); err != nil {
 				return err

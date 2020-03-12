@@ -85,10 +85,10 @@ func (s *Store) InsertDpResponse(cr libunlynx.DpResponse, proofsB bool, groupBy,
 	} else {
 		value, ok := s.DpResponsesAggr[GroupingKeyTuple{libunlynx.Key(clearGrp), libunlynx.Key(clearWhr)}]
 		if ok {
-			tmp := libunlynx.NewCipherVector(len(value.AggregatingAttributes))
-			tmp.Add(value.AggregatingAttributes, newResp.AggregatingAttributes)
+			cv := libunlynx.NewCipherVector(len(value.AggregatingAttributes))
+			cv.Add(value.AggregatingAttributes, newResp.AggregatingAttributes)
 			mapValue := s.DpResponsesAggr[GroupingKeyTuple{libunlynx.Key(clearGrp), libunlynx.Key(clearWhr)}]
-			mapValue.AggregatingAttributes = *tmp
+			mapValue.AggregatingAttributes = *cv
 			s.DpResponsesAggr[GroupingKeyTuple{libunlynx.Key(clearGrp), libunlynx.Key(clearWhr)}] = mapValue
 
 			if proofsB {

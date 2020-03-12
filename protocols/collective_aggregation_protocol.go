@@ -238,10 +238,10 @@ func (p *CollectiveAggregationProtocol) ascendingAggregationPhase(cvMap map[libu
 				}
 
 				if ok {
-					tmp := libunlynx.NewCipherVector(len(localAggr.AggregatingAttributes))
-					tmp.Add(localAggr.AggregatingAttributes, aggr.Fr.AggregatingAttributes)
+					cv := libunlynx.NewCipherVector(len(localAggr.AggregatingAttributes))
+					cv.Add(localAggr.AggregatingAttributes, aggr.Fr.AggregatingAttributes)
 
-					localAggr.AggregatingAttributes = *tmp
+					localAggr.AggregatingAttributes = *cv
 				} else {
 					localAggr = aggr.Fr
 				}

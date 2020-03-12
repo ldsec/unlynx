@@ -123,13 +123,12 @@ func changeEncryption(cipherTexts []libunlynx.CipherText, serverAddRmKey kyber.S
 }
 
 func changeEncryptionKeyCipherTexts(cipherText libunlynx.CipherText, serverAddRmKey kyber.Scalar, toAdd bool) libunlynx.CipherText {
-	tmp := libunlynx.SuiTe.Point().Mul(serverAddRmKey, cipherText.K)
 	result := libunlynx.CipherText{}
 	result.K = cipherText.K
 	if toAdd {
-		result.C = libunlynx.SuiTe.Point().Add(cipherText.C, tmp)
+		result.C = libunlynx.SuiTe.Point().Add(cipherText.C, libunlynx.SuiTe.Point().Mul(serverAddRmKey, cipherText.K))
 	} else {
-		result.C = libunlynx.SuiTe.Point().Sub(cipherText.C, tmp)
+		result.C = libunlynx.SuiTe.Point().Sub(cipherText.C, libunlynx.SuiTe.Point().Mul(serverAddRmKey, cipherText.K))
 	}
 	return result
 }

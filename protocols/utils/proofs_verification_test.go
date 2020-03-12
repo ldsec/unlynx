@@ -67,14 +67,14 @@ func TestProofsVerification(t *testing.T) {
 	toAddWrong := libunlynx.SuiTe.Point().Mul(secKey, libunlynx.SuiTe.Point().Base())
 	for j := 0; j < 2; j++ {
 		for i := range cipherVect {
-			tmp := libunlynx.SuiTe.Point()
+			point := libunlynx.SuiTe.Point()
 			if j%2 == 0 {
-				tmp = libunlynx.SuiTe.Point().Add(cipherVect[i].C, toAdd)
+				point = libunlynx.SuiTe.Point().Add(cipherVect[i].C, toAdd)
 			} else {
-				tmp = libunlynx.SuiTe.Point().Add(cipherVect[i].C, toAddWrong)
+				point = libunlynx.SuiTe.Point().Add(cipherVect[i].C, toAddWrong)
 			}
 
-			prf, err := libunlynxdetertag.DeterministicTagAdditionProofCreation(cipherVect[i].C, secKeyNew, toAdd, tmp)
+			prf, err := libunlynxdetertag.DeterministicTagAdditionProofCreation(cipherVect[i].C, secKeyNew, toAdd, point)
 			assert.NoError(t, err)
 			deterministicTaggingAddProofs.List = append(deterministicTaggingAddProofs.List, prf)
 		}

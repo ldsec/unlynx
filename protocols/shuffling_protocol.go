@@ -194,15 +194,15 @@ func (p *ShufflingProtocol) Dispatch() error {
 		return fmt.Errorf(p.ServerIdentity().String() + " didn't get the <shufflingBytesMessageLength> on time")
 	}
 
-	var tmp shufflingBytesStruct
+	var sbs shufflingBytesStruct
 	select {
-	case tmp = <-p.PreviousNodeInPathChannel:
+	case sbs = <-p.PreviousNodeInPathChannel:
 	case <-time.After(libunlynx.TIMEOUT):
-		return fmt.Errorf(p.ServerIdentity().String() + " didn't get the <tmp> on time")
+		return fmt.Errorf(p.ServerIdentity().String() + " didn't get the <sbs> on time")
 	}
 
 	sm := ShufflingMessage{}
-	if err := sm.FromBytes(tmp.Data, shufflingBytesMessageLength.CVLengths); err != nil {
+	if err := sm.FromBytes(sbs.Data, shufflingBytesMessageLength.CVLengths); err != nil {
 		return err
 	}
 	shuffleTarget := sm.Data

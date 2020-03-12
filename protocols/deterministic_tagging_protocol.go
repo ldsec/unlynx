@@ -178,9 +178,9 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 		go func(i int) {
 			defer wg.Done()
 			for j := 0; j < libunlynx.VPARALLELIZE && (i+j) < len(deterministicTaggingTargetBef.Data); j++ {
-				tmp := libunlynx.SuiTe.Point().Add(deterministicTaggingTargetBef.Data[i+j].C, toAdd)
+				r := libunlynx.SuiTe.Point().Add(deterministicTaggingTargetBef.Data[i+j].C, toAdd)
 				if p.Proofs {
-					_, tmpErr := libunlynxdetertag.DeterministicTagAdditionProofCreation(deterministicTaggingTargetBef.Data[i+j].C, *p.SurveySecretKey, toAdd, tmp)
+					_, tmpErr := libunlynxdetertag.DeterministicTagAdditionProofCreation(deterministicTaggingTargetBef.Data[i+j].C, *p.SurveySecretKey, toAdd, r)
 					if tmpErr != nil {
 						mutex.Lock()
 						err = tmpErr
@@ -188,7 +188,7 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 						return
 					}
 				}
-				deterministicTaggingTargetBef.Data[i+j].C = tmp
+				deterministicTaggingTargetBef.Data[i+j].C = r
 			}
 		}(i)
 	}
@@ -233,15 +233,15 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 			if j > len(deterministicTaggingTarget.Data) {
 				j = len(deterministicTaggingTarget.Data)
 			}
-			tmp := deterministicTaggingTarget.Data[i:j]
-			tmpErr := TaggingDet(&tmp, p.Private(), *p.SurveySecretKey, p.Public(), p.Proofs)
+			cv := deterministicTaggingTarget.Data[i:j]
+			tmpErr := TaggingDet(&cv, p.Private(), *p.SurveySecretKey, p.Public(), p.Proofs)
 			if tmpErr != nil {
 				mutex.Lock()
 				err = tmpErr
 				mutex.Unlock()
 				return
 			}
-			copy(deterministicTaggingTarget.Data[i:j], tmp)
+			copy(deterministicTaggingTarget.Data[i:j], cv)
 		}(i)
 	}
 	wg.Wait()
@@ -394,9 +394,9 @@ func (dtm *DeterministicTaggingMessage) FromBytes(data []byte) error {
 		go func(i int) {
 			defer wg.Done()
 			for j := 0; j < elementSize*libunlynx.VPARALLELIZE && i+j < len(data); j += elementSize {
-				tmp := make([]byte, elementSize)
-				copy(tmp, data[i+j:i+j+elementSize])
-				tmpErr := (*dtm).Data[(i+j)/elementSize].FromBytes(tmp)
+				dataCopy := make([]byte, elementSize)
+				copy(dataCopy, data[i+j:i+j+elementSize])
+				tmpErr := (*dtm).Data[(i+j)/elementSize].FromBytes(dataCopy)
 				if tmpErr != nil {
 					mutex.Lock()
 					err = tmpErr
