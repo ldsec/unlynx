@@ -102,7 +102,7 @@ func (cv *FilteredResponse) Add(cv1, cv2 FilteredResponse) *FilteredResponse {
 
 // AddInMap permits to add a filtered response with its deterministic tag in a map
 func AddInMap(s map[GroupingKey]FilteredResponse, key GroupingKey, added FilteredResponse) {
-	if localResult, ok := s[key]; !ok {
+	if localResult, ok := s[key]; ok == false {
 		s[key] = added
 	} else {
 		nfr := NewFilteredResponse(len(added.GroupByEnc), len(added.AggregatingAttributes))

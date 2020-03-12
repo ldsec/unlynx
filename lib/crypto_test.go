@@ -119,7 +119,7 @@ func TestNullCipherVector(t *testing.T) {
 	nullVectDec := libunlynx.DecryptIntVector(secKey, &nullVectEnc)
 
 	target := []int64{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-	if !reflect.DeepEqual(nullVectDec, target) {
+	if reflect.DeepEqual(nullVectDec, target) == false {
 		t.Fatal("Null vector of dimension 4 should be ", target, "got", nullVectDec)
 	}
 
@@ -127,7 +127,7 @@ func TestNullCipherVector(t *testing.T) {
 	twoTimesNullEnc.Add(nullVectEnc, nullVectEnc)
 	twoTimesNullDec := libunlynx.DecryptIntVector(secKey, twoTimesNullEnc)
 
-	if !reflect.DeepEqual(twoTimesNullDec, target) {
+	if reflect.DeepEqual(twoTimesNullDec, target) == false {
 		t.Fatal("Null vector + Null vector should be ", target, "got", twoTimesNullDec)
 	}
 }
@@ -198,7 +198,7 @@ func TestAbstractPointsConverter(t *testing.T) {
 	}
 
 	for i, el := range aps {
-		if !reflect.DeepEqual(el.String(), newAps[i].String()) {
+		if reflect.DeepEqual(el.String(), newAps[i].String()) == false {
 			t.Fatal("Wrong results, expected", el, "but got", newAps[i])
 		}
 	}

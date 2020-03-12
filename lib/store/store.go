@@ -53,7 +53,7 @@ func proccessParameters(data []string, clear map[string]int64, encrypted map[str
 		// all where and group by attributes are in clear
 		if noEnc {
 			containerClear = append(containerClear, clear[v])
-		} else if !noEnc {
+		} else if noEnc == false {
 			if value, ok := encrypted[v]; ok {
 				containerEnc = append(containerEnc, value)
 			} else {
@@ -80,7 +80,7 @@ func (s *Store) InsertDpResponse(cr libunlynx.DpResponse, proofsB bool, groupBy,
 	clearWhr, newResp.WhereEnc = proccessParameters(whereStrings, cr.WhereClear, cr.WhereEnc, noEnc)
 	_, newResp.AggregatingAttributes = proccessParameters(sum, cr.AggregatingAttributesClear, cr.AggregatingAttributesEnc, false)
 
-	if !noEnc {
+	if noEnc == false {
 		s.DpResponses = append(s.DpResponses, newResp)
 	} else {
 		value, ok := s.DpResponsesAggr[GroupingKeyTuple{libunlynx.Key(clearGrp), libunlynx.Key(clearWhr)}]

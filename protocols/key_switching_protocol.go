@@ -191,7 +191,7 @@ func (p *KeySwitchingProtocol) Dispatch() error {
 	defer p.Done()
 
 	// 1. Key switching announcement phase
-	if !p.IsRoot() {
+	if p.IsRoot() == false {
 		targetPublicKey, rbs, err := p.announcementKSPhase()
 		if err != nil {
 			return err
@@ -253,7 +253,7 @@ func (p *KeySwitchingProtocol) ascendingKSPhase() (*libunlynx.CipherVector, erro
 
 	keySwitchingAscendingAggregation := libunlynx.StartTimer(p.Name() + "_KeySwitching(ascendingAggregation)")
 
-	if !p.IsLeaf() {
+	if p.IsLeaf() == false {
 		length := make([]LengthStruct, 0)
 		for _, v := range <-p.LengthChannel {
 			length = append(length, v)
@@ -278,7 +278,7 @@ func (p *KeySwitchingProtocol) ascendingKSPhase() (*libunlynx.CipherVector, erro
 	}
 	libunlynx.EndTimer(keySwitchingAscendingAggregation)
 
-	if !p.IsRoot() {
+	if p.IsRoot() == false {
 		if err := p.SendToParent(&LengthMessage{Length: libunlynxtools.UnsafeCastIntsToBytes([]int{len(*p.NodeContribution)})}); err != nil {
 			return nil, fmt.Errorf("Node "+p.ServerIdentity().String()+" failed to broadcast LengthMessage: %v", err)
 		}

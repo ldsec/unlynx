@@ -98,7 +98,7 @@ func parseQuery(el *onet.Roster, sum string, count bool, where, predicate, group
 	whereRegex := "{(w[0-9]+(,\\s*[0-9]+))*(,\\s*w[0-9]+(,\\s*[0-9]+))*}"
 	groupByRegex := "{g[0-9]+(,\\s*g[0-9]+)*}"
 
-	if !checkRegex(sum, sumRegex) {
+	if checkRegex(sum, sumRegex) == false {
 		return nil, false, nil, "", nil, fmt.Errorf("error parsing the sum parameter(s)")
 	}
 	sum = strings.Replace(sum, " ", "", -1)
@@ -114,12 +114,12 @@ func parseQuery(el *onet.Roster, sum string, count bool, where, predicate, group
 			}
 		}
 
-		if !check {
+		if check == false {
 			return nil, false, nil, "", nil, fmt.Errorf("no 'count' attribute in the sum variables")
 		}
 	}
 
-	if !checkRegex(where, whereRegex) {
+	if checkRegex(where, whereRegex) == false {
 		return nil, false, nil, "", nil, fmt.Errorf("error parsing the where parameter(s)")
 	}
 	where = strings.Replace(where, " ", "", -1)
@@ -144,7 +144,7 @@ func parseQuery(el *onet.Roster, sum string, count bool, where, predicate, group
 		}
 	}
 
-	if !checkRegex(groupBy, groupByRegex) {
+	if checkRegex(groupBy, groupByRegex) == false {
 		return nil, false, nil, "", nil, fmt.Errorf("error parsing the groupBy parameter(s)")
 	}
 	groupBy = strings.Replace(groupBy, " ", "", -1)
