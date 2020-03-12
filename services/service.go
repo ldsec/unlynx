@@ -417,10 +417,6 @@ func (s *Service) HandleQueryBroadcastFinished(recq *QueryBroadcastFinished) (ne
 
 // NewProtocol creates a protocol instance executed by all nodes
 func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfig) (onet.ProtocolInstance, error) {
-	if err := tn.SetConfig(conf); err != nil {
-		return nil, xerrors.Errorf("couldn't set config: %+v", err)
-	}
-
 	var pi onet.ProtocolInstance
 	target := SurveyID(string(conf.Data))
 	survey, err := s.getSurvey(SurveyID(conf.Data))
@@ -595,6 +591,9 @@ func (s *Service) StartProtocol(name string, targetSurvey SurveyID) (onet.Protoc
 
 	conf := onet.GenericConfig{Data: []byte(string(targetSurvey))}
 
+	if err := tn.SetConfig(&conf); err != nil {
+		return nil, xerrors.Errorf("couldn't set config: %+v", err)
+	}
 	pi, err := s.NewProtocol(tn, &conf)
 	if err != nil {
 		return nil, fmt.Errorf("error running "+name+" : %v", err)
