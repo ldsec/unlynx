@@ -1,4 +1,4 @@
-package appunlynx
+package main
 
 import (
 	"fmt"
