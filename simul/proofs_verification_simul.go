@@ -250,7 +250,7 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 			} else if results[5] == false {
 				return fmt.Errorf("collective aggregation proofs failed")
 			}
-		case <-time.After(libunlynx.DEFAULT_TIMEOUT):
+		case <-time.After(libunlynx.DefaultTimeout):
 			return fmt.Errorf("simulation didn't finish in time")
 		}
 	}
