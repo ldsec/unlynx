@@ -190,14 +190,14 @@ func (p *ShufflingProtocol) Dispatch() error {
 	var shufflingBytesMessageLength shufflingBytesLengthStruct
 	select {
 	case shufflingBytesMessageLength = <-p.LengthNodeChannel:
-	case <-time.After(libunlynx.TIMEOUT):
+	case <-time.After(libunlynx.DEFAULT_TIMEOUT):
 		return fmt.Errorf(p.ServerIdentity().String() + " didn't get the <shufflingBytesMessageLength> on time")
 	}
 
 	var tmp shufflingBytesStruct
 	select {
 	case tmp = <-p.PreviousNodeInPathChannel:
-	case <-time.After(libunlynx.TIMEOUT):
+	case <-time.After(libunlynx.DEFAULT_TIMEOUT):
 		return fmt.Errorf(p.ServerIdentity().String() + " didn't get the <tmp> on time")
 	}
 

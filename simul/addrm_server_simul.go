@@ -90,7 +90,7 @@ func (sim *AddRmSimulation) Run(config *onet.SimulationConfig) error {
 		case results := <-root.ProtocolInstance().(*protocolsunlynxutils.AddRmServerProtocol).FeedbackChannel:
 			log.Lvl1("Number of aggregated lines: ", len(results))
 			libunlynx.EndTimer(round)
-		case <-time.After(libunlynx.TIMEOUT):
+		case <-time.After(libunlynx.DEFAULT_TIMEOUT):
 			return fmt.Errorf("simulation didn't finish in time")
 		}
 	}

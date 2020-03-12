@@ -97,7 +97,7 @@ func (sim *LocalClearAggregationSimulation) Run(config *onet.SimulationConfig) e
 				log.Lvl1("Result is wrong! :(")
 			}
 			round.Record()
-		case <-time.After(libunlynx.TIMEOUT):
+		case <-time.After(libunlynx.DEFAULT_TIMEOUT):
 			return fmt.Errorf("simulation didn't finish in time")
 		}
 	}

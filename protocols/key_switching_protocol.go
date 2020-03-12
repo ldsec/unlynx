@@ -233,7 +233,7 @@ func (p *KeySwitchingProtocol) announcementKSPhase() (kyber.Point, []kyber.Point
 	var dataReferenceMessage DownBytesStruct
 	select {
 	case dataReferenceMessage = <-p.DownChannel:
-	case <-time.After(libunlynx.TIMEOUT):
+	case <-time.After(libunlynx.DEFAULT_TIMEOUT):
 		return nil, nil, fmt.Errorf(p.ServerIdentity().String() + " didn't get the <dataReferenceMessage> on time")
 	}
 
