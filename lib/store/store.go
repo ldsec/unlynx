@@ -53,7 +53,7 @@ func proccessParameters(data []string, clear map[string]int64, encrypted map[str
 		// all where and group by attributes are in clear
 		if noEnc {
 			containerClear = append(containerClear, clear[v])
-		} else if noEnc == false {
+		} else if !noEnc {
 			if value, ok := encrypted[v]; ok {
 				containerEnc = append(containerEnc, value)
 			} else {
@@ -80,7 +80,7 @@ func (s *Store) InsertDpResponse(cr libunlynx.DpResponse, proofsB bool, groupBy,
 	clearWhr, newResp.WhereEnc = proccessParameters(whereStrings, cr.WhereClear, cr.WhereEnc, noEnc)
 	_, newResp.AggregatingAttributes = proccessParameters(sum, cr.AggregatingAttributesClear, cr.AggregatingAttributesEnc, false)
 
-	if noEnc == false {
+	if !noEnc {
 		s.DpResponses = append(s.DpResponses, newResp)
 	} else {
 		value, ok := s.DpResponsesAggr[GroupingKeyTuple{libunlynx.Key(clearGrp), libunlynx.Key(clearWhr)}]
@@ -199,7 +199,7 @@ func AddInClear(s []libunlynx.DpClearResponse) []libunlynx.DpClearResponse {
 		cpy = append(cpy, libunlynxtools.ConvertMapToData(elem.AggregatingAttributesClear, "s", 0)...)
 		cpy = append(cpy, libunlynxtools.ConvertMapToData(elem.AggregatingAttributesEnc, "s", len(elem.AggregatingAttributesClear))...)
 
-		if _, ok := dataMap[key]; ok == false {
+		if _, ok := dataMap[key]; !ok {
 			dataMap[key] = cpy
 		} else {
 			for i := 0; i < len(dataMap[key]); i = i + libunlynx.VPARALLELIZE {
@@ -272,7 +272,7 @@ func (s *Store) PullCothorityAggregatedFilteredResponses(diffPri bool, noise lib
 
 	s.GroupedDeterministicFilteredResponses = make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse)
 
-	if diffPri == true {
+	if diffPri {
 		for _, v := range aggregatedResults {
 			for _, aggr := range v.AggregatingAttributes {
 				aggr.Add(aggr, noise)
@@ -293,7 +293,7 @@ func (s *Store) PullDeliverableResults(diffPri bool, noise libunlynx.CipherText)
 	results := s.DeliverableResults
 	s.DeliverableResults = s.DeliverableResults[:0]
 
-	if diffPri == true {
+	if diffPri {
 		for _, v := range results {
 			for _, aggr := range v.AggregatingAttributes {
 				aggr.Add(aggr, noise)

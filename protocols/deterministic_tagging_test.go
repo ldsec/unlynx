@@ -81,7 +81,7 @@ func TestDeterministicTagging(t *testing.T) {
 					present = true
 				}
 			}
-			if present == false {
+			if !present {
 				t.Fatal("DP responses changed and shouldn't")
 			}
 		}

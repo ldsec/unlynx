@@ -343,9 +343,9 @@ func discreteLog(P kyber.Point, checkNeg bool) (int64, error) {
 	guessIntMinus := int64(0)
 
 	start := true
-	for i := guessInt; i < MaxHomomorphicInt && foundPos == false && foundNeg == false; i = i + 1 {
+	for i := guessInt; i < MaxHomomorphicInt && !foundPos && !foundNeg; i = i + 1 {
 		// check for 0 first
-		if start == false {
+		if !start {
 			guess = SuiTe.Point().Add(guess, B)
 		}
 		start = false
@@ -365,7 +365,7 @@ func discreteLog(P kyber.Point, checkNeg bool) (int64, error) {
 				foundNeg = true
 			}
 		}
-		if foundNeg == false && guess.Equal(P) {
+		if !foundNeg && guess.Equal(P) {
 			foundPos = true
 		}
 	}
@@ -373,7 +373,7 @@ func discreteLog(P kyber.Point, checkNeg bool) (int64, error) {
 	currentGreatestInt = guessInt
 	mutex.Unlock()
 
-	if foundPos == false && foundNeg == false {
+	if !foundPos && !foundNeg {
 		log.Error("out of bound encryption, bound is ", MaxHomomorphicInt)
 		return 0, nil
 	}
@@ -451,7 +451,7 @@ func (cv *CipherVector) Equal(cv2 *CipherVector) bool {
 	}
 
 	for i := range *cv2 {
-		if (*cv)[i].Equal(&(*cv2)[i]) == false {
+		if !(*cv)[i].Equal(&(*cv2)[i]) {
 			return false
 		}
 	}
@@ -490,7 +490,7 @@ func (dcv *DeterministCipherVector) Equal(dcv2 *DeterministCipherVector) bool {
 	}
 
 	for i := range *dcv2 {
-		if (*dcv)[i].Equal(&(*dcv2)[i]) == false {
+		if !(*dcv)[i].Equal(&(*dcv2)[i]) {
 			return false
 		}
 	}

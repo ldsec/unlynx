@@ -16,7 +16,7 @@ import (
 func SendISMOthers(s *onet.ServiceProcessor, el *onet.Roster, msg interface{}) error {
 	var errStrs []string
 	for _, e := range el.List {
-		if e.ID.Equal(s.ServerIdentity().ID) == false {
+		if !e.ID.Equal(s.ServerIdentity().ID) {
 			log.Lvl3("Sending to", e)
 			err := s.SendRaw(e, msg)
 			if err != nil {

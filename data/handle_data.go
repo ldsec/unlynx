@@ -82,7 +82,7 @@ func GenerateData(numDPs, numEntries, numEntriesFiltered, numGroupsClear, numGro
 
 	testData := make(map[string][]libunlynx.DpClearResponse)
 
-	if randomGroups == false {
+	if !randomGroups {
 		numElem := 1
 		for _, el := range numType {
 			numElem = numElem * int(el)
@@ -362,7 +362,7 @@ func CompareClearResponses(x []libunlynx.DpClearResponse, y []libunlynx.DpClearR
 			}
 		}
 
-		if test == false {
+		if !test {
 			break
 		}
 	}

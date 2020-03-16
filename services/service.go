@@ -237,7 +237,7 @@ func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.
 	log.Lvl1(s.ServerIdentity().String(), " received a Survey Creation Query")
 
 	// if this server is the one receiving the query from the client
-	if recq.IntraMessage == false {
+	if !recq.IntraMessage {
 		id := uuid.NewV4()
 		newID := SurveyID(id.String())
 		recq.SurveyID = newID
@@ -271,7 +271,7 @@ func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.
 	}
 	log.Lvl1(s.ServerIdentity(), " initiated the survey ", recq.SurveyID)
 
-	if recq.IntraMessage == false {
+	if !recq.IntraMessage {
 		recq.IntraMessage = true
 		recq.Source = s.ServerIdentity()
 		// broadcasts the query
@@ -318,7 +318,7 @@ func (s *Service) HandleSurveyCreationQuery(recq *SurveyCreationQuery) (network.
 		survey.DpChannel <- 1
 	}
 
-	if recq.IntraMessage == false {
+	if !recq.IntraMessage {
 		survey, err := s.getSurvey(recq.SurveyID)
 		if err != nil {
 			return nil, err
@@ -362,7 +362,7 @@ func (s *Service) HandleSurveyResultsQuery(resq *SurveyResultsQuery) (network.Me
 		return nil, err
 	}
 
-	if resq.IntraMessage == false {
+	if !resq.IntraMessage {
 		resq.IntraMessage = true
 
 		err := libunlynxtools.SendISMOthers(s.ServiceProcessor, &survey.Query.Roster, resq)
@@ -556,7 +556,7 @@ func (s *Service) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfi
 		if tn.IsRoot() {
 			var coaggr []libunlynx.FilteredResponse
 
-			if libunlynx.DIFFPRI == true {
+			if libunlynx.DIFFPRI {
 				coaggr = survey.PullCothorityAggregatedFilteredResponses(true, survey.Noise)
 			} else {
 				coaggr = survey.PullCothorityAggregatedFilteredResponses(false, libunlynx.CipherText{})
@@ -671,7 +671,7 @@ func (s *Service) StartService(targetSurvey SurveyID, root bool) error {
 	libunlynx.EndTimer(start)
 
 	// Aggregation Phase
-	if root == true {
+	if root {
 		start := libunlynx.StartTimer(s.ServerIdentity().String() + "_AggregationPhase")
 
 		err = s.AggregationPhase(target.Query.SurveyID)
@@ -683,7 +683,7 @@ func (s *Service) StartService(targetSurvey SurveyID, root bool) error {
 	}
 
 	// DRO Phase
-	if root == true && libunlynx.DIFFPRI == true {
+	if root && libunlynx.DIFFPRI {
 		start := libunlynx.StartTimer(s.ServerIdentity().String() + "_DROPhase")
 
 		err := s.DROPhase(target.Query.SurveyID)
@@ -695,7 +695,7 @@ func (s *Service) StartService(targetSurvey SurveyID, root bool) error {
 	}
 
 	// Key Switch Phase
-	if root == true {
+	if root {
 		start := libunlynx.StartTimer(s.ServerIdentity().String() + "_KeySwitchingPhase")
 
 		err := s.KeySwitchingPhase(target.Query.SurveyID)

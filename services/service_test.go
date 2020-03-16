@@ -198,7 +198,7 @@ func TestServiceClearAttr(t *testing.T) {
 			grpTab[ind] = v
 		}
 		data, ok := expectedResults[grpTab]
-		if ok == false || reflect.DeepEqual(data, (*aggr)[i]) == false {
+		if !ok || !reflect.DeepEqual(data, (*aggr)[i]) {
 			t.Error("Not expected results, got ", (*aggr)[i], " when expected ", data)
 		}
 	}
@@ -302,7 +302,7 @@ func TestServiceClearGrpEncWhereAttr(t *testing.T) {
 			grpTab[ind] = v
 		}
 		data, ok := expectedResults[grpTab]
-		if ok == false || reflect.DeepEqual(data, (*aggr)[i]) == false {
+		if !ok || !reflect.DeepEqual(data, (*aggr)[i]) {
 			t.Error("Not expected results, got ", (*aggr)[i], " when expected ", data)
 		}
 	}
@@ -407,7 +407,7 @@ func TestServiceEncGrpClearWhereAttr(t *testing.T) {
 			grpTab[ind] = v
 		}
 		data, ok := expectedResults[grpTab]
-		if ok == false || reflect.DeepEqual(data, (*aggr)[i]) == false {
+		if !ok || !reflect.DeepEqual(data, (*aggr)[i]) {
 			t.Error("Not expected results, got ", (*aggr)[i], " when expected ", data)
 		}
 	}
@@ -515,7 +515,7 @@ func TestServiceEncGrpAndWhereAttr(t *testing.T) {
 			grpTab[ind] = v
 		}
 		data, ok := expectedResults[grpTab]
-		if ok == false || reflect.DeepEqual(data, (*aggr)[i]) == false {
+		if !ok || !reflect.DeepEqual(data, (*aggr)[i]) {
 			t.Error("Not expected results, got ", (*aggr)[i], " when expected ", data)
 		}
 	}
@@ -619,7 +619,7 @@ func TestServiceEverything(t *testing.T) {
 			grpTab[ind] = v
 		}
 		data, ok := expectedResults[grpTab]
-		if ok == false || reflect.DeepEqual(data, (*aggr)[i]) == false {
+		if !ok || !reflect.DeepEqual(data, (*aggr)[i]) {
 			t.Error("Not expected results, got ", (*aggr)[i], " when expected ", data)
 		}
 	}
@@ -723,7 +723,7 @@ func TestServiceEncGrpAndWhereAttrWithCount(t *testing.T) {
 			grpTab[ind] = v
 		}
 		data, ok := expectedResults[grpTab]
-		if ok == false || reflect.DeepEqual(data, (*aggr)[i]) == false {
+		if !ok || !reflect.DeepEqual(data, (*aggr)[i]) {
 			t.Error("Not expected results, got ", (*aggr)[i], " when expected ", data)
 		}
 	}
@@ -833,7 +833,7 @@ func TestAllServersNoDPs(t *testing.T) {
 			grpTab[ind] = v
 		}
 		data, ok := expectedResults[grpTab]
-		if ok == false || reflect.DeepEqual(data, (*aggr)[i]) == false {
+		if !ok || !reflect.DeepEqual(data, (*aggr)[i]) {
 			t.Error("Not expected results, got ", (*aggr)[i], " when expected ", data)
 		}
 	}
@@ -947,7 +947,7 @@ func TestAllServersRandomDPs(t *testing.T) {
 			grpTab[ind] = v
 		}
 		data, ok := expectedResults[grpTab]
-		if ok == false || reflect.DeepEqual(data, (*aggr)[i]) == false {
+		if !ok || !reflect.DeepEqual(data, (*aggr)[i]) {
 			t.Error("Not expected results, got ", (*aggr)[i], " when expected ", data)
 		}
 	}
@@ -1072,7 +1072,7 @@ func TestConcurrentSurveys(t *testing.T) {
 					grpTab[ind] = v
 				}
 				data, ok := expectedResults[grpTab]
-				if ok == false || reflect.DeepEqual(data, (*aggr)[i]) == false {
+				if !ok || !reflect.DeepEqual(data, (*aggr)[i]) {
 					t.Error("Not expected results, got ", (*aggr)[i], " when expected ", data)
 				}
 			}

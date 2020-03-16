@@ -151,7 +151,7 @@ func (p *CollectiveAggregationProtocol) Dispatch() error {
 	}
 
 	// 1. Aggregation announcement phase
-	if p.IsRoot() == false {
+	if !p.IsRoot() {
 		err := p.aggregationAnnouncementPhase()
 		if err != nil {
 			return err
@@ -211,7 +211,7 @@ func (p *CollectiveAggregationProtocol) aggregationAnnouncementPhase() error {
 func (p *CollectiveAggregationProtocol) ascendingAggregationPhase(cvMap map[libunlynx.GroupingKey][]libunlynx.CipherVector) (*map[libunlynx.GroupingKey]libunlynx.FilteredResponse, error) {
 	roundTotComput := libunlynx.StartTimer(p.Name() + "_CollectiveAggregation(ascendingAggregation)")
 
-	if p.IsLeaf() == false {
+	if !p.IsLeaf() {
 		length := make([]cadmbLengthStruct, 0)
 		for _, v := range <-p.LengthNodeChannel {
 			length = append(length, v)
@@ -257,7 +257,7 @@ func (p *CollectiveAggregationProtocol) ascendingAggregationPhase(cvMap map[libu
 
 	libunlynx.EndTimer(roundTotComput)
 
-	if p.IsRoot() == false {
+	if !p.IsRoot() {
 		detAggrResponses := make([]libunlynx.FilteredResponseDet, len(*p.GroupedData))
 		count := 0
 		for i, v := range *p.GroupedData {

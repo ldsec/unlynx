@@ -74,7 +74,7 @@ func TestCTKS(t *testing.T) {
 		res := libunlynx.DecryptIntVector(clientPrivate, &cv1)
 		log.Lvl2("Received results (attributes) ", res)
 
-		if reflect.DeepEqual(res, append(data1, data2...)) == false {
+		if !reflect.DeepEqual(res, append(data1, data2...)) {
 			t.Fatal("Wrong results, expected", data1, "but got", res)
 		} else {
 			t.Log("Good results")

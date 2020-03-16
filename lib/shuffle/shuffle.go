@@ -183,7 +183,7 @@ func PrecomputationWritingForShuffling(appFlag bool, gobFile, serverName string,
 
 // ReadPrecomputedFile reads the precomputation data from a .gob file
 func ReadPrecomputedFile(fileName string) ([]CipherVectorScalar, error) {
-	if _, err := os.Stat(fileName); os.IsNotExist(err) == false {
+	if _, err := os.Stat(fileName); !os.IsNotExist(err) {
 		var encoded []CipherVectorScalarBytes
 		err := libunlynxtools.ReadFromGobFile(fileName, &encoded)
 		if err != nil {

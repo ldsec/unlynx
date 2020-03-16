@@ -237,17 +237,17 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 
 			log.Lvl1(len(results), " proofs verified")
 
-			if results[0] == false {
+			if !results[0] {
 				return fmt.Errorf("key switching proofs failed")
-			} else if results[1] == false {
+			} else if !results[1] {
 				return fmt.Errorf("deterministic tagging (creation) proofs failed")
-			} else if results[2] == false {
+			} else if !results[2] {
 				return fmt.Errorf("deterministic tagging (addition) proofs failed")
-			} else if results[3] == false {
+			} else if !results[3] {
 				return fmt.Errorf("local aggregation proofs failed")
-			} else if results[4] == false {
+			} else if !results[4] {
 				return fmt.Errorf("shuffling proofs failed")
-			} else if results[5] == false {
+			} else if !results[5] {
 				return fmt.Errorf("collective aggregation proofs failed")
 			}
 		case <-time.After(libunlynx.TIMEOUT):

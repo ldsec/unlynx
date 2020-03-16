@@ -224,7 +224,7 @@ func (p *ShufflingProtocol) Dispatch() error {
 	var pi []int
 	var beta [][]kyber.Scalar
 
-	if p.IsRoot() == false {
+	if !p.IsRoot() {
 		shufflingDispatchNoProof := libunlynx.StartTimer(p.Name() + "_Shuffling(DISPATCH-noProof)")
 
 		shuffledData, pi, beta = libunlynxshuffle.ShuffleSequence(shuffleTarget, libunlynx.SuiTe.Point().Base(), collectiveKey, p.Precomputed)
