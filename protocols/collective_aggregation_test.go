@@ -62,7 +62,6 @@ func TestCollectiveAggregationGroup(t *testing.T) {
 		resultData := make(map[libunlynx.GroupingKey][]int64)
 		for k, v := range encryptedResult.GroupedData {
 			resultData[k] = libunlynx.DecryptIntVector(clientPrivate, &v.AggregatingAttributes)
-
 			log.Lvl1(k, resultData[k])
 		}
 		for k, v1 := range expectedGroups {
@@ -139,8 +138,8 @@ func TestCollectiveAggregationSimple(t *testing.T) {
 	case encryptedResult := <-feedback:
 		log.Lvl1("Received results:")
 		resultData := make([]int64, len(encryptedResult.GroupedData[protocolsunlynx.EMPTYKEY].AggregatingAttributes))
-		tmp := encryptedResult.GroupedData[protocolsunlynx.EMPTYKEY].AggregatingAttributes
-		resultData = libunlynx.DecryptIntVector(clientPrivate, &tmp)
+		aggrAttr := encryptedResult.GroupedData[protocolsunlynx.EMPTYKEY].AggregatingAttributes
+		resultData = libunlynx.DecryptIntVector(clientPrivate, &aggrAttr)
 		log.Lvl1(resultData)
 		assert.Equal(t, expectedResults, resultData)
 	case <-time.After(timeout):

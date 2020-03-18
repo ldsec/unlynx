@@ -3,10 +3,12 @@
 package protocolsunlynxutils
 
 import (
+	"fmt"
 	"github.com/ldsec/unlynx/lib"
 	"github.com/ldsec/unlynx/lib/store"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
+	"time"
 )
 
 // LocalClearAggregationProtocolName is the registered name for the local cleartext aggregation protocol.
@@ -37,7 +39,6 @@ func NewLocalClearAggregationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolIn
 		TreeNodeInstance: n,
 		FeedbackChannel:  make(chan []libunlynx.DpClearResponse),
 	}
-
 	return pvp, nil
 }
 
@@ -57,7 +58,13 @@ func (p *LocalClearAggregationProtocol) Start() error {
 func (p *LocalClearAggregationProtocol) Dispatch() error {
 	defer p.Done()
 
-	aux := <-finalResultClearAggr
-	p.FeedbackChannel <- aux
+	var finalResultMessage []libunlynx.DpClearResponse
+	select {
+	case finalResultMessage = <-finalResultClearAggr:
+	case <-time.After(libunlynx.TIMEOUT):
+		return fmt.Errorf(p.ServerIdentity().String() + " didn't get the <finalResultMessage> on time")
+	}
+
+	p.FeedbackChannel <- finalResultMessage
 	return nil
 }

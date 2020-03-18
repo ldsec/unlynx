@@ -8,8 +8,9 @@
 package protocolsunlynx
 
 import (
-	"errors"
+	"fmt"
 	"sync"
+	"time"
 
 	"github.com/ldsec/unlynx/lib"
 	"github.com/ldsec/unlynx/lib/aggregation"
@@ -117,16 +118,16 @@ func NewCollectiveAggregationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolIn
 
 	err := pap.RegisterChannel(&pap.DataReferenceChannel)
 	if err != nil {
-		return nil, errors.New("couldn't register data reference channel: " + err.Error())
+		return nil, fmt.Errorf("couldn't register data reference channel: %v", err)
 	}
 
 	err = pap.RegisterChannel(&pap.ChildDataChannel)
 	if err != nil {
-		return nil, errors.New("couldn't register child-data channel: " + err.Error())
+		return nil, fmt.Errorf("couldn't register child-data channel: %v", err)
 	}
 
 	if err := pap.RegisterChannel(&pap.LengthNodeChannel); err != nil {
-		return nil, errors.New("couldn't register data reference channel: " + err.Error())
+		return nil, fmt.Errorf("couldn't register data reference channel: %v", err)
 	}
 
 	return pap, nil
@@ -136,7 +137,7 @@ func NewCollectiveAggregationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolIn
 func (p *CollectiveAggregationProtocol) Start() error {
 	log.Lvl1(p.ServerIdentity(), " started a Colective Aggregation Protocol")
 	if err := p.SendToChildren(&DataReferenceMessage{}); err != nil {
-		return errors.New("Error sending <DataReferenceMessage>:" + err.Error())
+		return fmt.Errorf("error sending <DataReferenceMessage>: %v", err)
 	}
 	return nil
 }
@@ -195,11 +196,13 @@ func (p *CollectiveAggregationProtocol) Dispatch() error {
 
 // Announce forwarding down the tree.
 func (p *CollectiveAggregationProtocol) aggregationAnnouncementPhase() error {
-	dataReferenceMessage := <-p.DataReferenceChannel
-	if !p.IsLeaf() {
+	select {
+	case dataReferenceMessage := <-p.DataReferenceChannel:
 		if err := p.SendToChildren(&dataReferenceMessage.DataReferenceMessage); err != nil {
-			return errors.New("Error sending <DataReferenceMessage>:" + err.Error())
+			return fmt.Errorf("error sending <DataReferenceMessage>: %v", err)
 		}
+	case <-time.After(libunlynx.TIMEOUT):
+		return fmt.Errorf(p.ServerIdentity().String() + " didn't get the <dataReferenceMessage> on time")
 	}
 	return nil
 }
@@ -235,10 +238,10 @@ func (p *CollectiveAggregationProtocol) ascendingAggregationPhase(cvMap map[libu
 				}
 
 				if ok {
-					tmp := libunlynx.NewCipherVector(len(localAggr.AggregatingAttributes))
-					tmp.Add(localAggr.AggregatingAttributes, aggr.Fr.AggregatingAttributes)
+					cv := libunlynx.NewCipherVector(len(localAggr.AggregatingAttributes))
+					cv.Add(localAggr.AggregatingAttributes, aggr.Fr.AggregatingAttributes)
 
-					localAggr.AggregatingAttributes = *tmp
+					localAggr.AggregatingAttributes = *cv
 				} else {
 					localAggr = aggr.Fr
 				}
@@ -280,10 +283,10 @@ func (p *CollectiveAggregationProtocol) ascendingAggregationPhase(cvMap map[libu
 		}
 
 		if err := p.SendToParent(&CADBLengthMessage{gacbLength, aabLength, dtbLength}); err != nil {
-			return nil, errors.New("Error sending <CADBLengthMessage>:" + err.Error())
+			return nil, fmt.Errorf("error sending <CADBLengthMessage>: %v", err)
 		}
 		if err := p.SendToParent(&message); err != nil {
-			return nil, errors.New("Error sending <ChildAggregatedDataMessage>:" + err.Error())
+			return nil, fmt.Errorf("error sending <ChildAggregatedDataMessage>: %v", err)
 		}
 	}
 
@@ -294,10 +297,10 @@ func (p *CollectiveAggregationProtocol) ascendingAggregationPhase(cvMap map[libu
 func (p *CollectiveAggregationProtocol) checkData() error {
 	// If no data is passed to the collection protocol
 	if p.GroupedData == nil && p.SimpleData == nil {
-		return errors.New("no data reference is provided")
+		return fmt.Errorf("no data reference is provided")
 		// If both data entry points are used
 	} else if p.GroupedData != nil && p.SimpleData != nil {
-		return errors.New("two data references are given in the struct")
+		return fmt.Errorf("two data references are given in the struct")
 		// If we are using the GroupedData keep everything as is
 	} else if p.GroupedData != nil {
 		return nil

@@ -2,7 +2,6 @@ package dataunlynx
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"math"
 	"math/rand"
@@ -78,7 +77,7 @@ func GenerateData(numDPs, numEntries, numEntriesFiltered, numGroupsClear, numGro
 	numWhereClear, numWhereEnc, numAggrClear, numAggrEnc int64, numType []int64, randomGroups bool) (map[string][]libunlynx.DpClearResponse, error) {
 
 	if int64(len(numType)) != (numGroupsClear + numGroupsEnc) {
-		return nil, errors.New("specify the correct number of group types for each grouping attribute")
+		return nil, fmt.Errorf("specify the correct number of group types for each grouping attribute")
 	}
 
 	testData := make(map[string][]libunlynx.DpClearResponse)
@@ -94,7 +93,7 @@ func GenerateData(numDPs, numEntries, numEntriesFiltered, numGroupsClear, numGro
 			group := make([]int64, 0)
 			AllPossibleGroups(numType[:], group, 0, &groups)
 		} else {
-			return nil, errors.New("the number of groups is different from the number of entries")
+			return nil, fmt.Errorf("the number of groups is different from the number of entries")
 		}
 	}
 

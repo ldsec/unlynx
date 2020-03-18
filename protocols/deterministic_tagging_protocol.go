@@ -7,7 +7,7 @@
 package protocolsunlynx
 
 import (
-	"errors"
+	"fmt"
 	"sync"
 	"time"
 
@@ -101,10 +101,10 @@ func NewDeterministicTaggingProtocol(n *onet.TreeNodeInstance) (onet.ProtocolIns
 	}
 
 	if err := dsp.RegisterChannel(&dsp.PreviousNodeInPathChannel); err != nil {
-		return nil, errors.New("couldn't register data reference channel: " + err.Error())
+		return nil, fmt.Errorf("couldn't register data reference channel: %v", err)
 	}
 	if err := dsp.RegisterChannel(&dsp.LengthNodeChannel); err != nil {
-		return nil, errors.New("couldn't register data reference channel: " + err.Error())
+		return nil, fmt.Errorf("couldn't register data reference channel: %v", err)
 	}
 
 	var i int
@@ -116,7 +116,6 @@ func NewDeterministicTaggingProtocol(n *onet.TreeNodeInstance) (onet.ProtocolIns
 			break
 		}
 	}
-
 	return dsp, nil
 }
 
@@ -126,10 +125,10 @@ func (p *DeterministicTaggingProtocol) Start() error {
 	roundTotalStart := libunlynx.StartTimer(p.Name() + "_DetTagging(START)")
 
 	if p.TargetOfSwitch == nil {
-		return errors.New("no data on which to do a deterministic tagging")
+		return fmt.Errorf("no data on which to do a deterministic tagging")
 	}
 	if p.SurveySecretKey == nil {
-		return errors.New("no survey secret key given")
+		return fmt.Errorf("no survey secret key given")
 	}
 
 	p.ExecTime = 0
@@ -156,7 +155,13 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 	defer p.Done()
 
 	//************ ----- first round, add value derivated from ephemeral secret to message ---- ********************
-	deterministicTaggingTargetBytesBef := <-p.PreviousNodeInPathChannel
+	var deterministicTaggingTargetBytesBef deterministicTaggingBytesStruct
+	select {
+	case deterministicTaggingTargetBytesBef = <-p.PreviousNodeInPathChannel:
+	case <-time.After(libunlynx.TIMEOUT):
+		return fmt.Errorf(p.ServerIdentity().String() + " didn't get the <deterministicTaggingTargetBytesBef> (first round) on time")
+	}
+
 	deterministicTaggingTargetBef := DeterministicTaggingMessage{Data: make([]libunlynx.CipherText, 0)}
 	err := deterministicTaggingTargetBef.FromBytes(deterministicTaggingTargetBytesBef.Data)
 	if err != nil {
@@ -173,9 +178,9 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 		go func(i int) {
 			defer wg.Done()
 			for j := 0; j < libunlynx.VPARALLELIZE && (i+j) < len(deterministicTaggingTargetBef.Data); j++ {
-				tmp := libunlynx.SuiTe.Point().Add(deterministicTaggingTargetBef.Data[i+j].C, toAdd)
+				r := libunlynx.SuiTe.Point().Add(deterministicTaggingTargetBef.Data[i+j].C, toAdd)
 				if p.Proofs {
-					_, tmpErr := libunlynxdetertag.DeterministicTagAdditionProofCreation(deterministicTaggingTargetBef.Data[i+j].C, *p.SurveySecretKey, toAdd, tmp)
+					_, tmpErr := libunlynxdetertag.DeterministicTagAdditionProofCreation(deterministicTaggingTargetBef.Data[i+j].C, *p.SurveySecretKey, toAdd, r)
 					if tmpErr != nil {
 						mutex.Lock()
 						err = tmpErr
@@ -183,7 +188,7 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 						return
 					}
 				}
-				deterministicTaggingTargetBef.Data[i+j].C = tmp
+				deterministicTaggingTargetBef.Data[i+j].C = r
 			}
 		}(i)
 	}
@@ -203,7 +208,13 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 	}
 
 	//************ ----- second round, deterministic tag creation  ---- ********************
-	deterministicTaggingTargetBytes := <-p.PreviousNodeInPathChannel
+	var deterministicTaggingTargetBytes deterministicTaggingBytesStruct
+	select {
+	case deterministicTaggingTargetBytes = <-p.PreviousNodeInPathChannel:
+	case <-time.After(libunlynx.TIMEOUT):
+		return fmt.Errorf(p.ServerIdentity().String() + " didn't get the <deterministicTaggingTargetBytes> (second round) on time")
+	}
+
 	deterministicTaggingTarget := DeterministicTaggingMessage{Data: make([]libunlynx.CipherText, 0)}
 	err = deterministicTaggingTarget.FromBytes(deterministicTaggingTargetBytes.Data)
 	if err != nil {
@@ -222,15 +233,15 @@ func (p *DeterministicTaggingProtocol) Dispatch() error {
 			if j > len(deterministicTaggingTarget.Data) {
 				j = len(deterministicTaggingTarget.Data)
 			}
-			tmp := deterministicTaggingTarget.Data[i:j]
-			tmpErr := TaggingDet(&tmp, p.Private(), *p.SurveySecretKey, p.Public(), p.Proofs)
+			cv := deterministicTaggingTarget.Data[i:j]
+			tmpErr := TaggingDet(&cv, p.Private(), *p.SurveySecretKey, p.Public(), p.Proofs)
 			if tmpErr != nil {
 				mutex.Lock()
 				err = tmpErr
 				mutex.Unlock()
 				return
 			}
-			copy(deterministicTaggingTarget.Data[i:j], tmp)
+			copy(deterministicTaggingTarget.Data[i:j], cv)
 		}(i)
 	}
 	wg.Wait()
@@ -383,9 +394,9 @@ func (dtm *DeterministicTaggingMessage) FromBytes(data []byte) error {
 		go func(i int) {
 			defer wg.Done()
 			for j := 0; j < elementSize*libunlynx.VPARALLELIZE && i+j < len(data); j += elementSize {
-				tmp := make([]byte, elementSize)
-				copy(tmp, data[i+j:i+j+elementSize])
-				tmpErr := (*dtm).Data[(i+j)/elementSize].FromBytes(tmp)
+				dataCopy := make([]byte, elementSize)
+				copy(dataCopy, data[i+j:i+j+elementSize])
+				tmpErr := (*dtm).Data[(i+j)/elementSize].FromBytes(dataCopy)
 				if tmpErr != nil {
 					mutex.Lock()
 					err = tmpErr

@@ -1,8 +1,9 @@
 package protocolsunlynx
 
 import (
-	"errors"
+	"fmt"
 	"sync"
+	"time"
 
 	"github.com/ldsec/unlynx/lib"
 	"github.com/ldsec/unlynx/lib/deterministic_tag"
@@ -91,11 +92,11 @@ func NewShufflingPlusDDTProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstanc
 	}
 
 	if err := pi.RegisterChannel(&pi.PreviousNodeInPathChannel); err != nil {
-		return nil, errors.New("couldn't register data reference channel: " + err.Error())
+		return nil, fmt.Errorf("couldn't register data reference channel: %v", err)
 	}
 
 	if err := pi.RegisterChannel(&pi.LengthNodeChannel); err != nil {
-		return nil, errors.New("couldn't register data reference channel: " + err.Error())
+		return nil, fmt.Errorf("couldn't register data reference channel: %v", err)
 	}
 
 	// choose next node in circuit
@@ -113,7 +114,7 @@ func NewShufflingPlusDDTProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstanc
 func (p *ShufflingPlusDDTProtocol) Start() error {
 
 	if p.TargetData == nil {
-		return errors.New("no data is given")
+		return fmt.Errorf("no data is given")
 	}
 	nbrSqCVs := len(*p.TargetData)
 	log.Lvl1("["+p.Name()+"]", " started a Shuffling+DDT Protocol (", nbrSqCVs, " responses)")
@@ -152,12 +153,23 @@ func (p *ShufflingPlusDDTProtocol) Start() error {
 func (p *ShufflingPlusDDTProtocol) Dispatch() error {
 	defer p.Done()
 
-	shufflingPlusDDTBytesMessageLength := <-p.LengthNodeChannel
-	tmp := <-p.PreviousNodeInPathChannel
+	var shufflingPlusDDTBytesMessageLength shufflingPlusDDTBytesLengthStruct
+	select {
+	case shufflingPlusDDTBytesMessageLength = <-p.LengthNodeChannel:
+	case <-time.After(libunlynx.TIMEOUT):
+		return fmt.Errorf(p.ServerIdentity().String() + " didn't get the <shufflingPlusDDTBytesMessageLength> on time")
+	}
+
+	var spDDTbs shufflingPlusDDTBytesStruct
+	select {
+	case spDDTbs = <-p.PreviousNodeInPathChannel:
+	case <-time.After(libunlynx.TIMEOUT):
+		return fmt.Errorf(p.ServerIdentity().String() + " didn't get the <spDDTbs> on time")
+	}
 
 	readData := libunlynx.StartTimer(p.Name() + "_ShufflingPlusDDT(ReadData)")
 	sm := ShufflingPlusDDTMessage{}
-	err := sm.FromBytes(tmp.Data, tmp.ShuffKey, shufflingPlusDDTBytesMessageLength.CVLengths)
+	err := sm.FromBytes(spDDTbs.Data, spDDTbs.ShuffKey, shufflingPlusDDTBytesMessageLength.CVLengths)
 	if err != nil {
 		return err
 	}
@@ -190,9 +202,9 @@ func (p *ShufflingPlusDDTProtocol) Dispatch() error {
 			defer wg.Done()
 			for j := 0; j < libunlynx.VPARALLELIZE && (i+j) < len(shuffledData); j++ {
 				for k := range shuffledData[i+j] {
-					tmp := libunlynx.SuiTe.Point().Add(shuffledData[i+j][k].C, toAdd)
+					r := libunlynx.SuiTe.Point().Add(shuffledData[i+j][k].C, toAdd)
 					if p.Proofs {
-						_, tmpErr := libunlynxdetertag.DeterministicTagAdditionProofCreation(shuffledData[i+j][k].C, *p.SurveySecretKey, toAdd, tmp)
+						_, tmpErr := libunlynxdetertag.DeterministicTagAdditionProofCreation(shuffledData[i+j][k].C, *p.SurveySecretKey, toAdd, r)
 						if tmpErr != nil {
 							mutex.Lock()
 							err = tmpErr
@@ -200,7 +212,7 @@ func (p *ShufflingPlusDDTProtocol) Dispatch() error {
 							return
 						}
 					}
-					shuffledData[i+j][k].C = tmp
+					shuffledData[i+j][k].C = r
 				}
 			}
 		}(i)
@@ -223,10 +235,10 @@ func (p *ShufflingPlusDDTProtocol) Dispatch() error {
 		go func(i int) {
 			defer wg.Done()
 			for j := 0; j < libunlynx.VPARALLELIZE && (i+j) < len(shuffledData); j++ {
-				tmp := shuffledData[i+j]
-				switchedVect := libunlynxdetertag.DeterministicTagSequence(tmp, p.Private(), *p.SurveySecretKey)
+				vBef := shuffledData[i+j]
+				vAft := libunlynxdetertag.DeterministicTagSequence(vBef, p.Private(), *p.SurveySecretKey)
 				if p.Proofs {
-					_, tmpErr := libunlynxdetertag.DeterministicTagCrListProofCreation(tmp, switchedVect, p.Public(), *p.SurveySecretKey, p.Private())
+					_, tmpErr := libunlynxdetertag.DeterministicTagCrListProofCreation(vBef, vAft, p.Public(), *p.SurveySecretKey, p.Private())
 					if tmpErr != nil {
 						mutex.Lock()
 						err = tmpErr
@@ -234,7 +246,7 @@ func (p *ShufflingPlusDDTProtocol) Dispatch() error {
 						return
 					}
 				}
-				copy(shuffledData[i+j], switchedVect)
+				copy(shuffledData[i+j], vAft)
 			}
 		}(i)
 	}

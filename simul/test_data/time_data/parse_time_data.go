@@ -56,7 +56,7 @@ func ReadTomlSetup(filename string, setupNbr int) (map[string]string, error) {
 
 		c := strings.Split(line, ", ")
 
-		if flag == true {
+		if flag {
 			if pos == setupNbr {
 				for i, el := range c {
 					setup[parameters[i]] = el

@@ -1,12 +1,15 @@
 package main
 
 import (
+	"fmt"
 	"github.com/BurntSushi/toml"
 	"github.com/ldsec/unlynx/data"
+	libunlynx "github.com/ldsec/unlynx/lib"
 	"github.com/ldsec/unlynx/protocols/utils"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
 	"go.dedis.ch/onet/v3/simul/monitor"
+	"time"
 )
 
 func init() {
@@ -83,16 +86,20 @@ func (sim *LocalClearAggregationSimulation) Run(config *onet.SimulationConfig) e
 		if err := root.Start(); err != nil {
 			return err
 		}
-		results := <-root.ProtocolInstance().(*protocolsunlynxutils.LocalClearAggregationProtocol).FeedbackChannel
-		log.Lvl1("Number of aggregated lines (groups): ", len(results))
 
-		// Test Simulation
-		if dataunlynx.CompareClearResponses(dataunlynx.ComputeExpectedResult(testData, 1, false), results) {
-			log.Lvl1("Result is right! :)")
-		} else {
-			log.Lvl1("Result is wrong! :(")
+		select {
+		case results := <-root.ProtocolInstance().(*protocolsunlynxutils.LocalClearAggregationProtocol).FeedbackChannel:
+			log.Lvl1("Number of aggregated lines (groups): ", len(results))
+			// Test Simulation
+			if dataunlynx.CompareClearResponses(dataunlynx.ComputeExpectedResult(testData, 1, false), results) {
+				log.Lvl1("Result is right! :)")
+			} else {
+				log.Lvl1("Result is wrong! :(")
+			}
+			round.Record()
+		case <-time.After(libunlynx.TIMEOUT):
+			return fmt.Errorf("simulation didn't finish in time")
 		}
-		round.Record()
 	}
 
 	return nil

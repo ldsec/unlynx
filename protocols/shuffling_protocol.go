@@ -4,7 +4,7 @@
 package protocolsunlynx
 
 import (
-	"errors"
+	"fmt"
 	"time"
 
 	"github.com/ldsec/unlynx/lib"
@@ -101,11 +101,11 @@ func NewShufflingProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, erro
 	}
 
 	if err := dsp.RegisterChannel(&dsp.PreviousNodeInPathChannel); err != nil {
-		return nil, errors.New("couldn't register data reference channel: " + err.Error())
+		return nil, fmt.Errorf("couldn't register data reference channel: %v", err)
 	}
 
 	if err := dsp.RegisterChannel(&dsp.LengthNodeChannel); err != nil {
-		return nil, errors.New("couldn't register data reference channel: " + err.Error())
+		return nil, fmt.Errorf("couldn't register data reference channel: %v", err)
 	}
 
 	// choose next node in circuit
@@ -116,6 +116,7 @@ func NewShufflingProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, erro
 			break
 		}
 	}
+
 	return dsp, nil
 }
 
@@ -125,7 +126,7 @@ func (p *ShufflingProtocol) Start() error {
 	shufflingStart := libunlynx.StartTimer(p.Name() + "_Shuffling(START)")
 
 	if p.ShuffleTarget == nil {
-		return errors.New("no map given as shuffling target")
+		return fmt.Errorf("no map given as shuffling target")
 	}
 
 	p.ExecTimeStart = 0
@@ -186,11 +187,22 @@ func (p *ShufflingProtocol) Start() error {
 func (p *ShufflingProtocol) Dispatch() error {
 	defer p.Done()
 
-	shufflingBytesMessageLength := <-p.LengthNodeChannel
+	var shufflingBytesMessageLength shufflingBytesLengthStruct
+	select {
+	case shufflingBytesMessageLength = <-p.LengthNodeChannel:
+	case <-time.After(libunlynx.TIMEOUT):
+		return fmt.Errorf(p.ServerIdentity().String() + " didn't get the <shufflingBytesMessageLength> on time")
+	}
 
-	tmp := <-p.PreviousNodeInPathChannel
+	var sbs shufflingBytesStruct
+	select {
+	case sbs = <-p.PreviousNodeInPathChannel:
+	case <-time.After(libunlynx.TIMEOUT):
+		return fmt.Errorf(p.ServerIdentity().String() + " didn't get the <sbs> on time")
+	}
+
 	sm := ShufflingMessage{}
-	if err := sm.FromBytes(tmp.Data, shufflingBytesMessageLength.CVLengths); err != nil {
+	if err := sm.FromBytes(sbs.Data, shufflingBytesMessageLength.CVLengths); err != nil {
 		return err
 	}
 	shuffleTarget := sm.Data

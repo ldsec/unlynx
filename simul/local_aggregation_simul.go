@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/BurntSushi/toml"
 	"github.com/ldsec/unlynx/lib"
 	"github.com/ldsec/unlynx/protocols"
@@ -8,6 +9,7 @@ import (
 	"go.dedis.ch/kyber/v3/util/random"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
+	"time"
 )
 
 func init() {
@@ -82,9 +84,9 @@ func (sim *LocalAggregationSimulation) Run(config *onet.SimulationConfig) error 
 		groupCipherVect := *libunlynx.EncryptIntVector(pubKey, tabGr)
 		detResponses := make([]libunlynx.FilteredResponseDet, 0)
 		for i := 0; i < sim.NbrGroups; i++ {
-			tmp := libunlynx.NewCipherVector(sim.NbrGroupAttributes)
-			tmp.Add(groupCipherVect, groupCipherVect)
-			groupCipherVect = *tmp
+			cv := libunlynx.NewCipherVector(sim.NbrGroupAttributes)
+			cv.Add(groupCipherVect, groupCipherVect)
+			groupCipherVect = *cv
 			cr := libunlynx.FilteredResponse{GroupByEnc: testCipherVect1, AggregatingAttributes: testCipherVect1}
 			det1 := groupCipherVect
 			if err := protocolsunlynx.TaggingDet(&det1, secKey, newSecKey, pubKey, sim.Proofs); err != nil {
@@ -113,11 +115,14 @@ func (sim *LocalAggregationSimulation) Run(config *onet.SimulationConfig) error 
 		if err := root.Start(); err != nil {
 			return err
 		}
-		results := <-root.ProtocolInstance().(*protocolsunlynxutils.LocalAggregationProtocol).FeedbackChannel
-		log.Lvl1("Number of aggregated lines: ", len(results))
 
-		libunlynx.EndTimer(round)
-
+		select {
+		case results := <-root.ProtocolInstance().(*protocolsunlynxutils.LocalAggregationProtocol).FeedbackChannel:
+			log.Lvl1("Number of aggregated lines: ", len(results))
+			libunlynx.EndTimer(round)
+		case <-time.After(libunlynx.TIMEOUT):
+			return fmt.Errorf("simulation didn't finish in time")
+		}
 	}
 
 	return nil
