@@ -11,12 +11,12 @@ require (
 	github.com/montanaflynn/stats v0.6.3 // indirect
 	github.com/r0fls/gostats v0.0.0-20180711082619-e793b1fda35c
 	github.com/satori/go.uuid v1.2.0
-	github.com/stretchr/testify v1.4.0
+	github.com/stretchr/testify v1.5.1
 	github.com/urfave/cli v1.22.3
 	go.dedis.ch/kyber/v3 v3.0.12
-	go.dedis.ch/onet/v3 v3.1.1
-	golang.org/x/crypto v0.0.0-20200302210943-78000ba7a073 // indirect
-	golang.org/x/sys v0.0.0-20200302150141-5c8b2ff67527 // indirect
+	go.dedis.ch/onet/v3 v3.2.0
+	golang.org/x/crypto v0.0.0-20200317142112-1b76d66859c6 // indirect
+	golang.org/x/sys v0.0.0-20200317113312-5766fd39f98d // indirect
 	golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543
 )
 
