@@ -1,7 +1,7 @@
 package libunlynxkeyswitch
 
 import (
-	"errors"
+	"fmt"
 	"math"
 	"sync"
 
@@ -68,7 +68,7 @@ func KeySwitchProofCreation(K, Q kyber.Point, k kyber.Scalar, viB, ks2, rBNeg ky
 	prover := predicate.Prover(libunlynx.SuiTe, sval, pval, nil) // computes: commitment, challenge, response
 	proofKS, err := proof.HashProve(libunlynx.SuiTe, "proofTest", prover)
 	if err != nil {
-		return PublishedKSProof{}, errors.New("---------Prover: " + err.Error())
+		return PublishedKSProof{}, fmt.Errorf("---------prover: %v", err)
 	}
 
 	return PublishedKSProof{Proof: proofKS, K: K, ViB: viB, Ks2: ks2, RbNeg: rBNeg, Q: Q}, nil

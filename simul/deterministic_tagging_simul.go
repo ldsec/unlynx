@@ -1,7 +1,7 @@
 package main
 
 import (
-	"errors"
+	"fmt"
 	"github.com/BurntSushi/toml"
 	"github.com/ldsec/unlynx/lib"
 	"github.com/ldsec/unlynx/protocols"
@@ -60,7 +60,7 @@ func (sim *DeterministicTaggingSimulation) Node(config *onet.SimulationConfig) e
 		func(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 			return NewDeterministicTaggingSimul(tni, sim)
 		}); err != nil {
-		return errors.New("Error while registering <DeterministicTaggingSimul>:" + err.Error())
+		return fmt.Errorf("error while registering <DeterministicTaggingSimul>: %v", err)
 	}
 
 	return sim.SimulationBFTree.Node(config)

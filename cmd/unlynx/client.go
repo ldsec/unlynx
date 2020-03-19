@@ -1,7 +1,7 @@
-package appunlynx
+package main
 
 import (
-	"errors"
+	"fmt"
 	"os"
 	"regexp"
 	"strconv"
@@ -32,7 +32,7 @@ func startQuery(el *onet.Roster, proofs bool, sum []string, count bool, whereQue
 
 	grp, aggr, err := client.SendSurveyResultsQuery(*surveyID)
 	if err != nil {
-		return errors.New("service could not output the results: " + err.Error())
+		return fmt.Errorf("service could not output the results: %v", err)
 	}
 
 	// Print Output
@@ -77,7 +77,7 @@ func openGroupToml(tomlFileName string) (*onet.Roster, error) {
 	}
 
 	if len(el.Roster.List) <= 0 {
-		return nil, errors.New("empty or invalid unlynx group file:" + tomlFileName)
+		return nil, fmt.Errorf("empty or invalid unlynx group file: %v", tomlFileName)
 	}
 
 	return el.Roster, nil
@@ -91,7 +91,7 @@ func checkRegex(input, expression string) bool {
 func parseQuery(el *onet.Roster, sum string, count bool, where, predicate, groupBy string) ([]string, bool, []libunlynx.WhereQueryAttribute, string, []string, error) {
 
 	if sum == "" || (where != "" && predicate == "") || (where == "" && predicate != "") {
-		return nil, false, nil, "", nil, errors.New("wrong query! please check the sum, where and the predicate parameters")
+		return nil, false, nil, "", nil, fmt.Errorf("wrong query! please check the sum, where and the predicate parameters")
 	}
 
 	sumRegex := "{s[0-9]+(,\\s*s[0-9]+)*}"
@@ -99,7 +99,7 @@ func parseQuery(el *onet.Roster, sum string, count bool, where, predicate, group
 	groupByRegex := "{g[0-9]+(,\\s*g[0-9]+)*}"
 
 	if !checkRegex(sum, sumRegex) {
-		return nil, false, nil, "", nil, errors.New("error parsing the sum parameter(s)")
+		return nil, false, nil, "", nil, fmt.Errorf("error parsing the sum parameter(s)")
 	}
 	sum = strings.Replace(sum, " ", "", -1)
 	sum = strings.Replace(sum, "{", "", -1)
@@ -115,27 +115,27 @@ func parseQuery(el *onet.Roster, sum string, count bool, where, predicate, group
 		}
 
 		if !check {
-			return nil, false, nil, "", nil, errors.New("no 'count' attribute in the sum variables")
+			return nil, false, nil, "", nil, fmt.Errorf("no 'count' attribute in the sum variables")
 		}
 	}
 
 	if !checkRegex(where, whereRegex) {
-		return nil, false, nil, "", nil, errors.New("error parsing the where parameter(s)")
+		return nil, false, nil, "", nil, fmt.Errorf("error parsing the where parameter(s)")
 	}
 	where = strings.Replace(where, " ", "", -1)
 	where = strings.Replace(where, "{", "", -1)
 	where = strings.Replace(where, "}", "", -1)
-	tmp := strings.Split(where, ",")
+	whereTokens := strings.Split(where, ",")
 
 	whereFinal := make([]libunlynx.WhereQueryAttribute, 0)
 
 	var variable string
-	for i := range tmp {
+	for i := range whereTokens {
 		// if is a variable (w1, w2...)
 		if i%2 == 0 {
-			variable = tmp[i]
+			variable = whereTokens[i]
 		} else { // if it is a value
-			value, err := strconv.Atoi(tmp[i])
+			value, err := strconv.Atoi(whereTokens[i])
 			if err != nil {
 				return nil, false, nil, "", nil, err
 			}
@@ -145,7 +145,7 @@ func parseQuery(el *onet.Roster, sum string, count bool, where, predicate, group
 	}
 
 	if !checkRegex(groupBy, groupByRegex) {
-		return nil, false, nil, "", nil, errors.New("error parsing the groupBy parameter(s)")
+		return nil, false, nil, "", nil, fmt.Errorf("error parsing the groupBy parameter(s)")
 	}
 	groupBy = strings.Replace(groupBy, " ", "", -1)
 	groupBy = strings.Replace(groupBy, "{", "", -1)

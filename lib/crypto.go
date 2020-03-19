@@ -3,7 +3,6 @@ package libunlynx
 import (
 	"encoding"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"math/big"
 	"strings"
@@ -635,7 +634,7 @@ func (c *CipherText) Serialize() (string, error) {
 func (c *CipherText) Deserialize(b64Encoded string) error {
 	decoded, err := base64.URLEncoding.DecodeString(b64Encoded)
 	if err != nil {
-		return errors.New("Invalid CipherText (decoding failed): " + err.Error())
+		return fmt.Errorf("invalid ciphertext (decoding failed): %v", err)
 	}
 	err = (*c).FromBytes(decoded)
 	if err != nil {
@@ -648,7 +647,7 @@ func (c *CipherText) Deserialize(b64Encoded string) error {
 func SerializeElement(el encoding.BinaryMarshaler) (string, error) {
 	bytes, err := el.MarshalBinary()
 	if err != nil {
-		return "", errors.New("Error marshalling element: " + err.Error())
+		return "", fmt.Errorf("error marshalling element: %v", err)
 	}
 	return base64.URLEncoding.EncodeToString(bytes), nil
 }
@@ -665,15 +664,15 @@ func SerializeScalar(scalar encoding.BinaryMarshaler) (string, error) {
 
 // DeserializePoint deserializes a point using base64 encoding
 func DeserializePoint(encodedPoint string) (kyber.Point, error) {
-	decoded, errD := base64.URLEncoding.DecodeString(encodedPoint)
-	if errD != nil {
-		return nil, errors.New("Error decoding point: " + errD.Error())
+	decoded, err := base64.URLEncoding.DecodeString(encodedPoint)
+	if err != nil {
+		return nil, fmt.Errorf("error decoding point: %v", err)
 	}
 
 	point := SuiTe.Point()
-	errM := point.UnmarshalBinary(decoded)
-	if errM != nil {
-		return nil, errors.New("Error unmarshalling point: " + errM.Error())
+	err = point.UnmarshalBinary(decoded)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshalling point: %v", err)
 	}
 
 	return point, nil
@@ -681,15 +680,15 @@ func DeserializePoint(encodedPoint string) (kyber.Point, error) {
 
 // DeserializeScalar deserializes a scalar using base64 encoding
 func DeserializeScalar(encodedScalar string) (kyber.Scalar, error) {
-	decoded, errD := base64.URLEncoding.DecodeString(encodedScalar)
-	if errD != nil {
-		return nil, errors.New("Error decoding scalar: " + errD.Error())
+	decoded, err := base64.URLEncoding.DecodeString(encodedScalar)
+	if err != nil {
+		return nil, fmt.Errorf("error decoding scalar: %v", err)
 	}
 
 	scalar := SuiTe.Scalar()
-	errM := scalar.UnmarshalBinary(decoded)
-	if errM != nil {
-		return nil, errors.New("Error unmarshalling scalar: " + errM.Error())
+	err = scalar.UnmarshalBinary(decoded)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshalling scalar: %v", err)
 	}
 
 	return scalar, nil

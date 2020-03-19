@@ -1,7 +1,7 @@
 package main
 
 import (
-	"errors"
+	"fmt"
 	"github.com/BurntSushi/toml"
 	"github.com/ldsec/unlynx/lib"
 	"github.com/ldsec/unlynx/lib/aggregation"
@@ -14,6 +14,7 @@ import (
 	"go.dedis.ch/kyber/v3/util/random"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
+	"time"
 )
 
 func init() {
@@ -55,7 +56,6 @@ func (sim *ProofsVerificationSimulation) Setup(dir string, hosts []string) (*one
 
 // Run starts the simulation.
 func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) error {
-
 	for round := 0; round < sim.Rounds; round++ {
 		log.Lvl1("Starting round", round)
 		rooti, err := config.Overlay.CreateProtocol("ProofsVerification", config.Tree, onet.NilServiceID)
@@ -115,8 +115,8 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 
 		toAdd := libunlynx.SuiTe.Point().Mul(secKeyNew, libunlynx.SuiTe.Point().Base())
 		for i := range cipherVect {
-			tmp := libunlynx.SuiTe.Point().Add(cipherVect[i].C, toAdd)
-			prf, err := libunlynxdetertag.DeterministicTagAdditionProofCreation(cipherVect[i].C, secKeyNew, toAdd, tmp)
+			r := libunlynx.SuiTe.Point().Add(cipherVect[i].C, toAdd)
+			prf, err := libunlynxdetertag.DeterministicTagAdditionProofCreation(cipherVect[i].C, secKeyNew, toAdd, r)
 			if err != nil {
 				return err
 			}
@@ -145,10 +145,10 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 
 		detResponses := make([]libunlynx.FilteredResponseDet, 0)
 		for i := 0; i < sim.NbrGroups; i++ {
-			tmp := libunlynx.NewCipherVector(sim.NbrGroupAttributes)
-			tmp.Add(cipherVectGr, cipherVectGr)
+			cv := libunlynx.NewCipherVector(sim.NbrGroupAttributes)
+			cv.Add(cipherVectGr, cipherVectGr)
 
-			cipherVectGr = *tmp
+			cipherVectGr = *cv
 			det1 := cipherVectGr
 			if err := protocolsunlynx.TaggingDet(&det1, secKey, secKey, pubKey, false); err != nil {
 				return err
@@ -231,23 +231,27 @@ func (sim *ProofsVerificationSimulation) Run(config *onet.SimulationConfig) erro
 		if err := root.Start(); err != nil {
 			return err
 		}
-		results := <-root.ProtocolInstance().(*protocolsunlynxutils.ProofsVerificationProtocol).FeedbackChannel
-		libunlynx.EndTimer(round)
+		select {
+		case results := <-root.ProtocolInstance().(*protocolsunlynxutils.ProofsVerificationProtocol).FeedbackChannel:
+			libunlynx.EndTimer(round)
 
-		log.Lvl1(len(results), " proofs verified")
+			log.Lvl1(len(results), " proofs verified")
 
-		if results[0] == false {
-			return errors.New("key switching proofs failed")
-		} else if results[1] == false {
-			return errors.New("deterministic tagging (creation) proofs failed")
-		} else if results[2] == false {
-			return errors.New("deterministic tagging (addition) proofs failed")
-		} else if results[3] == false {
-			return errors.New("local aggregation proofs failed")
-		} else if results[4] == false {
-			return errors.New("shuffling proofs failed")
-		} else if results[5] == false {
-			return errors.New("collective aggregation proofs failed")
+			if !results[0] {
+				return fmt.Errorf("key switching proofs failed")
+			} else if !results[1] {
+				return fmt.Errorf("deterministic tagging (creation) proofs failed")
+			} else if !results[2] {
+				return fmt.Errorf("deterministic tagging (addition) proofs failed")
+			} else if !results[3] {
+				return fmt.Errorf("local aggregation proofs failed")
+			} else if !results[4] {
+				return fmt.Errorf("shuffling proofs failed")
+			} else if !results[5] {
+				return fmt.Errorf("collective aggregation proofs failed")
+			}
+		case <-time.After(libunlynx.TIMEOUT):
+			return fmt.Errorf("simulation didn't finish in time")
 		}
 	}
 	return nil

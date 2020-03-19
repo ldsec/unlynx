@@ -1,12 +1,14 @@
 package main
 
 import (
+	"fmt"
 	"github.com/BurntSushi/toml"
 	"github.com/ldsec/unlynx/lib"
 	"github.com/ldsec/unlynx/protocols/utils"
 	"go.dedis.ch/kyber/v3/util/random"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
+	"time"
 )
 
 func init() {
@@ -83,11 +85,14 @@ func (sim *AddRmSimulation) Run(config *onet.SimulationConfig) error {
 		if err := root.Start(); err != nil {
 			return err
 		}
-		results := <-root.ProtocolInstance().(*protocolsunlynxutils.AddRmServerProtocol).FeedbackChannel
-		log.Lvl1("Number of aggregated lines: ", len(results))
 
-		libunlynx.EndTimer(round)
-
+		select {
+		case results := <-root.ProtocolInstance().(*protocolsunlynxutils.AddRmServerProtocol).FeedbackChannel:
+			log.Lvl1("Number of aggregated lines: ", len(results))
+			libunlynx.EndTimer(round)
+		case <-time.After(libunlynx.TIMEOUT):
+			return fmt.Errorf("simulation didn't finish in time")
+		}
 	}
 
 	return nil

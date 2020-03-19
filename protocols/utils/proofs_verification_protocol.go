@@ -5,6 +5,7 @@
 package protocolsunlynxutils
 
 import (
+	"fmt"
 	"github.com/ldsec/unlynx/lib"
 	"github.com/ldsec/unlynx/lib/aggregation"
 	"github.com/ldsec/unlynx/lib/deterministic_tag"
@@ -12,6 +13,7 @@ import (
 	"github.com/ldsec/unlynx/lib/shuffle"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
+	"time"
 )
 
 // ProofsVerificationProtocolName is the registered name for the proof verification protocol.
@@ -107,7 +109,13 @@ func (p *ProofsVerificationProtocol) Start() error {
 func (p *ProofsVerificationProtocol) Dispatch() error {
 	defer p.Done()
 
-	aux := <-finalResult
-	p.FeedbackChannel <- aux
+	var finalResultMessage []bool
+	select {
+	case finalResultMessage = <-finalResult:
+	case <-time.After(libunlynx.TIMEOUT):
+		return fmt.Errorf(p.ServerIdentity().String() + " didn't get the <finalResultMessage> on time")
+	}
+
+	p.FeedbackChannel <- finalResultMessage
 	return nil
 }

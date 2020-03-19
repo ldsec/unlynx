@@ -1,7 +1,7 @@
 package libunlynxshuffle
 
 import (
-	"errors"
+	"fmt"
 	"math"
 	"sync"
 
@@ -84,7 +84,7 @@ func ShuffleProofCreation(originalList, shuffledList []libunlynx.CipherVector, g
 	// do k-shuffle of ElGamal on the (Xhat,Yhat) and check it
 	k = len(Xhat)
 	if k != len(Yhat) {
-		return PublishedShufflingProof{}, errors.New("X,Y vectors have inconsistent lengths")
+		return PublishedShufflingProof{}, fmt.Errorf("X,Y vectors have inconsistent lengths")
 	}
 	ps := shuffleKyber.PairShuffle{}
 	ps.Init(libunlynx.SuiTe, k)
@@ -95,7 +95,7 @@ func ShuffleProofCreation(originalList, shuffledList []libunlynx.CipherVector, g
 
 	prf, err := proof.HashProve(libunlynx.SuiTe, "PairShuffle", prover)
 	if err != nil {
-		return PublishedShufflingProof{}, errors.New("Shuffle proof failed: " + err.Error())
+		return PublishedShufflingProof{}, fmt.Errorf("shuffle proof failed: %v", err)
 	}
 	return PublishedShufflingProof{originalList, shuffledList, g, h, prf}, nil
 }
@@ -293,7 +293,7 @@ func compressCipherVector(ciphervector libunlynx.CipherVector, e []kyber.Scalar)
 
 	// check that e and cipher vectors have the same size
 	if len(e) != k {
-		return libunlynx.CipherText{}, errors.New("e is not the right size")
+		return libunlynx.CipherText{}, fmt.Errorf("e is not the right size")
 	}
 
 	ciphertext := *libunlynx.NewCipherText()
@@ -343,7 +343,7 @@ func compressCipherVectorMultiple(inputList, outputList []libunlynx.CipherVector
 	wg := libunlynx.StartParallelize(2)
 	go func() {
 		defer wg.Done()
-		tmp, tmpErr := compressCipherVector(inputList[i], e)
+		cv, tmpErr := compressCipherVector(inputList[i], e)
 		if tmpErr != nil {
 			mutex.Lock()
 			err = tmpErr
@@ -351,12 +351,12 @@ func compressCipherVectorMultiple(inputList, outputList []libunlynx.CipherVector
 			return
 		}
 
-		Xhat[i] = tmp.K
-		Yhat[i] = tmp.C
+		Xhat[i] = cv.K
+		Yhat[i] = cv.C
 	}()
 	go func() {
 		defer wg.Done()
-		tmpBar, tmpErr := compressCipherVector(outputList[i], e)
+		cv, tmpErr := compressCipherVector(outputList[i], e)
 		if tmpErr != nil {
 			mutex.Lock()
 			err = tmpErr
@@ -364,8 +364,8 @@ func compressCipherVectorMultiple(inputList, outputList []libunlynx.CipherVector
 			return
 		}
 
-		XhatBar[i] = tmpBar.K
-		YhatBar[i] = tmpBar.C
+		XhatBar[i] = cv.K
+		YhatBar[i] = cv.C
 	}()
 	libunlynx.EndParallelize(wg)
 
@@ -388,8 +388,8 @@ func compressBeta(beta [][]kyber.Scalar, e []kyber.Scalar) []kyber.Scalar {
 		go func(i int) {
 			defer wg.Done()
 			for j := 0; j < NQ; j++ {
-				tmp := libunlynx.SuiTe.Scalar().Mul(beta[i][j], e[j])
-				betaCompressed[i] = libunlynx.SuiTe.Scalar().Add(betaCompressed[i], tmp)
+				betaMulE := libunlynx.SuiTe.Scalar().Mul(beta[i][j], e[j])
+				betaCompressed[i] = libunlynx.SuiTe.Scalar().Add(betaCompressed[i], betaMulE)
 			}
 		}(i)
 	}
@@ -412,7 +412,7 @@ func (psp *PublishedShufflingProof) ToBytes() (PublishedShufflingProofBytes, err
 	wg := libunlynx.StartParallelize(3)
 	go func(data []libunlynx.CipherVector) {
 		defer wg.Done()
-		tmp, tmpLength, tmpErr := libunlynx.ArrayCipherVectorToBytes(data)
+		cvBytes, cvLengthBytes, tmpErr := libunlynx.ArrayCipherVectorToBytes(data)
 		if tmpErr != nil {
 			mutex.Lock()
 			err = tmpErr
@@ -420,14 +420,14 @@ func (psp *PublishedShufflingProof) ToBytes() (PublishedShufflingProofBytes, err
 			return
 		}
 
-		pspb.OriginalList = &tmp
-		pspb.OriginalListLength = &tmpLength
+		pspb.OriginalList = &cvBytes
+		pspb.OriginalListLength = &cvLengthBytes
 	}(psp.OriginalList)
 
 	// convert ShuffledList
 	go func(data []libunlynx.CipherVector) {
 		defer wg.Done()
-		tmp, tmpLength, tmpErr := libunlynx.ArrayCipherVectorToBytes(data)
+		cvBytes, cvLengthBytes, tmpErr := libunlynx.ArrayCipherVectorToBytes(data)
 		if tmpErr != nil {
 			mutex.Lock()
 			err = tmpErr
@@ -435,8 +435,8 @@ func (psp *PublishedShufflingProof) ToBytes() (PublishedShufflingProofBytes, err
 			return
 		}
 
-		pspb.ShuffledList = &tmp
-		pspb.ShuffledListLength = &tmpLength
+		pspb.ShuffledList = &cvBytes
+		pspb.ShuffledListLength = &cvLengthBytes
 	}(psp.ShuffledList)
 
 	// convert 'the rest'
@@ -450,8 +450,7 @@ func (psp *PublishedShufflingProof) ToBytes() (PublishedShufflingProofBytes, err
 			mutex.Unlock()
 			return
 		}
-		tmpGBytes := dataG
-		pspb.G = &tmpGBytes
+		pspb.G = &dataG
 
 		dataH, tmpErr := libunlynx.AbstractPointsToBytes([]kyber.Point{H})
 		if tmpErr != nil {
@@ -460,8 +459,7 @@ func (psp *PublishedShufflingProof) ToBytes() (PublishedShufflingProofBytes, err
 			mutex.Unlock()
 			return
 		}
-		tmpHBytes := dataH
-		pspb.H = &tmpHBytes
+		pspb.H = &dataH
 
 		pspb.HashProof = psp.HashProof
 	}(psp.G, psp.H, psp.HashProof)

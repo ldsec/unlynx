@@ -1,7 +1,7 @@
 package main
 
 import (
-	"errors"
+	"fmt"
 	"github.com/ldsec/unlynx/data"
 	"github.com/ldsec/unlynx/lib"
 	"github.com/ldsec/unlynx/lib/tools"
@@ -74,7 +74,7 @@ func (sim *SimulationUnLynx) Run(config *onet.SimulationConfig) error {
 
 	// Does not make sense to have more servers than clients!!
 	if nbrHosts > sim.NbrDPs {
-		return errors.New("hosts: " + strconv.FormatInt(int64(nbrHosts), 10) + " must be the same or lower as num_clients " + strconv.FormatInt(int64(sim.NbrDPs), 10))
+		return fmt.Errorf("hosts: " + strconv.FormatInt(int64(nbrHosts), 10) + " must be the same or lower as num_clients " + strconv.FormatInt(int64(sim.NbrDPs), 10))
 	}
 	el := (*config.Tree).Roster
 
@@ -155,7 +155,7 @@ func (sim *SimulationUnLynx) Run(config *onet.SimulationConfig) error {
 				client = servicesunlynx.NewUnLynxClient(server, strconv.Itoa(i+1))
 				if tmpErr := client.SendSurveyResponseQuery(*surveyID, dataCollection, el.Aggregate, sim.DataRepetitions, count); tmpErr != nil {
 					mutex.Lock()
-					err = errors.New("Error while sending DP (" + client.String() + ") responses:" + err.Error())
+					err = fmt.Errorf("Error while sending DP ("+client.String()+") responses: %v", err)
 					log.Error(err)
 					mutex.Unlock()
 				}
@@ -174,7 +174,7 @@ func (sim *SimulationUnLynx) Run(config *onet.SimulationConfig) error {
 
 		grp, aggr, err := client.SendSurveyResultsQuery(*surveyID)
 		if err != nil {
-			return errors.New("Service could not output the results: " + err.Error())
+			return fmt.Errorf("service could not output the results: %v", err)
 		}
 
 		libunlynx.EndTimer(start)

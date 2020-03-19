@@ -1,7 +1,7 @@
 package main
 
 import (
-	"errors"
+	"fmt"
 	"github.com/BurntSushi/toml"
 	"github.com/ldsec/unlynx/lib"
 	"github.com/ldsec/unlynx/lib/shuffle"
@@ -56,7 +56,7 @@ func (sim *ShufflingSimulation) Node(config *onet.SimulationConfig) error {
 		func(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 			return NewShufflingSimul(tni, sim)
 		}); err != nil {
-		return errors.New("Error while registering <ShufflingSimul>:" + err.Error())
+		return fmt.Errorf("error while registering <ShufflingSimul>: %v", err)
 	}
 
 	return sim.SimulationBFTree.Node(config)

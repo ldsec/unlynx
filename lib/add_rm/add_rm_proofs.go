@@ -1,7 +1,7 @@
 package libunlynxaddrm
 
 import (
-	"errors"
+	"fmt"
 	"math"
 	"sync"
 
@@ -65,7 +65,7 @@ func AddRmProofCreation(cBef, cAft libunlynx.CipherText, K kyber.Point, k kyber.
 	proofTmp, err := proof.HashProve(libunlynx.SuiTe, "proofTest", prover)
 
 	if err != nil {
-		return PublishedAddRmProof{}, errors.New("---------Prover:" + err.Error())
+		return PublishedAddRmProof{}, fmt.Errorf("---------prover: %v", err)
 	}
 
 	return PublishedAddRmProof{Proof: proofTmp, CtBef: cBef, CtAft: cAft, RB: rB}, nil

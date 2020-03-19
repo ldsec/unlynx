@@ -19,8 +19,7 @@ func TestDeterministicTagSequence(t *testing.T) {
 	target := []int64{-8358645081376817152, -8358645081376817152, 2, 3, 2, 5}
 	cv := *libunlynx.EncryptIntVector(K, target)
 	for n := 0; n < N; n++ {
-		tmp := libunlynxdetertag.DeterministicTagSequence(cv, private[n], secretPrivate[n])
-		cv = tmp
+		cv = libunlynxdetertag.DeterministicTagSequence(cv, private[n], secretPrivate[n])
 	}
 
 	assert.True(t, cv[0].C.Equal(cv[1].C))

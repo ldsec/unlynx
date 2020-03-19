@@ -7,7 +7,7 @@
 package protocolsunlynx
 
 import (
-	"errors"
+	"fmt"
 	"time"
 
 	"github.com/ldsec/unlynx/lib"
@@ -125,16 +125,16 @@ func NewKeySwitchingProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, e
 
 	err := pap.RegisterChannel(&pap.DownChannel)
 	if err != nil {
-		return nil, errors.New("couldn't register down channel: " + err.Error())
+		return nil, fmt.Errorf("couldn't register down channel: %v", err)
 	}
 
 	err = pap.RegisterChannel(&pap.ChildDataChannel)
 	if err != nil {
-		return nil, errors.New("couldn't register child-data channel: " + err.Error())
+		return nil, fmt.Errorf("couldn't register child-data channel: %v", err)
 	}
 
 	if err := pap.RegisterChannel(&pap.LengthChannel); err != nil {
-		return nil, errors.New("couldn't register length channel: " + err.Error())
+		return nil, fmt.Errorf("couldn't register length channel: %v", err)
 	}
 
 	return pap, nil
@@ -146,11 +146,11 @@ func (p *KeySwitchingProtocol) Start() error {
 	keySwitchingStart := libunlynx.StartTimer(p.Name() + "_KeySwitching(START)")
 
 	if p.TargetOfSwitch == nil {
-		return errors.New("no ciphertext given as key switching target")
+		return fmt.Errorf("no ciphertext given as key switching target")
 	}
 
 	if p.TargetPublicKey == nil {
-		return errors.New("no new public key to be switched on provided")
+		return fmt.Errorf("no new public key to be switched on provided")
 	}
 
 	log.Lvl2("[KEY SWITCHING PROTOCOL] <Drynx> Server", p.ServerIdentity(), " started a Key Switching Protocol")
@@ -178,7 +178,7 @@ func (p *KeySwitchingProtocol) Start() error {
 	}
 
 	if err := p.SendToChildren(&DownMessageBytes{Data: data}); err != nil {
-		return errors.New("Root " + p.ServerIdentity().String() + " failed to broadcast DownMessageBytes: " + err.Error())
+		return fmt.Errorf("Root "+p.ServerIdentity().String()+" failed to broadcast DownMessageBytes: %v", err)
 	}
 
 	libunlynx.EndTimer(keySwitchingStart)
@@ -230,11 +230,15 @@ func (p *KeySwitchingProtocol) Dispatch() error {
 
 // Announce forwarding down the tree.
 func (p *KeySwitchingProtocol) announcementKSPhase() (kyber.Point, []kyber.Point, error) {
-	dataReferenceMessage := <-p.DownChannel
-	if !p.IsLeaf() {
-		if err := p.SendToChildren(&dataReferenceMessage.DownMessageBytes); err != nil {
-			return nil, nil, errors.New("Node " + p.ServerIdentity().String() + " failed to broadcast DownMessageBytes: " + err.Error())
-		}
+	var dataReferenceMessage DownBytesStruct
+	select {
+	case dataReferenceMessage = <-p.DownChannel:
+	case <-time.After(libunlynx.TIMEOUT):
+		return nil, nil, fmt.Errorf(p.ServerIdentity().String() + " didn't get the <dataReferenceMessage> on time")
+	}
+
+	if err := p.SendToChildren(&dataReferenceMessage.DownMessageBytes); err != nil {
+		return nil, nil, fmt.Errorf("Node "+p.ServerIdentity().String()+" failed to broadcast DownMessageBytes: %v", err)
 	}
 	message, err := libunlynx.FromBytesToAbstractPoints(dataReferenceMessage.Data)
 	if err != nil {
@@ -276,7 +280,7 @@ func (p *KeySwitchingProtocol) ascendingKSPhase() (*libunlynx.CipherVector, erro
 
 	if !p.IsRoot() {
 		if err := p.SendToParent(&LengthMessage{Length: libunlynxtools.UnsafeCastIntsToBytes([]int{len(*p.NodeContribution)})}); err != nil {
-			return nil, errors.New("Node " + p.ServerIdentity().String() + " failed to broadcast LengthMessage ( " + err.Error() + " )")
+			return nil, fmt.Errorf("Node "+p.ServerIdentity().String()+" failed to broadcast LengthMessage: %v", err)
 		}
 		message, _, err := (*p.NodeContribution).ToBytes()
 		if err != nil {
@@ -284,7 +288,7 @@ func (p *KeySwitchingProtocol) ascendingKSPhase() (*libunlynx.CipherVector, erro
 		}
 
 		if err := p.SendToParent(&UpBytesMessage{Data: message}); err != nil {
-			return nil, errors.New("Node " + p.ServerIdentity().String() + " failed to broadcast UpBytesMessage: " + err.Error())
+			return nil, fmt.Errorf("Node "+p.ServerIdentity().String()+" failed to broadcast UpBytesMessage: %v", err)
 		}
 	}
 

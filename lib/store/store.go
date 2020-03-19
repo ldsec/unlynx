@@ -85,10 +85,10 @@ func (s *Store) InsertDpResponse(cr libunlynx.DpResponse, proofsB bool, groupBy,
 	} else {
 		value, ok := s.DpResponsesAggr[GroupingKeyTuple{libunlynx.Key(clearGrp), libunlynx.Key(clearWhr)}]
 		if ok {
-			tmp := libunlynx.NewCipherVector(len(value.AggregatingAttributes))
-			tmp.Add(value.AggregatingAttributes, newResp.AggregatingAttributes)
+			cv := libunlynx.NewCipherVector(len(value.AggregatingAttributes))
+			cv.Add(value.AggregatingAttributes, newResp.AggregatingAttributes)
 			mapValue := s.DpResponsesAggr[GroupingKeyTuple{libunlynx.Key(clearGrp), libunlynx.Key(clearWhr)}]
-			mapValue.AggregatingAttributes = *tmp
+			mapValue.AggregatingAttributes = *cv
 			s.DpResponsesAggr[GroupingKeyTuple{libunlynx.Key(clearGrp), libunlynx.Key(clearWhr)}] = mapValue
 
 			if proofsB {
@@ -199,7 +199,7 @@ func AddInClear(s []libunlynx.DpClearResponse) []libunlynx.DpClearResponse {
 		cpy = append(cpy, libunlynxtools.ConvertMapToData(elem.AggregatingAttributesClear, "s", 0)...)
 		cpy = append(cpy, libunlynxtools.ConvertMapToData(elem.AggregatingAttributesEnc, "s", len(elem.AggregatingAttributesClear))...)
 
-		if _, ok := dataMap[key]; ok == false {
+		if _, ok := dataMap[key]; !ok {
 			dataMap[key] = cpy
 		} else {
 			for i := 0; i < len(dataMap[key]); i = i + libunlynx.VPARALLELIZE {
@@ -272,7 +272,7 @@ func (s *Store) PullCothorityAggregatedFilteredResponses(diffPri bool, noise lib
 
 	s.GroupedDeterministicFilteredResponses = make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse)
 
-	if diffPri == true {
+	if diffPri {
 		for _, v := range aggregatedResults {
 			for _, aggr := range v.AggregatingAttributes {
 				aggr.Add(aggr, noise)
@@ -293,7 +293,7 @@ func (s *Store) PullDeliverableResults(diffPri bool, noise libunlynx.CipherText)
 	results := s.DeliverableResults
 	s.DeliverableResults = s.DeliverableResults[:0]
 
-	if diffPri == true {
+	if diffPri {
 		for _, v := range results {
 			for _, aggr := range v.AggregatingAttributes {
 				aggr.Add(aggr, noise)
