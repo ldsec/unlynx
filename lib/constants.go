@@ -10,11 +10,11 @@ import (
 )
 
 func init() {
-	timeout, err := time.ParseDuration(os.Getenv("MEDCO_TIMEOUT"))
+	timeout, err := time.ParseDuration(os.Getenv("CONN_TIMEOUT"))
 	if err == nil {
 		TIMEOUT = timeout
 	} else {
-		log.Warn("Couldn't parse MEDCO_TIMEOUT, using default value: ", TIMEOUT.String())
+		log.Warn("Couldn't parse CONN_TIMEOUT, using default value: ", TIMEOUT.String())
 	}
 }
 
