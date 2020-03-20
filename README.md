@@ -18,7 +18,7 @@ UnLynx is developed by LDS (Laboratory for Data Security in EPFL) in collaborati
 
 We have a development and a stable version. The `master`-branch in `github.com/ldsec/unlynx` is the development version that works but can have incompatible changes.
 
-Use the latest tag `v1.4` that are stable and has no incompatible changes.
+Use the latest tag `v1.4.1` that are stable and has no incompatible changes.
 
 ## License
 
