@@ -6,10 +6,11 @@ UnLynx is developed by LDS (Laboratory for Data Security in EPFL) in collaborati
 
 ## Documentation
 
+* For further details and support, you can check the official [documentation](https://ldsec.gitbook.io/unlynx/).
 * The UnLynx library does an intensive use of [Overlay-network (ONet) library](https://github.com/dedis/onet) and of the [Advanced Crypto (kyber) library](https://github.com/dedis/kyber).
-* For more information regarding the underlying architecture please refer to the stable version of ONet `go.dedis.ch/onet/v3`
-* To check the code organisation, have a look at [Layout](https://github.com/ldsec/unlynx/wiki/Layout)
-* For more information on how to run our protocols, services, simulations and apps, go to [Running UnLynx](https://github.com/ldsec/unlynx/wiki/Running-UnLynx)
+* For more information regarding the underlying architecture please refer to the stable version of ONet `go.dedis.ch/onet/v3`.
+* To check the code organisation, have a look at [Layout](https://app.gitbook.com/@ldsec/s/unlynx/layout).
+* For more information on how to run our protocols, services, simulations and apps, go to [Running UnLynx](https://app.gitbook.com/@ldsec/s/unlynx/running-unlynx).
 
 ## Version
 
