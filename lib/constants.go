@@ -3,7 +3,6 @@ package libunlynx
 import (
 	"go.dedis.ch/onet/v3/log"
 	"os"
-	"sync"
 	"time"
 
 	"go.dedis.ch/onet/v3/simul/monitor"
@@ -48,14 +47,44 @@ func EndTimer(timer *monitor.TimeMeasure) {
 	}
 }
 
+// WaitGroupWithError is like a sync.WaitGroup, with an error channel
+type WaitGroupWithError struct {
+	waiter  chan error
+	counter uint
+}
+
+// NewWaitGroupWithError creates a new WaitGroupWithError for the given count
+func NewWaitGroupWithError(count uint) WaitGroupWithError {
+	return WaitGroupWithError{
+		waiter:  make(chan error, count),
+		counter: count,
+	}
+}
+
+// Done mark the end of a goroutine, it has to be called, even with nil error
+func (wg WaitGroupWithError) Done(err error) {
+	wg.waiter <- err
+}
+
+// Wait waits for all expected goroutine to finish, returning the first error encountered
+func (wg WaitGroupWithError) Wait() error {
+	var ret error
+
+	for i := uint(0); i < wg.counter; i++ {
+		if err := <-wg.waiter; ret == nil && err != nil {
+			ret = err
+		}
+	}
+
+	return ret
+}
+
 // StartParallelize starts parallelization by instanciating number of threads
-func StartParallelize(nbrWg int) *sync.WaitGroup {
-	var wg sync.WaitGroup
-	wg.Add(nbrWg)
-	return &wg
+func StartParallelize(nbrWg uint) WaitGroupWithError {
+	return NewWaitGroupWithError(nbrWg)
 }
 
 // EndParallelize waits for a number of threads to finish
-func EndParallelize(wg *sync.WaitGroup) {
-	wg.Wait()
+func EndParallelize(wg WaitGroupWithError) error {
+	return wg.Wait()
 }
