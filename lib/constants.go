@@ -1,6 +1,7 @@
 package libunlynx
 
 import (
+	"errors"
 	"go.dedis.ch/onet/v3/log"
 	"os"
 	"time"
@@ -82,6 +83,23 @@ func (wg WaitGroupWithError) Wait() error {
 // StartParallelize starts parallelization by instanciating number of threads
 func StartParallelize(nbrWg uint) WaitGroupWithError {
 	return NewWaitGroupWithError(nbrWg)
+}
+
+// StartParallelizeWithInt starts parallelization by instanciating number of threads, channelling an error if nbrWg < 0
+func StartParallelizeWithInt(nbrWg int) WaitGroupWithError {
+	wrongArg := nbrWg < 0
+
+	if wrongArg {
+		nbrWg = 1
+	}
+
+	ret := NewWaitGroupWithError(uint(nbrWg))
+
+	if wrongArg {
+		ret.Done(errors.New("parallelization with negative number of worker"))
+	}
+
+	return ret
 }
 
 // EndParallelize waits for a number of threads to finish
