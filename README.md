@@ -4,7 +4,7 @@
 # UnLynx 
 UnLynx is a library for simulating a privacy-preserving data sharing tool. It offers a series of independent protocols that when combined offer a verifiably-secure and safe way to share sensitive data (e.g., medical data).  
 
-UnLynx is developed by LDS (Laboratory for Data Security in EPFL) in collaboration with DeDis (Laboratory for Decentralized and Distributed Systems).  
+UnLynx is developed by LDS (Laboratory for Data Security in EPFL) in collaboration with DEDIS (Laboratory for Decentralized and Distributed Systems).  
 
 ## Documentation
 
