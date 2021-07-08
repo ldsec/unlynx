@@ -181,3 +181,78 @@ func NewCollectiveAggregationTestSimple(tni *onet.TreeNodeInstance) (onet.Protoc
 
 	return protocol, err
 }
+
+func TestCollectiveAggregationDiffSizes(t *testing.T) {
+	local := onet.NewLocalTest(libunlynx.SuiTe)
+
+	// You must register this protocol before creating the servers
+	_, err := onet.GlobalProtocolRegister("CollectiveAggregationDiffSizes", NewCollectiveAggregationDiffSizes)
+	assert.NoError(t, err, "Error registering <CollectiveAggregationDiffSizes>:")
+
+	_, _, tree := local.GenTree(10, true)
+	defer local.CloseAll()
+
+	p, err := local.CreateProtocol("CollectiveAggregationDiffSizes", tree)
+	assert.NoError(t, err)
+
+	protocol := p.(*protocolsunlynx.CollectiveAggregationProtocol)
+
+	//run protocol
+	go func() {
+		err := protocol.Start()
+		assert.NoError(t, err)
+	}()
+	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*10) * time.Millisecond
+
+	feedback := protocol.FeedbackChannel
+
+	//verify results
+	expectedResults := []int64{4, 6, 8, 10, 12, 9, 9, 6}
+
+	select {
+	case encryptedResult := <-feedback:
+		log.Lvl1("Received results:")
+		resultData := make([]int64, len(encryptedResult.GroupedData[protocolsunlynx.EMPTYKEY].AggregatingAttributes))
+		aggrAttr := encryptedResult.GroupedData[protocolsunlynx.EMPTYKEY].AggregatingAttributes
+		resultData = libunlynx.DecryptIntVector(clientPrivate, &aggrAttr)
+		assert.Equal(t, expectedResults, resultData)
+	case <-time.After(timeout):
+		t.Fatal("Didn't finish in time")
+	}
+}
+
+func NewCollectiveAggregationDiffSizes(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
+	pi, err := protocolsunlynx.NewCollectiveAggregationProtocol(tni)
+	protocol := pi.(*protocolsunlynx.CollectiveAggregationProtocol)
+
+	simpleSlice := make([]libunlynx.CipherText, 0)
+	switch tni.Index() {
+	case 0:
+		toAdd := libunlynx.EncryptIntVector(clientPublic, []int64{1, 1, 1, 1, 1, 2})
+		simpleSlice = append(simpleSlice, *toAdd...)
+	case 1:
+		toAdd := libunlynx.EncryptIntVector(clientPublic, []int64{1, 2, 3, 4, 5, 3, 4})
+		simpleSlice = append(simpleSlice, *toAdd...)
+	case 2:
+		toAdd := libunlynx.EncryptIntVector(clientPublic, []int64{1, 2, 3, 4, 5, 3, 5, 6})
+		simpleSlice = append(simpleSlice, *toAdd...)
+	case 5:
+		toAdd := libunlynx.EncryptIntVector(clientPublic, []int64{0, 1, 0, 1, 0, 0, 0, 0})
+		simpleSlice = append(simpleSlice, *toAdd...)
+	case 9:
+		toAdd := libunlynx.EncryptIntVector(clientPublic, []int64{1, 0, 1, 0, 1, 1})
+		simpleSlice = append(simpleSlice, *toAdd...)
+	default:
+	}
+
+	protocol.Pubkey = clientPublic
+	protocol.SimpleData = &simpleSlice
+	protocol.GroupedData = nil
+	protocol.Proofs = false
+	protocol.ProofFunc = func(data []libunlynx.CipherVector, res libunlynx.CipherVector) *libunlynxaggr.PublishedAggregationListProof {
+		proof := libunlynxaggr.AggregationListProofCreation(data, res)
+		return &proof
+	}
+
+	return protocol, err
+}
