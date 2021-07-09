@@ -9,7 +9,6 @@ package protocolsunlynx
 
 import (
 	"fmt"
-	"go.dedis.ch/kyber/v3"
 	"math"
 	"sync"
 	"time"
@@ -100,8 +99,6 @@ type CollectiveAggregationProtocol struct {
 	DataReferenceChannel chan dataReferenceStruct
 	LengthNodeChannel    chan []cadmbLengthStruct
 	ChildDataChannel     chan []childAggregatedDataBytesStruct
-
-	Pubkey kyber.Point
 
 	// Protocol state data
 	GroupedData *map[libunlynx.GroupingKey]libunlynx.FilteredResponse
@@ -243,7 +240,7 @@ func (p *CollectiveAggregationProtocol) ascendingAggregationPhase(cvMap map[libu
 					if len(localAggr.AggregatingAttributes) != len(aggr.Fr.AggregatingAttributes) {
 						encZeros := make(libunlynx.CipherVector, int(math.Abs(float64(len(localAggr.AggregatingAttributes)-len(aggr.Fr.AggregatingAttributes)))))
 						for e := range encZeros {
-							encZeros[e] = *libunlynx.EncryptInt(p.Pubkey, 0)
+							encZeros[e] = *libunlynx.EncryptInt(p.Roster().Aggregate, 0)
 						}
 						if len(localAggr.AggregatingAttributes) > len(aggr.Fr.AggregatingAttributes) {
 							aggr.Fr.AggregatingAttributes = append(aggr.Fr.AggregatingAttributes, encZeros...)
