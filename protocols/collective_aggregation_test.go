@@ -253,8 +253,6 @@ func NewCollectiveAggregationDiffSizes(tni *onet.TreeNodeInstance) (onet.Protoco
 		simpleSlice = append(simpleSlice, *toAdd...)
 	default:
 	}
-
-	protocol.Pubkey = clientPublic
 	protocol.SimpleData = &simpleSlice
 	protocol.GroupedData = nil
 	protocol.Proofs = false
