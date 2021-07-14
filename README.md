@@ -1,6 +1,6 @@
 <img align="right" src="https://github.com/ldsec/unlynx/blob/master/logo_unlynx_x3.png" width="280">
 
-[![Build Status](https://travis-ci.com/ldsec/unlynx.svg?branch=master)](https://travis-ci.com/ldsec/unlynx) [![Go Report Card](https://goreportcard.com/badge/github.com/ldsec/unlynx)](https://goreportcard.com/report/github.com/ldsec/unlynx) [![Coverage Status](https://coveralls.io/repos/github/ldsec/unlynx/badge.svg?branch=master)](https://coveralls.io/github/ldsec/unlynx?branch=master)
+[![Build Status](https://travis-ci.com/ldsec/unlynx.svg?branch=master)](https://travis-ci.com/ldsec/unlynx) [![Go Report Card](https://goreportcard.com/badge/github.com/ldsec/unlynx)](https://goreportcard.com/report/github.com/ldsec/unlynx)
 # UnLynx 
 UnLynx is a library for simulating a privacy-preserving data sharing tool. It offers a series of independent protocols that when combined offer a verifiably-secure and safe way to share sensitive data (e.g., medical data).  
 
