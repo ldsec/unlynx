@@ -4,6 +4,7 @@ import (
 	"github.com/ldsec/unlynx/lib"
 	"github.com/ldsec/unlynx/services"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
 	"os"
@@ -994,10 +995,7 @@ func TestConcurrentSurveys(t *testing.T) {
 			groupBy := []string{"g1", "g2", "g3"}
 
 			surveyID, err := client.SendSurveyCreationQuery(el, servicesunlynx.SurveyID(""), nil, nbrDPs, proofsService, false, sum, count, whereQueryValues, predicate, groupBy)
-
-			if err != nil {
-				t.Fatal("Service did not start.")
-			}
+			require.NoError(t, err, "Service did not start.")
 
 			//save values in a map to verify them at the end
 			expectedResults := make(map[[numberGrpAttr]int64][]int64)
@@ -1051,10 +1049,7 @@ func TestConcurrentSurveys(t *testing.T) {
 			expectedResults[[3]int64{0, 1, 2}] = []int64{0, 9}
 			expectedResults[[3]int64{1, 2, 3}] = []int64{0, 9}
 			grp, aggr, err := client.SendSurveyResultsQuery(*surveyID)
-
-			if err != nil {
-				t.Fatal("Service could not output the results.")
-			}
+			require.NoError(t, err, "Service did not start.")
 
 			log.Lvl1("Service output:")
 			var tabVerify [][]int64
