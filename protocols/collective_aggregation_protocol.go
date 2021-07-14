@@ -9,6 +9,7 @@ package protocolsunlynx
 
 import (
 	"fmt"
+	"math"
 	"sync"
 	"time"
 
@@ -236,6 +237,17 @@ func (p *CollectiveAggregationProtocol) ascendingAggregationPhase(cvMap map[libu
 				}
 
 				if ok {
+					if len(localAggr.AggregatingAttributes) != len(aggr.Fr.AggregatingAttributes) {
+						encZeros := make(libunlynx.CipherVector, int(math.Abs(float64(len(localAggr.AggregatingAttributes)-len(aggr.Fr.AggregatingAttributes)))))
+						for e := range encZeros {
+							encZeros[e] = *libunlynx.EncryptInt(p.Roster().Aggregate, 0)
+						}
+						if len(localAggr.AggregatingAttributes) > len(aggr.Fr.AggregatingAttributes) {
+							aggr.Fr.AggregatingAttributes = append(aggr.Fr.AggregatingAttributes, encZeros...)
+						} else {
+							localAggr.AggregatingAttributes = append(localAggr.AggregatingAttributes, encZeros...)
+						}
+					}
 					cv := libunlynx.NewCipherVector(len(localAggr.AggregatingAttributes))
 					cv.Add(localAggr.AggregatingAttributes, aggr.Fr.AggregatingAttributes)
 
