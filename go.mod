@@ -21,6 +21,15 @@ require (
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 // indirect
 	golang.org/x/sys v0.0.0-20211007075335-d3039528d8ac // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
-	gopkg.in/satori/go.uuid.v1 v1.2.0 // indirect
-	gopkg.in/tylerb/graceful.v1 v1.2.15 // indirect
+)
+
+require (
+	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/russross/blackfriday/v2 v2.1.0 // indirect
+	github.com/smartystreets/goconvey v1.6.4 // indirect
+	go.dedis.ch/fixbuf v1.0.3 // indirect
+	go.dedis.ch/protobuf v1.0.11 // indirect
+	gopkg.in/yaml.v2 v2.2.2 // indirect
+	rsc.io/goversion v1.2.0 // indirect
 )
